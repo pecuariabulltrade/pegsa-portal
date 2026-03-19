@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>PEGSA Portal — Guía de Instalación</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { background:#f5f0e8; color:#1a1612; font-family:'DM Sans',sans-serif; max-width:860px; margin:0 auto; padding:40px 32px 80px; }
+  h1 { font-family:'Playfair Display',serif; font-size:32px; color:#1a1612; margin-bottom:4px; }
+  .sub { font-family:'DM Mono',monospace; font-size:11px; color:#b8922a; letter-spacing:.12em; text-transform:uppercase; margin-bottom:40px; }
+  h2 { font-family:'Playfair Display',serif; font-size:20px; margin:40px 0 16px; padding-bottom:8px; border-bottom:2px solid rgba(26,22,18,.12); }
+  .step { display:flex; gap:20px; margin-bottom:24px; align-items:flex-start; }
+  .num { width:36px; height:36px; border-radius:50%; background:#1a1612; color:#d4a84b; font-family:'Playfair Display',serif; font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .step-body { flex:1; }
+  .step-title { font-weight:600; font-size:15px; margin-bottom:6px; }
+  .step-desc { font-size:13px; color:rgba(26,22,18,.65); line-height:1.7; }
+  code { background:rgba(26,22,18,.07); padding:2px 7px; border-radius:3px; font-family:'DM Mono',monospace; font-size:12px; }
+  .cmd { background:#1a1612; color:#d4a84b; padding:12px 16px; border-radius:4px; font-family:'DM Mono',monospace; font-size:13px; margin:10px 0; }
+  .warn { background:rgba(192,57,43,.08); border-left:3px solid #c0392b; padding:10px 14px; border-radius:2px; font-size:13px; margin:10px 0; }
+  .tip  { background:rgba(184,146,42,.1); border-left:3px solid #b8922a; padding:10px 14px; border-radius:2px; font-size:13px; margin:10px 0; }
+  .ok   { background:rgba(39,97,61,.08); border-left:3px solid #27613d; padding:10px 14px; border-radius:2px; font-size:13px; margin:10px 0; }
+  .badge { display:inline-block; background:#1a1612; color:#d4a84b; font-family:'DM Mono',monospace; font-size:10px; padding:3px 8px; border-radius:2px; letter-spacing:.08em; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; }
+  th { text-align:left; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:rgba(26,22,18,.45); padding:8px 12px; border-bottom:2px solid rgba(26,22,18,.15); }
+  td { padding:9px 12px; border-bottom:1px solid rgba(26,22,18,.1); font-size:13px; }
+  hr { border:none; border-top:1px solid rgba(26,22,18,.1); margin:40px 0; }
+</style>
+</head>
+<body>
+
+<h1>PEGSA & BULLTRADE</h1>
+<div class="sub">Portal de Datos — Guía de Instalación en PC Personal</div>
+
+<div class="tip">
+  <strong>Antes de empezar:</strong> Este proceso se hace <strong>una sola vez</strong> en tu PC.
+  Después todo es automático. Tiempo estimado: 10–15 minutos.
+</div>
+
+<h2>Paso 1 — Instalar Python</h2>
+
+<div class="step">
+  <div class="num">1</div>
+  <div class="step-body">
+    <div class="step-title">Descargar Python</div>
+    <div class="step-desc">
+      Ir a <strong>https://www.python.org/downloads/</strong> y descargar la versión más reciente (botón amarillo grande).
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">2</div>
+  <div class="step-body">
+    <div class="step-title">Instalar — ¡con una opción clave!</div>
+    <div class="step-desc">
+      Ejecutar el instalador. En la primera pantalla, <strong>tildar esta opción antes de continuar:</strong>
+    </div>
+    <div class="cmd">☑  Add Python to PATH</div>
+    <div class="warn">Si no tildás esta opción, nada funcionará. Es lo más importante.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">3</div>
+  <div class="step-body">
+    <div class="step-title">Verificar instalación</div>
+    <div class="step-desc">
+      Abrir <strong>CMD</strong> (buscar "cmd" en el menú inicio) y escribir:
+    </div>
+    <div class="cmd">python --version</div>
+    <div class="ok">Debería aparecer algo como: <code>Python 3.12.4</code> — significa que funciona.</div>
+  </div>
+</div>
+
+<hr>
+
+<h2>Paso 2 — Configurar la carpeta de OneDrive</h2>
+
+<div class="step">
+  <div class="num">4</div>
+  <div class="step-body">
+    <div class="step-title">Encontrar tu usuario de Windows</div>
+    <div class="step-desc">
+      Abrí CMD y escribí:
+    </div>
+    <div class="cmd">echo %USERNAME%</div>
+    <div class="step-desc">Anotá el nombre que aparece (ej: <code>Juan</code> o <code>jperez</code>).</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">5</div>
+  <div class="step-body">
+    <div class="step-title">Abrir config.ini</div>
+    <div class="step-desc">
+      En la carpeta del actualizador, hacer <strong>click derecho</strong> en <code>config.ini</code> → <strong>Abrir con → Bloc de notas</strong>.
+      Buscar la línea que dice <code>carpeta =</code> y cambiarla con tu usuario:
+    </div>
+    <div class="cmd">carpeta = C:\Users\TU_USUARIO\OneDrive\PEGSA_Portal\datos</div>
+    <div class="step-desc">Reemplazá <code>TU_USUARIO</code> con el nombre que anotaste arriba. Guardar con Ctrl+S.</div>
+    <div class="tip">La carpeta <code>PEGSA_Portal\datos</code> se crea sola, no tenés que crearla a mano.</div>
+  </div>
+</div>
+
+<hr>
+
+<h2>Paso 3 — Instalar y probar</h2>
+
+<div class="step">
+  <div class="num">6</div>
+  <div class="step-body">
+    <div class="step-title">Ejecutar el instalador</div>
+    <div class="step-desc">
+      Click derecho en <span class="badge">1_INSTALAR.bat</span> → <strong>Ejecutar como administrador</strong>.<br>
+      Seguir las instrucciones en pantalla. Tarda 1–2 minutos.
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">7</div>
+  <div class="step-body">
+    <div class="step-title">Conectar la VPN</div>
+    <div class="step-desc">
+      Conectar la VPN de la empresa como siempre. Luego verificar que el servidor sea visible:
+    </div>
+    <div class="cmd">ping DARWASH</div>
+    <div class="ok">Si aparecen 4 líneas con tiempos (ej: <code>tiempo=5ms</code>), la conexión funciona.</div>
+    <div class="warn">Si dice "Host no encontrado", la VPN no está conectada o hay un problema de red.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">8</div>
+  <div class="step-body">
+    <div class="step-title">Primera prueba</div>
+    <div class="step-desc">
+      Doble clic en <span class="badge">2_EJECUTAR_AHORA.bat</span>.<br>
+      Va a aparecer una ventana mostrando el progreso. Al final debería decir:
+    </div>
+    <div class="ok">✓ EXITO: Datos actualizados correctamente</div>
+    <div class="step-desc" style="margin-top:8px">
+      Los archivos JSON van a aparecer en tu carpeta de OneDrive y se sincronizan automáticamente.
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<h2>Uso diario — No tenés que hacer nada</h2>
+
+<div class="ok">
+  La tarea queda programada para correr <strong>todos los días a las 7:00 AM</strong> automáticamente,
+  siempre que tu PC esté encendida y la VPN conectada.<br><br>
+  Si querés actualizar en cualquier momento: doble clic en <code>2_EJECUTAR_AHORA.bat</code>.
+</div>
+
+<h2>Archivos que se generan en OneDrive</h2>
+
+<table>
+  <thead><tr><th>Archivo</th><th>Contenido</th></tr></thead>
+  <tbody>
+    <tr><td><code>stock_hacienda_2025.json</code></td><td>Stock completo con KPIs por categoría y establecimiento</td></tr>
+    <tr><td><code>ultima_actualizacion.json</code></td><td>Resumen general + fecha/hora de la última sync</td></tr>
+  </tbody>
+</table>
+
+<h2>Solución de problemas</h2>
+
+<table>
+  <thead><tr><th>Problema</th><th>Solución</th></tr></thead>
+  <tbody>
+    <tr><td>No se pudo conectar al SQL</td><td>Verificar que la VPN esté conectada y hacer <code>ping DARWASH</code></td></tr>
+    <tr><td>python no se reconoce</td><td>Reinstalar Python tildando "Add Python to PATH"</td></tr>
+    <tr><td>Error al leer V_STOCK_HACIENDA</td><td>Verificar en Power BI el nombre exacto de la vista</td></tr>
+    <tr><td>JSON no aparece en OneDrive</td><td>Verificar la ruta en config.ini con tu usuario correcto</td></tr>
+  </tbody>
+</table>
+
+<div style="margin-top:48px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,22,18,.3);text-align:center;letter-spacing:.08em;text-transform:uppercase;">
+  PEGSA & BULLTRADE · Sistema de Gestión · Feb 2026
+</div>
+
+</body>
+</html>
