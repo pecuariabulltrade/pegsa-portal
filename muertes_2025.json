@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "generado": "2026-03-19T11:08:16.119207",
+    "periodo": "2025",
+    "tabla": "V_MUERTES",
+    "mes_actual": "2026-03",
+    "nombre_mes": "Marzo 2026",
+    "mes_anterior": "2026-02-17",
+    "nombre_mes_ant": "Últimos 30 días (17/02/2026 – 19/03/2026)",
+    "desde_anio": "2025-03-19",
+    "hasta": "2026-03-19",
+    "filtro_dias": ">30 días de encierre"
+  },
+  "mortandad": {
+    "muertes_anio": 300,
+    "ingresos_anio": 19842,
+    "stock_haras_hoy": 8461,
+    "denominador": 28303,
+    "tasa_mensual_pct": 1.06,
+    "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
+    "por_grupo": {
+      "Vacas": {
+        "muertes": 193,
+        "ingresos": 9983,
+        "stock": 2349,
+        "denominador": 12332,
+        "tasa_mensual_pct": 1.565
+      },
+      "Machos": {
+        "muertes": 70,
+        "ingresos": 7365,
+        "stock": 4586,
+        "denominador": 11951,
+        "tasa_mensual_pct": 0.586
+      },
+      "Hembras": {
+        "muertes": 37,
+        "ingresos": 2494,
+        "stock": 1526,
+        "denominador": 4020,
+        "tasa_mensual_pct": 0.92
+      }
+    }
+  },
+  "anio": {
+    "total_muertes": 300,
+    "por_categoria": {
+      "VA": 193,
+      "TM": 50,
+      "TH": 33,
+      "NV": 11,
+      "NT": 9,
+      "VQ": 4
+    },
+    "por_grupo": {
+      "Vacas": 193,
+      "Machos": 70,
+      "Hembras": 37
+    },
+    "por_mes": {
+      "2025-03": 36,
+      "2025-04": 28,
+      "2025-05": 23,
+      "2025-06": 32,
+      "2025-07": 34,
+      "2025-08": 13,
+      "2025-09": 22,
+      "2025-10": 18,
+      "2025-11": 26,
+      "2025-12": 28,
+      "2026-01": 24,
+      "2026-02": 16
+    }
+  },
+  "mes_anterior": {
+    "nombre": "Últimos 30 días (17/02/2026 – 19/03/2026)",
+    "mes": "2026-02-17",
+    "total_muertes": 16,
+    "por_categoria": {
+      "VA": 6,
+      "TH": 5,
+      "TM": 3,
+      "NV": 2
+    },
+    "por_grupo": {
+      "Vacas": 6,
+      "Machos": 5,
+      "Hembras": 5
+    }
+  }
+}

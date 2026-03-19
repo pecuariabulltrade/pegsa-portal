@@ -1,0 +1,45 @@
+{
+  "generado": "2026-03-19T11:14:00.583784",
+  "denominador": "El Haras",
+  "fuentes": {
+    "kg_stock_haras": 3922045,
+    "kg_stock_total": 4454911,
+    "cab_haras": 8461,
+    "cab_total": 10223,
+    "prom_diario_ms": 63233.7,
+    "prom_diario_tc": 98620.7,
+    "adp_promedio": 1.545,
+    "prod_diaria_kg": 13072.2,
+    "dias_consumo": 5
+  },
+  "indicadores": {
+    "pct_peso_vivo": {
+      "valor": 1.61,
+      "unidad": "% PV",
+      "descripcion": "Consumo MS como % del peso vivo — El Haras",
+      "ref_min": 2.0,
+      "ref_opt": 2.5,
+      "ref_max": 3.0,
+      "formula": "kg MS/día ÷ kg PV El Haras × 100"
+    },
+    "consumo_por_cabeza": {
+      "valor_tc": 11.66,
+      "valor_ms": 7.47,
+      "unidad": "kg/cab/día",
+      "descripcion": "Alimento por animal por día — El Haras",
+      "ref_min": 8.0,
+      "ref_opt_min": 12.5,
+      "ref_opt_max": 15.5,
+      "ref_max": 19.0,
+      "formula": "kg TC/día ÷ cabezas El Haras"
+    },
+    "conversion_alimenticia": {
+      "valor": 4.84,
+      "unidad": "kg MS : kg carne",
+      "descripcion": "Kg MS por cab por día dividido ADP — El Haras",
+      "ref_min": 5.0,
+      "ref_max": 8.0,
+      "formula": "(kg MS/día ÷ cabezas El Haras) ÷ ADP"
+    }
+  }
+}
