@@ -9,12 +9,6 @@
     "total_establecimientos": 2,
     "total_propietarios": 1,
     "por_categoria": {
-      "TM": {
-        "cabezas": 200.0,
-        "kg_estimado": 83535,
-        "ton_estimado": 83.53,
-        "kg_promedio": 417.7
-      },
       "TH": {
         "cabezas": 73.0,
         "kg_estimado": 28428,
@@ -26,6 +20,12 @@
         "kg_estimado": 650,
         "ton_estimado": 0.65,
         "kg_promedio": 650.0
+      },
+      "TM": {
+        "cabezas": 200.0,
+        "kg_estimado": 83535,
+        "ton_estimado": 83.53,
+        "kg_promedio": 417.7
       },
       "NV": {
         "cabezas": 13.0,
@@ -69,17 +69,17 @@
       }
     },
     "por_clasificacion": {
-      "Macho": {
-        "cabezas": 214.0,
-        "kg_estimado": 92133,
-        "ton_estimado": 92.13,
-        "kg_promedio": 430.5
-      },
       "Hembra": {
         "cabezas": 120.0,
         "kg_estimado": 52389,
         "ton_estimado": 52.39,
         "kg_promedio": 436.6
+      },
+      "Macho": {
+        "cabezas": 214.0,
+        "kg_estimado": 92133,
+        "ton_estimado": 92.13,
+        "kg_promedio": 430.5
       },
       "Vaca": {
         "cabezas": 20.0,
@@ -89,17 +89,17 @@
       }
     },
     "por_categoria_final": {
-      "novillo mayor a 550 kg": {
-        "cabezas": 61.0,
-        "kg_estimado": 37501,
-        "ton_estimado": 37.5,
-        "kg_promedio": 614.8
-      },
       "vaquillona": {
         "cabezas": 120.0,
         "kg_estimado": 52389,
         "ton_estimado": 52.39,
         "kg_promedio": 436.6
+      },
+      "novillo mayor a 550 kg": {
+        "cabezas": 61.0,
+        "kg_estimado": 37501,
+        "ton_estimado": 37.5,
+        "kg_promedio": 614.8
       },
       "novillo": {
         "cabezas": 64.0,
@@ -128,17 +128,17 @@
     },
     "por_establecimiento_categoria": {
       "El Haras": {
-        "novillo mayor a 550 kg": {
-          "cabezas": 61.0,
-          "kg_estimado": 37501.0,
-          "ton_estimado": 37.5,
-          "kg_promedio": 614.8
-        },
         "vaquillona": {
           "cabezas": 90.0,
           "kg_estimado": 43010.89999999999,
           "ton_estimado": 43.01,
           "kg_promedio": 477.9
+        },
+        "novillo mayor a 550 kg": {
+          "cabezas": 61.0,
+          "kg_estimado": 37501.0,
+          "ton_estimado": 37.5,
+          "kg_promedio": 614.8
         },
         "novillo": {
           "cabezas": 63.0,
@@ -187,24 +187,6 @@
       }
     },
     "por_categoria_desglose": {
-      "novillo mayor a 550 kg": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 61.0,
-            "kg_estimado": 37501.0,
-            "ton_estimado": 37.5,
-            "kg_promedio": 614.8
-          }
-        },
-        "por_propietario": {
-          "LAS TAPERAS": {
-            "cabezas": 61.0,
-            "kg_estimado": 37501.0,
-            "ton_estimado": 37.5,
-            "kg_promedio": 614.8
-          }
-        }
-      },
       "vaquillona": {
         "por_establecimiento": {
           "El Haras": {
@@ -226,6 +208,24 @@
             "kg_estimado": 52389.49999999995,
             "ton_estimado": 52.39,
             "kg_promedio": 436.6
+          }
+        }
+      },
+      "novillo mayor a 550 kg": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 61.0,
+            "kg_estimado": 37501.0,
+            "ton_estimado": 37.5,
+            "kg_promedio": 614.8
+          }
+        },
+        "por_propietario": {
+          "LAS TAPERAS": {
+            "cabezas": 61.0,
+            "kg_estimado": 37501.0,
+            "ton_estimado": 37.5,
+            "kg_promedio": 614.8
           }
         }
       },
