@@ -1,40 +1,35 @@
 {
   "meta": {
-    "generado": "2026-03-20T17:02:07.175128",
+    "generado": "2026-03-21T12:44:27.284034",
     "periodo": "2025",
     "mes_actual": "2026-03",
     "nombre_mes": "Marzo 2026",
     "mes_anterior": "2026-02",
     "nombre_mes_ant": "Febrero 2026",
-    "desde_anio": "2025-03-20",
-    "hasta": "2026-03-20",
+    "desde_anio": "2025-03-21",
+    "hasta": "2026-03-21",
     "filtros": "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos."
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 19643,
-      "kg_ingresado": 7153924.7,
-      "kg_promedio_ingreso": 364.2,
+      "cabezas_ingresadas": 19501,
+      "kg_ingresado": 7105892.7,
+      "kg_promedio_ingreso": 364.4,
       "cabezas_egresadas": 21469,
       "kg_egresado": 11483263.5,
       "kg_promedio_egreso": 534.9,
-      "saldo_cabezas": -1826,
-      "saldo_kg": -4329338.8
+      "saldo_cabezas": -1968,
+      "saldo_kg": -4377370.8
     },
     "ingresos": {
-      "total_cabezas": 19643,
-      "total_kg": 7153924.7,
-      "kg_promedio": 364.2,
+      "total_cabezas": 19501,
+      "total_kg": 7105892.7,
+      "kg_promedio": 364.4,
       "por_propietario": {
-        "LAS TAPERAS": {
-          "cabezas": 919,
-          "kg": 256435.0,
-          "kg_promedio": 279.0
-        },
         "PEGSA": {
-          "cabezas": 16062,
-          "kg": 6057456.7,
-          "kg_promedio": 377.1
+          "cabezas": 15939,
+          "kg": 6015251.7,
+          "kg_promedio": 377.4
         },
         "ZAMBRONI NICANOR": {
           "cabezas": 99,
@@ -45,6 +40,11 @@
           "cabezas": 268,
           "kg": 72717.0,
           "kg_promedio": 271.3
+        },
+        "LAS TAPERAS": {
+          "cabezas": 900,
+          "kg": 250608.0,
+          "kg_promedio": 278.5
         },
         "UGMA": {
           "cabezas": 149,
@@ -73,20 +73,10 @@
         }
       },
       "por_categoria": {
-        "VAQUILLONA": {
-          "cabezas": 860,
-          "kg": 288476.0,
-          "kg_promedio": 335.4
-        },
-        "NOVILLITO": {
-          "cabezas": 1953,
-          "kg": 532441.7,
-          "kg_promedio": 272.6
-        },
         "VACA": {
-          "cabezas": 9850,
-          "kg": 4453486.5,
-          "kg_promedio": 452.1
+          "cabezas": 9775,
+          "kg": 4427491.5,
+          "kg_promedio": 452.9
         },
         "TORO": {
           "cabezas": 130,
@@ -98,6 +88,11 @@
           "kg": 656006.1,
           "kg_promedio": 216.1
         },
+        "VAQUILLONA": {
+          "cabezas": 841,
+          "kg": 282649.0,
+          "kg_promedio": 336.1
+        },
         "NOVILLO": {
           "cabezas": 2226,
           "kg": 846288.5,
@@ -107,13 +102,18 @@
           "cabezas": 1589,
           "kg": 316322.9,
           "kg_promedio": 199.1
+        },
+        "NOVILLITO": {
+          "cabezas": 1905,
+          "kg": 516231.7,
+          "kg_promedio": 271.0
         }
       },
       "por_mes": {
         "2025-03": {
-          "cabezas": 329,
-          "kg": 131266.0,
-          "kg_promedio": 399.0
+          "cabezas": 187,
+          "kg": 83234.0,
+          "kg_promedio": 445.1
         },
         "2025-04": {
           "cabezas": 2009,
@@ -192,27 +192,27 @@
         },
         {
           "nombre": "FERIA RODEO HUINCA S.R.L",
-          "cabezas": 2347,
+          "cabezas": 2224,
           "por_categoria": {
-            "VACA": 1207,
+            "VACA": 1132,
             "NOVILLO": 562,
             "VAQUILLONA": 250,
             "TERNERA": 113,
-            "NOVILLITO": 110,
             "TERNERO": 86,
+            "NOVILLITO": 62,
             "TORO": 19
           }
         },
         {
           "nombre": "SOC. RURAL. GRAL VILLEGAS",
-          "cabezas": 1501,
+          "cabezas": 1482,
           "por_categoria": {
             "VACA": 961,
             "TERNERO": 189,
             "TERNERA": 175,
             "NOVILLITO": 75,
             "NOVILLO": 63,
-            "VAQUILLONA": 34,
+            "VAQUILLONA": 15,
             "TORO": 4
           }
         },
