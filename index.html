@@ -316,6 +316,47 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 /* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
 @media (max-width: 768px) {
 
+  /* Grids inline con columnas fijas → 1 columna en mobile */
+  [style*="1fr 1fr"],
+  [style*="repeat(3,1fr)"],
+  [style*="repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* KPI rows de 4 y 5 columnas → 2 columnas */
+  [style*="repeat(4,1fr)"],
+  [style*="repeat(4, 1fr)"],
+  [style*="repeat(5,1fr)"],
+  [style*="repeat(5, 1fr)"] {
+    grid-template-columns: repeat(2,1fr) !important;
+    gap: 1px !important;
+  }
+
+  /* Charts con columna fija 240px o 200px → full width */
+  [style*="240px 1fr"],
+  [style*="200px 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Masthead header dentro de módulos */
+  #screenStock > div > div:first-child,
+  #screenTesoreria > div > div:first-child,
+  #screenInsumos > div > div:first-child {
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  /* Padding interno de screens */
+  #screenStock .stock-panel,
+  #screenTesoreria,
+  #screenInsumos {
+    padding: 0 !important;
+  }
+
+
+
   /* Login */
   .login-box { width: 95vw; }
   .login-hd { padding: 24px 20px 18px; }
