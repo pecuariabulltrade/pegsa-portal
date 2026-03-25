@@ -2574,8 +2574,7 @@ window.addEventListener('load', function(){
 
   <!-- Nav tabs -->
   <div class="nav-tabs">
-    <div class="nav-tab active" id="mercadoTabHacienda"    onclick="mercadoTab('hacienda',this)">🐄 Precios Hacienda</div>
-    <div class="nav-tab"        id="mercadoTabCommodities" onclick="mercadoTab('commodities',this)">🌽 Granos BCR</div>
+    <div class="nav-tab active" id="mercadoTabHacienda"    onclick="mercadoTab('hacienda',this)">🐄 Precios</div>
     <div class="nav-tab"        id="mercadoTabNegocios"    onclick="mercadoTab('negocios',this)">📋 Negocios</div>
     <div class="nav-tab"        id="mercadoTabHistorico"   onclick="mercadoTab('historico',this)">📊 Histórico</div>
   </div>
@@ -2583,23 +2582,22 @@ window.addEventListener('load', function(){
   <div id="mercadoLoading" style="text-align:center;padding:80px 0;color:rgba(26,22,18,.4);font-family:'DM Mono',monospace;font-size:12px">Cargando datos...</div>
   <div id="mercadoData" style="display:none">
 
-    <!-- Panel Hacienda -->
+    <!-- Panel Hacienda + Granos (combinado) -->
     <div id="panelMercadoHacienda" style="display:block">
       <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado de Cañuelas · deCampoaCampo · Por categoría</span></div>
+        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado de Cañuelas · Por categoría</span></div>
         <div class="nota-box" id="mercadoHaciendaFuente">Fuente: <strong>Mercado de Cañuelas</strong> · Actualización automática diaria.</div>
         <div id="mercadoHaciendaTabla"></div>
       </div>
-    </div>
-
-    <!-- Panel Granos / BCR -->
-    <div id="panelMercadoCommodities" style="display:none">
-      <div class="panel" style="display:block">
+      <div class="panel" style="display:block;margin-top:24px">
         <div class="section-header"><span class="section-title">Precios de Pizarra · Granos</span><span class="section-sub">BCR Cámara Arbitral de Cereales · Rosario</span></div>
-        <div class="nota-box">Precios disponibles en $/tn. Fuente: <strong>cac.bcr.com.ar · Precios de Pizarra</strong>. Actualización automática diaria.</div>
+        <div class="nota-box">Precios en $/tn. Fuente: <strong>BCR Cámara Arbitral</strong>. Actualización automática diaria.</div>
         <div id="mercadoCommoditiesTabla"></div>
       </div>
     </div>
+
+    <!-- Panel Granos (vacío, mantenido para compatibilidad JS) -->
+    <div id="panelMercadoCommodities" style="display:none"></div>
 
     <!-- Panel Negocios -->
     <div id="panelMercadoNegocios" style="display:none">
@@ -3015,15 +3013,7 @@ window.addEventListener('load',()=>document.getElementById('inputUser').focus())
 // ── MERCADO Y PRECIOS ────────────────────────────────────────
 var MERCADO_INITED = false;
 
-var PRECIOS_HACIENDA = [
-  {categoria:'Novillo',          unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-  {categoria:'Novillito',        unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-  {categoria:'Vaca',             unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-  {categoria:'Vaquillona',       unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-  {categoria:'Ternero',          unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-  {categoria:'Ternera',          unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-  {categoria:'Toro',             unidad:'$/kg vivo', precio:null, ref:'Liniers'},
-];
+var PRECIOS_HACIENDA = [];
 
 var PRECIOS_COMMODITIES = [
   {nombre:'Maíz',         unidad:'$/tn', precio:null, ref:'MATBA-ROFEX'},
@@ -3038,14 +3028,13 @@ var PRECIOS_COMMODITIES = [
 function mercadoTab(tab, el){
   document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoCommodities','panelMercadoNegocios','panelMercadoHistorico'].forEach(function(p){
+  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico'].forEach(function(p){
     document.getElementById(p).style.display='none';
   });
   var map = {
-    hacienda:    'panelMercadoHacienda',
-    commodities: 'panelMercadoCommodities',
-    negocios:    'panelMercadoNegocios',
-    historico:   'panelMercadoHistorico',
+    hacienda:  'panelMercadoHacienda',
+    negocios:  'panelMercadoNegocios',
+    historico: 'panelMercadoHistorico',
   };
   if(map[tab]){
     document.getElementById(map[tab]).style.display='block';
