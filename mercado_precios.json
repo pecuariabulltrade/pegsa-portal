@@ -1,34 +1,79 @@
 {
   "fecha": "2026-03-25",
-  "fuente": "Mercado de Liniers / MATBA-ROFEX",
+  "fuente": "Cañuelas (deCampoaCampo) · BCR Cámara Arbitral",
   "hacienda": [
-    {"categoria": "Novillo especial",  "precio": 4800, "unidad": "$/kg en pie"},
-    {"categoria": "Novillo",           "precio": 4536, "unidad": "$/kg en pie"},
-    {"categoria": "Vaca",              "precio": 3900, "unidad": "$/kg en pie"},
-    {"categoria": "Vaquillona",        "precio": 4290, "unidad": "$/kg en pie"},
-    {"categoria": "Ternero",           "precio": 5242, "unidad": "$/kg en pie"},
-    {"categoria": "Ternera",           "precio": 4600, "unidad": "$/kg en pie"},
-    {"categoria": "Novillito",         "precio": 4700, "unidad": "$/kg en pie"}
+    {
+      "categoria": "Novillito",
+      "precio": 310.0,
+      "variacion": 0,
+      "unidad": "$/kg en pie"
+    },
+    {
+      "categoria": "Vaquillona",
+      "precio": 380.0,
+      "variacion": 0,
+      "unidad": "$/kg en pie"
+    },
+    {
+      "categoria": "Vaca",
+      "precio": 450.0,
+      "variacion": 0,
+      "unidad": "$/kg en pie"
+    },
+    {
+      "categoria": "Ternero",
+      "precio": 300.0,
+      "variacion": 0,
+      "unidad": "$/kg en pie"
+    }
   ],
   "commodities": [
-    {"nombre": "Maíz",  "precio": 243150, "unidad": "$/tn", "fuente": "MATBA-ROFEX"},
-    {"nombre": "Soja",  "precio": 390000, "unidad": "$/tn", "fuente": "MATBA-ROFEX"},
-    {"nombre": "Trigo", "precio": 230000, "unidad": "$/tn", "fuente": "MATBA-ROFEX"},
-    {"nombre": "Sorgo", "precio": 180000, "unidad": "$/tn", "fuente": "MATBA-ROFEX"}
+    {
+      "nombre": "Maíz",
+      "precio": 243150,
+      "unidad": "$/tn",
+      "fuente": "BCR Pizarra"
+    },
+    {
+      "nombre": "Soja",
+      "precio": 898987,
+      "unidad": "$/tn",
+      "fuente": "BCR Pizarra"
+    },
+    {
+      "nombre": "Trigo",
+      "precio": 230000,
+      "unidad": "$/tn",
+      "fuente": "BCR Pizarra"
+    },
+    {
+      "nombre": "Sorgo",
+      "precio": 180000,
+      "unidad": "$/tn",
+      "fuente": "BCR Pizarra"
+    }
   ],
   "insumos": {
-    "maiz":      243150,
-    "gluten":    130944,
-    "nucleo":    470500,
-    "germen":    243148,
-    "silo":      155482,
-    "rollo":     25000,
-    "hominy":    204588,
+    "maiz": 243150,
+    "gluten": 130936,
+    "nucleo": 470301,
+    "germen": 297300,
+    "hominy": 204562,
+    "silo": 155482,
+    "rollo": 25000,
     "hoteleria": 310,
-    "sanidad":   7500,
+    "sanidad": 7500,
     "flete_12tn": 2750,
-    "guias":     1725,
-    "dolar":     1400
+    "guias": 1725,
+    "dolar": 1400
   },
-  "historico": []
+  "historico": [
+    {
+      "fecha": "2026-03-25",
+      "maiz": 243150,
+      "soja": 898987,
+      "novillo": 0,
+      "ternero": 300.0
+    }
+  ]
 }
