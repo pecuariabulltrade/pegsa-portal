@@ -41,36 +41,54 @@
       }
     },
     "por_categoria_final": {
-      "vaca mayor a 650 kg": {
-        "cabezas": 6.0,
-        "kg_estimado": 3900,
-        "ton_estimado": 3.9,
-        "kg_promedio": 650.0
-      },
       "vaca": {
         "cabezas": 46.0,
         "kg_estimado": 25419,
         "ton_estimado": 25.42,
         "kg_promedio": 552.6
+      },
+      "vaca mayor a 650 kg": {
+        "cabezas": 6.0,
+        "kg_estimado": 3900,
+        "ton_estimado": 3.9,
+        "kg_promedio": 650.0
       }
     },
     "por_establecimiento_categoria": {
       "El Haras": {
+        "vaca": {
+          "cabezas": 46.0,
+          "kg_estimado": 25419.200000000023,
+          "ton_estimado": 25.42,
+          "kg_promedio": 552.6
+        },
         "vaca mayor a 650 kg": {
           "cabezas": 6.0,
           "kg_estimado": 3900.0,
           "ton_estimado": 3.9,
           "kg_promedio": 650.0
-        },
-        "vaca": {
-          "cabezas": 46.0,
-          "kg_estimado": 25419.200000000026,
-          "ton_estimado": 25.42,
-          "kg_promedio": 552.6
         }
       }
     },
     "por_categoria_desglose": {
+      "vaca": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 46.0,
+            "kg_estimado": 25419.200000000023,
+            "ton_estimado": 25.42,
+            "kg_promedio": 552.6
+          }
+        },
+        "por_propietario": {
+          "PACO GALARZA": {
+            "cabezas": 46.0,
+            "kg_estimado": 25419.200000000023,
+            "ton_estimado": 25.42,
+            "kg_promedio": 552.6
+          }
+        }
+      },
       "vaca mayor a 650 kg": {
         "por_establecimiento": {
           "El Haras": {
@@ -86,24 +104,6 @@
             "kg_estimado": 3900.0,
             "ton_estimado": 3.9,
             "kg_promedio": 650.0
-          }
-        }
-      },
-      "vaca": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 46.0,
-            "kg_estimado": 25419.200000000026,
-            "ton_estimado": 25.42,
-            "kg_promedio": 552.6
-          }
-        },
-        "por_propietario": {
-          "PACO GALARZA": {
-            "cabezas": 46.0,
-            "kg_estimado": 25419.200000000026,
-            "ton_estimado": 25.42,
-            "kg_promedio": 552.6
           }
         }
       }
