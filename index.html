@@ -2574,9 +2574,10 @@ window.addEventListener('load', function(){
 
   <!-- Nav tabs -->
   <div class="nav-tabs">
-    <div class="nav-tab active" id="mercadoTabHacienda" onclick="mercadoTab('hacienda',this)">🐄 Precios Hacienda</div>
-    <div class="nav-tab" id="mercadoTabCommodities" onclick="mercadoTab('commodities',this)">🌽 Commodities</div>
-    <div class="nav-tab" id="mercadoTabHistorico" onclick="mercadoTab('historico',this)">📊 Histórico</div>
+    <div class="nav-tab active" id="mercadoTabHacienda"    onclick="mercadoTab('hacienda',this)">🐄 Precios Hacienda</div>
+    <div class="nav-tab"        id="mercadoTabCommodities" onclick="mercadoTab('commodities',this)">🌽 Granos BCR</div>
+    <div class="nav-tab"        id="mercadoTabNegocios"    onclick="mercadoTab('negocios',this)">📋 Negocios</div>
+    <div class="nav-tab"        id="mercadoTabHistorico"   onclick="mercadoTab('historico',this)">📊 Histórico</div>
   </div>
 
   <div id="mercadoLoading" style="text-align:center;padding:80px 0;color:rgba(26,22,18,.4);font-family:'DM Mono',monospace;font-size:12px">Cargando datos...</div>
@@ -2585,27 +2586,37 @@ window.addEventListener('load', function(){
     <!-- Panel Hacienda -->
     <div id="panelMercadoHacienda" style="display:block">
       <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado de Liniers · Por categoría</span></div>
-        <div class="nota-box">Los precios son de referencia y se actualizan manualmente. Fuente: <strong>Mercado de Liniers</strong>.</div>
+        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado de Cañuelas · deCampoaCampo · Por categoría</span></div>
+        <div class="nota-box" id="mercadoHaciendaFuente">Fuente: <strong>Mercado de Cañuelas</strong> · Actualización automática diaria.</div>
         <div id="mercadoHaciendaTabla"></div>
       </div>
     </div>
 
-    <!-- Panel Commodities -->
+    <!-- Panel Granos / BCR -->
     <div id="panelMercadoCommodities" style="display:none">
       <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Commodities Agrícolas</span><span class="section-sub">MATBA-ROFEX · Posición disponible</span></div>
-        <div class="nota-box">Cotizaciones de referencia actualizadas manualmente. Fuente: <strong>MATBA-ROFEX / BCR</strong>.</div>
+        <div class="section-header"><span class="section-title">Precios de Pizarra · Granos</span><span class="section-sub">BCR Cámara Arbitral de Cereales · Rosario</span></div>
+        <div class="nota-box">Precios disponibles en $/tn. Fuente: <strong>cac.bcr.com.ar · Precios de Pizarra</strong>. Actualización automática diaria.</div>
         <div id="mercadoCommoditiesTabla"></div>
+      </div>
+    </div>
+
+    <!-- Panel Negocios -->
+    <div id="panelMercadoNegocios" style="display:none">
+      <div class="panel" style="display:block">
+        <div class="section-header"><span class="section-title">Negocios Ejecutados</span><span class="section-sub">Google Sheets · Cargas / Ventas · Compras</span></div>
+        <div id="mercadoNegociosMsg" class="nota-box"></div>
+        <div id="mercadoNegociosBody"></div>
       </div>
     </div>
 
     <!-- Panel Histórico -->
     <div id="panelMercadoHistorico" style="display:none">
       <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Evolución Histórica</span><span class="section-sub">Últimos 12 meses</span></div>
+        <div class="section-header"><span class="section-title">Evolución Histórica de Precios</span><span class="section-sub">Últimos 12 meses · Novillo · Ternero · Maíz</span></div>
+        <div id="mercadoHistNoData" class="nota-box" style="display:none">Aún no hay suficientes datos históricos. Se acumulan automáticamente con cada actualización diaria.</div>
         <div id="mercadoHistoricoChart" style="background:white;border:1px solid var(--border);padding:24px;border-radius:2px">
-          <canvas id="chartMercadoHistorico" style="max-height:320px"></canvas>
+          <canvas id="chartMercadoHistorico" style="max-height:340px"></canvas>
         </div>
       </div>
     </div>
@@ -3027,11 +3038,20 @@ var PRECIOS_COMMODITIES = [
 function mercadoTab(tab, el){
   document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoCommodities','panelMercadoHistorico'].forEach(p=>{
+  ['panelMercadoHacienda','panelMercadoCommodities','panelMercadoNegocios','panelMercadoHistorico'].forEach(function(p){
     document.getElementById(p).style.display='none';
   });
-  var map = {hacienda:'panelMercadoHacienda', commodities:'panelMercadoCommodities', historico:'panelMercadoHistorico'};
-  if(map[tab]) document.getElementById(map[tab]).style.display='block';
+  var map = {
+    hacienda:    'panelMercadoHacienda',
+    commodities: 'panelMercadoCommodities',
+    negocios:    'panelMercadoNegocios',
+    historico:   'panelMercadoHistorico',
+  };
+  if(map[tab]){
+    document.getElementById(map[tab]).style.display='block';
+    if(tab==='historico') renderHistoricoChart();
+    if(tab==='negocios')  renderNegocios();
+  }
 }
 
 function fmtPrecio(v){ return v!=null ? '$'+Number(v).toLocaleString('es-AR') : '<span style="color:rgba(26,22,18,.3)">—</span>'; }
@@ -3064,43 +3084,227 @@ function renderTablaCommodities(){
   document.getElementById('mercadoCommoditiesTabla').innerHTML = html;
 }
 
+var MERCADO_DATA_CACHE  = null;
+var NEGOCIOS_DATA_CACHE = null;
+
 function initMercado(){
   document.getElementById('mercadoLoading').style.display='block';
   document.getElementById('mercadoData').style.display='none';
   var status = document.getElementById('mercadoSyncStatus');
   status.textContent = 'Cargando precios...';
 
-  // Intentar cargar precios desde JSON (si existe)
-  fetch(STOCK_SB+'/mercado_precios.json',{})
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(data){
-      MERCADO_DATA_CACHE = data;
-      if(data){
-        if(data.hacienda) data.hacienda.forEach(function(d,i){ if(PRECIOS_HACIENDA[i]) PRECIOS_HACIENDA[i].precio=d.precio; });
-        if(data.commodities) data.commodities.forEach(function(d,i){ if(PRECIOS_COMMODITIES[i]) PRECIOS_COMMODITIES[i].precio=d.precio; });
-        if(data.fecha) status.textContent = 'Actualizado: '+data.fecha;
-        // KPIs
-        var nov = data.hacienda && data.hacienda[0] ? data.hacienda[0].precio : null;
-        var vac = data.hacienda && data.hacienda[2] ? data.hacienda[2].precio : null;
-        var mz  = data.commodities && data.commodities[0] ? data.commodities[0].precio : null;
-        var sj  = data.commodities && data.commodities[1] ? data.commodities[1].precio : null;
-        document.getElementById('mkpi-novillo').textContent = nov ? '$'+Number(nov).toLocaleString('es-AR') : '—';
-        document.getElementById('mkpi-vaca').textContent    = vac ? '$'+Number(vac).toLocaleString('es-AR') : '—';
-        document.getElementById('mkpi-maiz').textContent    = mz  ? '$'+Number(mz).toLocaleString('es-AR')  : '—';
-        document.getElementById('mkpi-soja').textContent    = sj  ? '$'+Number(sj).toLocaleString('es-AR')  : '—';
-      } else {
-        status.textContent = 'Sin datos cargados aún';
-      }
-    })
-    .catch(function(){ status.textContent = 'Sin datos cargados aún'; })
-    .finally(function(){
-      renderTablaHacienda();
-      renderTablaCommodities();
-      document.getElementById('mercadoLoading').style.display='none';
-      document.getElementById('mercadoData').style.display='block';
-    });
+  // Cargar ambos JSONs en paralelo
+  Promise.all([
+    fetch(STOCK_SB+'/mercado_precios.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
+    fetch(STOCK_SB+'/negocios_resumen.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
+  ]).then(function(results){
+    var data = results[0];
+    var neg  = results[1];
+    MERCADO_DATA_CACHE  = data;
+    NEGOCIOS_DATA_CACHE = neg;
+
+    if(data){
+      // Actualizar tablas de precios
+      if(data.hacienda) data.hacienda.forEach(function(d){
+        var found = PRECIOS_HACIENDA.find(function(h){ return h.categoria===d.categoria; });
+        if(found){ found.precio=d.precio; found.variacion=d.variacion||0; }
+        else PRECIOS_HACIENDA.push({categoria:d.categoria, unidad:d.unidad||'$/kg en pie', precio:d.precio, variacion:d.variacion||0, ref:'Cañuelas'});
+      });
+      if(data.commodities) data.commodities.forEach(function(d){
+        var found = PRECIOS_COMMODITIES.find(function(c){ return c.nombre===d.nombre; });
+        if(found){ found.precio=d.precio; found.ref=d.fuente||found.ref; }
+      });
+      if(data.fecha) status.textContent = 'Actualizado: '+data.fecha;
+      // Fuente label
+      var fEl = document.getElementById('mercadoHaciendaFuente');
+      if(fEl && data.fuente) fEl.innerHTML = 'Fuente: <strong>'+data.fuente+'</strong> · '+data.fecha;
+      // KPIs
+      var nov = data.hacienda && data.hacienda.find(function(h){return h.categoria&&h.categoria.toLowerCase().indexOf('novillo')>=0&&h.categoria.toLowerCase().indexOf('especial')<0;});
+      var vac = data.hacienda && data.hacienda.find(function(h){return h.categoria&&h.categoria.toLowerCase().indexOf('vaca')>=0;});
+      var mz  = data.commodities && data.commodities.find(function(c){return c.nombre&&c.nombre.toLowerCase().indexOf('maíz')>=0||c.nombre&&c.nombre.toLowerCase().indexOf('maiz')>=0;});
+      var sj  = data.commodities && data.commodities.find(function(c){return c.nombre&&c.nombre.toLowerCase().indexOf('soja')>=0;});
+      document.getElementById('mkpi-novillo').textContent = nov?'$'+Number(nov.precio).toLocaleString('es-AR'):'—';
+      document.getElementById('mkpi-vaca').textContent    = vac?'$'+Number(vac.precio).toLocaleString('es-AR'):'—';
+      document.getElementById('mkpi-maiz').textContent    = mz ?'$'+Number(mz.precio).toLocaleString('es-AR') :'—';
+      document.getElementById('mkpi-soja').textContent    = sj ?'$'+Number(sj.precio).toLocaleString('es-AR') :'—';
+    } else {
+      status.textContent = 'Sin datos — ejecutar actualización';
+    }
+  })
+  .catch(function(){ status.textContent = 'Error al cargar datos'; })
+  .finally(function(){
+    renderTablaHaciendaNueva();
+    renderTablaCommoditiesNueva();
+    document.getElementById('mercadoLoading').style.display='none';
+    document.getElementById('mercadoData').style.display='block';
+  });
 }
-var MERCADO_DATA_CACHE = null;
+
+// ── Tabla Hacienda mejorada (con variación) ────────────────
+function renderTablaHaciendaNueva(){
+  var html = '<table class="data-table"><thead><tr>'
+    +'<th>Categoría</th><th class="right">Precio</th><th class="right">Var.</th><th>Unidad</th><th>Fuente</th>'
+    +'</tr></thead><tbody>';
+  PRECIOS_HACIENDA.forEach(function(r){
+    var varStr = '';
+    if(r.variacion){
+      var cls = r.variacion>0?'color:var(--green)':'color:var(--red)';
+      varStr = '<span style="font-size:10px;'+cls+'">'+(r.variacion>0?'↑':'↓')+' '+Math.abs(r.variacion).toFixed(1)+'%</span>';
+    } else varStr = '<span style="color:rgba(26,22,18,.3)">—</span>';
+    html += '<tr><td><strong>'+r.categoria+'</strong></td>'
+      +'<td class="right mono">'+fmtPrecio(r.precio)+'</td>'
+      +'<td class="right mono">'+varStr+'</td>'
+      +'<td class="muted">'+r.unidad+'</td>'
+      +'<td class="muted">'+(r.ref||'Cañuelas')+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('mercadoHaciendaTabla').innerHTML = html;
+}
+
+// ── Tabla Commodities mejorada ─────────────────────────────
+function renderTablaCommoditiesNueva(){
+  var html = '<table class="data-table"><thead><tr>'
+    +'<th>Cereal</th><th class="right">Precio</th><th>Unidad</th><th>Fuente</th>'
+    +'</tr></thead><tbody>';
+  PRECIOS_COMMODITIES.forEach(function(r){
+    html += '<tr><td><strong>'+r.nombre+'</strong></td>'
+      +'<td class="right mono">'+fmtPrecio(r.precio)+'</td>'
+      +'<td class="muted">'+r.unidad+'</td>'
+      +'<td class="muted">'+r.ref+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('mercadoCommoditiesTabla').innerHTML = html;
+}
+
+// ── Render Negocios ────────────────────────────────────────
+function renderNegocios(){
+  var neg = NEGOCIOS_DATA_CACHE;
+  var msgEl  = document.getElementById('mercadoNegociosMsg');
+  var bodyEl = document.getElementById('mercadoNegociosBody');
+  if(!neg){
+    msgEl.innerHTML = '⏳ Datos de negocios no disponibles aún. Ejecutar actualización para conectar la planilla de Google Sheets.';
+    bodyEl.innerHTML = '';
+    return;
+  }
+  if(neg.error){
+    msgEl.innerHTML = '⚠ '+neg.error+'<br><small>ID Planilla: <code>'+neg.sheet_id+'</code></small>';
+  } else {
+    msgEl.innerHTML = '✓ Planilla conectada · <strong>'+neg.total_ventas+'</strong> ventas · <strong>'+neg.total_compras+'</strong> compras · Actualizado: '+neg.fecha;
+  }
+
+  var html = '';
+
+  // Resumen por categoría de ventas
+  if(neg.resumen_cat && Object.keys(neg.resumen_cat).length){
+    html += '<div class="section-header" style="margin-top:24px"><span class="section-title">Ventas por Categoría</span></div>';
+    html += '<table class="data-table"><thead><tr>'
+      +'<th>Categoría</th><th class="right">Operaciones</th><th class="right">Cabezas</th>'
+      +'<th class="right">Precio Prom. Carne</th><th class="right">Rinde Prom.</th>'
+      +'</tr></thead><tbody>';
+    Object.entries(neg.resumen_cat).forEach(function(e){
+      var k=e[0], v=e[1];
+      html += '<tr><td><strong>'+k+'</strong></td>'
+        +'<td class="right mono">'+v.ventas+'</td>'
+        +'<td class="right mono">'+v.cabezas+'</td>'
+        +'<td class="right mono">'+(v.precio_promedio?'$'+Number(v.precio_promedio).toLocaleString('es-AR'):'—')+'</td>'
+        +'<td class="right mono">'+(v.rinde_promedio?Number(v.rinde_promedio*100).toFixed(1)+'%':'—')+'</td>'
+        +'</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  // Resumen por frigorífico
+  if(neg.resumen_frigo && Object.keys(neg.resumen_frigo).length){
+    html += '<div class="section-header" style="margin-top:24px"><span class="section-title">Ventas por Frigorífico / Destino</span></div>';
+    html += '<table class="data-table"><thead><tr>'
+      +'<th>Frigorífico</th><th class="right">Operaciones</th><th class="right">Cabezas</th>'
+      +'<th class="right">Precio Prom. Carne</th>'
+      +'</tr></thead><tbody>';
+    Object.entries(neg.resumen_frigo).forEach(function(e){
+      var k=e[0], v=e[1];
+      html += '<tr><td><strong>'+k+'</strong></td>'
+        +'<td class="right mono">'+v.ventas+'</td>'
+        +'<td class="right mono">'+v.cabezas+'</td>'
+        +'<td class="right mono">'+(v.precio_promedio?'$'+Number(v.precio_promedio).toLocaleString('es-AR'):'—')+'</td>'
+        +'</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  // Últimas ventas (últimas 10)
+  if(neg.ventas && neg.ventas.length){
+    html += '<div class="section-header" style="margin-top:24px"><span class="section-title">Últimas Ventas</span></div>';
+    html += '<table class="data-table"><thead><tr>'
+      +'<th>Fecha</th><th>Categoría</th><th class="right">Kg/cab</th>'
+      +'<th class="right">Precio Carne</th><th class="right">Rinde</th><th>Frigorífico</th>'
+      +'</tr></thead><tbody>';
+    var ults = neg.ventas.slice(-10).reverse();
+    ults.forEach(function(v){
+      html += '<tr>'
+        +'<td class="muted">'+v.fecha+'</td>'
+        +'<td><strong>'+v.categoria+'</strong></td>'
+        +'<td class="right mono">'+(v.kg_cab||'—')+'</td>'
+        +'<td class="right mono">'+(v.precio_carne?'$'+Number(v.precio_carne).toLocaleString('es-AR'):'—')+'</td>'
+        +'<td class="right mono">'+(v.rinde?Number(v.rinde*100).toFixed(1)+'%':'—')+'</td>'
+        +'<td class="muted">'+(v['frigorífico']||'—')+'</td>'
+        +'</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if(!html){
+    html = '<div style="padding:40px;text-align:center;color:rgba(26,22,18,.4);font-family:\'DM Mono\',monospace">Sin datos de negocios disponibles</div>';
+  }
+  bodyEl.innerHTML = html;
+}
+
+// ── Gráfico Histórico de Precios ───────────────────────────
+var _histChart = null;
+function renderHistoricoChart(){
+  var data = MERCADO_DATA_CACHE;
+  var noDataEl = document.getElementById('mercadoHistNoData');
+  var chartEl  = document.getElementById('mercadoHistoricoChart');
+
+  if(!data || !data.historico || data.historico.length < 3){
+    if(noDataEl) noDataEl.style.display='block';
+    if(chartEl)  chartEl.style.display='none';
+    return;
+  }
+  if(noDataEl) noDataEl.style.display='none';
+  if(chartEl)  chartEl.style.display='block';
+
+  var hist = data.historico.slice(-90); // últimos 90 días
+  var labels  = hist.map(function(h){ return h.fecha ? h.fecha.slice(5) : ''; }); // MM-DD
+  var novillos = hist.map(function(h){ return h.novillo||null; });
+  var terneros = hist.map(function(h){ return h.ternero||null; });
+  var maices   = hist.map(function(h){ return h.maiz   ? h.maiz/1000 : null; }); // en $/kg para escala similar
+
+  var ctx = document.getElementById('chartMercadoHistorico').getContext('2d');
+  if(_histChart){ _histChart.destroy(); }
+  _histChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {label:'Novillo ($/kg pie)', data:novillos, borderColor:'#b8922a', backgroundColor:'rgba(184,146,42,.08)', tension:.3, pointRadius:2, borderWidth:2, yAxisID:'y'},
+        {label:'Ternero ($/kg pie)', data:terneros, borderColor:'#27613d', backgroundColor:'rgba(39,97,61,.08)',   tension:.3, pointRadius:2, borderWidth:2, yAxisID:'y'},
+        {label:'Maíz ($/kg = $/tn÷1000)', data:maices, borderColor:'#e8a020', backgroundColor:'rgba(232,160,32,.06)', tension:.3, pointRadius:2, borderWidth:1.5, borderDash:[4,3], yAxisID:'y'},
+      ]
+    },
+    options:{
+      responsive:true,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{position:'top', labels:{font:{family:'DM Mono, monospace', size:10}}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': $'+Number(c.raw||0).toLocaleString('es-AR',{maximumFractionDigits:0});}}}
+      },
+      scales:{
+        x:{ticks:{font:{family:'DM Mono, monospace', size:9}, maxTicksLimit:12}, grid:{color:'rgba(0,0,0,.05)'}},
+        y:{ticks:{font:{family:'DM Mono, monospace', size:9}, callback:function(v){return '$'+Number(v).toLocaleString('es-AR',{maximumFractionDigits:0});}}, grid:{color:'rgba(0,0,0,.05)'}}
+      }
+    }
+  });
+}
 
 // ── SIMULADOR FEEDLOT ─────────────────────────────────────────
 var SIM_ACTIVE_TAB = 'terneros';
