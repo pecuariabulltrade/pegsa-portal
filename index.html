@@ -532,11 +532,11 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
         <div class="mod-desc">Stock en kg de insumos principales. Diesel, maíz, soja, gluten y más. Actualización diaria 07:00 AM.</div>
         <span class="mod-arrow">Abrir módulo →</span>
       </div>
-      <div class="module-card coming-soon">
-        <span class="mod-badge soon">Próximamente</span><span class="mod-icon">🌾</span>
-        <div class="mod-tag">Módulo 05</div><div class="mod-title">Agricultura</div>
-        <div class="mod-desc">Cultivos, rendimientos por lote, costos de producción e inventario de cereales.</div>
-        <span class="mod-arrow" style="color:rgba(245,240,232,.13)">En desarrollo →</span>
+      <div class="module-card" data-mod="mercado" onclick="openModule('mercado')">
+        <span class="mod-badge live">● Disponible</span><span class="mod-icon">📈</span>
+        <div class="mod-tag">Módulo 05</div><div class="mod-title">Mercado y Precios</div>
+        <div class="mod-desc">Precios de hacienda por categoría y cotizaciones de insumos y commodities agrícolas.</div>
+        <span class="mod-arrow">Abrir módulo →</span>
       </div>
       <div class="module-card" data-mod="tesoreria" onclick="openModule('tesoreria')">
         <span class="mod-badge live">● En vivo · OneDrive</span><span class="mod-icon">🏦</span>
@@ -2542,6 +2542,71 @@ window.addEventListener('load', function(){
   </div>
 </div>
 
+<!-- ══ SCREEN MERCADO Y PRECIOS ══ -->
+<div id="screenMercado" class="screen" style="display:none">
+  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">Módulo 05 · Cotizaciones</div>
+        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">MERCADO Y PRECIOS</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(212,168,75,.5);margin-top:6px">Precios de hacienda · Insumos · Commodities agrícolas</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;">← Panel Principal</button>
+        <div id="mercadoSyncStatus" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(212,168,75,.6)"></div>
+        <button onclick="initMercado()" style="padding:7px 16px;background:rgba(184,146,42,.15);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:var(--gold-l);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;">↺ Actualizar</button>
+      </div>
+    </div>
+    <!-- KPIs rápidos -->
+    <div id="mercadoKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.08);margin-top:24px">
+      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Novillo ($/kg)</div><div id="mkpi-novillo" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
+      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Vaca ($/kg)</div><div id="mkpi-vaca" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
+      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Maíz ($/tn)</div><div id="mkpi-maiz" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
+      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Soja ($/tn)</div><div id="mkpi-soja" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
+    </div>
+  </div>
+
+  <!-- Nav tabs -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" id="mercadoTabHacienda" onclick="mercadoTab('hacienda',this)">🐄 Precios Hacienda</div>
+    <div class="nav-tab" id="mercadoTabCommodities" onclick="mercadoTab('commodities',this)">🌽 Commodities</div>
+    <div class="nav-tab" id="mercadoTabHistorico" onclick="mercadoTab('historico',this)">📊 Histórico</div>
+  </div>
+
+  <div id="mercadoLoading" style="text-align:center;padding:80px 0;color:rgba(26,22,18,.4);font-family:'DM Mono',monospace;font-size:12px">Cargando datos...</div>
+  <div id="mercadoData" style="display:none">
+
+    <!-- Panel Hacienda -->
+    <div id="panelMercadoHacienda" style="display:block">
+      <div class="panel" style="display:block">
+        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado de Liniers · Por categoría</span></div>
+        <div class="nota-box">Los precios son de referencia y se actualizan manualmente. Fuente: <strong>Mercado de Liniers</strong>.</div>
+        <div id="mercadoHaciendaTabla"></div>
+      </div>
+    </div>
+
+    <!-- Panel Commodities -->
+    <div id="panelMercadoCommodities" style="display:none">
+      <div class="panel" style="display:block">
+        <div class="section-header"><span class="section-title">Commodities Agrícolas</span><span class="section-sub">MATBA-ROFEX · Posición disponible</span></div>
+        <div class="nota-box">Cotizaciones de referencia actualizadas manualmente. Fuente: <strong>MATBA-ROFEX / BCR</strong>.</div>
+        <div id="mercadoCommoditiesTabla"></div>
+      </div>
+    </div>
+
+    <!-- Panel Histórico -->
+    <div id="panelMercadoHistorico" style="display:none">
+      <div class="panel" style="display:block">
+        <div class="section-header"><span class="section-title">Evolución Histórica</span><span class="section-sub">Últimos 12 meses</span></div>
+        <div id="mercadoHistoricoChart" style="background:white;border:1px solid var(--border);padding:24px;border-radius:2px">
+          <canvas id="chartMercadoHistorico" style="max-height:320px"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ══ SCREEN TESORERÍA ══ -->
 <div id="screenTesoreria" class="screen" style="display:none">
   <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
@@ -2621,8 +2686,8 @@ window.addEventListener('load', function(){
 const USERS={
   'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA', modules:['stock','insumos']},
   'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA', modules:['tesoreria']},
-  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','tesoreria']},
-  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','tesoreria']},
+  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria']},
+  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria']},
 };
 const PERIODS={'2025':{available:true},'2024':{available:false}};
 let currentUser=null, selectedPeriod='2025', chartsInited=false;
@@ -2662,6 +2727,13 @@ function showScreen(id){
 
 function openModule(mod){
   if(currentUser && !currentUser.modules.includes(mod)){return;}
+  if(mod==='mercado'){
+    showScreen('screenMercado');
+    document.body.style.background='var(--paper)';
+    window.scrollTo(0,0);
+    initMercado();
+    return;
+  }
   if(mod==='insumos'){
     showScreen('screenInsumos');
     document.body.style.background='var(--paper)';
@@ -2703,6 +2775,105 @@ function logout(){
   setTimeout(()=>{ls.style.opacity='1';ls.style.transition='opacity .35s ease';},10);
 }
 window.addEventListener('load',()=>document.getElementById('inputUser').focus());
+
+// ── MERCADO Y PRECIOS ────────────────────────────────────────
+var MERCADO_INITED = false;
+
+var PRECIOS_HACIENDA = [
+  {categoria:'Novillo',          unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+  {categoria:'Novillito',        unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+  {categoria:'Vaca',             unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+  {categoria:'Vaquillona',       unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+  {categoria:'Ternero',          unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+  {categoria:'Ternera',          unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+  {categoria:'Toro',             unidad:'$/kg vivo', precio:null, ref:'Liniers'},
+];
+
+var PRECIOS_COMMODITIES = [
+  {nombre:'Maíz',         unidad:'$/tn', precio:null, ref:'MATBA-ROFEX'},
+  {nombre:'Soja',         unidad:'$/tn', precio:null, ref:'MATBA-ROFEX'},
+  {nombre:'Trigo',        unidad:'$/tn', precio:null, ref:'MATBA-ROFEX'},
+  {nombre:'Girasol',      unidad:'$/tn', precio:null, ref:'BCR'},
+  {nombre:'Gluten Maíz',  unidad:'$/tn', precio:null, ref:'Mercado local'},
+  {nombre:'Maíz (USD)',   unidad:'USD/tn', precio:null, ref:'CBOT'},
+  {nombre:'Soja (USD)',   unidad:'USD/tn', precio:null, ref:'CBOT'},
+];
+
+function mercadoTab(tab, el){
+  document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  ['panelMercadoHacienda','panelMercadoCommodities','panelMercadoHistorico'].forEach(p=>{
+    document.getElementById(p).style.display='none';
+  });
+  var map = {hacienda:'panelMercadoHacienda', commodities:'panelMercadoCommodities', historico:'panelMercadoHistorico'};
+  if(map[tab]) document.getElementById(map[tab]).style.display='block';
+}
+
+function fmtPrecio(v){ return v!=null ? '$'+Number(v).toLocaleString('es-AR') : '<span style="color:rgba(26,22,18,.3)">—</span>'; }
+
+function renderTablaHacienda(){
+  var html = '<table class="data-table"><thead><tr>'
+    +'<th>Categoría</th><th class="right">Precio</th><th>Unidad</th><th>Fuente</th>'
+    +'</tr></thead><tbody>';
+  PRECIOS_HACIENDA.forEach(function(r){
+    html += '<tr><td><strong>'+r.categoria+'</strong></td>'
+      +'<td class="right mono">'+fmtPrecio(r.precio)+'</td>'
+      +'<td class="muted">'+r.unidad+'</td>'
+      +'<td class="muted">'+r.ref+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('mercadoHaciendaTabla').innerHTML = html;
+}
+
+function renderTablaCommodities(){
+  var html = '<table class="data-table"><thead><tr>'
+    +'<th>Commodity</th><th class="right">Precio</th><th>Unidad</th><th>Fuente</th>'
+    +'</tr></thead><tbody>';
+  PRECIOS_COMMODITIES.forEach(function(r){
+    html += '<tr><td><strong>'+r.nombre+'</strong></td>'
+      +'<td class="right mono">'+fmtPrecio(r.precio)+'</td>'
+      +'<td class="muted">'+r.unidad+'</td>'
+      +'<td class="muted">'+r.ref+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('mercadoCommoditiesTabla').innerHTML = html;
+}
+
+function initMercado(){
+  document.getElementById('mercadoLoading').style.display='block';
+  document.getElementById('mercadoData').style.display='none';
+  var status = document.getElementById('mercadoSyncStatus');
+  status.textContent = 'Cargando precios...';
+
+  // Intentar cargar precios desde JSON (si existe)
+  fetch(STOCK_SB+'/mercado_precios.json',{})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(data){
+        if(data.hacienda) data.hacienda.forEach(function(d,i){ if(PRECIOS_HACIENDA[i]) PRECIOS_HACIENDA[i].precio=d.precio; });
+        if(data.commodities) data.commodities.forEach(function(d,i){ if(PRECIOS_COMMODITIES[i]) PRECIOS_COMMODITIES[i].precio=d.precio; });
+        if(data.fecha) status.textContent = 'Actualizado: '+data.fecha;
+        // KPIs
+        var nov = data.hacienda && data.hacienda[0] ? data.hacienda[0].precio : null;
+        var vac = data.hacienda && data.hacienda[2] ? data.hacienda[2].precio : null;
+        var mz  = data.commodities && data.commodities[0] ? data.commodities[0].precio : null;
+        var sj  = data.commodities && data.commodities[1] ? data.commodities[1].precio : null;
+        document.getElementById('mkpi-novillo').textContent = nov ? '$'+Number(nov).toLocaleString('es-AR') : '—';
+        document.getElementById('mkpi-vaca').textContent    = vac ? '$'+Number(vac).toLocaleString('es-AR') : '—';
+        document.getElementById('mkpi-maiz').textContent    = mz  ? '$'+Number(mz).toLocaleString('es-AR')  : '—';
+        document.getElementById('mkpi-soja').textContent    = sj  ? '$'+Number(sj).toLocaleString('es-AR')  : '—';
+      } else {
+        status.textContent = 'Sin datos cargados aún';
+      }
+    })
+    .catch(function(){ status.textContent = 'Sin datos cargados aún'; })
+    .finally(function(){
+      renderTablaHacienda();
+      renderTablaCommodities();
+      document.getElementById('mercadoLoading').style.display='none';
+      document.getElementById('mercadoData').style.display='block';
+    });
+}
 </script>
 
 <script>
