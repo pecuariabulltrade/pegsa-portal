@@ -367,25 +367,25 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
   <div class="modules-section">
     <div class="modules-label">Módulos disponibles</div>
     <div class="modules-grid">
-      <div class="module-card" onclick="openModule('resultados')">
+      <div class="module-card" data-mod="resultados" onclick="openModule('resultados')">
         <span class="mod-badge live">● Disponible</span><span class="mod-icon">📊</span>
         <div class="mod-tag">Módulo 01</div><div class="mod-title">Estado de Resultados de Gestión</div>
         <div class="mod-desc">Análisis por centro de negocio. Resultado operativo, tenencia y consolidado del período.</div>
         <span class="mod-arrow">Abrir módulo →</span>
       </div>
-      <div class="module-card" onclick="openModule('flujo')">
+      <div class="module-card" data-mod="flujo" onclick="openModule('flujo')">
         <span class="mod-badge live">● Disponible</span><span class="mod-icon">💧</span>
         <div class="mod-tag">Módulo 02</div><div class="mod-title">Flujo de Fondos</div>
         <div class="mod-desc">Estado de Origen y Aplicación de Fondos. Ingresos cobrados, egresos por centro y variaciones patrimoniales.</div>
         <span class="mod-arrow">Abrir módulo →</span>
       </div>
-      <div class="module-card" onclick="openModule('stock')">
+      <div class="module-card" data-mod="stock" onclick="openModule('stock')">
         <span class="mod-badge live">● En vivo · WinCampo</span><span class="mod-icon">🐄</span>
         <div class="mod-tag">Módulo 03</div><div class="mod-title">Stock de Masa — Kilos</div>
         <div class="mod-desc">Datos en vivo desde WinCampo vía OneDrive. Actualización automática diaria 07:00 AM.</div>
         <span class="mod-arrow">Abrir módulo →</span>
       </div>
-      <div class="module-card" onclick="openModule('insumos')">
+      <div class="module-card" data-mod="insumos" onclick="openModule('insumos')">
         <span class="mod-badge live">● En vivo · WinCampo</span><span class="mod-icon">🌽</span>
         <div class="mod-tag">Módulo 04</div><div class="mod-title">Stock de Insumos</div>
         <div class="mod-desc">Stock en kg de insumos principales. Diesel, maíz, soja, gluten y más. Actualización diaria 07:00 AM.</div>
@@ -397,7 +397,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
         <div class="mod-desc">Cultivos, rendimientos por lote, costos de producción e inventario de cereales.</div>
         <span class="mod-arrow" style="color:rgba(245,240,232,.13)">En desarrollo →</span>
       </div>
-      <div class="module-card" onclick="openModule('tesoreria')">
+      <div class="module-card" data-mod="tesoreria" onclick="openModule('tesoreria')">
         <span class="mod-badge live">● En vivo · OneDrive</span><span class="mod-icon">🏦</span>
         <div class="mod-tag">Módulo 06</div><div class="mod-title">Tesorería & Posición Financiera</div>
         <div class="mod-desc">Saldos bancarios, posición en dólares, cheques y deuda financiera consolidada.</div>
@@ -2478,10 +2478,10 @@ window.addEventListener('load', function(){
 
 <script>
 const USERS={
-  'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA'},
-  'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA'},
-  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR'},
-  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD'},
+  'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA', modules:['stock','insumos']},
+  'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA', modules:['tesoreria']},
+  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','tesoreria']},
+  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','tesoreria']},
 };
 const PERIODS={'2025':{available:true},'2024':{available:false}};
 let currentUser=null, selectedPeriod='2025', chartsInited=false;
@@ -2502,6 +2502,9 @@ function tryLogin(){
   document.getElementById('tbUser').textContent=acc.name;
   ['tbPeriod','tbPeriod2','tbPeriod3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=selectedPeriod;});
   document.getElementById('heroPeriod').textContent=selectedPeriod;
+  document.querySelectorAll('.module-card[data-mod]').forEach(card=>{
+    card.style.display=acc.modules.includes(card.dataset.mod)?'':'none';
+  });
   const ls=document.getElementById('screenLogin');
   ls.style.opacity='0';ls.style.transition='opacity .35s ease';
   setTimeout(()=>{showScreen('screenHome');document.body.style.background='var(--ink)';},350);
@@ -2517,6 +2520,7 @@ function showScreen(id){
 }
 
 function openModule(mod){
+  if(currentUser && !currentUser.modules.includes(mod)){return;}
   if(mod==='insumos'){
     showScreen('screenInsumos');
     document.body.style.background='var(--paper)';
@@ -2549,6 +2553,7 @@ function openModule(mod){
 function goHome(){showScreen('screenHome');document.body.style.background='var(--ink)';window.scrollTo(0,0);}
 function logout(){
   currentUser=null;chartsInited=false;
+  document.querySelectorAll('.module-card[data-mod]').forEach(card=>{card.style.display='';});
   showScreen('screenLogin');document.body.style.background='var(--ink)';
   const ls=document.getElementById('screenLogin');
   ls.style.display='flex';ls.style.opacity='0';
@@ -2561,7 +2566,7 @@ window.addEventListener('load',()=>document.getElementById('inputUser').focus())
 
 <script>
 
-var STOCK_SB   = '.'; // ruta relativa para GitHub Pages de proyecto
+var STOCK_SB   = ''; // mismo dominio en GitHub Pages
 var STOCK_PER  = '2025';
 var STOCK_CACHE= {};
 var STOCK_COLS = ['#b8922a','#27613d','#3d4a5c','#c0392b','#d4a84b','#6bc47a','#5d8aa8','#8b4513'];
@@ -4459,7 +4464,7 @@ function renderMovimientos(data) {
 
 
 <script>
-var INS_SB  = '.'; // ruta relativa para GitHub Pages de proyecto
+var INS_SB  = ''; // mismo dominio en GitHub Pages
 var INS_PER = '2025';
 var INS_COLS = ['#b8922a','#27613d','#3d4a5c','#c0392b','#d4a84b','#6bc47a','#5d8aa8','#8b4513'];
 
