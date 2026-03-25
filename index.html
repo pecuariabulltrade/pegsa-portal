@@ -313,6 +313,106 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
 .pct-bar-fill.dominant { opacity: 0.9; background: #8b1a0e; }
 .pct-bar-label { font-family: 'DM Mono', monospace; font-size: 9px; color: rgba(26,22,18,0.45); white-space: nowrap; min-width: 32px; text-align: right; }
 
+/* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Login */
+  .login-box { width: 95vw; }
+  .login-hd { padding: 24px 20px 18px; }
+  .login-title { font-size: 19px; }
+  .login-bd { padding: 20px 20px 22px; }
+  .login-ft { padding: 10px 20px; }
+
+  /* Topbar */
+  .topbar { padding: 0 14px; height: 46px; }
+  .tb-logo { font-size: 13px; }
+  .tb-sep, .tb-breadcrumb { display: none; }
+  .tb-period { font-size: 9px; padding: 3px 7px; }
+  .btn-logout, .btn-home { font-size: 8px; padding: 4px 8px; }
+
+  /* Home Hero */
+  .home-hero { padding: 28px 18px 22px; }
+  .hero-title { font-size: 22px; }
+  .hero-sub { font-size: 9px; }
+
+  /* KPI strip home */
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .kpi-cell { padding: 14px 14px; border-right: none; border-bottom: 1px solid var(--dark-border); }
+  .kpi-num { font-size: 18px; }
+
+  /* Modules */
+  .modules-section { padding: 22px 14px 28px; }
+  .modules-grid { grid-template-columns: 1fr; }
+  .module-card { padding: 18px 16px; }
+  .mod-title { font-size: 15px; }
+
+  /* Masthead (pantallas internas) */
+  .masthead { padding: 18px 16px 14px; }
+  .masthead-title { font-size: 20px; }
+  .masthead-top { flex-direction: column; gap: 8px; }
+  .masthead-meta { text-align: left; font-size: 10px; }
+  .masthead-kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi-item { padding: 10px 12px; }
+  .kpi-value { font-size: 16px; }
+
+  /* Nav tabs — scroll horizontal */
+  .nav-tabs { padding: 0 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab { padding: 11px 14px; font-size: 10px; white-space: nowrap; }
+
+  /* Panels */
+  .panel { padding: 18px 14px 28px; }
+
+  /* Grillas internas */
+  .three-col { grid-template-columns: 1fr; gap: 16px; }
+  .centros-grid { grid-template-columns: 1fr; }
+  .panel-chart-grid { grid-template-columns: 1fr; }
+
+  /* Tablas — scroll horizontal */
+  .data-table, .summary-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .data-table td, .data-table th { padding: 7px 9px; }
+
+  /* Modal torta */
+  .chart-modal { width: 96vw; }
+  .chart-modal-body { grid-template-columns: 1fr; gap: 14px; padding: 16px; }
+  .chart-modal-canvas-wrap { height: 180px; }
+
+  /* Ranking */
+  .ranking-name { width: 100px; font-size: 11px; }
+  .ranking-vals { width: 80px; }
+  .bar-lbl { width: 36px; }
+
+  /* Sección detalle */
+  .detail-top { flex-direction: column; gap: 10px; }
+  .detail-kpis { gap: 10px; flex-wrap: wrap; }
+  .dkpi { text-align: left; }
+  .detail-name { font-size: 20px; }
+
+  /* Back button */
+  .back-btn { font-size: 9px; padding: 6px 10px; margin-bottom: 18px; }
+
+  /* Nota box */
+  .nota-box { font-size: 11px; padding: 12px 14px; }
+}
+
+@media (max-width: 480px) {
+  .hero-title { font-size: 18px; }
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .kpi-num { font-size: 16px; }
+  .masthead-kpis { grid-template-columns: 1fr 1fr; }
+  .kpi-value { font-size: 15px; }
+  .tb-period { display: none; }
+  .tb-right { gap: 6px; }
+  .module-card { padding: 16px 14px; }
+  .mod-icon { font-size: 22px; margin-bottom: 10px; }
+}
+
 
 </style>
 </head>
