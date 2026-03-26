@@ -1,29 +1,29 @@
 {
   "meta": {
-    "generado": "2026-03-25T23:03:22.053566",
+    "generado": "2026-03-26T00:02:19.394291",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 42327,
-    "registros_filtrados": 16063,
+    "registros_totales": 42263,
+    "registros_filtrados": 15854,
     "excluidos": {
       "motivo": 431,
-      "rfid": 4008,
-      "estadia": 978,
-      "adp": 200,
-      "fecha": 20647
+      "rfid": 3996,
+      "estadia": 977,
+      "adp": 199,
+      "fecha": 20806
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 16063,
-    "adp_promedio": 1.542,
+    "cabezas": 15854,
+    "adp_promedio": 1.539,
     "adp_min": 0.01,
     "adp_max": 4.96,
-    "estadia_promedio": 126.0,
+    "estadia_promedio": 126.7,
     "estadia_min": 31,
     "estadia_max": 364
   },
@@ -74,32 +74,32 @@
       "estadia_max": 324
     },
     "VACA": {
-      "cabezas": 8533,
-      "adp_promedio": 1.647,
+      "cabezas": 8325,
+      "adp_promedio": 1.645,
       "adp_min": 0.01,
       "adp_max": 4.96,
-      "estadia_promedio": 106.4,
+      "estadia_promedio": 107.3,
       "estadia_min": 31,
       "estadia_max": 364
     },
     "VAQUILLONA": {
-      "cabezas": 646,
+      "cabezas": 645,
       "adp_promedio": 1.355,
       "adp_min": 0.16,
       "adp_max": 3.14,
-      "estadia_promedio": 110.5,
+      "estadia_promedio": 110.6,
       "estadia_min": 32,
       "estadia_max": 364
     }
   },
   "por_mes": {
     "2025-03": {
-      "cabezas": 508,
-      "adp_promedio": 1.708,
-      "adp_min": 0.17,
-      "adp_max": 4.95,
-      "estadia_promedio": 86.5,
-      "estadia_min": 31,
+      "cabezas": 299,
+      "adp_promedio": 1.685,
+      "adp_min": 0.36,
+      "adp_max": 4.85,
+      "estadia_promedio": 96.5,
+      "estadia_min": 33,
       "estadia_max": 281
     },
     "2025-04": {
