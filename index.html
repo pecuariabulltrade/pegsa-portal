@@ -550,6 +550,12 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
         <div class="mod-desc">Simulación económica de terneros, terneras e invernada con precios de insumos actualizados.</div>
         <span class="mod-arrow">Abrir módulo →</span>
       </div>
+      <div class="module-card" data-mod="historico" onclick="openModule('historico')">
+        <span class="mod-badge live">● Acumulando datos</span><span class="mod-icon">📅</span>
+        <div class="mod-tag">Módulo 08</div><div class="mod-title">Histórico & Evolución</div>
+        <div class="mod-desc">Evolución mensual de cabezas, kilogramos, insumos y posición financiera. Hasta 30 meses de historia.</div>
+        <span class="mod-arrow">Abrir módulo →</span>
+      </div>
     </div>
   </div>
 </div>
@@ -2878,6 +2884,108 @@ window.addEventListener('load', function(){
 </div>
 <!-- FIN screenSimulador -->
 
+<!-- ══════════════════════════════════════════
+     MÓDULO 08 — HISTÓRICO & EVOLUCIÓN
+══════════════════════════════════════════ -->
+<div id="screenHistorico" class="screen" style="display:none">
+  <!-- Header -->
+  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.6);margin-bottom:6px">Evolución histórica · Hasta 30 meses</div>
+        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">HISTÓRICO &amp; EVOLUCIÓN</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(212,168,75,.5);margin-top:6px;letter-spacing:.06em">Cabezas · Kilogramos · Insumos · Posición Financiera</div>
+      </div>
+      <div style="text-align:right">
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.08em">&#8592; Panel Principal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="nav-tabs" style="position:sticky;top:0;z-index:100">
+    <div class="nav-tab active" id="histTabHacienda"  onclick="histTab('hacienda',this)">🐄 Hacienda</div>
+    <div class="nav-tab"        id="histTabInsumos"   onclick="histTab('insumos',this)">🌽 Insumos</div>
+    <div class="nav-tab"        id="histTabFinanciero" onclick="histTab('financiero',this)">🏦 Posición Financiera</div>
+  </div>
+
+  <div style="padding:32px 48px;background:var(--paper);min-height:calc(100vh - 200px)">
+
+    <!-- ── PANEL HACIENDA ── -->
+    <div id="panelHistHacienda" style="display:block">
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;align-items:center">
+        <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:4px">Ver por:</span>
+        <button class="hist-filter active" id="hfTotal"          onclick="histFiltro('total',this)">Total</button>
+        <button class="hist-filter"        id="hfPropietario"    onclick="histFiltro('propietario',this)">Por Propietario</button>
+        <button class="hist-filter"        id="hfEstablecimiento" onclick="histFiltro('establecimiento',this)">Por Establecimiento</button>
+        <button class="hist-filter"        id="hfCategoria"      onclick="histFiltro('categoria',this)">Por Categoría</button>
+      </div>
+
+      <!-- Gráfico cabezas -->
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Cabezas en Stock</span>
+          <span class="section-sub" id="histHacSub">Evolución mensual · total</span>
+        </div>
+        <div style="position:relative;height:280px"><canvas id="chartHistCabezas"></canvas></div>
+      </div>
+
+      <!-- Gráfico kg -->
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Kilogramos Estimados</span>
+          <span class="section-sub">Evolución mensual</span>
+        </div>
+        <div style="position:relative;height:280px"><canvas id="chartHistKg"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── PANEL INSUMOS ── -->
+    <div id="panelHistInsumos" style="display:none">
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Stock de Insumos — Total kg</span>
+          <span class="section-sub">Evolución mensual</span>
+        </div>
+        <div style="position:relative;height:280px"><canvas id="chartHistInsumos"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="section-header">
+          <span class="section-title">Detalle por Insumo</span>
+          <span class="section-sub">Evolución mensual por tipo</span>
+        </div>
+        <div style="position:relative;height:320px"><canvas id="chartHistInsumoDetalle"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── PANEL FINANCIERO ── -->
+    <div id="panelHistFinanciero" style="display:none">
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Posición Líquida</span>
+          <span class="section-sub">Saldo disponibilidades por corte</span>
+        </div>
+        <div style="position:relative;height:280px"><canvas id="chartHistFinanciero"></canvas></div>
+      </div>
+      <!-- Tabla de cortes -->
+      <div class="panel">
+        <div class="section-header">
+          <span class="section-title">Detalle de Cortes</span>
+        </div>
+        <div id="histFinancieroTabla" style="overflow-x:auto"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.hist-filter{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;padding:5px 14px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;cursor:pointer;color:var(--ink);transition:all .15s}
+.hist-filter:hover{border-color:var(--gold);color:var(--gold)}
+.hist-filter.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+</style>
+
 <style>
 .sim-label{font-family:'DM Mono',monospace;font-size:10px;color:rgba(26,22,18,.55);margin-bottom:4px;letter-spacing:.04em}
 .sim-input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:2px;font-family:'DM Mono',monospace;font-size:12px;background:#fff;box-sizing:border-box;color:var(--ink)}
@@ -2987,6 +3095,13 @@ function openModule(mod){
     document.body.style.background='var(--paper)';
     window.scrollTo(0,0);
     initSimulador();
+    return;
+  }
+  if(mod==='historico'){
+    showScreen('screenHistorico');
+    document.body.style.background='var(--paper)';
+    window.scrollTo(0,0);
+    initHistorico();
     return;
   }
   showScreen('screenReport');
@@ -6250,5 +6365,241 @@ function _tesRenderAcum(flujo){
   sv.innerHTML=svg;
 }
 </script>
+
+<!-- ══ MÓDULO 08 · HISTÓRICO JS ══ -->
+<script>
+var _histData      = null;  // stock_historico.json
+var _histFinData   = null;  // financiero_historico.json
+var _histFiltroAct = 'total';
+var _histCharts    = {};
+var _histInited    = false;
+
+var HIST_COLORS = ['#b8922a','#27613d','#2d6a8a','#8a2d6a','#6a8a2d','#6a2d2d','#2d6a6a','#8a6a2d'];
+
+function initHistorico(){
+  if(_histInited) return;
+  _histInited = true;
+  var base = window.DATA_BASE_URL || 'https://raw.githubusercontent.com/NicolasAriel/pegsa-portal/main/datos/';
+  Promise.all([
+    fetch(base + 'stock_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(base + 'financiero_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  ]).then(function(results){
+    _histData    = results[0];
+    _histFinData = results[1];
+    _renderHistHacienda('total');
+    _renderHistInsumos();
+    _renderHistFinanciero();
+  });
+}
+
+function histTab(name, el){
+  ['hacienda','insumos','financiero'].forEach(function(p){
+    document.getElementById('panelHist'+p.charAt(0).toUpperCase()+p.slice(1)).style.display = p===name?'block':'none';
+  });
+  document.querySelectorAll('#screenHistorico .nav-tab').forEach(function(t){t.classList.remove('active');});
+  if(el) el.classList.add('active');
+}
+
+function histFiltro(tipo, el){
+  _histFiltroAct = tipo;
+  document.querySelectorAll('.hist-filter').forEach(function(b){b.classList.remove('active');});
+  if(el) el.classList.add('active');
+  _renderHistHacienda(tipo);
+}
+
+function _destroyChart(id){
+  if(_histCharts[id]){try{_histCharts[id].destroy();}catch(e){} _histCharts[id]=null;}
+}
+
+function _mkLineChart(canvasId, labels, datasets, yFmt, yTitle){
+  _destroyChart(canvasId);
+  var ctx = document.getElementById(canvasId);
+  if(!ctx) return;
+  _histCharts[canvasId] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 16 } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx){ return ' ' + ctx.dataset.label + ': ' + (yFmt ? yFmt(ctx.parsed.y) : ctx.parsed.y.toLocaleString('es-AR')); }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { family: 'DM Mono', size: 10 } }, grid: { color: 'rgba(0,0,0,.06)' } },
+        y: {
+          ticks: { font: { family: 'DM Mono', size: 10 }, callback: yFmt || function(v){ return v.toLocaleString('es-AR'); } },
+          grid: { color: 'rgba(0,0,0,.06)' },
+          title: yTitle ? { display: true, text: yTitle, font: { family: 'DM Mono', size: 9 } } : undefined
+        }
+      }
+    }
+  });
+}
+
+function _renderHistHacienda(tipo){
+  if(!_histData || !_histData.snapshots || !_histData.snapshots.length){
+    document.getElementById('chartHistCabezas').parentElement.innerHTML='<div style="text-align:center;padding:60px 0;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">Sin datos históricos aún. Se acumularán con cada ejecución mensual del actualizador.</div>';
+    return;
+  }
+  var snaps  = _histData.snapshots;
+  var labels = snaps.map(function(s){ return s.periodo; });
+
+  // Actualizar subtítulo
+  var subtitulos = {total:'total',propietario:'por propietario',establecimiento:'por establecimiento',categoria:'por categoría'};
+  var sub = document.getElementById('histHacSub');
+  if(sub) sub.textContent = 'Evolución mensual · ' + (subtitulos[tipo]||tipo);
+
+  if(tipo === 'total'){
+    var dsCab = [{
+      label: 'Cabezas totales',
+      data: snaps.map(function(s){ return s.hacienda.total_cabezas||0; }),
+      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.1)',
+      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7
+    }];
+    var dsKg = [{
+      label: 'Kg estimado total',
+      data: snaps.map(function(s){ return s.hacienda.total_kg_estimado||0; }),
+      borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.1)',
+      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7
+    }];
+    _mkLineChart('chartHistCabezas', labels, dsCab, null, 'cabezas');
+    _mkLineChart('chartHistKg', labels, dsKg, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
+
+  } else {
+    // Recolectar todas las claves del grupo
+    var claveSet = {};
+    snaps.forEach(function(s){
+      var grupo = s.hacienda['por_'+tipo] || {};
+      Object.keys(grupo).forEach(function(k){ claveSet[k]=1; });
+    });
+    var claves = Object.keys(claveSet);
+
+    var dsCab = claves.map(function(k, i){
+      return {
+        label: k,
+        data: snaps.map(function(s){ return (s.hacienda['por_'+tipo]||{})[k] ? (s.hacienda['por_'+tipo][k].cabezas||0) : null; }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length],
+        backgroundColor: 'transparent',
+        tension: .3, pointRadius: 4, spanGaps: true
+      };
+    });
+    var dsKg = claves.map(function(k, i){
+      return {
+        label: k,
+        data: snaps.map(function(s){ return (s.hacienda['por_'+tipo]||{})[k] ? (s.hacienda['por_'+tipo][k].kg_estimado||0) : null; }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length],
+        backgroundColor: 'transparent',
+        tension: .3, pointRadius: 4, spanGaps: true
+      };
+    });
+    _mkLineChart('chartHistCabezas', labels, dsCab, null, 'cabezas');
+    _mkLineChart('chartHistKg', labels, dsKg, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
+  }
+}
+
+function _renderHistInsumos(){
+  if(!_histData || !_histData.snapshots || !_histData.snapshots.length) return;
+  var snaps  = _histData.snapshots;
+  var labels = snaps.map(function(s){ return s.periodo; });
+
+  // Total kg
+  var dsTot = [{
+    label: 'Stock total insumos (kg)',
+    data: snaps.map(function(s){ return s.insumos ? (s.insumos.total_kg||0) : 0; }),
+    borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.1)',
+    tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7
+  }];
+  _mkLineChart('chartHistInsumos', labels, dsTot, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
+
+  // Detalle por insumo
+  var insuSet = {};
+  snaps.forEach(function(s){
+    if(s.insumos && s.insumos.items) s.insumos.items.forEach(function(it){ insuSet[it.nombre]=1; });
+  });
+  var insumos = Object.keys(insuSet);
+  var dsIns = insumos.map(function(nom, i){
+    return {
+      label: nom,
+      data: snaps.map(function(s){
+        if(!s.insumos||!s.insumos.items) return null;
+        var it = s.insumos.items.find(function(x){ return x.nombre===nom; });
+        return it ? it.stock_kg : null;
+      }),
+      borderColor: HIST_COLORS[i%HIST_COLORS.length],
+      backgroundColor: 'transparent',
+      tension: .3, pointRadius: 4, spanGaps: true
+    };
+  });
+  _mkLineChart('chartHistInsumoDetalle', labels, dsIns, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
+}
+
+function _renderHistFinanciero(){
+  if(!_histFinData || !_histFinData.cortes || !_histFinData.cortes.length) return;
+  var cortes = _histFinData.cortes.filter(function(c){ return c.posicion && c.posicion.saldo_disponibilidades !== undefined; });
+  if(!cortes.length) return;
+  var labels = cortes.map(function(c){ return c.fecha_corte; });
+  var vals   = cortes.map(function(c){ return c.posicion.saldo_disponibilidades||0; });
+
+  _destroyChart('chartHistFinanciero');
+  var ctx = document.getElementById('chartHistFinanciero');
+  if(!ctx) return;
+
+  _histCharts['chartHistFinanciero'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Posición Líquida ($)',
+        data: vals,
+        backgroundColor: vals.map(function(v){ return v>=0?'rgba(39,97,61,.7)':'rgba(192,57,43,.7)'; }),
+        borderColor: vals.map(function(v){ return v>=0?'#27613d':'#c0392b'; }),
+        borderWidth: 1, borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx){
+              var v=ctx.parsed.y;
+              return ' ' + (v>=0?'+':'') + '$\u00a0' + Math.round(Math.abs(v)).toLocaleString('es-AR') + (v<0?' (negativo)':'');
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { font: { family: 'DM Mono', size: 10 } } },
+        y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return '$\u00a0'+(v/1000000).toFixed(1)+'M'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
+      }
+    }
+  });
+
+  // Tabla de cortes
+  var tabla = document.getElementById('histFinancieroTabla');
+  if(!tabla) return;
+  var html = '<table class="data-table"><thead><tr><th>Fecha</th><th style="text-align:right">Saldo Disponibilidades</th><th style="text-align:right">FCI</th><th style="text-align:right">eCheqs Cartera</th><th style="text-align:right">USD cant.</th></tr></thead><tbody>';
+  cortes.forEach(function(c){
+    var p = c.posicion;
+    var sd = p.saldo_disponibilidades||0;
+    var color = sd>=0?'color:#27613d':'color:#c0392b';
+    html += '<tr>'
+      + '<td style="font-family:\'DM Mono\',monospace;font-size:12px">'+c.fecha_corte+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;'+color+'">'+(sd>=0?'+':'')+'$\u00a0'+Math.round(sd).toLocaleString('es-AR')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px">$\u00a0'+Math.round(p.fci||0).toLocaleString('es-AR')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px">$\u00a0'+Math.round((c.cheques&&c.cheques.total_cartera)||0).toLocaleString('es-AR')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px">'+(p.usd_cant ? Math.round(p.usd_cant).toLocaleString('es-AR')+' USD' : '—')+'</td>'
+      + '</tr>';
+  });
+  tabla.innerHTML = html + '</tbody></table>';
+}
+</script>
+
 </body>
 </html>
