@@ -2904,15 +2904,59 @@ window.addEventListener('load', function(){
 
   <!-- Sub-tabs -->
   <div class="nav-tabs" style="position:sticky;top:0;z-index:100">
-    <div class="nav-tab active" id="histTabHacienda"  onclick="histTab('hacienda',this)">🐄 Hacienda</div>
+    <div class="nav-tab active" id="histTabDiario"    onclick="histTab('diario',this)">📅 Evolución Diaria</div>
+    <div class="nav-tab"        id="histTabHacienda"  onclick="histTab('hacienda',this)">📆 Mensual</div>
     <div class="nav-tab"        id="histTabInsumos"   onclick="histTab('insumos',this)">🌽 Insumos</div>
     <div class="nav-tab"        id="histTabFinanciero" onclick="histTab('financiero',this)">🏦 Posición Financiera</div>
   </div>
 
   <div style="padding:32px 48px;background:var(--paper);min-height:calc(100vh - 200px)">
 
-    <!-- ── PANEL HACIENDA ── -->
-    <div id="panelHistHacienda" style="display:block">
+    <!-- ── PANEL DIARIO ── -->
+    <div id="panelHistDiario" style="display:block">
+
+      <!-- Selector de período y filtros -->
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:24px">
+        <div>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:6px">Período:</span>
+          <button class="hist-filter active" id="dPer30"  onclick="histDiarioPeriodo(30,this)">30 días</button>
+          <button class="hist-filter"        id="dPer60"  onclick="histDiarioPeriodo(60,this)">60 días</button>
+          <button class="hist-filter"        id="dPer90"  onclick="histDiarioPeriodo(90,this)">90 días</button>
+          <button class="hist-filter"        id="dPerAll" onclick="histDiarioPeriodo(0,this)">Todo</button>
+        </div>
+        <div>
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:6px">Ver por:</span>
+          <button class="hist-filter active" id="dFTotal" onclick="histDiarioFiltro('total',this)">Total</button>
+          <button class="hist-filter"        id="dFProp"  onclick="histDiarioFiltro('propietario',this)">Propietario</button>
+          <button class="hist-filter"        id="dFEst"   onclick="histDiarioFiltro('establecimiento',this)">Establecimiento</button>
+          <button class="hist-filter"        id="dFCat"   onclick="histDiarioFiltro('categoria',this)">Categoría</button>
+        </div>
+      </div>
+
+      <!-- KPIs rápidos -->
+      <div id="histDiarioKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+
+      <!-- Gráfico cabezas diario -->
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Cabezas en Stock — Evolución Diaria</span>
+          <span class="section-sub" id="dSubCab">últimos 30 días · total</span>
+        </div>
+        <div style="position:relative;height:300px"><canvas id="chartDiarioCabezas"></canvas></div>
+      </div>
+
+      <!-- Gráfico kg diario -->
+      <div class="panel">
+        <div class="section-header">
+          <span class="section-title">Kilogramos Estimados — Evolución Diaria</span>
+          <span class="section-sub" id="dSubKg">últimos 30 días · total</span>
+        </div>
+        <div style="position:relative;height:300px"><canvas id="chartDiarioKg"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── PANEL HACIENDA (mensual) ── -->
+    <div id="panelHistHacienda" style="display:none">
       <!-- Filtros -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;align-items:center">
         <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:4px">Ver por:</span>
@@ -6368,9 +6412,12 @@ function _tesRenderAcum(flujo){
 
 <!-- ══ MÓDULO 08 · HISTÓRICO JS ══ -->
 <script>
-var _histData      = null;  // stock_historico.json
+var _histData      = null;  // stock_historico.json  (mensual)
+var _histDiario    = null;  // stock_diario.json     (diario)
 var _histFinData   = null;  // financiero_historico.json
 var _histFiltroAct = 'total';
+var _histDiarioPer = 30;    // días mostrados por defecto
+var _histDiarioFil = 'total';
 var _histCharts    = {};
 var _histInited    = false;
 
@@ -6379,13 +6426,16 @@ var HIST_COLORS = ['#b8922a','#27613d','#2d6a8a','#8a2d6a','#6a8a2d','#6a2d2d','
 function initHistorico(){
   if(_histInited) return;
   _histInited = true;
-  var base = window.DATA_BASE_URL || 'https://raw.githubusercontent.com/NicolasAriel/pegsa-portal/main/datos/';
+  var base = window.DATA_BASE_URL || 'https://raw.githubusercontent.com/pecuariabulltrade/pegsa-portal/main/';
   Promise.all([
     fetch(base + 'stock_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(base + 'stock_diario.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(base + 'financiero_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
     _histData    = results[0];
-    _histFinData = results[1];
+    _histDiario  = results[1];
+    _histFinData = results[2];
+    _renderHistDiario(30, 'total');
     _renderHistHacienda('total');
     _renderHistInsumos();
     _renderHistFinanciero();
@@ -6393,7 +6443,7 @@ function initHistorico(){
 }
 
 function histTab(name, el){
-  ['hacienda','insumos','financiero'].forEach(function(p){
+  ['diario','hacienda','insumos','financiero'].forEach(function(p){
     document.getElementById('panelHist'+p.charAt(0).toUpperCase()+p.slice(1)).style.display = p===name?'block':'none';
   });
   document.querySelectorAll('#screenHistorico .nav-tab').forEach(function(t){t.classList.remove('active');});
@@ -6441,6 +6491,143 @@ function _mkLineChart(canvasId, labels, datasets, yFmt, yTitle){
   });
 }
 
+// ── DIARIO ──────────────────────────────────────────────────
+function histDiarioPeriodo(dias, el){
+  _histDiarioPer = dias;
+  document.querySelectorAll('#dPer30,#dPer60,#dPer90,#dPerAll').forEach(function(b){b.classList.remove('active');});
+  if(el) el.classList.add('active');
+  _renderHistDiario(_histDiarioPer, _histDiarioFil);
+}
+function histDiarioFiltro(tipo, el){
+  _histDiarioFil = tipo;
+  document.querySelectorAll('#dFTotal,#dFProp,#dFEst,#dFCat').forEach(function(b){b.classList.remove('active');});
+  if(el) el.classList.add('active');
+  _renderHistDiario(_histDiarioPer, _histDiarioFil);
+}
+
+function _renderHistDiario(dias, filtro){
+  var noData = '<div style="text-align:center;padding:60px 0;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">Sin datos diarios aún. Se acumulan automáticamente con cada ejecución del actualizador.</div>';
+  if(!_histDiario || !_histDiario.snapshots || !_histDiario.snapshots.length){
+    document.getElementById('histDiarioKpis').innerHTML='';
+    document.getElementById('chartDiarioCabezas').parentElement.innerHTML=noData;
+    return;
+  }
+
+  // Filtrar por período
+  var snaps = _histDiario.snapshots.slice();
+  if(dias > 0) snaps = snaps.slice(-dias);
+  var labels = snaps.map(function(s){
+    var d=s.fecha.split('-'); return d[2]+'/'+d[1]; // DD/MM
+  });
+
+  // KPIs rápidos
+  var ultimo = snaps[snaps.length-1];
+  var primero = snaps[0];
+  var deltaCab = ultimo.hacienda.total_cabezas - primero.hacienda.total_cabezas;
+  var deltaKg  = ultimo.hacienda.total_kg_estimado - primero.hacienda.total_kg_estimado;
+  var kpiFmt = function(n){ return n>=0?'+'+n.toLocaleString('es-AR'):n.toLocaleString('es-AR'); };
+  var kpiColor = function(n){ return n>=0?'#27613d':'#c0392b'; };
+  var kpiBox = function(label, val, sub, col){
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:14px 18px">'
+      +'<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-bottom:6px">'+label+'</div>'
+      +'<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:'+col+'">'+val+'</div>'
+      +'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:rgba(26,22,18,.5);margin-top:4px">'+sub+'</div>'
+      +'</div>';
+  };
+  document.getElementById('histDiarioKpis').innerHTML =
+    kpiBox('Cabezas hoy', ultimo.hacienda.total_cabezas.toLocaleString('es-AR'), 'stock actual', 'var(--ink)') +
+    kpiBox('Variación cabezas', kpiFmt(deltaCab), 'en el período', kpiColor(deltaCab)) +
+    kpiBox('Kg estimado hoy', (ultimo.hacienda.total_kg_estimado/1000).toFixed(0)+'t', 'toneladas', 'var(--ink)') +
+    kpiBox('Variación kg', kpiFmt(Math.round(deltaKg/1000))+'t', 'en el período', kpiColor(deltaKg));
+
+  // Sub-labels
+  var perLabel = dias>0?'últimos '+dias+' días':'todo el historial';
+  var nomFiltro = {total:'total',propietario:'por propietario',establecimiento:'por establecimiento',categoria:'por categoría'};
+  var sub = perLabel+' · '+(nomFiltro[filtro]||filtro);
+  var dSubCab = document.getElementById('dSubCab'); if(dSubCab) dSubCab.textContent = sub;
+  var dSubKg  = document.getElementById('dSubKg');  if(dSubKg)  dSubKg.textContent  = sub;
+
+  // Construir datasets
+  var dsCab, dsKg;
+  if(filtro === 'total'){
+    dsCab = [{
+      label: 'Cabezas',
+      data: snaps.map(function(s){ return s.hacienda.total_cabezas; }),
+      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.08)',
+      tension: .2, fill: true, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2
+    }];
+    dsKg = [{
+      label: 'Kg estimado',
+      data: snaps.map(function(s){ return s.hacienda.total_kg_estimado; }),
+      borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.08)',
+      tension: .2, fill: true, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2
+    }];
+  } else {
+    var keyMap = {propietario:'por_propietario', establecimiento:'por_establecimiento', categoria:'por_categoria'};
+    var key = keyMap[filtro];
+    var claveSet = {};
+    snaps.forEach(function(s){ Object.keys(s.hacienda[key]||{}).forEach(function(k){ claveSet[k]=1; }); });
+    var claves = Object.keys(claveSet);
+    dsCab = claves.map(function(k,i){
+      return {
+        label: k,
+        data: snaps.map(function(s){ return (s.hacienda[key]||{})[k] ? s.hacienda[key][k].cabezas : null; }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length], backgroundColor:'transparent',
+        tension: .2, pointRadius: 1, pointHoverRadius: 4, borderWidth: 1.5, spanGaps: true
+      };
+    });
+    dsKg = claves.map(function(k,i){
+      return {
+        label: k,
+        data: snaps.map(function(s){ return (s.hacienda[key]||{})[k] ? s.hacienda[key][k].kg_estimado : null; }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length], backgroundColor:'transparent',
+        tension: .2, pointRadius: 1, pointHoverRadius: 4, borderWidth: 1.5, spanGaps: true
+      };
+    });
+  }
+
+  // Tick: mostrar solo cada N labels para no saturar eje X
+  var maxTicks = 12;
+  var step = Math.max(1, Math.ceil(labels.length / maxTicks));
+
+  var xTicks = {
+    font:{family:'DM Mono',size:10},
+    callback: function(val,i){ return i%step===0?labels[i]:''; },
+    maxRotation: 0
+  };
+
+  _destroyChart('chartDiarioCabezas');
+  var ctx1 = document.getElementById('chartDiarioCabezas');
+  if(ctx1) _histCharts['chartDiarioCabezas'] = new Chart(ctx1, {
+    type:'line', data:{labels:labels,datasets:dsCab},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'DM Mono',size:11},boxWidth:12,padding:14}}},
+      scales:{
+        x:{ticks:xTicks, grid:{color:'rgba(0,0,0,.04)'}},
+        y:{ticks:{font:{family:'DM Mono',size:10},callback:function(v){return v.toLocaleString('es-AR');}}, grid:{color:'rgba(0,0,0,.06)'}}
+      }
+    }
+  });
+
+  _destroyChart('chartDiarioKg');
+  var ctx2 = document.getElementById('chartDiarioKg');
+  if(ctx2) _histCharts['chartDiarioKg'] = new Chart(ctx2, {
+    type:'line', data:{labels:labels,datasets:dsKg},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'DM Mono',size:11},boxWidth:12,padding:14}}},
+      scales:{
+        x:{ticks:xTicks, grid:{color:'rgba(0,0,0,.04)'}},
+        y:{ticks:{font:{family:'DM Mono',size:10},callback:function(v){return (v/1000).toFixed(0)+'t';}}, grid:{color:'rgba(0,0,0,.06)'}}
+      }
+    }
+  });
+}
+
+// ── MENSUAL ──────────────────────────────────────────────────
 function _renderHistHacienda(tipo){
   if(!_histData || !_histData.snapshots || !_histData.snapshots.length){
     document.getElementById('chartHistCabezas').parentElement.innerHTML='<div style="text-align:center;padding:60px 0;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">Sin datos históricos aún. Se acumularán con cada ejecución mensual del actualizador.</div>';

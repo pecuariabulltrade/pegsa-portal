@@ -2426,6 +2426,61 @@ def main():
         log.warning(f"  ⚠ Snapshot histórico falló: {e}")
         resumen["modulos"]["historico"] = {"ok": False, "error": str(e)}
 
+    # ── SNAPSHOT DIARIO ───────────────────────────────────────
+    try:
+        _diario_path = Path(carpeta) / "stock_diario.json"
+        _kpis_path   = Path(carpeta) / f"stock_kpis_{periodo}.json"
+
+        if _kpis_path.exists():
+            with open(_kpis_path, encoding="utf-8") as _f:
+                _kpis_raw = json.load(_f)
+            _k = _kpis_raw.get("kpis", {})
+            _hoy = datetime.now().strftime("%Y-%m-%d")
+            _snap_d = {
+                "fecha": _hoy,
+                "hacienda": {
+                    "total_cabezas":     _k.get("total_cabezas", 0),
+                    "total_kg_estimado": _k.get("total_kg_estimado_hoy", 0),
+                    "por_propietario": {
+                        p: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
+                        for p, v in _k.get("por_propietario", {}).items()
+                    },
+                    "por_establecimiento": {
+                        e: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
+                        for e, v in _k.get("por_establecimiento", {}).items()
+                    },
+                    "por_categoria": {
+                        c: {"cabezas": v.get("cabezas", 0), "kg_estimado": v.get("kg_estimado", 0)}
+                        for c, v in _k.get("por_categoria", {}).items()
+                    }
+                }
+            }
+
+            _diario = {"generado": datetime.now().isoformat(), "dias": 0, "snapshots": []}
+            if _diario_path.exists():
+                try:
+                    with open(_diario_path, encoding="utf-8") as _f:
+                        _diario = json.load(_f)
+                except Exception:
+                    pass
+
+            # Upsert por fecha, mantener últimos 730 días (2 años)
+            _dsnaps = [s for s in _diario.get("snapshots", []) if s.get("fecha") != _hoy]
+            _dsnaps.append(_snap_d)
+            _dsnaps.sort(key=lambda s: s.get("fecha", ""))
+            _diario["snapshots"] = _dsnaps[-730:]
+            _diario["dias"]      = len(_diario["snapshots"])
+            _diario["generado"]  = datetime.now().isoformat()
+
+            guardar(_diario, carpeta, "stock_diario.json")
+            log.info(f"  ✓ stock_diario.json — {_diario['dias']} días · hoy: {_hoy}")
+            resumen["modulos"]["stock_diario"] = {
+                "ok": True, "dias": _diario["dias"], "ultima_fecha": _hoy,
+            }
+    except Exception as e:
+        log.warning(f"  ⚠ Snapshot diario falló: {e}")
+        resumen["modulos"]["stock_diario"] = {"ok": False, "error": str(e)}
+
     separador()
     guardar(resumen, carpeta, "ultima_actualizacion.json")
 
