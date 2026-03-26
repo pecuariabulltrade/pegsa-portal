@@ -161,6 +161,24 @@ def limpiar_nan(obj):
             return None
     return obj
 
+def esperar_si_interactivo(mensaje="\nPresiona Enter para cerrar..."):
+    try:
+        if sys.stdin and sys.stdin.isatty():
+            input(mensaje)
+    except Exception:
+        pass
+
+def resolver_carpeta_salida(ruta_cfg):
+    script_dir = Path(__file__).resolve().parent
+    ruta = str(ruta_cfg or "").strip()
+    if (not ruta or ruta.lower() in {"auto", ".", ".\\", "./"} or
+        "C:\\Users\\USER\\" in ruta or "C:/Users/USER/" in ruta):
+        return str(script_dir)
+    p = Path(ruta).expanduser()
+    if not p.is_absolute():
+        p = (script_dir / p).resolve()
+    return str(p)
+
 # ═══════════════════════════════════════════════════════════
 #  CONFIG
 # ═══════════════════════════════════════════════════════════
@@ -168,7 +186,7 @@ def cargar_config():
     path = Path(__file__).parent / "config.ini"
     if not path.exists():
         log.error(f"No encontre config.ini en: {path}")
-        input("\nPresiona Enter para cerrar...")
+        esperar_si_interactivo("\nPresiona Enter para cerrar...")
         sys.exit(1)
     cfg = configparser.ConfigParser()
     cfg.read(path, encoding="utf-8")
@@ -182,7 +200,7 @@ def conectar(cfg):
         import pyodbc
     except ImportError:
         log.error("Falta pyodbc. Ejecuta: pip install pyodbc pandas")
-        input("\nPresiona Enter para cerrar...")
+        esperar_si_interactivo("\nPresiona Enter para cerrar...")
         sys.exit(1)
 
     srv  = cfg["SQL"]["servidor"]
@@ -208,13 +226,18 @@ def conectar(cfg):
     except Exception as e:
         log.error(f"No se pudo conectar: {e}")
         log.error("  Verifica: 1. VPN conectada  2. WinCampo corriendo  3. Usuario/contrasena")
-        input("\nPresiona Enter para cerrar...")
+        esperar_si_interactivo("\nPresiona Enter para cerrar...")
         sys.exit(1)
 
 # ═══════════════════════════════════════════════════════════
 #  EXTRACCION Y ENRIQUECIMIENTO
 # ═══════════════════════════════════════════════════════════
-def extraer(conn, tabla):
+def extraer(conn, tabla, fecha_col=None, dias=730):
+    """
+    Lee una tabla SQL.
+    Si se indica fecha_col, filtra en SQL a los últimos `dias` días
+    para evitar traer millones de registros innecesarios.
+    """
     try:
         import pandas as pd
     except ImportError:
@@ -225,7 +248,13 @@ def extraer(conn, tabla):
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            df = pd.read_sql(f"SELECT * FROM {tabla} WITH (NOLOCK)", conn)
+            if fecha_col:
+                sql = (f"SELECT * FROM {tabla} WITH (NOLOCK) "
+                       f"WHERE {fecha_col} >= DATEADD(day, -{dias}, GETDATE())")
+                log.info(f"    (filtro SQL: {fecha_col} últimos {dias} días)")
+            else:
+                sql = f"SELECT * FROM {tabla} WITH (NOLOCK)"
+            df = pd.read_sql(sql, conn)
 
         # Limpiar NaN/inf
         df = df.where(pd.notnull(df), None)
@@ -1672,7 +1701,7 @@ def main():
 
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
-    carpeta = cfg["ONEDRIVE"]["carpeta"]
+    carpeta = resolver_carpeta_salida(cfg["ONEDRIVE"].get("carpeta", ""))
     log.info(f"  Periodo : {periodo}")
     log.info(f"  Destino : {carpeta}")
     log.info("")
@@ -1839,8 +1868,8 @@ def main():
     tabla_ing = cfg["TABLAS"].get("movimientos_ingresos", "v_PB_Ingresos")
     tabla_egr = cfg["TABLAS"].get("movimientos_egresos",  "v_PB_Egresos")
 
-    regs_ing, cols_ing = extraer(conn, tabla_ing)
-    regs_egr, cols_egr = extraer(conn, tabla_egr)
+    regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730)
+    regs_egr, cols_egr = extraer(conn, tabla_egr, fecha_col="FechaSalida",  dias=730)
 
     prod_data = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo)
 
@@ -1855,7 +1884,7 @@ def main():
     # ── 7. JSON Muertes + Tasa de Mortandad ──
     separador("Muertes & Tasa de Mortandad")
     tabla_muertes = cfg["TABLAS"].get("muertes", "V_MUERTES")
-    regs_m, cols_m = extraer(conn, tabla_muertes)
+    regs_m, cols_m = extraer(conn, tabla_muertes, fecha_col="FECHA_MUERTE", dias=730)
 
     # Reusar regs_ing/cols_ing (ya cargados en módulo 6) y regs/cols de stock hacienda
     # regs_ing ya fue cargado arriba; regs (stock) también — los pasamos directamente
@@ -1912,7 +1941,7 @@ def main():
     # ── 9. JSON Consumo de Alimento (anual + promedio diario 7d) ──
     separador("Consumo de Alimento")
     tabla_consumo = cfg["TABLAS"].get("consumo_detallado", "v_PB_ConsumoDetallado")
-    regs_cons, cols_cons = extraer(conn, tabla_consumo)
+    regs_cons, cols_cons = extraer(conn, tabla_consumo, fecha_col="FECHA", dias=730)
     consumo_data = procesar_consumo(regs_cons, cols_cons, periodo)
     guardar(consumo_data, carpeta, f"consumo_{periodo}.json")
     log.info(f"  ✓ consumo_{periodo}.json")
@@ -2315,14 +2344,866 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["tesoreria"] = {"ok": False, "error": str(e)}
 
+    # ── MÓDULO MERCADO Y PRECIOS (web scraping) ───────────────
+    separador("MÓDULO 7 · MERCADO Y PRECIOS")
+    try:
+        _repo_txt = Path(__file__).parent / "repo_github_path.txt"
+        _repo_path = _repo_txt.read_text(encoding="utf-8").strip() if _repo_txt.exists() else ""
+        if not _repo_path:
+            _repo_path = cfg.get("GITHUB", {}).get("repo_path", "")
+        actualizar_mercado_precios(carpeta, _repo_path)
+    except Exception as e:
+        log.warning(f"  ⚠ Módulo mercado falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+
+    # ── MÓDULO 8 · SNAPSHOT HISTÓRICO MENSUAL ────────────────
+    separador("MÓDULO 8 · SNAPSHOT HISTÓRICO")
+    try:
+        _hist_path = Path(carpeta) / "stock_historico.json"
+        _kpis_path = Path(carpeta) / f"stock_kpis_{periodo}.json"
+        _ins_path  = Path(carpeta) / f"stock_insumos_{periodo}.json"
+
+        if _kpis_path.exists() and _ins_path.exists():
+            with open(_kpis_path, encoding="utf-8") as _f:
+                _kpis_raw = json.load(_f)
+            with open(_ins_path, encoding="utf-8") as _f:
+                _ins_raw  = json.load(_f)
+
+            _k = _kpis_raw.get("kpis", {})
+            _mes_actual = datetime.now().strftime("%Y-%m")
+            _snap = {
+                "fecha":   datetime.now().strftime("%Y-%m-%d"),
+                "periodo": _mes_actual,
+                "hacienda": {
+                    "total_cabezas":     _k.get("total_cabezas", 0),
+                    "total_kg_estimado": _k.get("total_kg_estimado_hoy", 0),
+                    "por_propietario": {
+                        p: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
+                        for p, v in _k.get("por_propietario", {}).items()
+                    },
+                    "por_establecimiento": {
+                        e: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
+                        for e, v in _k.get("por_establecimiento", {}).items()
+                    },
+                    "por_categoria": {
+                        c: {"cabezas": v.get("cabezas", 0), "kg_estimado": v.get("kg_estimado", 0)}
+                        for c, v in _k.get("por_categoria", {}).items()
+                    }
+                },
+                "insumos": {
+                    "total_kg": _ins_raw.get("total_kg", 0),
+                    "items": [
+                        {"nombre": it["nombre"], "stock_kg": it["stock_kg"]}
+                        for it in _ins_raw.get("insumos", [])
+                    ]
+                }
+            }
+
+            # Leer historial existente y hacer upsert por periodo
+            _hist = {"generado": datetime.now().isoformat(), "snapshots": []}
+            if _hist_path.exists():
+                try:
+                    with open(_hist_path, encoding="utf-8") as _f:
+                        _hist = json.load(_f)
+                except Exception:
+                    pass
+
+            _snaps = [s for s in _hist.get("snapshots", []) if s.get("periodo") != _mes_actual]
+            _snaps.append(_snap)
+            _snaps.sort(key=lambda s: s.get("periodo", ""))
+            _hist["snapshots"] = _snaps[-30:]
+            _hist["generado"]   = datetime.now().isoformat()
+
+            guardar(_hist, carpeta, "stock_historico.json")
+            log.info(f"  ✓ stock_historico.json — {len(_hist['snapshots'])} snapshots · último: {_mes_actual}")
+            resumen["modulos"]["historico"] = {
+                "ok": True, "snapshots": len(_hist["snapshots"]), "ultimo_periodo": _mes_actual,
+            }
+        else:
+            log.info("  ℹ stock_kpis o stock_insumos no encontrados — snapshot omitido")
+            resumen["modulos"]["historico"] = {"ok": True, "snapshots": 0}
+    except Exception as e:
+        log.warning(f"  ⚠ Snapshot histórico falló: {e}")
+        resumen["modulos"]["historico"] = {"ok": False, "error": str(e)}
+
     separador()
     guardar(resumen, carpeta, "ultima_actualizacion.json")
+
+    # ── AUTO GIT PUSH ─────────────────────────────────────────
+    separador("GIT · PUBLICAR EN GITHUB PAGES")
+    _repo_txt = Path(__file__).parent / "repo_github_path.txt"
+    _repo_path = _repo_txt.read_text(encoding="utf-8").strip() if _repo_txt.exists() else ""
+    if not _repo_path:
+        _repo_path = cfg.get("GITHUB", {}).get("repo_path", "")
+    if _repo_path and Path(_repo_path).is_dir():
+        import subprocess, datetime as _dt, shutil as _shutil
+        try:
+            _ts   = _dt.datetime.now().strftime("%a %d/%m/%Y %H:%M:%S")
+            _repo = Path(_repo_path)
+
+            # 1) Copiar JSONs de datos de OneDrive → repo
+            #    Excluir archivos con credenciales o configuración sensible
+            _EXCLUIR = {"lector-robot", "credential", "secret", "config", "key"}
+            _copiados = 0
+            for _json in Path(carpeta).glob("*.json"):
+                _nombre_lower = _json.name.lower()
+                if any(excl in _nombre_lower for excl in _EXCLUIR):
+                    log.info(f"  ⚠ Omitido (sensible): {_json.name}")
+                    continue
+                _dst = _repo / _json.name
+                _shutil.copy2(str(_json), str(_dst))
+                _copiados += 1
+            log.info(f"  ✓ {_copiados} JSON copiados a repo")
+
+            # 2) Commit + push
+            subprocess.run(["git", "-C", str(_repo), "add", "-A"],
+                           check=True, capture_output=True)
+            _res = subprocess.run(
+                ["git", "-C", str(_repo), "commit", "-m",
+                 f"Actualizacion automatica {_ts}"],
+                capture_output=True, text=True
+            )
+            if "nothing to commit" in _res.stdout or "nothing to commit" in _res.stderr:
+                log.info("  ℹ Git: sin cambios nuevos para publicar")
+            else:
+                log.info(f"  ✓ Git commit: Actualizacion automatica {_ts}")
+                push = subprocess.run(
+                    ["git", "-C", str(_repo), "push"],
+                    capture_output=True, text=True, timeout=60
+                )
+                if push.returncode == 0:
+                    log.info("  ✓ Git push OK → GitHub Pages actualizado")
+                else:
+                    log.warning(f"  ⚠ Git push falló: {push.stderr.strip()[:200]}")
+        except Exception as _e:
+            log.warning(f"  ⚠ Git error: {_e}")
+            import traceback; log.warning(traceback.format_exc())
+    else:
+        log.info("  ℹ Git: repo_github_path.txt no configurado, se omite push")
+
     separador("FINALIZADO")
     log.info(f"  Archivos guardados en: {carpeta}")
     log.info("  OneDrive sincronizara automaticamente")
     separador()
     print()
-    input("  Presiona Enter para cerrar...")
+    esperar_si_interactivo("  Presiona Enter para cerrar...")
+
+
+# ══════════════════════════════════════════════════════════════
+# MÓDULO 7 — MERCADO Y PRECIOS
+# Fuentes:
+#   - Hacienda: Mercado de Cañuelas (decampoacampo.com)
+#   - Granos:   BCR Cámara Arbitral (cac.bcr.com.ar/es/precios-de-pizarra)
+#   - Negocios: Google Sheets (CARGAS + COMPRAS)
+# ══════════════════════════════════════════════════════════════
+
+# ID de la planilla de negocios en Google Sheets
+GSHEET_ID = "1_N1k3QkNQ8NMfs-uz_FHmpLd8afR067-EsoThkg0RWk"
+# URL base para export CSV público (requiere que la hoja esté "Publicada en web")
+GSHEET_CSV_BASE = f"https://docs.google.com/spreadsheets/d/{GSHEET_ID}/export?format=csv&sheet="
+
+
+def _http_get(url, timeout=20):
+    """Descarga URL como texto. Devuelve str o None."""
+    import urllib.request
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "text/html,application/json,*/*",
+                "Accept-Language": "es-AR,es;q=0.9",
+            }
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read()
+            # detectar encoding
+            ct = resp.headers.get("Content-Type", "")
+            enc = "utf-8"
+            if "charset=" in ct:
+                enc = ct.split("charset=")[-1].split(";")[0].strip()
+            return raw.decode(enc, errors="replace")
+    except Exception as e:
+        log.debug(f"    _http_get({url[:60]}...): {e}")
+        return None
+
+
+def _parse_ar_num(s):
+    """Convierte string numérico argentino/internacional a float."""
+    s = str(s or "").strip().replace(" ", "").replace("$", "")
+    if not s or s in ("-", "—", ""):
+        return None
+    if "," in s and "." in s:
+        # "1.234,56" → 1234.56
+        s = s.replace(".", "").replace(",", ".")
+    elif "," in s:
+        # puede ser "1234,56" (decimal) o "1.234" (miles)
+        partes = s.split(",")
+        if len(partes) == 2 and len(partes[1]) <= 2:
+            s = s.replace(",", ".")  # decimal: 1234,56
+        else:
+            s = s.replace(",", "")   # miles: 1,234
+    elif "." in s:
+        partes = s.split(".")
+        if len(partes) == 2 and len(partes[1]) == 3:
+            s = s.replace(".", "")  # miles: 1.234
+    try:
+        return float(s)
+    except Exception:
+        return None
+
+
+# ──────────────────────────────────────────────────────────────
+# 7_HIST. Histórico de precios — Excel en OneDrive
+# ──────────────────────────────────────────────────────────────
+def actualizar_historico_excel(hacienda, commodities, carpeta, today):
+    """
+    Agrega/actualiza una fila en historico_precios.xlsx con los precios del día.
+    Si no llegaron precios de alguna columna, replica el último valor conocido (carry-forward).
+    Requiere: pandas + openpyxl
+    """
+    try:
+        import pandas as pd
+        from pathlib import Path
+    except ImportError:
+        log.warning("  ⚠ pandas no disponible; se omite historico_precios.xlsx")
+        return
+
+    ARCHIVO = Path(carpeta) / "historico_precios.xlsx"
+
+    # Mapeo: clave interna → nombre de columna Excel
+    COLS_HAC = [
+        ("novillito <390",      "Novillito <390kg $/kg"),
+        ("novillito 391",       "Novillito 391/430kg $/kg"),
+        ("novillo 431",         "Novillo 431/460kg $/kg"),
+        ("novillo 461",         "Novillo 461/490kg $/kg"),
+        ("vaquillona",          "Vaquillona <390kg $/kg"),
+        ("vaca buena",          "Vaca Buena $/kg"),
+        ("vaca regular",        "Vaca Regular $/kg"),
+        ("vaca conserva",       "Vaca Conserva $/kg"),
+        ("ternero",             "Ternero $/kg"),
+        ("ternera",             "Ternera $/kg"),
+    ]
+    COLS_COM = [
+        ("maiz",   "Maíz $/tn"),
+        ("soja",   "Soja $/tn"),
+        ("trigo",  "Trigo $/tn"),
+        ("sorgo",  "Sorgo $/tn"),
+    ]
+
+    # Construir dict de precios de hacienda de hoy
+    def _hac_precio(key_lower):
+        for h in hacienda:
+            if key_lower in h.get("categoria", "").lower():
+                p = h.get("precio", 0)
+                if p and p > 500:
+                    return p
+        return None
+
+    def _com_precio(key_lower):
+        for c in commodities:
+            if key_lower in c.get("nombre", "").lower():
+                p = c.get("precio", 0)
+                if p and p > 1000:
+                    return p
+        return None
+
+    # Leer Excel existente o crear DataFrame vacío
+    todas_cols = ["Fecha"] + [c for _, c in COLS_HAC] + [c for _, c in COLS_COM]
+    if ARCHIVO.exists():
+        try:
+            df = pd.read_excel(ARCHIVO, sheet_name="Historico", dtype={"Fecha": str})
+            # Asegurar que todas las columnas existen
+            for col in todas_cols:
+                if col not in df.columns:
+                    df[col] = None
+        except Exception as e:
+            log.warning(f"  ⚠ No se pudo leer {ARCHIVO.name}: {e}. Se crea nuevo.")
+            df = pd.DataFrame(columns=todas_cols)
+    else:
+        df = pd.DataFrame(columns=todas_cols)
+
+    # Obtener última fila como valores de carry-forward
+    if len(df) > 0:
+        last = df.iloc[-1].to_dict()
+    else:
+        last = {}
+
+    # Armar la fila de hoy
+    fila = {"Fecha": today}
+    for key, col in COLS_HAC:
+        p = _hac_precio(key)
+        if p:
+            fila[col] = p
+        else:
+            # Carry-forward: usar el último valor conocido
+            fila[col] = last.get(col, None)
+
+    for key, col in COLS_COM:
+        p = _com_precio(key)
+        if p:
+            fila[col] = p
+        else:
+            fila[col] = last.get(col, None)
+
+    # Si hoy ya existe, reemplazar; si no, agregar
+    if "Fecha" in df.columns and today in df["Fecha"].values:
+        df.loc[df["Fecha"] == today, list(fila.keys())] = list(fila.values())
+        log.info(f"  ✓ historico_precios.xlsx — fila {today} actualizada")
+    else:
+        df = pd.concat([df, pd.DataFrame([fila])], ignore_index=True)
+        log.info(f"  ✓ historico_precios.xlsx — fila {today} agregada ({len(df)} días totales)")
+
+    # Guardar con formato
+    try:
+        import openpyxl
+        from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        with pd.ExcelWriter(ARCHIVO, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="Historico", index=False)
+            ws = writer.sheets["Historico"]
+
+            # Estilo encabezado
+            fill_hdr = PatternFill("solid", fgColor="1F4E79")
+            font_hdr = Font(bold=True, color="FFFFFF", size=10)
+            for cell in ws[1]:
+                cell.fill = fill_hdr
+                cell.font = font_hdr
+                cell.alignment = Alignment(horizontal="center", wrap_text=True)
+
+            # Freeze primera fila
+            ws.freeze_panes = "A2"
+
+            # Ancho automático
+            for col_idx, col_name in enumerate(todas_cols, start=1):
+                max_len = max(len(str(col_name)), 10)
+                ws.column_dimensions[get_column_letter(col_idx)].width = max_len * 1.2
+
+            # Filas alternadas
+            fill_par  = PatternFill("solid", fgColor="EBF3FB")
+            fill_impar = PatternFill("solid", fgColor="FFFFFF")
+            for row_idx in range(2, ws.max_row + 1):
+                fill = fill_par if row_idx % 2 == 0 else fill_impar
+                for cell in ws[row_idx]:
+                    cell.fill = fill
+                    cell.alignment = Alignment(horizontal="center")
+
+        log.info(f"  ✓ historico_precios.xlsx guardado en {ARCHIVO.parent}")
+    except ImportError:
+        # openpyxl no disponible, guardar sin formato
+        df.to_excel(ARCHIVO, sheet_name="Historico", index=False)
+        log.info(f"  ✓ historico_precios.xlsx guardado (sin formato — instalar openpyxl)")
+    except Exception as e:
+        log.warning(f"  ⚠ Error guardando historico_precios.xlsx: {e}")
+
+
+# ──────────────────────────────────────────────────────────────
+# 7a. Hacienda — Mercado de Cañuelas via deCampoaCampo
+# ──────────────────────────────────────────────────────────────
+def scrape_canuelas():
+    """Devuelve lista de {categoria, precio, variacion, unidad} o [].
+    Usa la API JSON interna de deCampoaCampo:
+      GET /gh_funciones.php?function=getListadoPreciosGordo
+    Respuesta: {"hoy":"25/03/2026", "data":[
+      {"categoria":"Novillitos hasta 390 Kg.",
+       "precio_semana_1": 5204,
+       "variacion_precio_semana_1": -113, ...}, ...]}
+    """
+    # ── 1) API JSON (fuente primaria) ────────────────────────────
+    url_api = "https://www.decampoacampo.com/gh_funciones.php?function=getListadoPreciosGordo"
+    text = _http_get(url_api)
+    if text:
+        try:
+            data = json.loads(text)
+            items = data.get("data", [])
+            hacienda = []
+            for item in items:
+                cat = str(item.get("categoria", "")).strip()
+                precio = item.get("precio_semana_1") or item.get("precio_semana_2") or 0
+                var    = item.get("variacion_precio_semana_1") or 0
+                if cat and precio and 500 < float(precio) < 30000:
+                    hacienda.append({
+                        "categoria": cat,
+                        "precio":    round(float(precio), 2),
+                        "variacion": round(float(var or 0), 2),
+                        "unidad":    "$/kg + IVA"
+                    })
+            if hacienda:
+                log.info(f"  ✓ Cañuelas API: {len(hacienda)} categorías — "
+                         + " | ".join(f"{h['categoria']} ${h['precio']:,.0f}" for h in hacienda))
+                return hacienda
+        except (json.JSONDecodeError, TypeError, ValueError) as e:
+            log.debug(f"    Cañuelas API JSON error: {e}")
+
+    # ── 2) Fallback: HTML renderizado de la página outside ───────
+    import re
+    url_html = "https://www.decampoacampo.com/__dcac/outside/canuelas/precios"
+    text = _http_get(url_html)
+    if not text:
+        log.info("  ℹ Cañuelas: sin respuesta de red")
+        return []
+
+    hacienda = []
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
+    for row in rows:
+        cat_m = re.search(
+            r'class=["\']td_precios["\'][^>]*>.*?<h3[^>]*>(.*?)</h3>',
+            row, re.DOTALL | re.IGNORECASE
+        )
+        if not cat_m:
+            continue
+        categoria = re.sub(r'<[^>]+>', '', cat_m.group(1)).strip()
+        if not categoria:
+            continue
+        precio_m = re.search(
+            r'<span[^>]*class=["\']h4["\'][^>]*>([\d.,]+)</span>',
+            row, re.IGNORECASE
+        )
+        if not precio_m:
+            continue
+        precio = _parse_ar_num(precio_m.group(1))
+        if not precio or not (500 < precio < 30000):
+            continue
+        var_m = re.search(
+            r'<span[^>]*class=["\']h4["\'][^>]*>[\d.,]+</span>.*?\(([+-]?[\d.,]+)\)',
+            row, re.DOTALL | re.IGNORECASE
+        )
+        variacion = _parse_ar_num(var_m.group(1)) if var_m else 0
+        hacienda.append({
+            "categoria": categoria,
+            "precio":    round(precio, 2),
+            "variacion": round(variacion or 0, 2),
+            "unidad":    "$/kg + IVA"
+        })
+
+    if hacienda:
+        log.info(f"  ✓ Cañuelas HTML: {len(hacienda)} categorías extraídas")
+    else:
+        log.info("  ℹ Cañuelas: sin precios en respuesta")
+    return hacienda
+
+
+# ──────────────────────────────────────────────────────────────
+# 7b. Granos — BCR Cámara Arbitral Precios de Pizarra
+# ──────────────────────────────────────────────────────────────
+def scrape_bcr_pizarra():
+    """Devuelve {maiz, soja, trigo, sorgo} en $/tn o {} si falla."""
+    import re
+    url = "https://www.cac.bcr.com.ar/es/precios-de-pizarra"
+    text = _http_get(url)
+    if not text:
+        return {}
+
+    granos = {}
+    GRANOS_BUSCAR = {
+        "maiz":  ["maíz", "maiz", "corn"],
+        "soja":  ["soja", "soybean"],
+        "trigo": ["trigo", "wheat"],
+        "sorgo": ["sorgo", "sorghum"],
+    }
+
+    # Intentar parsear tablas HTML
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
+    for row in rows:
+        cells_raw = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row, re.DOTALL | re.IGNORECASE)
+        cells = [re.sub(r'<[^>]+>', '', c).strip().lower() for c in cells_raw]
+        if not cells:
+            continue
+        row_text = " ".join(cells)
+        for grano_key, aliases in GRANOS_BUSCAR.items():
+            if grano_key in granos:
+                continue
+            if any(alias in row_text for alias in aliases):
+                # Buscar precio en celdas (número mayor a 10000 = $/tn en pesos)
+                for cell in cells[1:]:
+                    p = _parse_ar_num(cell)
+                    if p and 10000 < p < 2000000:
+                        granos[grano_key] = round(p)
+                        break
+
+    # Fallback: búsqueda libre en texto
+    text_lower = text.lower()
+    for grano_key, aliases in GRANOS_BUSCAR.items():
+        if grano_key in granos:
+            continue
+        for alias in aliases:
+            pattern = re.compile(
+                re.escape(alias) + r'[^0-9<]{0,60}?(\d[\d.,]{4,10})',
+                re.IGNORECASE
+            )
+            m = pattern.search(text_lower)
+            if m:
+                p = _parse_ar_num(m.group(1))
+                if p and 10000 < p < 2000000:
+                    granos[grano_key] = round(p)
+                    break
+
+    if granos:
+        for g, p in granos.items():
+            log.info(f"  ✓ BCR {g}: ${p:,}/tn")
+    else:
+        log.info("  ℹ BCR: sin precios extraídos")
+    return granos
+
+
+# ──────────────────────────────────────────────────────────────
+# 7c. Negocios — Google Sheets con Service Account
+# ──────────────────────────────────────────────────────────────
+
+# Ruta al archivo de credenciales de la Service Account
+# (relativa al script; también puede ser ruta absoluta)
+GSHEET_CREDENTIALS_FILE = Path(__file__).parent / "lector-robot-credentials.json"
+
+
+def _leer_hoja_api(sheet_id, nombre_hoja, creds_file):
+    """Lee una hoja usando Google Sheets API con Service Account.
+    Devuelve lista de dicts (una fila = un dict) o None si falla."""
+    try:
+        from google.oauth2.service_account import Credentials
+        from googleapiclient.discovery import build
+
+        scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        creds  = Credentials.from_service_account_file(str(creds_file), scopes=scopes)
+        service = build("sheets", "v4", credentials=creds, cache_discovery=False)
+        result  = service.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range=nombre_hoja
+        ).execute()
+        values = result.get("values", [])
+        if not values or len(values) < 2:
+            return []
+        headers = [str(h).strip().lower().replace(" ", "_") for h in values[0]]
+        rows = []
+        for row in values[1:]:
+            # Rellenar celdas vacías al final de la fila
+            row_padded = row + [""] * (len(headers) - len(row))
+            reg = {headers[i]: str(row_padded[i]).strip() for i in range(len(headers))
+                   if str(row_padded[i]).strip()}
+            if reg:
+                rows.append(reg)
+        return rows
+    except ImportError:
+        return None  # Librería no instalada
+    except Exception as e:
+        log.debug(f"    Google API error ({nombre_hoja}): {e}")
+        return None
+
+
+def leer_negocios_gsheet():
+    """Lee hojas CARGAS y COMPRAS usando Service Account.
+    Devuelve dict con listas de registros."""
+    import csv, io
+
+    resultado = {"ventas": [], "compras": [], "error": None}
+
+    # ── Intentar con Service Account (API) ─────────────────────
+    if GSHEET_CREDENTIALS_FILE.exists():
+        log.info(f"  → Usando credenciales: {GSHEET_CREDENTIALS_FILE.name}")
+        for hoja, clave in [("CARGAS", "ventas"), ("COMPRAS", "compras")]:
+            rows = _leer_hoja_api(GSHEET_ID, hoja, GSHEET_CREDENTIALS_FILE)
+            if rows is None:
+                # Librería no instalada
+                resultado["error"] = (
+                    "Instalar librerías: pip install google-auth google-api-python-client"
+                )
+                log.warning("  ⚠ Librerías de Google no instaladas. Ejecutar: "
+                            "pip install google-auth google-api-python-client")
+                break
+            resultado[clave] = rows
+            log.info(f"  ✓ Google Sheets API '{hoja}': {len(rows)} registros")
+        return resultado
+
+    # ── Fallback: CSV público (si la hoja fue publicada) ────────
+    log.info("  ℹ Credenciales no encontradas, intentando CSV público...")
+    for hoja, clave in [("CARGAS", "ventas"), ("COMPRAS", "compras")]:
+        url = GSHEET_CSV_BASE + hoja
+        text = _http_get(url, timeout=25)
+        if not text:
+            log.info(f"  ℹ Google Sheets hoja '{hoja}': no accesible")
+            resultado["error"] = (
+                "Colocar lector-robot-credentials.json en la carpeta de datos, "
+                "o publicar la hoja en web como CSV"
+            )
+            continue
+
+        try:
+            reader = csv.DictReader(io.StringIO(text))
+            rows = list(reader)
+            if not rows:
+                log.info(f"  ℹ Google Sheets hoja '{hoja}': vacía")
+                continue
+            registros = []
+            for row in rows:
+                reg = {k.strip().lower().replace(" ", "_"): v.strip() for k, v in row.items() if v.strip()}
+                if reg:
+                    registros.append(reg)
+            resultado[clave] = registros
+            log.info(f"  ✓ Google Sheets CSV '{hoja}': {len(registros)} registros")
+        except Exception as e:
+            log.warning(f"  ⚠ Error procesando '{hoja}': {e}")
+
+    return resultado
+
+
+def procesar_negocios(negocios_raw):
+    """Procesa los registros crudos de CARGAS y COMPRAS.
+    Busca columnas estándar: fecha, categoria, kg_cab, precio_kg,
+    precio_carne, kg_total, frigorífico, etc.
+    Devuelve resumen agrupado por categoría y frigorífico."""
+    import re
+
+    def buscar_col(row, *candidatos):
+        """Busca la primera columna que coincida con algún candidato."""
+        for cand in candidatos:
+            for k, v in row.items():
+                if cand in k.lower() and v:
+                    return v
+        return ""
+
+    ventas_proc  = []
+    compras_proc = []
+
+    for r in negocios_raw.get("ventas", []):
+        try:
+            fecha    = buscar_col(r, "fecha")
+            cat      = buscar_col(r, "categ", "categoria", "tipo")
+            kg_cab   = _parse_ar_num(buscar_col(r, "kg_cab", "kg/cab", "peso", "kg_prom")) or 0
+            precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c",
+                                                "precio_carne", "precio")) or 0
+            precio_p = _parse_ar_num(buscar_col(r, "precio_pie", "precio_vivo", "$/pie")) or 0
+            rinde    = _parse_ar_num(buscar_col(r, "rinde", "rendimiento", "rto")) or 0
+            frigo    = buscar_col(r, "frigorifico", "frigorífico", "destino", "comprador")
+            cabezas  = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 1
+
+            if fecha or precio or kg_cab:
+                ventas_proc.append({
+                    "fecha":     fecha,
+                    "categoria": cat,
+                    "kg_cab":    round(kg_cab, 1) if kg_cab else 0,
+                    "precio_carne": round(precio, 2) if precio else 0,
+                    "precio_pie":   round(precio_p, 2) if precio_p else 0,
+                    "rinde":     round(rinde, 3) if rinde else 0,
+                    "frigorífico": frigo,
+                    "cabezas":   int(cabezas),
+                })
+        except Exception:
+            pass
+
+    for r in negocios_raw.get("compras", []):
+        try:
+            fecha    = buscar_col(r, "fecha")
+            cat      = buscar_col(r, "categ", "categoria", "tipo")
+            kg_cab   = _parse_ar_num(buscar_col(r, "kg_cab", "kg/cab", "peso", "kg_prom")) or 0
+            precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
+            cabezas  = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 1
+            origen   = buscar_col(r, "origen", "vendedor", "proveedor", "campo")
+
+            if fecha or precio or kg_cab:
+                compras_proc.append({
+                    "fecha":     fecha,
+                    "categoria": cat,
+                    "kg_cab":    round(kg_cab, 1) if kg_cab else 0,
+                    "precio_kg": round(precio, 2) if precio else 0,
+                    "cabezas":   int(cabezas),
+                    "origen":    origen,
+                })
+        except Exception:
+            pass
+
+    # Resumen por categoría
+    resumen_cat = {}
+    for v in ventas_proc:
+        cat = v["categoria"] or "Sin categoría"
+        if cat not in resumen_cat:
+            resumen_cat[cat] = {"ventas": 0, "cabezas": 0, "precio_prom": [], "rinde_prom": []}
+        resumen_cat[cat]["ventas"]  += 1
+        resumen_cat[cat]["cabezas"] += v["cabezas"]
+        if v["precio_carne"]: resumen_cat[cat]["precio_prom"].append(v["precio_carne"])
+        if v["rinde"]:        resumen_cat[cat]["rinde_prom"].append(v["rinde"])
+
+    for k, v in resumen_cat.items():
+        pp = v["precio_prom"]
+        rp = v["rinde_prom"]
+        v["precio_promedio"] = round(sum(pp)/len(pp), 2) if pp else 0
+        v["rinde_promedio"]  = round(sum(rp)/len(rp), 4) if rp else 0
+        del v["precio_prom"], v["rinde_prom"]
+
+    # Resumen por frigorífico
+    resumen_frigo = {}
+    for v in ventas_proc:
+        frig = v["frigorífico"] or "Desconocido"
+        if frig not in resumen_frigo:
+            resumen_frigo[frig] = {"ventas": 0, "cabezas": 0, "precio_prom": []}
+        resumen_frigo[frig]["ventas"]  += 1
+        resumen_frigo[frig]["cabezas"] += v["cabezas"]
+        if v["precio_carne"]: resumen_frigo[frig]["precio_prom"].append(v["precio_carne"])
+
+    for k, v in resumen_frigo.items():
+        pp = v["precio_prom"]
+        v["precio_promedio"] = round(sum(pp)/len(pp), 2) if pp else 0
+        del v["precio_prom"]
+
+    return {
+        "ventas":        ventas_proc,
+        "compras":       compras_proc,
+        "resumen_cat":   resumen_cat,
+        "resumen_frigo": resumen_frigo,
+        "total_ventas":  len(ventas_proc),
+        "total_compras": len(compras_proc),
+    }
+
+
+# ──────────────────────────────────────────────────────────────
+# Función principal del módulo
+# ──────────────────────────────────────────────────────────────
+def actualizar_mercado_precios(carpeta, repo):
+    """Actualiza mercado_precios.json y negocios_resumen.json."""
+    from datetime import date
+    today = date.today().isoformat()
+    log.info(f"  Fecha: {today}")
+
+    # ── 1. Cargar JSON existente ────────────────────────────────
+    repo_json = Path(repo) / "mercado_precios.json" if repo else None
+    existing = {}
+    if repo_json and repo_json.exists():
+        try:
+            with open(repo_json, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception:
+            pass
+    elif (Path(carpeta) / "mercado_precios.json").exists():
+        try:
+            with open(Path(carpeta) / "mercado_precios.json", "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception:
+            pass
+
+    historico      = existing.get("historico", [])
+    insumos_ant    = existing.get("insumos", {})
+    comt_ant       = existing.get("commodities", [])
+
+    def _prev_com(nombre, default):
+        for c in comt_ant:
+            if c.get("nombre","").lower() == nombre.lower():
+                return c.get("precio", default)
+        return default
+
+    # ── 2. Hacienda — Cañuelas ──────────────────────────────────
+    log.info("  → Scraping Mercado de Cañuelas...")
+    hacienda = scrape_canuelas()
+    if not hacienda:
+        hacienda = existing.get("hacienda", [
+            {"categoria": "Novillo especial", "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Novillo",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Vaca",             "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Vaquillona",       "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Ternero",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Ternera",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Novillito",        "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+        ])
+        log.info("  ℹ Usando precios anteriores de hacienda")
+
+    # ── 3. Granos — BCR Pizarra ─────────────────────────────────
+    log.info("  → Scraping BCR Precios de Pizarra...")
+    granos = scrape_bcr_pizarra()
+    precio_maiz  = granos.get("maiz",  insumos_ant.get("maiz",  243150))
+    precio_soja  = granos.get("soja",  _prev_com("Soja",  390000))
+    precio_trigo = granos.get("trigo", _prev_com("Trigo", 230000))
+    precio_sorgo = granos.get("sorgo", _prev_com("Sorgo", 180000))
+
+    if not granos:
+        log.info("  ℹ Usando precios anteriores de granos")
+
+    # ── 4. Insumos (maíz como ancla, resto relaciones del Excel) ─
+    REL = {"gluten": 0.5385, "germen": 1.2227, "nucleo": 1.9342, "hominy": 0.8413}
+    insumos = {
+        "maiz":       precio_maiz,
+        "gluten":     round(precio_maiz * REL["gluten"]),
+        "nucleo":     round(precio_maiz * REL["nucleo"]),
+        "germen":     round(precio_maiz * REL["germen"]),
+        "hominy":     round(precio_maiz * REL["hominy"]),
+        "silo":       insumos_ant.get("silo",       155482),
+        "rollo":      insumos_ant.get("rollo",      25000),
+        "hoteleria":  insumos_ant.get("hoteleria",  310),
+        "sanidad":    insumos_ant.get("sanidad",    7500),
+        "flete_12tn": insumos_ant.get("flete_12tn", 2750),
+        "guias":      insumos_ant.get("guias",      1725),
+        "dolar":      insumos_ant.get("dolar",      1400),
+    }
+
+    commodities = [
+        {"nombre": "Maíz",  "precio": precio_maiz,  "unidad": "$/tn", "fuente": "BCR Pizarra"},
+        {"nombre": "Soja",  "precio": precio_soja,  "unidad": "$/tn", "fuente": "BCR Pizarra"},
+        {"nombre": "Trigo", "precio": precio_trigo, "unidad": "$/tn", "fuente": "BCR Pizarra"},
+        {"nombre": "Sorgo", "precio": precio_sorgo, "unidad": "$/tn", "fuente": "BCR Pizarra"},
+    ]
+
+    # ── 5. Negocios — Google Sheets ─────────────────────────────
+    log.info("  → Leyendo Google Sheets (negocios)...")
+    negocios_raw = leer_negocios_gsheet()
+    negocios     = procesar_negocios(negocios_raw)
+    log.info(f"  ✓ Negocios: {negocios['total_ventas']} ventas · {negocios['total_compras']} compras procesadas")
+
+    # ── 6. Histórico diario ─────────────────────────────────────
+    nov_precio = next((h["precio"] for h in hacienda
+                       if "novillo" in h["categoria"].lower()
+                       and "especial" not in h["categoria"].lower()), 0)
+    ter_precio = next((h["precio"] for h in hacienda
+                       if "ternero" in h["categoria"].lower()), 0)
+
+    hoy = {
+        "fecha":    today,
+        "maiz":     precio_maiz,
+        "soja":     precio_soja,
+        "novillo":  nov_precio,
+        "ternero":  ter_precio,
+    }
+    historico = [h for h in historico if h.get("fecha") != today]
+    historico.append(hoy)
+    historico = sorted(historico, key=lambda x: x.get("fecha", ""))[-365:]
+
+    # ── 7. Histórico Excel en OneDrive ──────────────────────────
+    log.info("  → Actualizando historico_precios.xlsx...")
+    actualizar_historico_excel(hacienda, commodities, carpeta, today)
+
+    # ── 8. Armar y guardar JSONs ────────────────────────────────
+    mercado_json = {
+        "fecha":       today,
+        "fuente":      "Cañuelas · BCR Cámara Arbitral",
+        "hacienda":    hacienda,
+        "commodities": commodities,
+        "insumos":     insumos,
+        "historico":   historico,
+    }
+
+    negocios_json = {
+        "fecha":          today,
+        "sheet_id":       GSHEET_ID,
+        "total_ventas":   negocios["total_ventas"],
+        "total_compras":  negocios["total_compras"],
+        "resumen_cat":    negocios["resumen_cat"],
+        "resumen_frigo":  negocios["resumen_frigo"],
+        "ventas":         negocios["ventas"],
+        "compras":        negocios["compras"],
+        "error":          negocios_raw.get("error"),
+    }
+
+    # Guardar en repo GitHub Pages
+    for fname, data in [("mercado_precios.json", mercado_json),
+                        ("negocios_resumen.json", negocios_json)]:
+        if repo_json:
+            dest = Path(repo) / fname
+            try:
+                with open(dest, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                log.info(f"  ✓ {fname} → repo ({dest})")
+            except Exception as e:
+                log.warning(f"  ⚠ No se pudo guardar {fname} en repo: {e}")
+
+        guardar(data, carpeta, fname)
+        log.info(f"  ✓ {fname} → OneDrive")
+
 
 if __name__ == "__main__":
     main()
