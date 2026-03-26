@@ -2908,6 +2908,7 @@ window.addEventListener('load', function(){
     <div class="nav-tab"        id="histTabHacienda"  onclick="histTab('hacienda',this)">📆 Mensual</div>
     <div class="nav-tab"        id="histTabInsumos"   onclick="histTab('insumos',this)">🌽 Insumos</div>
     <div class="nav-tab"        id="histTabFinanciero" onclick="histTab('financiero',this)">🏦 Posición Financiera</div>
+    <div class="nav-tab"        id="histTabReal"       onclick="histTab('real',this)">🐄 Real Mensual</div>
   </div>
 
   <div style="padding:32px 48px;background:var(--paper);min-height:calc(100vh - 200px)">
@@ -3019,6 +3020,41 @@ window.addEventListener('load', function(){
         </div>
         <div id="histFinancieroTabla" style="overflow-x:auto"></div>
       </div>
+    </div>
+
+    <!-- ── PANEL REAL MENSUAL (Módulo 9) ── -->
+    <div id="panelHistReal" style="display:none">
+
+      <!-- KPIs -->
+      <div id="histRealKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+
+      <!-- Gráfico masa kg PEGSA -->
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Masa PEGSA — Kg Proyectado</span>
+          <span class="section-sub">Por mes (Listado Caravanas)</span>
+        </div>
+        <div style="position:relative;height:260px"><canvas id="chartRealKgPegsa"></canvas></div>
+      </div>
+
+      <!-- Gráfico financiero disponible -->
+      <div class="panel" style="margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Posición Financiera Mensual</span>
+          <span class="section-sub">Disponible · Cartera · Emitidos · Hacienda</span>
+        </div>
+        <div style="position:relative;height:260px"><canvas id="chartRealFinanciero"></canvas></div>
+      </div>
+
+      <!-- Tabla completa -->
+      <div class="panel">
+        <div class="section-header">
+          <span class="section-title">Comportamiento Histórico Mensual</span>
+          <span class="section-sub">Hacienda · Insumos · Financiero</span>
+        </div>
+        <div id="histRealTabla" style="overflow-x:auto"></div>
+      </div>
+
     </div>
 
   </div>
@@ -6415,6 +6451,7 @@ function _tesRenderAcum(flujo){
 var _histData      = null;  // stock_historico.json  (mensual)
 var _histDiario    = null;  // stock_diario.json     (diario)
 var _histFinData   = null;  // financiero_historico.json
+var _histRealData  = null;  // comportamiento_historico.json (módulo 9)
 var _histFiltroAct = 'total';
 var _histDiarioPer = 30;    // días mostrados por defecto
 var _histDiarioFil = 'total';
@@ -6430,20 +6467,23 @@ function initHistorico(){
   Promise.all([
     fetch(base + 'stock_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(base + 'stock_diario.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
-    fetch(base + 'financiero_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    fetch(base + 'financiero_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(base + 'comportamiento_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
-    _histData    = results[0];
-    _histDiario  = results[1];
-    _histFinData = results[2];
+    _histData     = results[0];
+    _histDiario   = results[1];
+    _histFinData  = results[2];
+    _histRealData = results[3];
     _renderHistDiario(30, 'total');
     _renderHistHacienda('total');
     _renderHistInsumos();
     _renderHistFinanciero();
+    _renderHistReal();
   });
 }
 
 function histTab(name, el){
-  ['diario','hacienda','insumos','financiero'].forEach(function(p){
+  ['diario','hacienda','insumos','financiero','real'].forEach(function(p){
     document.getElementById('panelHist'+p.charAt(0).toUpperCase()+p.slice(1)).style.display = p===name?'block':'none';
   });
   document.querySelectorAll('#screenHistorico .nav-tab').forEach(function(t){t.classList.remove('active');});
@@ -6785,6 +6825,138 @@ function _renderHistFinanciero(){
       + '</tr>';
   });
   tabla.innerHTML = html + '</tbody></table>';
+}
+
+// ── REAL MENSUAL (Módulo 9) ──────────────────────────────────
+function _renderHistReal(){
+  var noData = '<div style="text-align:center;padding:60px 0;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">Sin datos de comportamiento histórico. Se generan al ejecutar el actualizador con archivos Listado_Caravanas.</div>';
+
+  // Guardar en variable global para re-render
+  if(!_histRealData || !_histRealData.snapshots || !_histRealData.snapshots.length){
+    document.getElementById('histRealKpis').innerHTML='';
+    document.getElementById('histRealTabla').innerHTML=noData;
+    return;
+  }
+
+  var snaps  = _histRealData.snapshots.slice().sort(function(a,b){ return a.fecha < b.fecha ? -1 : 1; });
+  var labels = snaps.map(function(s){ return s.periodo; });
+
+  // ── KPIs ──
+  var ultimo = snaps[snaps.length - 1];
+  var hm = ultimo.hacienda_masa || {};
+  var fin = ultimo.financiero || {};
+  var pegsa = (hm.pegsa) || {};
+  var kpis = [
+    { label:'Cabezas PEGSA', value: (pegsa.cabezas||0).toLocaleString('es-AR'), sub: 'último mes disponible' },
+    { label:'Masa PEGSA',    value: ((pegsa.kg_proyectado||0)/1000).toFixed(0)+' t', sub: 'kg proyectado' },
+    { label:'Disponible',    value: fin.disponible!=null ? '$\u00a0'+(Math.round(fin.disponible)/1000000).toFixed(1)+'M' : '—', sub: 'saldo líquido' },
+    { label:'Cobrar Hac.',   value: fin.cobrar_hacienda!=null ? '$\u00a0'+(Math.round(fin.cobrar_hacienda)/1000000).toFixed(1)+'M' : '—', sub: 'vtos a cobrar' },
+  ];
+  var kpiHtml = kpis.map(function(k){
+    return '<div class="kpi-card"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div></div>';
+  }).join('');
+  document.getElementById('histRealKpis').innerHTML = kpiHtml;
+
+  // ── Gráfico masa kg PEGSA por campo ──
+  var camposSet = {};
+  snaps.forEach(function(s){
+    var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+    Object.keys(pc).forEach(function(c){ camposSet[c]=1; });
+  });
+  var campos = Object.keys(camposSet);
+  var dsKg;
+  if(campos.length > 1){
+    dsKg = campos.map(function(campo, i){
+      return {
+        label: campo,
+        data: snaps.map(function(s){
+          var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+          return pc[campo] ? Math.round(pc[campo].kg_proyectado/1000) : 0;
+        }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length],
+        backgroundColor: 'rgba('+[184,146,42,39,97,61,45,106,138][i*3%9]+','+[184,146,42,39,97,61,45,106,138][i*3%9+1]+','+[184,146,42,39,97,61,45,106,138][i*3%9+2]+',.1)',
+        tension: .3, fill: i===0, pointRadius: 4, spanGaps: true
+      };
+    });
+  } else {
+    dsKg = [{
+      label: 'Masa PEGSA total (t)',
+      data: snaps.map(function(s){ return s.hacienda_masa && s.hacienda_masa.pegsa ? Math.round(s.hacienda_masa.pegsa.kg_proyectado/1000) : 0; }),
+      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.1)',
+      tension: .3, fill: true, pointRadius: 5
+    }];
+  }
+  _mkLineChart('chartRealKgPegsa', labels, dsKg, function(v){ return v.toFixed(0)+'t'; }, 'toneladas');
+
+  // ── Gráfico financiero ──
+  var dsDisp = {
+    label: 'Disponible ($M)',
+    data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.disponible||0)/1000000) : null; }),
+    borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.08)',
+    tension: .3, fill: true, pointRadius: 5, spanGaps: true
+  };
+  var dsCobrar = {
+    label: 'Cobrar Hacienda ($M)',
+    data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.cobrar_hacienda||0)/1000000) : null; }),
+    borderColor: '#2d6a8a', backgroundColor: 'transparent',
+    tension: .3, pointRadius: 4, spanGaps: true
+  };
+  var dsPagar = {
+    label: 'Pagar Hacienda ($M)',
+    data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.pagar_hacienda||0)/1000000)*-1 : null; }),
+    borderColor: '#c0392b', backgroundColor: 'transparent',
+    tension: .3, pointRadius: 4, spanGaps: true
+  };
+  _mkLineChart('chartRealFinanciero', labels, [dsDisp, dsCobrar, dsPagar], function(v){ return (v>=0?'':'−')+'$\u00a0'+Math.abs(v).toFixed(0)+'M'; }, '$ millones');
+
+  // ── Tabla completa ──
+  var thStyle = 'style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap;text-align:right"';
+  var thStyleL = 'style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap"';
+  var html = '<table class="data-table" style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th '+thStyleL+'>Periodo</th>'
+    + '<th '+thStyle+'>Cab. Total</th>'
+    + '<th '+thStyle+'>Cab. PEGSA</th>'
+    + '<th '+thStyle+'>Kg PEGSA (t)</th>'
+    + '<th '+thStyle+'>Disponible</th>'
+    + '<th '+thStyle+'>Cartera</th>'
+    + '<th '+thStyle+'>Emitidos</th>'
+    + '<th '+thStyle+'>Cobrar Hac.</th>'
+    + '<th '+thStyle+'>Pagar Hac.</th>'
+    + '<th '+thStyle+'>USD cant.</th>'
+    + '<th '+thStyle+'>LCG</th>'
+    + '<th '+thStyle+'>Tercio Bravo</th>'
+    + '<th '+thStyle+'>Insumos (t)</th>'
+    + '</tr></thead><tbody>';
+
+  snaps.slice().reverse().forEach(function(s){
+    var hm2 = s.hacienda_masa || {};
+    var fin2 = s.financiero || {};
+    var ins2 = s.insumos || {};
+    var pegsa2 = hm2.pegsa || {};
+    var disp = fin2.disponible != null ? fin2.disponible : null;
+    var dispColor = disp != null ? (disp >= 0 ? 'color:#27613d' : 'color:#c0392b') : '';
+    function fM(v){ return v != null ? '$\u00a0'+(Math.round(v)/1000000).toFixed(1)+'M' : '—'; }
+    function fN(v){ return v != null ? Math.round(v).toLocaleString('es-AR') : '—'; }
+
+    html += '<tr style="border-bottom:1px solid var(--border)">'
+      + '<td style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;padding:9px 10px;white-space:nowrap">'+s.periodo+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+(hm2.total_cabezas ? hm2.total_cabezas.toLocaleString('es-AR') : '—')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+(pegsa2.cabezas ? pegsa2.cabezas.toLocaleString('es-AR') : '—')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+(pegsa2.kg_proyectado ? (pegsa2.kg_proyectado/1000).toFixed(0)+'t' : '—')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px;font-weight:600;'+dispColor+'">'+fM(fin2.disponible)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+fM(fin2.cheques_cartera)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+fM(fin2.cheques_emitidos)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px;color:#27613d">'+fM(fin2.cobrar_hacienda)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px;color:#c0392b">'+fM(fin2.pagar_hacienda)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+(fin2.usd_cant ? Math.round(fin2.usd_cant).toLocaleString('es-AR')+' u' : '—')+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+fM(fin2.lcg != null && fin2.lcg !== 0 ? fin2.lcg : null)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+fM(fin2.tercio_bravo != null && fin2.tercio_bravo !== 0 ? fin2.tercio_bravo : null)+'</td>'
+      + '<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:9px 10px">'+(ins2.total_kg ? (ins2.total_kg/1000).toFixed(0)+'t' : '—')+'</td>'
+      + '</tr>';
+  });
+
+  document.getElementById('histRealTabla').innerHTML = html + '</tbody></table>';
 }
 </script>
 
