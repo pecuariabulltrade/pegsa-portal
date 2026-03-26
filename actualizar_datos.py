@@ -2356,71 +2356,98 @@ def main():
         log.warning(f"  ⚠ Módulo mercado falló: {e}")
         import traceback; log.warning(traceback.format_exc())
 
-    # ── MÓDULO 8 · SNAPSHOT HISTÓRICO MENSUAL ────────────────
-    separador("MÓDULO 8 · SNAPSHOT HISTÓRICO")
+    # ── MÓDULO 8 · HISTÓRICO MENSUAL (reconstrucción completa) ──
+    separador("MÓDULO 8 · HISTÓRICO MENSUAL")
     try:
+        import calendar as _cal
         _hist_path = Path(carpeta) / "stock_historico.json"
         _kpis_path = Path(carpeta) / f"stock_kpis_{periodo}.json"
         _ins_path  = Path(carpeta) / f"stock_insumos_{periodo}.json"
+        _mov_path  = Path(carpeta) / f"movimientos_{periodo}.json"
 
-        if _kpis_path.exists() and _ins_path.exists():
-            with open(_kpis_path, encoding="utf-8") as _f:
-                _kpis_raw = json.load(_f)
-            with open(_ins_path, encoding="utf-8") as _f:
-                _ins_raw  = json.load(_f)
+        if _kpis_path.exists() and _mov_path.exists():
+            with open(_kpis_path, encoding="utf-8") as _f: _kpis_raw = json.load(_f)
+            with open(_mov_path,  encoding="utf-8") as _f: _mov_raw  = json.load(_f)
+            _ins_raw = json.load(open(_ins_path, encoding="utf-8")) if _ins_path.exists() else {}
 
-            _k = _kpis_raw.get("kpis", {})
-            _mes_actual = datetime.now().strftime("%Y-%m")
-            _snap = {
-                "fecha":   datetime.now().strftime("%Y-%m-%d"),
-                "periodo": _mes_actual,
-                "hacienda": {
-                    "total_cabezas":     _k.get("total_cabezas", 0),
-                    "total_kg_estimado": _k.get("total_kg_estimado_hoy", 0),
-                    "por_propietario": {
-                        p: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
-                        for p, v in _k.get("por_propietario", {}).items()
+            _k      = _kpis_raw.get("kpis", {})
+            _anio   = _mov_raw.get("anio", {})
+            _ing_mes  = _anio.get("ingresos", {}).get("por_mes", {})
+            _egr_mes  = _anio.get("egresos",  {}).get("por_mes", {})
+            _ing_prop = _anio.get("ingresos", {}).get("por_propietario", {})
+            _egr_prop = _anio.get("egresos",  {}).get("por_propietario", {})
+            _ing_cat  = _anio.get("ingresos", {}).get("por_categoria", {})
+            _egr_cat  = _anio.get("egresos",  {}).get("por_categoria", {})
+
+            # Totales anuales para distribución proporcional
+            _tic = sum(v.get("cabezas",0) or 0 for v in _ing_prop.values()) or 1
+            _tec = sum(v.get("cabezas",0) or 0 for v in _egr_prop.values()) or 1
+            _tic2= sum(v.get("cabezas",0) or 0 for v in _ing_cat.values())  or 1
+            _tec2= sum(v.get("cabezas",0) or 0 for v in _egr_cat.values())  or 1
+
+            # Punto de anclaje: hoy
+            _stock_a = _k.get("total_cabezas", 0)
+            _kg_a    = _k.get("total_kg_estimado_hoy", 0)
+            _prop_a  = {p: v["cabezas"] for p,v in _k.get("por_propietario",{}).items()}
+            _cat_a   = {c: v.get("cabezas",0) for c,v in _k.get("por_categoria",{}).items()}
+
+            _hoy_str  = datetime.now().strftime("%Y-%m")
+            _all_meses= sorted(set(list(_ing_mes)+list(_egr_mes)))
+            _meses    = sorted([m for m in _all_meses if m <= _hoy_str], reverse=True)
+
+            _snaps = []
+            for _mes in _meses:
+                _ic = _ing_mes.get(_mes,{}).get("cabezas",0) or 0
+                _ec = _egr_mes.get(_mes,{}).get("cabezas",0) or 0
+                _ikg= _ing_mes.get(_mes,{}).get("kg",0)      or 0
+                _ekg= _egr_mes.get(_mes,{}).get("kg",0)      or 0
+
+                _y, _m = int(_mes[:4]), int(_mes[5:7])
+                _ld   = _cal.monthrange(_y, _m)[1]
+                _fecha= f"{_y:04d}-{_m:02d}-{_ld:02d}"
+
+                _pp = {p: {"cabezas": c, "kg_estimado": round(_kg_a * c / max(_stock_a,1))}
+                       for p,c in _prop_a.items()}
+                _pc = {c: {"cabezas": cab, "kg_estimado": round(_kg_a * cab / max(_stock_a,1))}
+                       for c,cab in _cat_a.items()}
+
+                _snaps.append({
+                    "fecha": _fecha, "periodo": _mes,
+                    "hacienda": {
+                        "total_cabezas":     _stock_a,
+                        "total_kg_estimado": max(0, round(_kg_a)),
+                        "por_propietario":   _pp,
+                        "por_categoria":     _pc,
                     },
-                    "por_establecimiento": {
-                        e: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
-                        for e, v in _k.get("por_establecimiento", {}).items()
-                    },
-                    "por_categoria": {
-                        c: {"cabezas": v.get("cabezas", 0), "kg_estimado": v.get("kg_estimado", 0)}
-                        for c, v in _k.get("por_categoria", {}).items()
-                    }
-                },
-                "insumos": {
-                    "total_kg": _ins_raw.get("total_kg", 0),
-                    "items": [
-                        {"nombre": it["nombre"], "stock_kg": it["stock_kg"]}
-                        for it in _ins_raw.get("insumos", [])
-                    ]
-                }
-            }
+                    "insumos": {
+                        "total_kg": _ins_raw.get("total_kg", 0),
+                        "items": [{"nombre": it["nombre"], "stock_kg": it["stock_kg"]}
+                                  for it in _ins_raw.get("insumos", [])]
+                    } if _mes == _hoy_str else {"total_kg": 0, "items": []}
+                })
 
-            # Leer historial existente y hacer upsert por periodo
-            _hist = {"generado": datetime.now().isoformat(), "snapshots": []}
-            if _hist_path.exists():
-                try:
-                    with open(_hist_path, encoding="utf-8") as _f:
-                        _hist = json.load(_f)
-                except Exception:
-                    pass
+                # Retroceder al mes anterior
+                _stock_a = max(0, _stock_a + _ec - _ic)
+                _kg_a    = max(0, _kg_a    + _ekg- _ikg)
+                _prop_a  = {p: max(0, round(c + (_egr_prop.get(p,{}).get("cabezas",0) or 0)/_tec*_ec
+                                              - (_ing_prop.get(p,{}).get("cabezas",0) or 0)/_tic*_ic))
+                            for p,c in _prop_a.items()}
+                _cat_a   = {c: max(0, round(cab + (_egr_cat.get(c,{}).get("cabezas",0) or 0)/_tec2*_ec
+                                              - (_ing_cat.get(c,{}).get("cabezas",0) or 0)/_tic2*_ic))
+                            for c,cab in _cat_a.items()}
 
-            _snaps = [s for s in _hist.get("snapshots", []) if s.get("periodo") != _mes_actual]
-            _snaps.append(_snap)
-            _snaps.sort(key=lambda s: s.get("periodo", ""))
-            _hist["snapshots"] = _snaps[-30:]
-            _hist["generado"]   = datetime.now().isoformat()
-
-            guardar(_hist, carpeta, "stock_historico.json")
-            log.info(f"  ✓ stock_historico.json — {len(_hist['snapshots'])} snapshots · último: {_mes_actual}")
+            _snaps.reverse()
+            _hist_out = {"generado": datetime.now().isoformat(), "fuente": "reconstruccion_sql",
+                         "snapshots": _snaps}
+            guardar(_hist_out, carpeta, "stock_historico.json")
+            log.info(f"  ✓ stock_historico.json — {len(_snaps)} meses reconstruidos "
+                     f"({_snaps[0]['periodo']} → {_snaps[-1]['periodo']})")
             resumen["modulos"]["historico"] = {
-                "ok": True, "snapshots": len(_hist["snapshots"]), "ultimo_periodo": _mes_actual,
+                "ok": True, "snapshots": len(_snaps),
+                "rango": f"{_snaps[0]['periodo']} → {_snaps[-1]['periodo']}"
             }
         else:
-            log.info("  ℹ stock_kpis o stock_insumos no encontrados — snapshot omitido")
+            log.info("  ℹ stock_kpis o movimientos no encontrados — histórico omitido")
             resumen["modulos"]["historico"] = {"ok": True, "snapshots": 0}
     except Exception as e:
         log.warning(f"  ⚠ Snapshot histórico falló: {e}")
