@@ -2993,6 +2993,26 @@ window.addEventListener('load', function(){
         <div style="position:relative;height:260px"><canvas id="chartRealKgPegsa"></canvas></div>
       </div>
 
+      <!-- Gráfico kg por cabeza -->
+      <div class="panel" style="display:block;margin-bottom:24px">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <span class="section-title">Kg por Cabeza — Evolución Mensual</span>
+            <span class="section-sub" id="realKgCabSub">Peso promedio proyectado por animal</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45)">Ver</span>
+            <select id="selRealKgCab" onchange="_renderRealKgCab(this.value)"
+              style="font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;color:var(--ink);cursor:pointer;min-width:160px">
+              <option value="pegsa" selected>PEGSA — total</option>
+              <option value="pegsa_campo">PEGSA — por campo</option>
+              <option value="total">Total general</option>
+            </select>
+          </div>
+        </div>
+        <div style="position:relative;height:260px"><canvas id="chartRealKgCab"></canvas></div>
+      </div>
+
       <!-- Gráfico financiero disponible -->
       <div class="panel" style="display:block;margin-bottom:24px">
         <div class="section-header">
@@ -6836,6 +6856,9 @@ function _renderHistReal(){
   }
   _mkLineChart('chartRealKgPegsa', labels, dsKg, function(v){ return v.toFixed(0)+'t'; }, 'toneladas');
 
+  // ── Gráfico kg por cabeza ──
+  _renderRealKgCab('pegsa');
+
   // ── Gráfico financiero ──
   var dsDisp = {
     label: 'Disponible ($M)',
@@ -6905,6 +6928,90 @@ function _renderHistReal(){
   });
 
   document.getElementById('histRealTabla').innerHTML = html + '</tbody></table>';
+}
+
+// ── KG POR CABEZA (Real Mensual) ─────────────────────────────
+function _renderRealKgCab(tipo){
+  if(!_histRealData || !_histRealData.snapshots || !_histRealData.snapshots.length) return;
+  var snaps  = _histRealData.snapshots.slice().sort(function(a,b){ return a.fecha<b.fecha?-1:1; });
+  var labels = snaps.map(function(s){ return s.periodo; });
+  var ds, subLabel;
+
+  if(tipo === 'pegsa_campo'){
+    // PEGSA desglosado por campo
+    var camposSet = {};
+    snaps.forEach(function(s){
+      var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+      Object.keys(pc).forEach(function(c){ camposSet[c]=1; });
+    });
+    var campos = Object.keys(camposSet);
+    ds = campos.map(function(campo, i){
+      return {
+        label: campo,
+        data: snaps.map(function(s){
+          var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+          var d = pc[campo];
+          if(!d || !d.cabezas || d.cabezas===0) return null;
+          return Math.round(d.kg_proyectado / d.cabezas);
+        }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length],
+        backgroundColor: 'transparent',
+        tension: .3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: true
+      };
+    });
+    subLabel = 'PEGSA · desglose por campo';
+
+  } else if(tipo === 'pegsa'){
+    // PEGSA total
+    ds = [{
+      label: 'PEGSA — kg / cabeza',
+      data: snaps.map(function(s){
+        var p = s.hacienda_masa && s.hacienda_masa.pegsa;
+        if(!p || !p.cabezas || p.cabezas===0) return null;
+        return Math.round(p.kg_proyectado / p.cabezas);
+      }),
+      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.12)',
+      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
+    }];
+    subLabel = 'PEGSA · promedio mensual por animal';
+
+  } else {
+    // Total general
+    ds = [{
+      label: 'Total — kg / cabeza',
+      data: snaps.map(function(s){
+        var hm = s.hacienda_masa || {};
+        if(!hm.total_cabezas || hm.total_cabezas===0) return null;
+        return Math.round((hm.total_kg||0) / hm.total_cabezas);
+      }),
+      borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.1)',
+      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
+    }];
+    subLabel = 'Total feedlot · promedio mensual por animal';
+  }
+
+  var sub = document.getElementById('realKgCabSub');
+  if(sub) sub.textContent = subLabel;
+
+  _destroyChart('chartRealKgCab');
+  var ctx = document.getElementById('chartRealKgCab');
+  if(!ctx) return;
+  _histCharts['chartRealKgCab'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: ds },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 14 } } },
+      scales: {
+        x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
+        y: {
+          ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toLocaleString('es-AR')+' kg'; } },
+          grid: { color: 'rgba(0,0,0,.06)' }
+        }
+      }
+    }
+  });
 }
 </script>
 
