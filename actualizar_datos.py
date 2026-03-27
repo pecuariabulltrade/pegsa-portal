@@ -1812,11 +1812,33 @@ def recalcular_stock_diario_desde_movimientos(
     log.info(f"  Ingresos últimas 5 fechas: {_sample_ing}")
     log.info(f"  Egresos  últimas 5 fechas: {_sample_egr}")
 
-    # ── 5. Running balance hacia atrás desde hoy ──────────────
+    # ── 5. Cargar historial acumulado de por_propietario ──────
+    # por_propietario se acumula día a día desde ejecuciones anteriores.
+    # No se reconstruye hacia atrás (el campo Hotelero en las vistas de
+    # movimientos puede no coincidir con los nombres en V_STOCK_HACIENDA).
+    # Estrategia: conservar histórico guardado; hoy se sobreescribe con la
+    # vista actual (siempre correcta).
+    _diario_path = Path(carpeta) / "stock_diario.json"
+    _hist_prop   = {}   # {fecha_str: {propietario: {cabezas, kg_estimado}}}
+    if _diario_path.exists():
+        try:
+            with open(_diario_path, encoding="utf-8") as _fh:
+                _old = json.load(_fh)
+            for _s in _old.get("snapshots", []):
+                _fs2 = _s.get("fecha", "")
+                _pp  = (_s.get("hacienda") or {}).get("por_propietario")
+                if _fs2 and _pp:
+                    _hist_prop[_fs2] = _pp
+        except Exception:
+            pass
+    # Hoy siempre desde la vista actual (dato fidedigno)
+    _hoy_str = hoy.strftime("%Y-%m-%d")
+    _hist_prop[_hoy_str] = prop_hoy
+    log.info(f"  por_propietario acumulado: {len(_hist_prop)} fechas con datos")
+
+    # ── 6. Running balance hacia atrás desde hoy ──────────────
     snapshots = []
-    cab_d  = total_cab_hoy
-    prop_d = {p: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
-              for p, v in prop_hoy.items()}
+    cab_d = total_cab_hoy
 
     for i in range(dias + 1):
         dia = hoy - _td(days=i)
@@ -1829,32 +1851,17 @@ def recalcular_stock_diario_desde_movimientos(
             egr_n   = egr_total.get(fs_next, 0)
             cab_d   = max(0, cab_d - ing_n + egr_n)
 
-            # Por propietario (Hotelero)
-            all_props = (set(prop_d.keys())
-                         | set(ing_prop.get(fs_next, {}).keys())
-                         | set(egr_prop.get(fs_next, {}).keys()))
-            new_prop = {}
-            for p in all_props:
-                cab_p = prop_d.get(p, {}).get("cabezas", 0)
-                delta = -ing_prop.get(fs_next, {}).get(p, 0) + egr_prop.get(fs_next, {}).get(p, 0)
-                new_c = max(0, cab_p + delta)
-                if new_c > 0:
-                    new_prop[p] = {"cabezas": new_c,
-                                   "kg_estimado": int(new_c * avg_kg_hoy)}
-            prop_d = new_prop
-
-        kg_d = int(cab_d * avg_kg_hoy)
+        kg_d      = int(cab_d * avg_kg_hoy)
+        prop_snap = _hist_prop.get(fs, {})   # datos reales si existen
 
         snapshots.append({
             "fecha": fs,
             "hacienda": {
                 "total_cabezas":       int(cab_d),
                 "total_kg_estimado":   kg_d,
-                "por_propietario":     {p: {"cabezas": v["cabezas"],
-                                            "kg_estimado": v["kg_estimado"]}
-                                        for p, v in prop_d.items()},
-                "por_establecimiento": {},   # solo disponible en snapshot actual
-                "por_categoria":       {}    # solo disponible en snapshot actual
+                "por_propietario":     prop_snap,
+                "por_establecimiento": {},
+                "por_categoria":       {}
             }
         })
 

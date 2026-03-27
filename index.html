@@ -2904,11 +2904,9 @@ window.addEventListener('load', function(){
 
   <!-- Sub-tabs -->
   <div class="nav-tabs" style="position:sticky;top:0;z-index:100">
-    <div class="nav-tab active" id="histTabDiario"    onclick="histTab('diario',this)">📅 Evolución Diaria</div>
-    <div class="nav-tab"        id="histTabHacienda"  onclick="histTab('hacienda',this)">📆 Mensual</div>
-    <div class="nav-tab"        id="histTabInsumos"   onclick="histTab('insumos',this)">🌽 Insumos</div>
-    <div class="nav-tab"        id="histTabFinanciero" onclick="histTab('financiero',this)">🏦 Posición Financiera</div>
-    <div class="nav-tab"        id="histTabReal"       onclick="histTab('real',this)">🐄 Real Mensual</div>
+    <div class="nav-tab active" id="histTabDiario"  onclick="histTab('diario',this)">📅 Evolución Diaria</div>
+    <div class="nav-tab"        id="histTabInsumos" onclick="histTab('insumos',this)">🌽 Insumos</div>
+    <div class="nav-tab"        id="histTabReal"    onclick="histTab('real',this)">🐄 Real Mensual</div>
   </div>
 
   <div style="padding:32px 48px;background:var(--paper);min-height:calc(100vh - 200px)">
@@ -2917,20 +2915,26 @@ window.addEventListener('load', function(){
     <div id="panelHistDiario" style="display:block">
 
       <!-- Selector de período y filtros -->
-      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:24px">
-        <div>
-          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:6px">Período:</span>
-          <button class="hist-filter active" id="dPer30"  onclick="histDiarioPeriodo(30,this)">30 días</button>
-          <button class="hist-filter"        id="dPer60"  onclick="histDiarioPeriodo(60,this)">60 días</button>
-          <button class="hist-filter"        id="dPer90"  onclick="histDiarioPeriodo(90,this)">90 días</button>
-          <button class="hist-filter"        id="dPerAll" onclick="histDiarioPeriodo(0,this)">Todo</button>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45)">Período</span>
+          <select id="selDiarioPer" onchange="histDiarioPeriodo(parseInt(this.value))"
+            style="font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;color:var(--ink);cursor:pointer;min-width:140px">
+            <option value="30">Últimos 30 días</option>
+            <option value="60">Últimos 60 días</option>
+            <option value="90">Últimos 90 días</option>
+            <option value="180">Últimos 6 meses</option>
+            <option value="0">Todo el historial</option>
+          </select>
         </div>
-        <div>
-          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:6px">Ver por:</span>
-          <button class="hist-filter active" id="dFTotal" onclick="histDiarioFiltro('total',this)">Total</button>
-          <button class="hist-filter"        id="dFProp"  onclick="histDiarioFiltro('propietario',this)">Propietario</button>
-          <button class="hist-filter"        id="dFEst"   onclick="histDiarioFiltro('establecimiento',this)">Establecimiento</button>
-          <button class="hist-filter"        id="dFCat"   onclick="histDiarioFiltro('categoria',this)">Categoría</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45)">Ver por</span>
+          <select id="selDiarioFil" onchange="histDiarioFiltro(this.value)"
+            style="font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;color:var(--ink);cursor:pointer;min-width:170px">
+            <option value="total">Total general</option>
+            <option value="propietario">Propietario / Hotelero</option>
+            <option value="establecimiento">Establecimiento</option>
+          </select>
         </div>
       </div>
 
@@ -2956,36 +2960,6 @@ window.addEventListener('load', function(){
       </div>
     </div>
 
-    <!-- ── PANEL HACIENDA (mensual) ── -->
-    <div id="panelHistHacienda" style="display:none">
-      <!-- Filtros -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;align-items:center">
-        <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-right:4px">Ver por:</span>
-        <button class="hist-filter active" id="hfTotal"          onclick="histFiltro('total',this)">Total</button>
-        <button class="hist-filter"        id="hfPropietario"    onclick="histFiltro('propietario',this)">Por Propietario</button>
-        <button class="hist-filter"        id="hfEstablecimiento" onclick="histFiltro('establecimiento',this)">Por Establecimiento</button>
-        <button class="hist-filter"        id="hfCategoria"      onclick="histFiltro('categoria',this)">Por Categoría</button>
-      </div>
-
-      <!-- Gráfico cabezas -->
-      <div class="panel" style="margin-bottom:24px">
-        <div class="section-header">
-          <span class="section-title">Cabezas en Stock</span>
-          <span class="section-sub" id="histHacSub">Evolución mensual · total</span>
-        </div>
-        <div style="position:relative;height:280px"><canvas id="chartHistCabezas"></canvas></div>
-      </div>
-
-      <!-- Gráfico kg -->
-      <div class="panel" style="margin-bottom:24px">
-        <div class="section-header">
-          <span class="section-title">Kilogramos Estimados</span>
-          <span class="section-sub">Evolución mensual</span>
-        </div>
-        <div style="position:relative;height:280px"><canvas id="chartHistKg"></canvas></div>
-      </div>
-    </div>
-
     <!-- ── PANEL INSUMOS ── -->
     <div id="panelHistInsumos" style="display:none">
       <div class="panel" style="margin-bottom:24px">
@@ -3001,24 +2975,6 @@ window.addEventListener('load', function(){
           <span class="section-sub">Evolución mensual por tipo</span>
         </div>
         <div style="position:relative;height:320px"><canvas id="chartHistInsumoDetalle"></canvas></div>
-      </div>
-    </div>
-
-    <!-- ── PANEL FINANCIERO ── -->
-    <div id="panelHistFinanciero" style="display:none">
-      <div class="panel" style="margin-bottom:24px">
-        <div class="section-header">
-          <span class="section-title">Posición Líquida</span>
-          <span class="section-sub">Saldo disponibilidades por corte</span>
-        </div>
-        <div style="position:relative;height:280px"><canvas id="chartHistFinanciero"></canvas></div>
-      </div>
-      <!-- Tabla de cortes -->
-      <div class="panel">
-        <div class="section-header">
-          <span class="section-title">Detalle de Cortes</span>
-        </div>
-        <div id="histFinancieroTabla" style="overflow-x:auto"></div>
       </div>
     </div>
 
@@ -6467,25 +6423,19 @@ function initHistorico(){
   _histInited = true;
   var base = window.DATA_BASE_URL || 'https://raw.githubusercontent.com/pecuariabulltrade/pegsa-portal/main/';
   Promise.all([
-    fetch(base + 'stock_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(base + 'stock_diario.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
-    fetch(base + 'financiero_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(base + 'comportamiento_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
-    _histData     = results[0];
-    _histDiario   = results[1];
-    _histFinData  = results[2];
-    _histRealData = results[3];
+    _histDiario   = results[0];
+    _histRealData = results[1];
     _renderHistDiario(30, 'total');
-    _renderHistHacienda('total');
     _renderHistInsumos();
-    _renderHistFinanciero();
     _renderHistReal();
   });
 }
 
 function histTab(name, el){
-  ['diario','hacienda','insumos','financiero','real'].forEach(function(p){
+  ['diario','insumos','real'].forEach(function(p){
     document.getElementById('panelHist'+p.charAt(0).toUpperCase()+p.slice(1)).style.display = p===name?'block':'none';
   });
   document.querySelectorAll('#screenHistorico .nav-tab').forEach(function(t){t.classList.remove('active');});
@@ -6534,16 +6484,12 @@ function _mkLineChart(canvasId, labels, datasets, yFmt, yTitle){
 }
 
 // ── DIARIO ──────────────────────────────────────────────────
-function histDiarioPeriodo(dias, el){
+function histDiarioPeriodo(dias){
   _histDiarioPer = dias;
-  document.querySelectorAll('#dPer30,#dPer60,#dPer90,#dPerAll').forEach(function(b){b.classList.remove('active');});
-  if(el) el.classList.add('active');
   _renderHistDiario(_histDiarioPer, _histDiarioFil);
 }
-function histDiarioFiltro(tipo, el){
+function histDiarioFiltro(tipo){
   _histDiarioFil = tipo;
-  document.querySelectorAll('#dFTotal,#dFProp,#dFEst,#dFCat').forEach(function(b){b.classList.remove('active');});
-  if(el) el.classList.add('active');
   _renderHistDiario(_histDiarioPer, _histDiarioFil);
 }
 
@@ -6732,8 +6678,8 @@ function _renderHistHacienda(tipo){
 }
 
 function _renderHistInsumos(){
-  if(!_histData || !_histData.snapshots || !_histData.snapshots.length) return;
-  var snaps  = _histData.snapshots;
+  if(!_histRealData || !_histRealData.snapshots || !_histRealData.snapshots.length) return;
+  var snaps  = _histRealData.snapshots;
   var labels = snaps.map(function(s){ return s.periodo; });
 
   // Total kg
