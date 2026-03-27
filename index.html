@@ -2981,8 +2981,41 @@ window.addEventListener('load', function(){
     <!-- ── PANEL REAL MENSUAL (Módulo 9) ── -->
     <div id="panelHistReal" style="display:none">
 
-      <!-- KPIs -->
+      <!-- KPIs hacienda -->
       <div id="histRealKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+
+      <!-- ── Valuación en Pesos ── -->
+      <div id="panelValuacion">
+        <!-- KPIs valuación último mes -->
+        <div id="valKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+
+        <!-- Gráfico stacked: composición del patrimonio -->
+        <div class="panel" style="display:block;margin-bottom:24px">
+          <div class="section-header">
+            <span class="section-title">Valuación Total en Pesos — Composición</span>
+            <span class="section-sub">Hacienda PEGSA · Insumos · Posición Financiera · USD</span>
+          </div>
+          <div style="position:relative;height:300px"><canvas id="chartValStack"></canvas></div>
+        </div>
+
+        <!-- Gráfico línea: total acumulado -->
+        <div class="panel" style="display:block;margin-bottom:24px">
+          <div class="section-header">
+            <span class="section-title">Patrimonio Total — Evolución Mensual</span>
+            <span class="section-sub">Suma de todos los componentes valuados</span>
+          </div>
+          <div style="position:relative;height:240px"><canvas id="chartValTotal"></canvas></div>
+        </div>
+
+        <!-- Tabla precios de referencia -->
+        <div class="panel" style="display:block;margin-bottom:24px">
+          <div class="section-header">
+            <span class="section-title">Precios de Referencia Mensuales</span>
+            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton)</span>
+          </div>
+          <div id="valTablaPrecios" style="overflow-x:auto"></div>
+        </div>
+      </div>
 
       <!-- Gráfico masa kg PEGSA -->
       <div class="panel" style="display:block;margin-bottom:24px">
@@ -6448,6 +6481,7 @@ var _histData      = null;  // stock_historico.json  (mensual)
 var _histDiario    = null;  // stock_diario.json     (diario)
 var _histFinData   = null;  // financiero_historico.json
 var _histRealData  = null;  // comportamiento_historico.json (módulo 9)
+var _valData       = null;  // valuacion_historica.json (módulo 10)
 var _histFiltroAct = 'total';
 var _histDiarioPer = 30;    // días mostrados por defecto
 var _histDiarioFil = 'total';
@@ -6462,10 +6496,12 @@ function initHistorico(){
   var base = window.DATA_BASE_URL || 'https://raw.githubusercontent.com/pecuariabulltrade/pegsa-portal/main/';
   Promise.all([
     fetch(base + 'stock_diario.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
-    fetch(base + 'comportamiento_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    fetch(base + 'comportamiento_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
+    fetch(base + 'valuacion_historica.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
   ]).then(function(results){
     _histDiario   = results[0];
     _histRealData = results[1];
+    _valData      = results[2];
     _renderHistDiario(30, 'total');
     _renderHistInsumos();
     _renderHistReal();
@@ -6874,6 +6910,9 @@ function _renderHistReal(){
   }
   _mkLineChart('chartRealKgPegsa', labels, dsKg, function(v){ return v.toFixed(0)+'t'; }, 'toneladas');
 
+  // ── Valuación en pesos ──
+  _renderValuacion();
+
   // ── Gráfico kg por cabeza ──
   _renderRealKgCab('pegsa');
 
@@ -6949,6 +6988,137 @@ function _renderHistReal(){
   });
 
   document.getElementById('histRealTabla').innerHTML = html + '</tbody></table>';
+}
+
+// ── VALUACIÓN EN PESOS (Módulo 10) ──────────────────────────
+function _renderValuacion(){
+  var panel = document.getElementById('panelValuacion');
+  if(!panel) return;
+
+  if(!_valData || !_valData.snapshots || !_valData.snapshots.length){
+    panel.innerHTML = '<div style="text-align:center;padding:40px;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">Valuación en pesos pendiente — se genera en la próxima ejecución del actualizador.</div>';
+    return;
+  }
+
+  var snaps  = _valData.snapshots.slice().sort(function(a,b){ return a.periodo<b.periodo?-1:1; });
+  var labels = snaps.map(function(s){ return s.periodo; });
+
+  function fM(v){
+    if(v==null) return '—';
+    var abs = Math.abs(v), sign = v<0?'−':'';
+    if(abs>=1e9)  return sign+'$\u00a0'+(abs/1e9).toFixed(2)+'B';
+    if(abs>=1e6)  return sign+'$\u00a0'+(abs/1e6).toFixed(1)+'M';
+    return sign+'$\u00a0'+Math.round(abs).toLocaleString('es-AR');
+  }
+  function fKg(v){ return v ? (v/1000).toFixed(0)+'t' : '—'; }
+
+  // ── KPIs último mes disponible ──
+  var ult = snaps[snaps.length-1];
+  var c   = ult.componentes || {};
+  var pr  = ult.precios || {};
+  var kpiDefs = [
+    { label:'Hacienda PEGSA',   value: fM(c.hacienda_pesos),   sub: (pr.mag_indice ? '@ $'+pr.mag_indice.toFixed(0)+'/kg MAG' : 'índice MAG') },
+    { label:'Insumos (M+S)',    value: fM(c.insumos_pesos),    sub: fKg(c.maiz_kg)+' maíz · '+fKg(c.soja_kg)+' soja' },
+    { label:'Pos. Financiera',  value: fM(c.financiero_pesos), sub: 'disp + cartera − emit + hac + otras' },
+    { label:'Patrimonio Total', value: fM(c.total_pesos),      sub: ult.periodo+' · todos los componentes' },
+  ];
+  var kpiHtml = kpiDefs.map(function(k){
+    var isTotal = k.label==='Patrimonio Total';
+    return '<div style="background:'+(isTotal?'var(--ink)':'#fff')+';border:1px solid var(--border);border-radius:2px;padding:14px 18px">'
+      +'<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:'+(isTotal?'rgba(255,255,255,.5)':'rgba(26,22,18,.45)')+';margin-bottom:6px">'+k.label+'</div>'
+      +'<div style="font-family:\'Playfair Display\',serif;font-size:20px;font-weight:700;color:'+(isTotal?'#d4a84b':'var(--ink)')+'">'+k.value+'</div>'
+      +'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:'+(isTotal?'rgba(255,255,255,.4)':'rgba(26,22,18,.5)')+';margin-top:4px">'+k.sub+'</div>'
+      +'</div>';
+  }).join('');
+  document.getElementById('valKpis').innerHTML = kpiHtml;
+
+  // ── Gráfico stacked barras ──
+  var colores = {
+    hacienda:   { bg: 'rgba(184,146,42,.8)',  border: '#b8922a' },
+    insumos:    { bg: 'rgba(39,97,61,.75)',   border: '#27613d' },
+    financiero: { bg: 'rgba(45,106,138,.75)', border: '#2d6a8a' },
+    usd:        { bg: 'rgba(138,45,138,.7)',  border: '#8a2d8a' },
+  };
+  var dsStack = [
+    { label: 'Hacienda PEGSA', data: snaps.map(function(s){ return s.componentes.hacienda_pesos!=null ? Math.round(s.componentes.hacienda_pesos/1e6) : null; }),
+      backgroundColor: colores.hacienda.bg, borderColor: colores.hacienda.border, borderWidth:1, borderRadius:2 },
+    { label: 'Insumos (M+S)',  data: snaps.map(function(s){ return s.componentes.insumos_pesos!=null ? Math.round(s.componentes.insumos_pesos/1e6) : null; }),
+      backgroundColor: colores.insumos.bg, borderColor: colores.insumos.border, borderWidth:1, borderRadius:2 },
+    { label: 'Pos. Financiera', data: snaps.map(function(s){ return s.componentes.financiero_pesos!=null ? Math.round(s.componentes.financiero_pesos/1e6) : null; }),
+      backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2 },
+    { label: 'USD (en $)',      data: snaps.map(function(s){ return s.componentes.usd_pesos!=null ? Math.round(s.componentes.usd_pesos/1e6) : null; }),
+      backgroundColor: colores.usd.bg, borderColor: colores.usd.border, borderWidth:1, borderRadius:2 },
+  ];
+  _destroyChart('chartValStack');
+  var ctxS = document.getElementById('chartValStack');
+  if(ctxS){
+    _histCharts['chartValStack'] = new Chart(ctxS, {
+      type: 'bar',
+      data: { labels: labels, datasets: dsStack },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { position:'bottom', labels:{ font:{family:'DM Mono',size:11}, boxWidth:12, padding:14 } },
+          tooltip: { callbacks: { label: function(ctx){ return ' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString('es-AR')+'M'; } } }
+        },
+        scales: {
+          x: { stacked:true, ticks:{ font:{family:'DM Mono',size:10}, maxRotation:0 }, grid:{ display:false } },
+          y: { stacked:true, ticks:{ font:{family:'DM Mono',size:10}, callback:function(v){ return '$'+v.toLocaleString('es-AR')+'M'; } }, grid:{color:'rgba(0,0,0,.06)'} }
+        }
+      }
+    });
+  }
+
+  // ── Gráfico total línea ──
+  var dsTotal = [{
+    label: 'Patrimonio total ($M)',
+    data: snaps.map(function(s){ return s.componentes.total_pesos!=null ? Math.round(s.componentes.total_pesos/1e6) : null; }),
+    borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.1)',
+    tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
+  }];
+  _destroyChart('chartValTotal');
+  var ctxT = document.getElementById('chartValTotal');
+  if(ctxT){
+    _histCharts['chartValTotal'] = new Chart(ctxT, {
+      type: 'line',
+      data: { labels: labels, datasets: dsTotal },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: { legend:{ display:false } },
+        scales: {
+          x: { ticks:{ font:{family:'DM Mono',size:10}, maxRotation:0 }, grid:{color:'rgba(0,0,0,.04)'} },
+          y: { ticks:{ font:{family:'DM Mono',size:10}, callback:function(v){ return '$'+v.toLocaleString('es-AR')+'M'; } }, grid:{color:'rgba(0,0,0,.06)'} }
+        }
+      }
+    });
+  }
+
+  // ── Tabla de precios de referencia ──
+  var thS = 'style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);text-align:right;white-space:nowrap"';
+  var thL = 'style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border)"';
+  var html = '<table class="data-table" style="width:100%;border-collapse:collapse">'
+    +'<thead><tr><th '+thL+'>Período</th><th '+thS+'>Índice MAG ($/kg)</th><th '+thS+'>Maíz BCR ($/ton)</th><th '+thS+'>Soja BCR ($/ton)</th>'
+    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>USD (en $)</th><th '+thS+'>Total</th></tr></thead><tbody>';
+
+  snaps.slice().reverse().forEach(function(s){
+    var p = s.precios||{}, c2 = s.componentes||{};
+    var tdR = 'style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;padding:8px 10px;border-bottom:1px solid var(--border)"';
+    var tdL = 'style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap"';
+    html += '<tr>'
+      +'<td '+tdL+'>'+s.periodo+'</td>'
+      +'<td '+tdR+'>'+(p.mag_indice!=null ? p.mag_indice.toLocaleString('es-AR',{minimumFractionDigits:3}) : '—')+'</td>'
+      +'<td '+tdR+'>'+(p.bcr_maiz_ton!=null ? Math.round(p.bcr_maiz_ton).toLocaleString('es-AR') : '—')+'</td>'
+      +'<td '+tdR+'>'+(p.bcr_soja_ton!=null ? Math.round(p.bcr_soja_ton).toLocaleString('es-AR') : '—')+'</td>'
+      +'<td '+tdR+'>'+fM(c2.hacienda_pesos)+'</td>'
+      +'<td '+tdR+'>'+fM(c2.insumos_pesos)+'</td>'
+      +'<td '+tdR+'>'+fM(c2.financiero_pesos)+'</td>'
+      +'<td '+tdR+'>'+fM(c2.usd_pesos)+'</td>'
+      +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--gold)">'+fM(c2.total_pesos)+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('valTablaPrecios').innerHTML = html+'</tbody></table>';
 }
 
 // ── INSUMOS (Real Mensual) ───────────────────────────────────

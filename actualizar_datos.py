@@ -1695,6 +1695,288 @@ def procesar_consumo(regs, cols, periodo):
     }
 
 # ═══════════════════════════════════════════════════════════
+#  MÓDULO 10 · VALUACIÓN EN PESOS
+#  Scraping de precios externos:
+#   · MAG  → Índice Arrendamiento ($/kg hacienda) por mes
+#   · BCR  → Precio pizarra promedio Maíz y Soja ($/ton) por mes
+#  Calcula valuación total mensual: Hacienda + Insumos + Financiero + USD
+# ═══════════════════════════════════════════════════════════
+
+def _ar_num(s):
+    """Convierte número formato argentino '1.234.567,89' a float."""
+    if s is None:
+        return None
+    s = str(s).strip().replace('\xa0', '').replace(' ', '')
+    if not s or s == '-' or s == '—':
+        return None
+    try:
+        return float(s.replace('.', '').replace(',', '.'))
+    except ValueError:
+        return None
+
+
+def _mes_rango(periodo_str):
+    """
+    Dado 'YYYY-MM' devuelve (primer_dia, ultimo_dia) como datetime.date.
+    """
+    import calendar
+    from datetime import date as _date
+    year, month = int(periodo_str[:4]), int(periodo_str[5:7])
+    ultimo = calendar.monthrange(year, month)[1]
+    return _date(year, month, 1), _date(year, month, ultimo)
+
+
+def _html_tabla(html_bytes, encoding='latin-1'):
+    """
+    Extrae filas de la primera tabla HTML encontrada.
+    Devuelve lista de listas de strings (texto de cada celda).
+    """
+    from html.parser import HTMLParser
+
+    class _TP(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.rows, self._row, self._cell, self._in = [], [], [], False
+        def handle_starttag(self, tag, attrs):
+            if tag in ('td', 'th'):
+                self._in = True; self._cell = []
+            elif tag == 'tr':
+                self._row = []
+        def handle_endtag(self, tag):
+            if tag in ('td', 'th'):
+                self._row.append(''.join(self._cell).strip()); self._in = False
+            elif tag == 'tr':
+                if self._row:
+                    self.rows.append(self._row)
+        def handle_data(self, data):
+            if self._in:
+                self._cell.append(data)
+
+    for enc in (encoding, 'utf-8', 'latin-1', 'cp1252'):
+        try:
+            txt = html_bytes.decode(enc, errors='replace')
+            break
+        except Exception:
+            continue
+
+    p = _TP()
+    p.feed(txt)
+    return p.rows
+
+
+def _scrap_mag_indice(periodo_str):
+    """
+    Scraping MAG: devuelve Índice Arrendamiento promedio del mes ($/kg hacienda)
+    para el período 'YYYY-MM'.  Retorna float o None si no hay datos.
+    """
+    import urllib.request, urllib.parse
+
+    primer, ultimo = _mes_rango(periodo_str)
+    fi = primer.strftime('%d/%m/%Y')
+    ff = ultimo.strftime('%d/%m/%Y')
+
+    payload = urllib.parse.urlencode({
+        'ID': '', 'CP': '', 'FLASH': '',
+        'USUARIO': 'SIN IDENTIFICAR',
+        'OPCIONMENU': '', 'OPCIONSUBMENU': '',
+        'txtFechaIni': fi,
+        'txtFechaFin': ff,
+    }).encode('utf-8')
+
+    url = 'https://www.mercadoagroganadero.com.ar/dll/hacienda2.dll/haciinfo000013'
+    try:
+        req = urllib.request.Request(url, data=payload, method='POST')
+        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; PEGSA-Bot/1.0)')
+        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read()
+    except Exception as e:
+        log.warning(f'    MAG request error ({periodo_str}): {e}')
+        return None
+
+    filas = _html_tabla(raw, encoding='latin-1')
+    # Buscar fila "Totales" → columna 3 = Índice Arrendamiento
+    # Encabezado: Fecha | Cab. ingresadas | Importe | Índice Arrendamiento | Variación
+    for fila in filas:
+        if fila and 'total' in fila[0].lower():
+            if len(fila) >= 4:
+                val = _ar_num(fila[3])
+                if val:
+                    log.info(f'    MAG {periodo_str}: índice={val:,.3f} $/kg')
+                    return val
+    log.warning(f'    MAG {periodo_str}: sin datos en la tabla')
+    return None
+
+
+def _scrap_bcr_precio(product_id, nombre, periodo_str):
+    """
+    Scraping BCR Cámara Arbitral: precio pizarra promedio mensual ($/ton).
+    product_id: 3=Maíz, 13=Soja
+    Retorna float ($/ton) o None.
+    """
+    import urllib.request
+
+    primer, ultimo = _mes_rango(periodo_str)
+    ds = primer.strftime('%Y-%m-%d')
+    de = ultimo.strftime('%Y-%m-%d')
+
+    url = (f'https://www.cac.bcr.com.ar/es/precios-de-pizarra/consultas'
+           f'?product={product_id}&type=average&date_start={ds}&date_end={de}')
+    try:
+        req = urllib.request.Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; PEGSA-Bot/1.0)')
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read()
+    except Exception as e:
+        log.warning(f'    BCR {nombre} request error ({periodo_str}): {e}')
+        return None
+
+    filas = _html_tabla(raw, encoding='utf-8')
+    # Estructura: [nombre], [Fecha Desde, Fecha Hasta, Promedio], [val, val, PRECIO]
+    for fila in filas:
+        if len(fila) >= 3 and fila[0].startswith('0') and '/' in fila[0]:
+            # Fila de datos: primera celda es una fecha
+            val = _ar_num(fila[2])
+            if val:
+                log.info(f'    BCR {nombre} {periodo_str}: {val:,.2f} $/ton')
+                return val
+    log.warning(f'    BCR {nombre} {periodo_str}: sin datos')
+    return None
+
+
+def actualizar_valuacion(carpeta, snaps_historico):
+    """
+    Calcula la valuación mensual en pesos para cada snapshot histórico.
+    Componentes:
+      · Hacienda PEGSA = kg_pegsa × indice_MAG ($/kg)
+      · Insumos        = kg_maiz × precio_maiz/ton + kg_soja × precio_soja/ton
+      · Financiero     = disponible + cartera - emitidos + cobrar_hac - pagar_hac + lcg + tercio
+      · USD            = usd_ars (ya convertido al TC del mes)
+    Cachea precios scrapeados para no re-consultar períodos ya guardados.
+    """
+    val_path = Path(carpeta) / 'valuacion_historica.json'
+
+    # ── Cargar caché existente ──
+    cache = {}   # {periodo_str: {mag, bcr_maiz, bcr_soja}}
+    val_snaps_prev = {}   # {periodo_str: snap guardado}
+    if val_path.exists():
+        try:
+            with open(val_path, encoding='utf-8') as _f:
+                _old = json.load(_f)
+            for _s in _old.get('snapshots', []):
+                p = _s.get('periodo', '')
+                val_snaps_prev[p] = _s
+                pr = _s.get('precios', {})
+                if pr.get('mag_indice') or pr.get('bcr_maiz_ton') or pr.get('bcr_soja_ton'):
+                    cache[p] = pr
+        except Exception:
+            pass
+
+    nuevos_snaps = []
+
+    for snap in snaps_historico:
+        periodo  = snap.get('periodo', '')
+        hm       = snap.get('hacienda_masa', {})
+        fin      = snap.get('financiero', {})
+        ins      = snap.get('insumos', {})
+        pegsa    = hm.get('pegsa', {})
+
+        if not periodo:
+            continue
+
+        log.info(f'  · Valuación {periodo}')
+
+        # ── 1. Obtener precios (con caché) ──
+        cached = cache.get(periodo, {})
+
+        mag_indice = cached.get('mag_indice')
+        if mag_indice is None:
+            mag_indice = _scrap_mag_indice(periodo)
+
+        bcr_maiz = cached.get('bcr_maiz_ton')
+        if bcr_maiz is None:
+            bcr_maiz = _scrap_bcr_precio(3, 'Maíz', periodo)
+
+        bcr_soja = cached.get('bcr_soja_ton')
+        if bcr_soja is None:
+            bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
+
+        # ── 2. Hacienda PEGSA en pesos ──
+        kg_pegsa       = float(pegsa.get('kg_proyectado') or 0)
+        hacienda_pesos = round(kg_pegsa * mag_indice) if mag_indice else None
+
+        # ── 3. Insumos en pesos (solo Maíz y Soja) ──
+        kg_maiz = kg_soja = 0.0
+        if ins and ins.get('items'):
+            for it in ins['items']:
+                nom = str(it.get('nombre', '') or '').upper()
+                kg  = float(it.get('stock_kg') or 0)
+                if 'MAIZ' in nom or 'MAÍZ' in nom:
+                    kg_maiz = kg
+                elif 'SOJA' in nom:
+                    kg_soja = kg
+
+        maiz_pesos = round(kg_maiz * bcr_maiz / 1000) if bcr_maiz else None
+        soja_pesos = round(kg_soja * bcr_soja / 1000) if bcr_soja else None
+        insumos_pesos = (
+            (maiz_pesos or 0) + (soja_pesos or 0)
+            if (maiz_pesos is not None or soja_pesos is not None) else None
+        )
+
+        # ── 4. Posición financiera en pesos ──
+        disp    = float(fin.get('disponible')       or 0)
+        cartera = float(fin.get('cheques_cartera')  or 0)
+        emit    = float(fin.get('cheques_emitidos') or 0)
+        cobrar  = float(fin.get('cobrar_hacienda')  or 0)
+        pagar   = float(fin.get('pagar_hacienda')   or 0)
+        lcg     = float(fin.get('lcg')              or 0)
+        tercio  = float(fin.get('tercio_bravo')     or 0)
+        fin_pesos = round(disp + cartera - emit + cobrar - pagar + lcg + tercio) if any([disp, cartera, cobrar]) else None
+
+        # ── 5. Dólares ya convertidos a pesos ──
+        usd_pesos = round(float(fin.get('usd_ars') or 0)) or None
+
+        # ── 6. Total ──
+        componentes = [hacienda_pesos, insumos_pesos, fin_pesos, usd_pesos]
+        total_pesos = round(sum(c for c in componentes if c is not None)) if any(c is not None for c in componentes) else None
+
+        s = {
+            'periodo':  periodo,
+            'fecha':    snap.get('fecha', ''),
+            'precios': {
+                'mag_indice':    mag_indice,
+                'bcr_maiz_ton':  bcr_maiz,
+                'bcr_soja_ton':  bcr_soja,
+            },
+            'componentes': {
+                'hacienda_kg_pegsa': round(kg_pegsa),
+                'hacienda_pesos':    hacienda_pesos,
+                'maiz_kg':           round(kg_maiz),
+                'maiz_pesos':        maiz_pesos,
+                'soja_kg':           round(kg_soja),
+                'soja_pesos':        soja_pesos,
+                'insumos_pesos':     insumos_pesos,
+                'financiero_pesos':  fin_pesos,
+                'usd_pesos':         usd_pesos,
+                'total_pesos':       total_pesos,
+            }
+        }
+        nuevos_snaps.append(s)
+        log.info(f'    Total {periodo}: {("${:,.0f}".format(total_pesos)) if total_pesos else "—"}')
+
+    nuevos_snaps.sort(key=lambda x: x.get('periodo', ''))
+
+    resultado = {
+        'generado':  datetime.now().isoformat(),
+        'metodo':    'scraping_mag_bcr',
+        'snapshots': nuevos_snaps,
+    }
+    guardar(resultado, carpeta, 'valuacion_historica.json')
+    log.info(f'  ✓ valuacion_historica.json — {len(nuevos_snaps)} períodos')
+    return resultado
+
+
+# ═══════════════════════════════════════════════════════════
 #  RUNNING BALANCE · STOCK DIARIO HISTÓRICO
 #  Recalcula cada día desde movimientos reales en lugar de
 #  acumular snapshots diarios (que quedan desactualizados
@@ -2667,6 +2949,30 @@ def main():
         log.warning(f"  ⚠ Módulo 9 falló: {e}")
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["comportamiento_historico"] = {"ok": False, "error": str(e)}
+
+    # ── MÓDULO 10 · VALUACIÓN EN PESOS ───────────────────────────
+    separador("MÓDULO 10 · VALUACIÓN EN PESOS")
+    try:
+        _val_path = Path(carpeta) / "comportamiento_historico.json"
+        if _val_path.exists():
+            with open(_val_path, encoding="utf-8") as _fv:
+                _hist9_data = json.load(_fv)
+            _snaps_hist9 = _hist9_data.get("snapshots", [])
+            if _snaps_hist9:
+                _val = actualizar_valuacion(carpeta, _snaps_hist9)
+                resumen["modulos"]["valuacion"] = {
+                    "ok": True, "periodos": len(_val.get("snapshots", []))
+                }
+            else:
+                log.info("  ℹ comportamiento_historico.json sin snapshots — valuación omitida")
+                resumen["modulos"]["valuacion"] = {"ok": True, "periodos": 0}
+        else:
+            log.info("  ℹ comportamiento_historico.json no encontrado — valuación omitida")
+            resumen["modulos"]["valuacion"] = {"ok": True, "periodos": 0}
+    except Exception as e:
+        log.warning(f"  ⚠ Módulo 10 falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["valuacion"] = {"ok": False, "error": str(e)}
 
     # ── STOCK DIARIO · RUNNING BALANCE ──────────────────────────
     # Recalcula el historial completo desde movimientos reales,
