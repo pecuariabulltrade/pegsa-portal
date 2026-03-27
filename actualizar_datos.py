@@ -1844,6 +1844,95 @@ def _scrap_bcr_precio(product_id, nombre, periodo_str):
     return None
 
 
+def _scrap_bna_tc():
+    """
+    Scraping BNA: devuelve el tipo de cambio dólar Billete Venta del día actual.
+    Fuente: https://www.bna.com.ar/Personas
+    Tabla 0 = Billete: fila "Dolar U.S.A" → celda[2] = Venta
+    Retorna float (ARS por USD) o None si falla.
+    """
+    import urllib.request
+
+    url = 'https://www.bna.com.ar/Personas'
+    try:
+        req = urllib.request.Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; PEGSA-Bot/1.0)')
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read()
+    except Exception as e:
+        log.warning(f'    BNA TC request error: {e}')
+        return None
+
+    # Parsear todas las tablas; tabla[0] = Billete, tabla[1] = Divisa
+    from html.parser import HTMLParser
+
+    class _AllTables(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.tables = []
+            self._cur_table = None
+            self._cur_row   = None
+            self._cur_cell  = None
+            self._depth     = 0
+
+        def handle_starttag(self, tag, attrs):
+            tag = tag.lower()
+            if tag == 'table':
+                self._cur_table = []
+                self._depth += 1
+            elif tag in ('tr',):
+                if self._cur_table is not None and self._depth == 1:
+                    self._cur_row = []
+            elif tag in ('td', 'th'):
+                if self._cur_row is not None:
+                    self._cur_cell = []
+
+        def handle_endtag(self, tag):
+            tag = tag.lower()
+            if tag == 'table':
+                if self._cur_table is not None:
+                    self.tables.append(self._cur_table)
+                self._cur_table = None
+                self._depth -= 1
+            elif tag == 'tr':
+                if self._cur_row is not None and self._cur_table is not None:
+                    self._cur_table.append(self._cur_row)
+                self._cur_row = None
+            elif tag in ('td', 'th'):
+                if self._cur_cell is not None and self._cur_row is not None:
+                    self._cur_row.append(' '.join(self._cur_cell).strip())
+                self._cur_cell = None
+
+        def handle_data(self, data):
+            if self._cur_cell is not None:
+                self._cur_cell.append(data)
+
+    try:
+        txt = raw.decode('utf-8', errors='replace')
+    except Exception:
+        txt = raw.decode('latin-1', errors='replace')
+
+    parser = _AllTables()
+    parser.feed(txt)
+
+    if not parser.tables:
+        log.warning('    BNA TC: no se encontraron tablas en la página')
+        return None
+
+    # Tabla 0 = Billete
+    tabla_billete = parser.tables[0]
+    for fila in tabla_billete:
+        if fila and 'dolar' in fila[0].lower():
+            # celda[2] = Venta
+            if len(fila) >= 3:
+                val = _ar_num(fila[2])
+                if val:
+                    log.info(f'    BNA TC Billete Venta: ${val:,.2f}/USD')
+                    return val
+    log.warning('    BNA TC: no se encontró fila "Dolar U.S.A" en tabla Billete')
+    return None
+
+
 def actualizar_valuacion(carpeta, snaps_historico):
     """
     Calcula la valuación mensual en pesos para cada snapshot histórico.
@@ -1871,6 +1960,13 @@ def actualizar_valuacion(carpeta, snaps_historico):
                     cache[p] = pr
         except Exception:
             pass
+
+    # ── Scraping BNA TC una sola vez (TC actual) ──
+    # Solo scrapeamos para el período actual; históricos que ya están cacheados
+    # conservan su TC guardado.  Si es None, el total_usd quedará null.
+    from datetime import date as _dtoday
+    _periodo_hoy = _dtoday.today().strftime('%Y-%m')
+    _bna_tc_hoy  = None   # se lazy-inicializa solo si hay al menos un período que lo necesita
 
     nuevos_snaps = []
 
@@ -1900,6 +1996,16 @@ def actualizar_valuacion(carpeta, snaps_historico):
         bcr_soja = cached.get('bcr_soja_ton')
         if bcr_soja is None:
             bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
+
+        # ── 1b. BNA TC: usar caché si existe; para el período actual re-scrapeamos ──
+        bna_tc = cached.get('bna_tc_venta')
+        if bna_tc is None or periodo == _periodo_hoy:
+            # Solo consultamos BNA una vez por ejecución
+            if _bna_tc_hoy is None and periodo == _periodo_hoy:
+                _bna_tc_hoy = _scrap_bna_tc()
+            if periodo == _periodo_hoy:
+                bna_tc = _bna_tc_hoy
+            # Para períodos históricos sin TC en caché: queda None (histórico no disponible)
 
         # ── 2. Hacienda PEGSA en pesos ──
         kg_pegsa       = float(pegsa.get('kg_proyectado') or 0)
@@ -1936,9 +2042,12 @@ def actualizar_valuacion(carpeta, snaps_historico):
         # ── 5. Dólares ya convertidos a pesos ──
         usd_pesos = round(float(fin.get('usd_ars') or 0)) or None
 
-        # ── 6. Total ──
+        # ── 6. Total pesos ──
         componentes = [hacienda_pesos, insumos_pesos, fin_pesos, usd_pesos]
         total_pesos = round(sum(c for c in componentes if c is not None)) if any(c is not None for c in componentes) else None
+
+        # ── 7. Total USD (usando BNA TC) ──
+        total_usd = round(total_pesos / bna_tc, 0) if (total_pesos is not None and bna_tc) else None
 
         s = {
             'periodo':  periodo,
@@ -1947,6 +2056,7 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'mag_indice':    mag_indice,
                 'bcr_maiz_ton':  bcr_maiz,
                 'bcr_soja_ton':  bcr_soja,
+                'bna_tc_venta':  bna_tc,
             },
             'componentes': {
                 'hacienda_kg_pegsa': round(kg_pegsa),
@@ -1959,16 +2069,19 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'financiero_pesos':  fin_pesos,
                 'usd_pesos':         usd_pesos,
                 'total_pesos':       total_pesos,
+                'total_usd':         total_usd,
             }
         }
         nuevos_snaps.append(s)
-        log.info(f'    Total {periodo}: {("${:,.0f}".format(total_pesos)) if total_pesos else "—"}')
+        tc_str = f' | TC ${bna_tc:,.0f}' if bna_tc else ''
+        usd_str = f' = U$S {total_usd:,.0f}' if total_usd else ''
+        log.info(f'    Total {periodo}: {("${:,.0f}".format(total_pesos)) if total_pesos else "—"}{tc_str}{usd_str}')
 
     nuevos_snaps.sort(key=lambda x: x.get('periodo', ''))
 
     resultado = {
         'generado':  datetime.now().isoformat(),
-        'metodo':    'scraping_mag_bcr',
+        'metodo':    'scraping_mag_bcr_bna',
         'snapshots': nuevos_snaps,
     }
     guardar(resultado, carpeta, 'valuacion_historica.json')

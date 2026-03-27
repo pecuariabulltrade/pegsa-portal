@@ -2998,20 +2998,29 @@ window.addEventListener('load', function(){
           <div style="position:relative;height:300px"><canvas id="chartValStack"></canvas></div>
         </div>
 
-        <!-- Gráfico línea: total acumulado -->
+        <!-- Gráfico línea: total acumulado en pesos -->
         <div class="panel" style="display:block;margin-bottom:24px">
           <div class="section-header">
-            <span class="section-title">Patrimonio Total — Evolución Mensual</span>
-            <span class="section-sub">Suma de todos los componentes valuados</span>
+            <span class="section-title">Patrimonio Total — Evolución Mensual ($)</span>
+            <span class="section-sub">Suma de todos los componentes valuados en pesos</span>
           </div>
           <div style="position:relative;height:240px"><canvas id="chartValTotal"></canvas></div>
+        </div>
+
+        <!-- Gráfico línea: total en USD -->
+        <div class="panel" style="display:block;margin-bottom:24px">
+          <div class="section-header">
+            <span class="section-title">Patrimonio Total — Evolución Mensual (USD)</span>
+            <span class="section-sub">Total en pesos convertido al TC BNA Billete Venta del mes</span>
+          </div>
+          <div style="position:relative;height:240px"><canvas id="chartValUSD"></canvas></div>
         </div>
 
         <!-- Tabla precios de referencia -->
         <div class="panel" style="display:block;margin-bottom:24px">
           <div class="section-header">
             <span class="section-title">Precios de Referencia Mensuales</span>
-            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton)</span>
+            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton) · TC BNA ($/USD)</span>
           </div>
           <div id="valTablaPrecios" style="overflow-x:auto"></div>
         </div>
@@ -7016,11 +7025,12 @@ function _renderValuacion(){
   var ult = snaps[snaps.length-1];
   var c   = ult.componentes || {};
   var pr  = ult.precios || {};
+  function fUSD(v){ if(v==null) return '—'; var abs=Math.abs(v),sign=v<0?'−':''; if(abs>=1e6) return sign+'U$S\u00a0'+(abs/1e6).toFixed(2)+'M'; return sign+'U$S\u00a0'+Math.round(abs).toLocaleString('es-AR'); }
   var kpiDefs = [
     { label:'Hacienda PEGSA',   value: fM(c.hacienda_pesos),   sub: (pr.mag_indice ? '@ $'+pr.mag_indice.toFixed(0)+'/kg MAG' : 'índice MAG') },
     { label:'Insumos (M+S)',    value: fM(c.insumos_pesos),    sub: fKg(c.maiz_kg)+' maíz · '+fKg(c.soja_kg)+' soja' },
-    { label:'Pos. Financiera',  value: fM(c.financiero_pesos), sub: 'disp + cartera − emit + hac + otras' },
-    { label:'Patrimonio Total', value: fM(c.total_pesos),      sub: ult.periodo+' · todos los componentes' },
+    { label:'Patrimonio en $',  value: fM(c.total_pesos),      sub: ult.periodo+' · todos los componentes' },
+    { label:'Patrimonio en USD',value: fUSD(c.total_usd),      sub: pr.bna_tc_venta ? 'TC BNA $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD' : 'TC BNA no disponible' },
   ];
   var kpiHtml = kpiDefs.map(function(k){
     var isTotal = k.label==='Patrimonio Total';
@@ -7095,12 +7105,40 @@ function _renderValuacion(){
     });
   }
 
+  // ── Gráfico USD ──
+  var dsUSD = [{
+    label: 'Patrimonio total (U$S)',
+    data: snaps.map(function(s){ var v=s.componentes&&s.componentes.total_usd; return v!=null?Math.round(v/1000):null; }),
+    borderColor: '#2d6a8a', backgroundColor: 'rgba(45,106,138,.1)',
+    tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
+  }];
+  _destroyChart('chartValUSD');
+  var ctxU = document.getElementById('chartValUSD');
+  if(ctxU){
+    _histCharts['chartValUSD'] = new Chart(ctxU, {
+      type: 'line',
+      data: { labels: labels, datasets: dsUSD },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { display:false },
+          tooltip: { callbacks: { label: function(ctx){ return ' U$S '+Math.round(ctx.parsed.y).toLocaleString('es-AR')+'K'; } } }
+        },
+        scales: {
+          x: { ticks:{ font:{family:'DM Mono',size:10}, maxRotation:0 }, grid:{color:'rgba(0,0,0,.04)'} },
+          y: { ticks:{ font:{family:'DM Mono',size:10}, callback:function(v){ return 'U$S '+v.toLocaleString('es-AR')+'K'; } }, grid:{color:'rgba(0,0,0,.06)'} }
+        }
+      }
+    });
+  }
+
   // ── Tabla de precios de referencia ──
   var thS = 'style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);text-align:right;white-space:nowrap"';
   var thL = 'style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border)"';
   var html = '<table class="data-table" style="width:100%;border-collapse:collapse">'
-    +'<thead><tr><th '+thL+'>Período</th><th '+thS+'>Índice MAG ($/kg)</th><th '+thS+'>Maíz BCR ($/ton)</th><th '+thS+'>Soja BCR ($/ton)</th>'
-    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>USD (en $)</th><th '+thS+'>Total</th></tr></thead><tbody>';
+    +'<thead><tr><th '+thL+'>Período</th><th '+thS+'>Índice MAG ($/kg)</th><th '+thS+'>Maíz BCR ($/ton)</th><th '+thS+'>Soja BCR ($/ton)</th><th '+thS+'>TC BNA ($/USD)</th>'
+    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>Total $</th><th '+thS+'>Total USD</th></tr></thead><tbody>';
 
   snaps.slice().reverse().forEach(function(s){
     var p = s.precios||{}, c2 = s.componentes||{};
@@ -7111,11 +7149,12 @@ function _renderValuacion(){
       +'<td '+tdR+'>'+(p.mag_indice!=null ? p.mag_indice.toLocaleString('es-AR',{minimumFractionDigits:3}) : '—')+'</td>'
       +'<td '+tdR+'>'+(p.bcr_maiz_ton!=null ? Math.round(p.bcr_maiz_ton).toLocaleString('es-AR') : '—')+'</td>'
       +'<td '+tdR+'>'+(p.bcr_soja_ton!=null ? Math.round(p.bcr_soja_ton).toLocaleString('es-AR') : '—')+'</td>'
+      +'<td '+tdR+'>'+(p.bna_tc_venta!=null ? Math.round(p.bna_tc_venta).toLocaleString('es-AR') : '—')+'</td>'
       +'<td '+tdR+'>'+fM(c2.hacienda_pesos)+'</td>'
       +'<td '+tdR+'>'+fM(c2.insumos_pesos)+'</td>'
       +'<td '+tdR+'>'+fM(c2.financiero_pesos)+'</td>'
-      +'<td '+tdR+'>'+fM(c2.usd_pesos)+'</td>'
       +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--gold)">'+fM(c2.total_pesos)+'</td>'
+      +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:#2d6a8a">'+fUSD(c2.total_usd)+'</td>'
       +'</tr>';
   });
   document.getElementById('valTablaPrecios').innerHTML = html+'</tbody></table>';
