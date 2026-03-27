@@ -1694,6 +1694,185 @@ def procesar_consumo(regs, cols, periodo):
         },
     }
 
+# ═══════════════════════════════════════════════════════════
+#  RUNNING BALANCE · STOCK DIARIO HISTÓRICO
+#  Recalcula cada día desde movimientos reales en lugar de
+#  acumular snapshots diarios (que quedan desactualizados
+#  cuando se cargan compras/ventas con fecha retroactiva).
+# ═══════════════════════════════════════════════════════════
+
+def recalcular_stock_diario_desde_movimientos(
+        regs_stock, cols_stock,
+        regs_ing,   cols_ing,
+        regs_egr,   cols_egr,
+        carpeta,    periodo,
+        dias=730):
+    """
+    Recalcula el stock diario histórico usando running balance.
+    stock(D) = stock(D+1) - ingresos(D+1) + egresos(D+1)
+    Baseline = V_STOCK_HACIENDA actual (estado definitivo de hoy).
+    El resultado reemplaza completamente stock_diario.json en cada ejecución,
+    incorporando automáticamente cualquier carga retroactiva de movimientos.
+    """
+    from datetime import date as _date, timedelta as _td
+
+    hoy = _date.today()
+
+    # ── 1. Baseline: stock de hoy ──────────────────────────────
+    kpis_hoy      = calcular_kpis(regs_stock or [], cols_stock or [])
+    total_cab_hoy = int(kpis_hoy.get("total_cabezas", 0))
+    total_kg_hoy  = kpis_hoy.get("total_kg_estimado_hoy", 0) or 0
+    avg_kg_hoy    = total_kg_hoy / max(total_cab_hoy, 1)
+
+    # Snapshots de propietario (Hotelero) para hoy
+    prop_hoy = {
+        p: {"cabezas": int(v.get("cabezas", 0)),
+            "kg_estimado": int(v.get("kg_estimado", 0))}
+        for p, v in kpis_hoy.get("por_propietario", {}).items()
+    }
+
+    log.info(f"  Baseline hoy ({hoy}): {total_cab_hoy:,} cab · {total_kg_hoy/1000:,.0f} t")
+    log.info(f"  Propietarios baseline: {list(prop_hoy.keys())}")
+
+    # ── 2. Resolución de columnas ─────────────────────────────
+    def _fc(cols, *keys):
+        """Busca la primera columna cuyo nombre exacto (o en minúsculas) coincide."""
+        for k in keys:
+            for c in (cols or []):
+                if c == k or c.lower() == k.lower():
+                    return c
+        return None
+
+    col_fi = _fc(cols_ing, "FechaIngreso", "fecha_ingreso", "FECHA_INGRESO", "fecha")
+    col_ci = _fc(cols_ing, "CantidadIngreso", "cantidadingreso", "CANTIDADINGRESO", "cantidad", "Cantidad", "cabezas")
+    col_hi = _fc(cols_ing, "Hotelero", "hotelero", "HOTELERO", "propietario", "Propietario")
+
+    col_fe = _fc(cols_egr, "FechaSalida", "fecha_salida", "FECHA_SALIDA", "fecha")
+    col_ce = _fc(cols_egr, "CantidadEgreso", "cantidadegreso", "CANTIDADEGRESO", "cantidad", "Cantidad", "cabezas")
+    col_he = _fc(cols_egr, "Hotelero", "hotelero", "HOTELERO", "propietario", "Propietario")
+
+    log.info(f"  Ingresos cols → fecha={col_fi} cant={col_ci} hotelero={col_hi}")
+    log.info(f"  Egresos cols  → fecha={col_fe} cant={col_ce} hotelero={col_he}")
+
+    # ── 3. Función fecha → YYYY-MM-DD ─────────────────────────
+    def _fs(val):
+        if val is None:
+            return None
+        if isinstance(val, _date):
+            return val.strftime("%Y-%m-%d")
+        if hasattr(val, "strftime"):
+            return val.strftime("%Y-%m-%d")
+        try:
+            from datetime import datetime as _dt
+            return _dt.fromisoformat(str(val)[:10]).strftime("%Y-%m-%d")
+        except Exception:
+            return None
+
+    # ── 4. Acumular movimientos por fecha ─────────────────────
+    ing_total = {}  # {fecha_str: cabezas_int}
+    ing_prop  = {}  # {fecha_str: {hotelero: cabezas_int}}
+    egr_total = {}
+    egr_prop  = {}
+
+    for r in (regs_ing or []):
+        fs = _fs(r.get(col_fi)) if col_fi else None
+        if not fs:
+            continue
+        try:
+            cant = int(round(float(r.get(col_ci, 0) or 0)))
+        except Exception:
+            cant = 0
+        if cant <= 0:
+            continue
+        prop = str(r.get(col_hi) or "").strip() if col_hi else ""
+        ing_total[fs] = ing_total.get(fs, 0) + cant
+        if prop:
+            ing_prop.setdefault(fs, {})
+            ing_prop[fs][prop] = ing_prop[fs].get(prop, 0) + cant
+
+    for r in (regs_egr or []):
+        fs = _fs(r.get(col_fe)) if col_fe else None
+        if not fs:
+            continue
+        try:
+            cant = int(round(float(r.get(col_ce, 0) or 0)))
+        except Exception:
+            cant = 0
+        if cant <= 0:
+            continue
+        prop = str(r.get(col_he) or "").strip() if col_he else ""
+        egr_total[fs] = egr_total.get(fs, 0) + cant
+        if prop:
+            egr_prop.setdefault(fs, {})
+            egr_prop[fs][prop] = egr_prop[fs].get(prop, 0) + cant
+
+    # Diagnóstico: primeras fechas con movimientos
+    _sample_ing = sorted(ing_total.items())[-5:]
+    _sample_egr = sorted(egr_total.items())[-5:]
+    log.info(f"  Ingresos últimas 5 fechas: {_sample_ing}")
+    log.info(f"  Egresos  últimas 5 fechas: {_sample_egr}")
+
+    # ── 5. Running balance hacia atrás desde hoy ──────────────
+    snapshots = []
+    cab_d  = total_cab_hoy
+    prop_d = {p: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
+              for p, v in prop_hoy.items()}
+
+    for i in range(dias + 1):
+        dia = hoy - _td(days=i)
+        fs  = dia.strftime("%Y-%m-%d")
+
+        if i > 0:
+            # stock(D) = stock(D+1) - ingresos(D+1) + egresos(D+1)
+            fs_next = (dia + _td(days=1)).strftime("%Y-%m-%d")
+            ing_n   = ing_total.get(fs_next, 0)
+            egr_n   = egr_total.get(fs_next, 0)
+            cab_d   = max(0, cab_d - ing_n + egr_n)
+
+            # Por propietario (Hotelero)
+            all_props = (set(prop_d.keys())
+                         | set(ing_prop.get(fs_next, {}).keys())
+                         | set(egr_prop.get(fs_next, {}).keys()))
+            new_prop = {}
+            for p in all_props:
+                cab_p = prop_d.get(p, {}).get("cabezas", 0)
+                delta = -ing_prop.get(fs_next, {}).get(p, 0) + egr_prop.get(fs_next, {}).get(p, 0)
+                new_c = max(0, cab_p + delta)
+                if new_c > 0:
+                    new_prop[p] = {"cabezas": new_c,
+                                   "kg_estimado": int(new_c * avg_kg_hoy)}
+            prop_d = new_prop
+
+        kg_d = int(cab_d * avg_kg_hoy)
+
+        snapshots.append({
+            "fecha": fs,
+            "hacienda": {
+                "total_cabezas":       int(cab_d),
+                "total_kg_estimado":   kg_d,
+                "por_propietario":     {p: {"cabezas": v["cabezas"],
+                                            "kg_estimado": v["kg_estimado"]}
+                                        for p, v in prop_d.items()},
+                "por_establecimiento": {},   # solo disponible en snapshot actual
+                "por_categoria":       {}    # solo disponible en snapshot actual
+            }
+        })
+
+    # Ordenar ascendente (más antiguo primero)
+    snapshots.sort(key=lambda s: s["fecha"])
+
+    diario = {
+        "generado":  datetime.now().isoformat(),
+        "periodo":   periodo,
+        "metodo":    "running_balance",
+        "dias":      len(snapshots),
+        "snapshots": snapshots,
+    }
+    guardar(diario, carpeta, "stock_diario.json")
+    log.info(f"  ✓ stock_diario.json — {len(snapshots)} días · running balance")
+    return diario
+
+
 def main():
     separador("PEGSA & BULLTRADE - Actualizador de Datos")
     log.info(f"  Inicio: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
@@ -1712,6 +1891,9 @@ def main():
     separador("Stock de Hacienda")
     tabla      = cfg["TABLAS"].get("stock_hacienda", "V_STOCK_HACIENDA")
     regs, cols = extraer(conn, tabla)
+    # Guardar referencia al stock actual para el recálculo diario posterior
+    _regs_stock_hoy = regs
+    _cols_stock_hoy = cols
 
     if regs:
         kpis = calcular_kpis(regs, cols)
@@ -2479,59 +2661,27 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["comportamiento_historico"] = {"ok": False, "error": str(e)}
 
-    # ── SNAPSHOT DIARIO ───────────────────────────────────────
+    # ── STOCK DIARIO · RUNNING BALANCE ──────────────────────────
+    # Recalcula el historial completo desde movimientos reales,
+    # incorporando automáticamente cargas retroactivas de compras/ventas.
+    separador("Stock Diario · Running Balance")
     try:
-        _diario_path = Path(carpeta) / "stock_diario.json"
-        _kpis_path   = Path(carpeta) / f"stock_kpis_{periodo}.json"
-
-        if _kpis_path.exists():
-            with open(_kpis_path, encoding="utf-8") as _f:
-                _kpis_raw = json.load(_f)
-            _k = _kpis_raw.get("kpis", {})
-            _hoy = datetime.now().strftime("%Y-%m-%d")
-            _snap_d = {
-                "fecha": _hoy,
-                "hacienda": {
-                    "total_cabezas":     _k.get("total_cabezas", 0),
-                    "total_kg_estimado": _k.get("total_kg_estimado_hoy", 0),
-                    "por_propietario": {
-                        p: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
-                        for p, v in _k.get("por_propietario", {}).items()
-                    },
-                    "por_establecimiento": {
-                        e: {"cabezas": v["cabezas"], "kg_estimado": v["kg_estimado"]}
-                        for e, v in _k.get("por_establecimiento", {}).items()
-                    },
-                    "por_categoria": {
-                        c: {"cabezas": v.get("cabezas", 0), "kg_estimado": v.get("kg_estimado", 0)}
-                        for c, v in _k.get("por_categoria", {}).items()
-                    }
-                }
-            }
-
-            _diario = {"generado": datetime.now().isoformat(), "dias": 0, "snapshots": []}
-            if _diario_path.exists():
-                try:
-                    with open(_diario_path, encoding="utf-8") as _f:
-                        _diario = json.load(_f)
-                except Exception:
-                    pass
-
-            # Upsert por fecha, mantener últimos 730 días (2 años)
-            _dsnaps = [s for s in _diario.get("snapshots", []) if s.get("fecha") != _hoy]
-            _dsnaps.append(_snap_d)
-            _dsnaps.sort(key=lambda s: s.get("fecha", ""))
-            _diario["snapshots"] = _dsnaps[-730:]
-            _diario["dias"]      = len(_diario["snapshots"])
-            _diario["generado"]  = datetime.now().isoformat()
-
-            guardar(_diario, carpeta, "stock_diario.json")
-            log.info(f"  ✓ stock_diario.json — {_diario['dias']} días · hoy: {_hoy}")
-            resumen["modulos"]["stock_diario"] = {
-                "ok": True, "dias": _diario["dias"], "ultima_fecha": _hoy,
-            }
+        _diario = recalcular_stock_diario_desde_movimientos(
+            _regs_stock_hoy, _cols_stock_hoy,
+            regs_ing,        cols_ing,
+            regs_egr,        cols_egr,
+            carpeta,         periodo,
+            dias=730
+        )
+        resumen["modulos"]["stock_diario"] = {
+            "ok":          True,
+            "dias":        _diario["dias"],
+            "ultima_fecha": datetime.now().strftime("%Y-%m-%d"),
+            "metodo":      "running_balance",
+        }
     except Exception as e:
-        log.warning(f"  ⚠ Snapshot diario falló: {e}")
+        log.warning(f"  ⚠ Running balance diario falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["stock_diario"] = {"ok": False, "error": str(e)}
 
     separador()
@@ -3437,20 +3587,52 @@ def _parse_listado_caravanas_html(ruta):
         return None
 
     try:
-        # Leer como HTML — prueba lxml primero, luego html.parser (built-in, no requiere instalación)
-        tables = None
-        for _flavor in ['lxml', 'html.parser', 'bs4', 'html5lib']:
+        # Leer como HTML — parser nativo de Python, sin dependencias externas
+        from html.parser import HTMLParser as _HTMLParser
+
+        class _TblParser(_HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.rows, self._row, self._cell, self._in = [], [], [], False
+            def handle_starttag(self, tag, attrs):
+                if tag in ('td','th'): self._in=True; self._cell=[]
+                elif tag=='tr': self._row=[]
+            def handle_endtag(self, tag):
+                if tag in ('td','th'):
+                    self._row.append(''.join(self._cell).strip()); self._in=False
+                elif tag=='tr':
+                    if self._row: self.rows.append(self._row)
+            def handle_data(self, data):
+                if self._in: self._cell.append(data)
+
+        # detectar encoding
+        raw = ruta.read_bytes()
+        for _enc in ('utf-8','latin-1','cp1252'):
+            try: html_txt = raw.decode(_enc); break
+            except: pass
+        else: html_txt = raw.decode('utf-8', errors='replace')
+
+        p = _TblParser(); p.feed(html_txt)
+        if not p.rows or len(p.rows) < 2:
+            log.warning(f"  ⚠ {nombre}: sin tablas HTML"); return None
+
+        # primera fila = encabezados
+        headers = p.rows[0]
+        data_rows = p.rows[1:]
+        # asegurar longitud uniforme
+        ncols = len(headers)
+        data_rows = [r + ['']*(ncols-len(r)) if len(r)<ncols else r[:ncols] for r in data_rows]
+        df = pd.DataFrame(data_rows, columns=headers)
+
+        # convertir números (formato argentino: punto=miles, coma=decimal)
+        def _to_num(v):
             try:
-                tables = pd.read_html(str(ruta), decimal=',', thousands='.', flavor=_flavor)
-                break
-            except ImportError:
-                continue
-            except Exception:
-                continue
-        if not tables:
-            log.warning(f"  ⚠ {nombre}: sin tablas HTML")
-            return None
-        df = tables[0]
+                v2 = str(v).replace('.','').replace(',','.')
+                return float(v2)
+            except: return v
+        for col in df.columns:
+            df[col] = df[col].apply(lambda v: _to_num(v) if str(v).replace('.','').replace(',','').replace('-','').strip().isdigit() or (str(v).count(',')<=1 and str(v).replace('.','').replace(',','').replace('-','').strip().replace(' ','').isdigit()) else v)
+
     except Exception as e:
         log.warning(f"  ⚠ {nombre}: error leyendo HTML: {e}")
         return None
