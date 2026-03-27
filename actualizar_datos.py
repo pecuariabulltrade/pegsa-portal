@@ -1863,6 +1863,17 @@ def main():
     else:
         log.warning("  ⚠ Sin datos de insumos")
 
+    # ── Actualizar STOCK DE INSUMOS.xlsx en carpeta stock mensuales ──
+    if insumos:
+        try:
+            from pathlib import Path as _Path
+            _carpeta_sm = _Path(carpeta).parent / "stock mensuales"
+            _today_str  = datetime.now().strftime('%Y-%m-%d')
+            log.info(f"  → Actualizando STOCK DE INSUMOS.xlsx ({_today_str})...")
+            actualizar_stock_insumos_excel(insumos, str(_carpeta_sm), _today_str)
+        except Exception as _e:
+            log.warning(f"  ⚠ Error actualizando STOCK DE INSUMOS.xlsx: {_e}")
+
     # ── 6. JSON Movimientos Productivos (Ingresos + Egresos) ──
     separador("Movimientos Productivos")
     tabla_ing = cfg["TABLAS"].get("movimientos_ingresos", "v_PB_Ingresos")
@@ -2453,6 +2464,21 @@ def main():
         log.warning(f"  ⚠ Snapshot histórico falló: {e}")
         resumen["modulos"]["historico"] = {"ok": False, "error": str(e)}
 
+    # ── MÓDULO 9 · COMPORTAMIENTO HISTÓRICO MENSUAL ───────────
+    separador("MÓDULO 9 · COMPORTAMIENTO HISTÓRICO MENSUAL")
+    try:
+        from pathlib import Path as _Path9
+        _carpeta_sm9 = _Path9(carpeta).parent / "stock mensuales"
+        _hist9 = actualizar_comportamiento_historico(carpeta, str(_carpeta_sm9))
+        _n9 = _hist9.get('total', 0) if _hist9 else 0
+        resumen["modulos"]["comportamiento_historico"] = {
+            "ok": True, "snapshots": _n9,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ Módulo 9 falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["comportamiento_historico"] = {"ok": False, "error": str(e)}
+
     # ── SNAPSHOT DIARIO ───────────────────────────────────────
     try:
         _diario_path = Path(carpeta) / "stock_diario.json"
@@ -2654,20 +2680,23 @@ def actualizar_historico_excel(hacienda, commodities, carpeta, today):
     ARCHIVO = Path(carpeta) / "historico_precios.xlsx"
 
     # Mapeo: clave interna → nombre de columna Excel
+    # IMPORTANTE: Las claves deben ser substrings exactos de los nombres de categoría
+    # devueltos por la API de Cañuelas (plural: "Novillitos", "Novillos", "Vacas", etc.)
+    # Ejemplo de respuesta API: "Novillitos hasta 390 Kg.", "Novillitos 391/430 Kg.", etc.
     COLS_HAC = [
-        ("novillito <390",      "Novillito <390kg $/kg"),
-        ("novillito 391",       "Novillito 391/430kg $/kg"),
-        ("novillo 431",         "Novillo 431/460kg $/kg"),
-        ("novillo 461",         "Novillo 461/490kg $/kg"),
+        ("novillitos hasta",    "Novillito <390kg $/kg"),
+        ("novillitos 391",      "Novillito 391/430kg $/kg"),
+        ("novillos 431",        "Novillo 431/460kg $/kg"),
+        ("novillos 461",        "Novillo 461/490kg $/kg"),
         ("vaquillona",          "Vaquillona <390kg $/kg"),
-        ("vaca buena",          "Vaca Buena $/kg"),
-        ("vaca regular",        "Vaca Regular $/kg"),
-        ("vaca conserva",       "Vaca Conserva $/kg"),
+        ("vacas buenas",        "Vaca Buena $/kg"),
+        ("vacas regulares",     "Vaca Regular $/kg"),
+        ("vacas conserva",      "Vaca Conserva $/kg"),
         ("ternero",             "Ternero $/kg"),
         ("ternera",             "Ternera $/kg"),
     ]
     COLS_COM = [
-        ("maiz",   "Maíz $/tn"),
+        ("maíz",   "Maíz $/tn"),   # usar tilde para que coincida con nombre="Maíz"
         ("soja",   "Soja $/tn"),
         ("trigo",  "Trigo $/tn"),
         ("sorgo",  "Sorgo $/tn"),
@@ -3285,6 +3314,707 @@ def actualizar_mercado_precios(carpeta, repo):
 
         guardar(data, carpeta, fname)
         log.info(f"  ✓ {fname} → OneDrive")
+
+
+# ══════════════════════════════════════════════════════════════
+#  MÓDULO 9 — COMPORTAMIENTO HISTÓRICO MENSUAL
+#  Combina: Masa de kg (Listado Caravanas XLS), Stock Insumos,
+#           y Financiero mensual (formato viejo + nuevo)
+# ══════════════════════════════════════════════════════════════
+
+def actualizar_stock_insumos_excel(insumos_list, carpeta_stock_mensuales, today_str):
+    """
+    Añade columna de hoy al archivo STOCK DE INSUMOS.xlsx.
+    Inserta la nueva columna en la posición 5 (después de 'Descripción Insumo').
+    Si la columna de hoy ya existe, sobreescribe los valores.
+    insumos_list: lista de {"nombre": str, "stock_kg": float}
+    """
+    try:
+        import openpyxl
+        from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+        from pathlib import Path
+        from datetime import datetime as _dt
+
+        ruta = Path(carpeta_stock_mensuales) / "STOCK DE INSUMOS.xlsx"
+        if not ruta.exists():
+            log.warning(f"  ⚠ No existe {ruta}")
+            return
+
+        wb = openpyxl.load_workbook(str(ruta))
+        ws = wb.active
+
+        # Construir dict {nombre_lower → stock_kg} desde insumos_list
+        stock_dict = {i['nombre'].lower().strip(): i['stock_kg'] for i in insumos_list}
+
+        # Función de coincidencia: substring bidireccional
+        def match_stock(desc_excel):
+            desc_lower = str(desc_excel or '').lower().strip()
+            for k, v in stock_dict.items():
+                if k in desc_lower or desc_lower in k:
+                    return v
+            return None
+
+        INSERT_COL = 5  # columna E (después de A=Depos, B=Rubro, C=Cod, D=Descripción)
+
+        # Verificar si la columna de hoy ya existe
+        today_col_idx = None
+        for c in range(INSERT_COL, ws.max_column + 1):
+            h = ws.cell(1, c).value
+            if h is None:
+                continue
+            if hasattr(h, 'strftime'):
+                h_str = h.strftime('%Y-%m-%d')
+            else:
+                h_str = str(h)[:10]
+            if h_str == today_str:
+                today_col_idx = c
+                break
+
+        if today_col_idx is None:
+            # Insertar nueva columna en posición 5
+            ws.insert_cols(INSERT_COL)
+            today_col_idx = INSERT_COL
+            # Header: fecha como datetime para que Excel la reconozca
+            try:
+                hdr_date = _dt.strptime(today_str, '%Y-%m-%d')
+            except Exception:
+                hdr_date = today_str
+            hdr_cell = ws.cell(1, today_col_idx)
+            hdr_cell.value = hdr_date
+            hdr_cell.number_format = 'DD/MM/YYYY'
+            hdr_cell.fill = PatternFill("solid", fgColor="1F4E79")
+            hdr_cell.font = Font(bold=True, color="FFFFFF", size=9)
+            hdr_cell.alignment = Alignment(horizontal="center")
+            log.info(f"  ✓ STOCK DE INSUMOS.xlsx — insertada columna {today_str} (col {today_col_idx})")
+        else:
+            log.info(f"  ℹ STOCK DE INSUMOS.xlsx — columna {today_str} ya existe, actualizando valores")
+
+        # Rellenar valores para cada fila de insumo
+        filled = 0
+        for row in range(2, ws.max_row + 1):
+            desc = ws.cell(row, 4).value  # columna D = Descripción Insumo
+            if desc is None:
+                continue
+            valor = match_stock(str(desc))
+            if valor is not None:
+                cell = ws.cell(row, today_col_idx)
+                cell.value = round(valor, 2)
+                cell.number_format = '#,##0.00'
+                cell.alignment = Alignment(horizontal="center")
+                filled += 1
+
+        wb.save(str(ruta))
+        log.info(f"  ✓ STOCK DE INSUMOS.xlsx — {filled} insumos actualizados para {today_str}")
+    except ImportError:
+        log.warning("  ⚠ openpyxl no disponible; se omite actualización de STOCK DE INSUMOS.xlsx")
+    except Exception as e:
+        log.warning(f"  ⚠ Error actualizando STOCK DE INSUMOS.xlsx: {e}")
+        import traceback; log.warning(traceback.format_exc())
+
+
+def _parse_listado_caravanas_html(ruta):
+    """
+    Parsea un Listado_Caravanas*.XLS (archivo HTML disfrazado de XLS).
+    Extrae fecha del nombre del archivo, mapea Corral → Campo,
+    usa 'Peso Proyectado' directamente para la masa de kg.
+    Returns: dict {fecha, total_cabezas, total_kg, pegsa, por_hotelero}
+    o None si falla.
+    """
+    import re as _re
+    from pathlib import Path
+
+    ruta = Path(ruta)
+    nombre = ruta.name  # Listado_Caravanas28-02-2026.XLS
+
+    # Extraer fecha del nombre (DD-MM-YYYY)
+    m = _re.search(r'(\d{2})-(\d{2})-(\d{4})', nombre)
+    if m:
+        d, mo, y = m.groups()
+        fecha_str = f"{y}-{mo}-{d}"
+    else:
+        log.warning(f"  ⚠ No se pudo extraer fecha de {nombre}")
+        return None
+
+    try:
+        # Leer como HTML — prueba lxml primero, luego html.parser (built-in, no requiere instalación)
+        tables = None
+        for _flavor in ['lxml', 'html.parser', 'bs4', 'html5lib']:
+            try:
+                tables = pd.read_html(str(ruta), decimal=',', thousands='.', flavor=_flavor)
+                break
+            except ImportError:
+                continue
+            except Exception:
+                continue
+        if not tables:
+            log.warning(f"  ⚠ {nombre}: sin tablas HTML")
+            return None
+        df = tables[0]
+    except Exception as e:
+        log.warning(f"  ⚠ {nombre}: error leyendo HTML: {e}")
+        return None
+
+    # Normalizar columnas
+    df.columns = [str(c).strip() for c in df.columns]
+
+    # Buscar columnas relevantes (tolerante a variaciones)
+    def _find(keywords):
+        kw_lower = [k.lower() for k in keywords]
+        for col in df.columns:
+            cl = col.lower()
+            if any(k in cl for k in kw_lower):
+                return col
+        return None
+
+    col_corral   = _find(['corral'])
+    col_hotelero = _find(['hotelero'])
+    col_peso_p   = _find(['peso proyectado', 'proyectado'])
+    col_categoria= _find(['categor'])
+
+    if col_corral is None or col_hotelero is None or col_peso_p is None:
+        log.warning(f"  ⚠ {nombre}: columnas requeridas no encontradas. Cols: {list(df.columns)}")
+        return None
+
+    # Normalizar datos
+    df['_corral_n'] = pd.to_numeric(df[col_corral], errors='coerce')
+    df['_peso']     = pd.to_numeric(df[col_peso_p],  errors='coerce').fillna(0)
+    df['_hotelero'] = df[col_hotelero].astype(str).str.strip().str.upper()
+
+    # Mapear corral → campo usando tabla CORRALES global
+    def _get_campo(nro):
+        try:
+            n = int(nro)
+        except (TypeError, ValueError):
+            return "Desconocido"
+        for lo, hi, nom in CORRALES:
+            if lo <= n <= hi:
+                return nom
+        return "Otro"
+
+    df['_campo'] = df['_corral_n'].apply(_get_campo)
+
+    # Total general
+    total_cab = len(df)
+    total_kg  = round(df['_peso'].sum(), 0)
+
+    # Por hotelero
+    por_hotelero = {}
+    for hot, grp in df.groupby('_hotelero'):
+        if not hot or hot in ('NAN', 'NONE', ''):
+            continue
+        por_hotelero[hot] = {
+            'cabezas':       int(len(grp)),
+            'kg_proyectado': round(float(grp['_peso'].sum()), 0),
+        }
+
+    # PEGSA solamente
+    df_peg = df[df['_hotelero'] == 'PEGSA']
+    peg_cab = int(len(df_peg))
+    peg_kg  = round(float(df_peg['_peso'].sum()), 0)
+
+    por_campo_pegsa = {}
+    for campo, grp in df_peg.groupby('_campo'):
+        por_campo_pegsa[campo] = {
+            'cabezas':       int(len(grp)),
+            'kg_proyectado': round(float(grp['_peso'].sum()), 0),
+        }
+
+    log.info(f"  ✓ {nombre} — total {total_cab:,} cab / {total_kg:,.0f} kg | "
+             f"PEGSA {peg_cab:,} cab / {peg_kg:,.0f} kg")
+
+    return {
+        'fecha':          fecha_str,
+        'archivo':        nombre,
+        'total_cabezas':  total_cab,
+        'total_kg':       float(total_kg),
+        'por_hotelero':   por_hotelero,
+        'pegsa': {
+            'cabezas':       peg_cab,
+            'kg_proyectado': float(peg_kg),
+            'por_campo':     por_campo_pegsa,
+        },
+    }
+
+
+def _parse_financiero_viejo(df, fecha_str):
+    """
+    Parsea financiero en FORMATO VIEJO (hoja única, layout semanal).
+    Columnas: col0=Label, col1=Referencia/Monto, col2=Sub-label, col3=Semana0, col4=Semana1...
+    Returns dict estandarizado con los campos financieros clave.
+    """
+    def _sf(v):
+        try:
+            f = float(v)
+            import math
+            return f if not math.isnan(f) else None
+        except Exception:
+            return None
+
+    # ── disponible: "saldo disponibilidades" → col3 ──
+    disponible = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'saldo disponibilidades' in label:
+            disponible = _sf(row.iloc[3]) or 0.0
+            break
+
+    # ── cheques en cartera corrientes: rows entre "cheq cartera ctes" y "compra dolares" → col1 ──
+    cheq_ctes = 0.0
+    in_ctes = False
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'cheq cartera ctes' in label:
+            in_ctes = True
+            continue
+        if in_ctes:
+            if 'compra dolares' in label or 'saldo disponibilidades' in label:
+                break
+            v = _sf(row.iloc[1]) if len(row) > 1 else None
+            if v and v > 0:
+                cheq_ctes += v
+
+    # ── cheques en cartera diferidos: "total disponib+chdif" → sum cols4+ positivos ──
+    cheq_dif = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'total disponib' in label and 'chdif' in label:
+            for c in range(4, len(row)):
+                v = _sf(row.iloc[c])
+                if v and v > 0:
+                    cheq_dif += v
+            break
+
+    cheques_cartera = cheq_ctes + cheq_dif
+
+    # ── cheques diferidos emitidos: "total cheques emitidos" → abs(sum cols4+) ──
+    cheques_emitidos = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'total cheques emitidos' in label:
+            for c in range(3, len(row)):
+                v = _sf(row.iloc[c])
+                if v and v < 0:
+                    cheques_emitidos += abs(v)
+            break
+
+    # ── cobrar hacienda: "total vtos x ventas" o "vencimientos a cobrar" → sum cols3+ positivos ──
+    cobrar_hacienda = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'total vtos x ventas' in label or 'vencimientos a cobrar' in label:
+            for c in range(3, len(row)):
+                v = _sf(row.iloc[c])
+                if v and v > 0:
+                    cobrar_hacienda += v
+            break
+
+    # ── pagar hacienda: "total vtos x compras" o "vencimientos a pagar" → abs(sum cols3+) ──
+    pagar_hacienda = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'total vtos x compras' in label or 'vencimientos a pagar' in label:
+            for c in range(3, len(row)):
+                v = _sf(row.iloc[c])
+                if v and v != 0:
+                    pagar_hacienda += abs(v)
+            break
+
+    # ── dólares: primera "compra dolares" en sección disponibilidades → col1=qty, col3=ARS ──
+    usd_cant = 0.0; usd_ars = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if 'compra dolares' in label:
+            usd_cant = _sf(row.iloc[1]) or 0.0
+            # ARS puede estar en col3 o ser 0 en archivos viejos
+            usd_ars = _sf(row.iloc[3]) or 0.0
+            break
+
+    # ── LCG: fila con "lcg" en label → col2 (valor de referencia/activo) ──
+    lcg = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if label.startswith('lcg') or ' lcg' in label:
+            # El valor está en col2 (col0=label, col1=vacío, col2=monto)
+            v = _sf(row.iloc[2]) if len(row) > 2 else None
+            if v is None:
+                v = _sf(row.iloc[1]) if len(row) > 1 else None
+            lcg = abs(v or 0.0)
+            if lcg > 0:
+                break
+
+    # ── Tercio Bravo: "terciobravo", "tercio bravo", "aporte tercio" → col2 ──
+    tercio_bravo = 0.0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
+        if any(k in label for k in ['terciobravo', 'tercio bravo', 'aporte tercio', 'terciob']):
+            v = _sf(row.iloc[2]) if len(row) > 2 else None
+            if v is None:
+                v = _sf(row.iloc[1]) if len(row) > 1 else None
+            tercio_bravo = abs(v or 0.0)
+            if tercio_bravo > 0:
+                break
+
+    return {
+        'fecha':            fecha_str,
+        'formato':          'viejo',
+        'disponible':       round(disponible, 2),
+        'cheques_cartera':  round(cheques_cartera, 2),
+        'cheques_emitidos': round(cheques_emitidos, 2),
+        'cobrar_hacienda':  round(cobrar_hacienda, 2),
+        'pagar_hacienda':   round(pagar_hacienda, 2),
+        'usd_cant':         round(usd_cant, 0),
+        'usd_ars':          round(usd_ars, 2),
+        'lcg':              round(lcg, 2),
+        'tercio_bravo':     round(tercio_bravo, 2),
+    }
+
+
+def _parse_financiero_nuevo(sheets, fecha_str):
+    """
+    Parsea financiero en FORMATO NUEVO (multi-hoja: resumen, posicion hoy, etc.).
+    Returns dict estandarizado con los campos financieros clave.
+    """
+    def _sf(v):
+        try:
+            f = float(v)
+            import math
+            return f if not math.isnan(f) else None
+        except Exception:
+            return None
+
+    # ── posicion hoy ──
+    ph = sheets.get('posicion hoy', pd.DataFrame())
+
+    def gph(r, c):
+        try:
+            return _sf(ph.iloc[r, c])
+        except Exception:
+            return None
+
+    # Row 22 = "saldo Disponibilidades" → col4 = SALDO FINAL
+    saldo_disp = gph(22, 4) or 0.0
+    # Row 25 = "COMPRA DOLARES" → col1=qty, col3=ARS
+    usd_cant = gph(25, 1) or 0.0
+    usd_ars  = gph(25, 3) or 0.0
+
+    # ── resumen (LCG y Tercio Bravo) ──
+    res = sheets.get('resumen', pd.DataFrame())
+
+    def gres(r, c):
+        try:
+            return _sf(res.iloc[r, c])
+        except Exception:
+            return None
+
+    # Row 1 = "LCG - aportes..." → col1; Row 2 = "aporte terciobravo" → col1
+    lcg          = abs(gres(1, 1) or 0.0)
+    tercio_bravo = abs(gres(2, 1) or 0.0)
+
+    # ── cheques pendiente → cartera (checks to receive) ──
+    cheq_raw      = sheets.get('cheques pendiente', pd.DataFrame())
+    total_cartera = 0.0
+    if len(cheq_raw) > 4:
+        importe_col = pd.to_numeric(cheq_raw.iloc[4:, 5], errors='coerce').fillna(0)
+        total_cartera = float(importe_col[importe_col > 0].sum())
+
+    # ── cheques emitidos: resumen row 30 "cheques pendientes" → sum cols1+ ──
+    # (organizados por semana, representan cheques diferidos emitidos pendientes)
+    cheques_emitidos = 0.0
+    if len(res) > 30:
+        for c in range(1, res.shape[1]):
+            v = gres(30, c)
+            if v and v > 0:
+                cheques_emitidos += v
+
+    # ── vencimientos de hacienda ──
+    hac = sheets.get('vencimientos de hacienda', pd.DataFrame())
+    cobrar_hacienda = 0.0
+    pagar_hacienda  = 0.0
+    if len(hac) > 22:
+        # Compras hacienda (pagar): filas 2-18
+        for i in range(2, min(19, len(hac))):
+            r = hac.iloc[i]
+            f = pd.to_datetime(r.iloc[0], errors='coerce')
+            if pd.isna(f):
+                continue
+            for c in range(1, hac.shape[1]):
+                v = _sf(r.iloc[c])
+                if v and v > 0:
+                    pagar_hacienda += v
+        # Ventas hacienda (cobrar): filas 22-38
+        for i in range(22, min(39, len(hac))):
+            r = hac.iloc[i]
+            f = pd.to_datetime(r.iloc[0], errors='coerce')
+            if pd.isna(f):
+                continue
+            for c in range(1, hac.shape[1]):
+                v = _sf(r.iloc[c])
+                if v and v > 0:
+                    cobrar_hacienda += v
+
+    return {
+        'fecha':            fecha_str,
+        'formato':          'nuevo',
+        'disponible':       round(saldo_disp, 2),
+        'cheques_cartera':  round(total_cartera, 2),
+        'cheques_emitidos': round(cheques_emitidos, 2),
+        'cobrar_hacienda':  round(cobrar_hacienda, 2),
+        'pagar_hacienda':   round(pagar_hacienda, 2),
+        'usd_cant':         round(usd_cant, 0),
+        'usd_ars':          round(usd_ars, 2),
+        'lcg':              round(lcg, 2),
+        'tercio_bravo':     round(tercio_bravo, 2),
+    }
+
+
+def parse_financiero_historico(ruta):
+    """
+    Detecta el formato (viejo=hoja única / nuevo=multi-hoja) y parsea el
+    archivo YYYY-MM-DD_financiero.xlsx, retornando un dict estandarizado.
+    """
+    import os as _os
+    nombre    = _os.path.basename(ruta)
+    fecha_str = nombre[:10]
+
+    try:
+        sheets = pd.read_excel(ruta, sheet_name=None, header=None, engine='openpyxl')
+    except Exception as e:
+        log.warning(f"  ⚠ {nombre}: error abriendo: {e}")
+        return None
+
+    if 'resumen' in sheets:
+        # FORMATO NUEVO (2026-03-20 en adelante)
+        return _parse_financiero_nuevo(sheets, fecha_str)
+    else:
+        # FORMATO VIEJO (hasta 2026-02-28)
+        # Buscar hoja principal (Hoja1 o la primera disponible)
+        hoja = sheets.get('Hoja1')
+        if hoja is None:
+            hoja = sheets.get('Sheet1')
+        if hoja is None:
+            hoja = list(sheets.values())[0] if sheets else None
+        if hoja is None:
+            log.warning(f"  ⚠ {nombre}: no se encontró hoja de datos")
+            return None
+        return _parse_financiero_viejo(hoja, fecha_str)
+
+
+def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
+    """
+    MÓDULO 9: construye/actualiza comportamiento_historico.json.
+
+    Para cada mes con Listado_Caravanas disponible:
+      - hacienda_masa: del XLS del mes
+      - insumos:       columna de esa fecha en STOCK DE INSUMOS.xlsx
+      - financiero:    del financiero más próximo a esa fecha
+
+    Salida: comportamiento_historico.json en carpeta datos.
+    """
+    import glob as _glob
+    import os as _os
+    from pathlib import Path
+
+    log.info("  Escaneando Listado_Caravanas...")
+    # 1. Listar archivos Listado_Caravanas
+    patron_xls = _os.path.join(carpeta_stock_mensuales, "Listado_Caravanas*.XLS")
+    archivos_cara = sorted(_glob.glob(patron_xls))
+    log.info(f"  Archivos Listado_Caravanas: {len(archivos_cara)}")
+
+    # 2. Listar archivos financieros y parsearlos todos
+    log.info("  Escaneando archivos financieros...")
+    patron_fin = _os.path.join(carpeta, "financiero",
+                               "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_financiero.xlsx")
+    archivos_fin = sorted(_glob.glob(patron_fin))
+    log.info(f"  Archivos financieros: {len(archivos_fin)}")
+
+    financieros = {}  # fecha_str → dict
+    for ruta_f in archivos_fin:
+        nombre_f = _os.path.basename(ruta_f)
+        fecha_f  = nombre_f[:10]
+        # Validar fecha antes de procesar
+        try:
+            datetime.strptime(fecha_f, '%Y-%m-%d')
+        except ValueError:
+            log.warning(f"  ⚠ Fecha inválida en nombre '{nombre_f}' — se omite")
+            continue
+        res = parse_financiero_historico(ruta_f)
+        if res:
+            financieros[fecha_f] = res
+            log.info(f"    ✓ {nombre_f} — disp: ${res['disponible']:,.0f} "
+                     f"| cartera: ${res['cheques_cartera']:,.0f} "
+                     f"| lcg: ${res['lcg']:,.0f}")
+    log.info(f"  Financieros parseados: {len(financieros)}")
+
+    # 3. Leer STOCK DE INSUMOS.xlsx (mapa fecha → col de insumos)
+    log.info("  Leyendo STOCK DE INSUMOS.xlsx...")
+    insumos_por_fecha = {}  # 'YYYY-MM-DD' → {nombre: kg}
+    ruta_ins = Path(carpeta_stock_mensuales) / "STOCK DE INSUMOS.xlsx"
+    if ruta_ins.exists():
+        try:
+            import openpyxl as _oxl
+            wb_ins = _oxl.load_workbook(str(ruta_ins), read_only=True, data_only=True)
+            ws_ins = wb_ins.active
+
+            # Leer encabezados (fila 1): cols 5+ son fechas
+            headers = {}
+            for c in range(5, ws_ins.max_column + 1):
+                h = ws_ins.cell(1, c).value
+                if h is None:
+                    continue
+                if hasattr(h, 'strftime'):
+                    h_str = h.strftime('%Y-%m-%d')
+                else:
+                    try:
+                        h_str = str(h)[:10]
+                    except Exception:
+                        continue
+                if len(h_str) == 10 and h_str[4] == '-':
+                    headers[c] = h_str
+
+            # Leer nombres de insumos (columna D = col4)
+            nombres_insumos = {}
+            for r in range(2, ws_ins.max_row + 1):
+                desc = ws_ins.cell(r, 4).value
+                if desc:
+                    nombres_insumos[r] = str(desc).strip()
+
+            # Para cada columna-fecha, leer los valores
+            for col_idx, fecha_col in headers.items():
+                items = {}
+                total = 0.0
+                for r, nombre_ins in nombres_insumos.items():
+                    v = ws_ins.cell(r, col_idx).value
+                    try:
+                        kg = float(v) if v is not None else 0.0
+                    except Exception:
+                        kg = 0.0
+                    items[nombre_ins] = round(kg, 2)
+                    total += kg
+                insumos_por_fecha[fecha_col] = {
+                    'items': items,
+                    'total_kg': round(total, 2)
+                }
+            wb_ins.close()
+            log.info(f"  ✓ STOCK DE INSUMOS.xlsx — {len(headers)} fechas leídas")
+        except Exception as e:
+            log.warning(f"  ⚠ Error leyendo STOCK DE INSUMOS.xlsx: {e}")
+    else:
+        log.warning(f"  ⚠ No existe {ruta_ins}")
+
+    def _try_parse_date(s):
+        """Intenta parsear una fecha YYYY-MM-DD; retorna None si es inválida."""
+        try:
+            return datetime.strptime(s, '%Y-%m-%d')
+        except ValueError:
+            return None
+
+    # 4. Función para encontrar el financiero más próximo a una fecha (sin exceder)
+    def _financiero_mas_proximo(fecha_target_str):
+        """Retorna el dict financiero cuya fecha es la más cercana a fecha_target (≤ fecha_target)."""
+        dt_target = _try_parse_date(fecha_target_str)
+        if dt_target is None:
+            return None
+        candidatos = [(f, d) for f, d in financieros.items()
+                      if _try_parse_date(f) is not None and f <= fecha_target_str]
+        if not candidatos:
+            candidatos = [(f, d) for f, d in financieros.items()
+                          if _try_parse_date(f) is not None]
+        if not candidatos:
+            return None
+        candidatos.sort(key=lambda x: abs((_try_parse_date(x[0]) - dt_target).days))
+        return candidatos[0][1]
+
+    # 5. Función para encontrar los insumos más próximos a una fecha
+    def _insumos_mas_proximos(fecha_target_str):
+        """Retorna insumos de la fecha más cercana a fecha_target."""
+        dt_target = _try_parse_date(fecha_target_str)
+        if dt_target is None:
+            return None, None
+        candidatos = [(f, d) for f, d in insumos_por_fecha.items()
+                      if _try_parse_date(f) is not None and f <= fecha_target_str]
+        if not candidatos:
+            candidatos = [(f, d) for f, d in insumos_por_fecha.items()
+                          if _try_parse_date(f) is not None]
+        if not candidatos:
+            return None, None
+        candidatos.sort(key=lambda x: abs((_try_parse_date(x[0]) - dt_target).days))
+        return candidatos[0][0], candidatos[0][1]
+
+    # 6. Construir snapshots
+    log.info("  Construyendo snapshots mensuales...")
+    snapshots = []
+
+    for ruta_c in archivos_cara:
+        nombre_c = _os.path.basename(ruta_c)
+        log.info(f"  → Procesando {nombre_c}")
+
+        # Parsear Listado Caravanas
+        masa = _parse_listado_caravanas_html(ruta_c)
+        if masa is None:
+            log.warning(f"    ⚠ Skipping {nombre_c} — error en parseo")
+            continue
+
+        fecha_snap = masa['fecha']
+
+        # Buscar financiero más próximo
+        fin = _financiero_mas_proximo(fecha_snap)
+        if fin:
+            fin_log = f"financiero: {fin['fecha']} (${fin['disponible']:,.0f})"
+        else:
+            fin_log = "financiero: no disponible"
+
+        # Buscar insumos más próximos
+        fecha_ins, ins_data = _insumos_mas_proximos(fecha_snap)
+        if ins_data:
+            ins_log = f"insumos: {fecha_ins} ({ins_data['total_kg']:,.0f} kg)"
+        else:
+            ins_log = "insumos: no disponibles"
+
+        log.info(f"    {fin_log} | {ins_log}")
+
+        # Extraer período (YYYY-MM) del nombre del archivo
+        m2 = re.search(r'(\d{2})-(\d{2})-(\d{4})', nombre_c)
+        if m2:
+            d2, mo2, y2 = m2.groups()
+            periodo = f"{y2}-{mo2}"
+        else:
+            periodo = fecha_snap[:7]
+
+        snap = {
+            'fecha':   fecha_snap,
+            'periodo': periodo,
+            'hacienda_masa': masa,
+            'insumos': {
+                'fecha_col':   fecha_ins,
+                'items':       ins_data['items']       if ins_data else {},
+                'total_kg':    ins_data['total_kg']    if ins_data else 0.0,
+            },
+            'financiero': fin if fin else {
+                'fecha': None, 'disponible': 0, 'cheques_cartera': 0,
+                'cheques_emitidos': 0, 'cobrar_hacienda': 0, 'pagar_hacienda': 0,
+                'usd_cant': 0, 'usd_ars': 0, 'lcg': 0, 'tercio_bravo': 0,
+            },
+        }
+        snapshots.append(snap)
+
+    # Ordenar por fecha
+    snapshots.sort(key=lambda s: s['fecha'])
+
+    output = {
+        'generado':  datetime.now().isoformat(),
+        'snapshots': snapshots,
+        'total':     len(snapshots),
+    }
+
+    guardar(output, carpeta, "comportamiento_historico.json")
+    n = len(snapshots)
+    if snapshots:
+        log.info(f"  ✓ comportamiento_historico.json — {n} meses "
+                 f"({snapshots[0]['fecha']} → {snapshots[-1]['fecha']})")
+    else:
+        log.info(f"  ✓ comportamiento_historico.json — 0 meses (sin Listado_Caravanas)")
+    return output
 
 
 if __name__ == "__main__":
