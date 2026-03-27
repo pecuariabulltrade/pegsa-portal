@@ -3022,6 +3022,24 @@ window.addEventListener('load', function(){
         <div style="position:relative;height:260px"><canvas id="chartRealFinanciero"></canvas></div>
       </div>
 
+      <!-- Gráfico insumos — total -->
+      <div class="panel" style="display:block;margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Stock de Insumos — Total</span>
+          <span class="section-sub">Toneladas en stock por mes</span>
+        </div>
+        <div style="position:relative;height:240px"><canvas id="chartRealInsuTotal"></canvas></div>
+      </div>
+
+      <!-- Gráfico insumos — por tipo -->
+      <div class="panel" style="display:block;margin-bottom:24px">
+        <div class="section-header">
+          <span class="section-title">Stock de Insumos — Por Tipo</span>
+          <span class="section-sub">Toneladas en stock · desglose por insumo</span>
+        </div>
+        <div style="position:relative;height:260px"><canvas id="chartRealInsuDetalle"></canvas></div>
+      </div>
+
       <!-- Tabla completa -->
       <div class="panel" style="display:block">
         <div class="section-header">
@@ -6859,6 +6877,9 @@ function _renderHistReal(){
   // ── Gráfico kg por cabeza ──
   _renderRealKgCab('pegsa');
 
+  // ── Gráficos insumos ──
+  _renderRealInsumos(snaps, labels);
+
   // ── Gráfico financiero ──
   var dsDisp = {
     label: 'Disponible ($M)',
@@ -6928,6 +6949,79 @@ function _renderHistReal(){
   });
 
   document.getElementById('histRealTabla').innerHTML = html + '</tbody></table>';
+}
+
+// ── INSUMOS (Real Mensual) ───────────────────────────────────
+function _renderRealInsumos(snaps, labels){
+  if(!snaps || !snaps.length) return;
+
+  // ── Total en toneladas ──
+  _destroyChart('chartRealInsuTotal');
+  var ctxT = document.getElementById('chartRealInsuTotal');
+  if(ctxT){
+    _histCharts['chartRealInsuTotal'] = new Chart(ctxT, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Stock total insumos',
+          data: snaps.map(function(s){ return s.insumos ? +(s.insumos.total_kg/1000).toFixed(1) : 0; }),
+          backgroundColor: 'rgba(184,146,42,.75)',
+          borderColor: '#b8922a',
+          borderWidth: 1,
+          borderRadius: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { display: false } },
+          y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toFixed(0)+'t'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
+        }
+      }
+    });
+  }
+
+  // ── Desglose por tipo de insumo ──
+  var insuSet = {};
+  snaps.forEach(function(s){
+    if(s.insumos && s.insumos.items) s.insumos.items.forEach(function(it){ insuSet[it.nombre]=1; });
+  });
+  var insumos = Object.keys(insuSet);
+
+  var dsDetalle = insumos.map(function(nom, i){
+    return {
+      label: nom,
+      data: snaps.map(function(s){
+        if(!s.insumos || !s.insumos.items) return null;
+        var it = s.insumos.items.find(function(x){ return x.nombre === nom; });
+        return it ? +(it.stock_kg/1000).toFixed(1) : null;
+      }),
+      borderColor: HIST_COLORS[i % HIST_COLORS.length],
+      backgroundColor: 'transparent',
+      tension: .3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: true
+    };
+  });
+
+  _destroyChart('chartRealInsuDetalle');
+  var ctxD = document.getElementById('chartRealInsuDetalle');
+  if(ctxD){
+    _histCharts['chartRealInsuDetalle'] = new Chart(ctxD, {
+      type: 'line',
+      data: { labels: labels, datasets: dsDetalle },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 14 } } },
+        scales: {
+          x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
+          y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toFixed(0)+'t'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
+        }
+      }
+    });
+  }
 }
 
 // ── KG POR CABEZA (Real Mensual) ─────────────────────────────
