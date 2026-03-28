@@ -6774,26 +6774,33 @@ function _renderHistInsumos(){
   }];
   _mkLineChart('chartHistInsumos', labels, dsTot, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
 
-  // Detalle por insumo
+  // Detalle por insumo — items puede ser array [{nombre,stock_kg}] u objeto {nombre:kg}
   var insuSet = {};
   snaps.forEach(function(s){
-    if(s.insumos && s.insumos.items) s.insumos.items.forEach(function(it){ insuSet[it.nombre]=1; });
+    if(s.insumos && s.insumos.items){
+      var it = s.insumos.items;
+      if(Array.isArray(it)){ it.forEach(function(x){ insuSet[x.nombre]=1; }); }
+      else { Object.keys(it).forEach(function(k){ insuSet[k]=1; }); }
+    }
   });
-  var insumos = Object.keys(insuSet);
+  var insumos = Object.keys(insuSet).sort();
   var dsIns = insumos.map(function(nom, i){
     return {
-      label: nom,
+      label: nom.replace(/\s*\(KG\)/i,'').trim(),
       data: snaps.map(function(s){
         if(!s.insumos||!s.insumos.items) return null;
-        var it = s.insumos.items.find(function(x){ return x.nombre===nom; });
-        return it ? it.stock_kg : null;
+        var it = s.insumos.items;
+        var kg = Array.isArray(it)
+          ? (function(){ var x=it.find(function(x){ return x.nombre===nom; }); return x?x.stock_kg:null; })()
+          : (it[nom]!=null ? it[nom] : null);
+        return kg!=null ? +(kg/1000).toFixed(1) : null;
       }),
       borderColor: HIST_COLORS[i%HIST_COLORS.length],
       backgroundColor: 'transparent',
       tension: .3, pointRadius: 4, spanGaps: true
     };
   });
-  _mkLineChart('chartHistInsumoDetalle', labels, dsIns, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
+  _mkLineChart('chartHistInsumoDetalle', labels, dsIns, function(v){ return v.toFixed(0)+'t'; }, 'toneladas');
 }
 
 function _renderHistFinanciero(){
