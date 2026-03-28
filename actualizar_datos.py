@@ -2025,15 +2025,28 @@ def actualizar_valuacion(carpeta, snaps_historico):
         hacienda_pesos = round(kg_pegsa * mag_indice) if mag_indice else None
 
         # ── 3. Insumos en pesos (solo Maíz y Soja) ──
+        # items puede ser dict {nombre: kg} o lista [{nombre, stock_kg}]
         kg_maiz = kg_soja = 0.0
         if ins and ins.get('items'):
-            for it in ins['items']:
-                nom = str(it.get('nombre', '') or '').upper()
-                kg  = float(it.get('stock_kg') or 0)
-                if 'MAIZ' in nom or 'MAÍZ' in nom:
-                    kg_maiz = kg
-                elif 'SOJA' in nom:
-                    kg_soja = kg
+            _items = ins['items']
+            if isinstance(_items, dict):
+                # Formato real: {"MAIZ GRANO (KG)": 1575000, ...}
+                for _nom, _kg in _items.items():
+                    _n = str(_nom or '').upper()
+                    _v = float(_kg or 0)
+                    if 'MAIZ' in _n or 'MAÍZ' in _n:
+                        kg_maiz += _v
+                    elif 'SOJA' in _n:
+                        kg_soja += _v
+            else:
+                # Formato alternativo: [{nombre, stock_kg}]
+                for it in _items:
+                    nom = str(it.get('nombre', '') or '').upper()
+                    kg  = float(it.get('stock_kg') or 0)
+                    if 'MAIZ' in nom or 'MAÍZ' in nom:
+                        kg_maiz += kg
+                    elif 'SOJA' in nom:
+                        kg_soja += kg
 
         maiz_pesos = round(kg_maiz * bcr_maiz / 1000) if bcr_maiz else None
         soja_pesos = round(kg_soja * bcr_soja / 1000) if bcr_soja else None
