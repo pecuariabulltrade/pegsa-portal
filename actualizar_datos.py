@@ -1377,11 +1377,24 @@ def procesar_muertes_30d(regs_m, cols_m, regs_ing, cols_ing, regs_stock, cols_st
 #  GUARDAR JSON
 # ═══════════════════════════════════════════════════════════
 def guardar(datos, carpeta, nombre):
+    """Guarda JSON de forma atómica (escribe en temp y renombra) para
+    evitar que interrupciones del proceso produzcan archivos truncados."""
+    import tempfile, os
     dest = Path(carpeta)
     dest.mkdir(parents=True, exist_ok=True)
     ruta = dest / nombre
-    with open(ruta, "w", encoding="utf-8") as f:
-        json.dump(limpiar_nan(datos), f, ensure_ascii=False, indent=2, default=str)
+    # Escribir en archivo temporal dentro del mismo directorio (mismo filesystem)
+    fd, tmp_path = tempfile.mkstemp(dir=dest, suffix='.tmp', prefix=nombre+'_')
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(limpiar_nan(datos), f, ensure_ascii=False, indent=2, default=str)
+        # Rename atómico: reemplaza el destino de forma segura
+        os.replace(tmp_path, ruta)
+    except Exception:
+        # Si algo falla, eliminar el temp para no dejar basura
+        try: os.unlink(tmp_path)
+        except Exception: pass
+        raise
     log.info(f"  Guardado: {ruta.name}  ({ruta.stat().st_size // 1024} KB)")
     return str(ruta)
 
@@ -2101,11 +2114,13 @@ def recalcular_stock_diario_desde_movimientos(
         regs_ing,   cols_ing,
         regs_egr,   cols_egr,
         carpeta,    periodo,
-        dias=730):
+        dias=90):
     """
     Recalcula el stock diario histórico usando running balance.
     stock(D) = stock(D+1) - ingresos(D+1) + egresos(D+1)
     Baseline = V_STOCK_HACIENDA actual (estado definitivo de hoy).
+    Retiene solo los últimos `dias` días (90 por defecto) para controlar
+    el tamaño del archivo. Las entradas más antiguas se descartan.
     El resultado reemplaza completamente stock_diario.json en cada ejecución,
     incorporando automáticamente cualquier carga retroactiva de movimientos.
     """
@@ -3097,7 +3112,7 @@ def main():
             regs_ing,        cols_ing,
             regs_egr,        cols_egr,
             carpeta,         periodo,
-            dias=730
+            dias=90
         )
         resumen["modulos"]["stock_diario"] = {
             "ok":          True,
