@@ -2588,7 +2588,14 @@ def main():
 
         prom_diario_ms = cs.get("promedio_diario_kg_ms", 0)
         prom_diario_tc = cs.get("promedio_diario_kg", 0)
-        adp_prom       = g.get("adp_promedio", 0) or 0
+        # Usar ADP del último mes disponible (más representativo del período actual)
+        # Si no hay datos mensuales, caer al ADP general del período
+        _por_mes_prod = prod_data.get("por_mes", {})
+        _ultimo_mes   = max(_por_mes_prod.keys()) if _por_mes_prod else None
+        adp_prom      = (_por_mes_prod[_ultimo_mes].get("adp_promedio") or 0) if _ultimo_mes else 0
+        if not adp_prom:
+            adp_prom = g.get("adp_promedio", 0) or 0
+        log.info(f"  ADP usado para conversión: {adp_prom} kg/día (mes {_ultimo_mes or 'general'})")
 
         log.info(f"  Denominador: {'El Haras' if usando_haras else 'PEGSA total (Haras no encontrado)'}")
         log.info(f"  Cabezas     : {cab_haras:,}")
