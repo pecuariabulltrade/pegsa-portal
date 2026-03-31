@@ -6203,7 +6203,7 @@ function _renderTesUI(d) {
   bg.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:18px';
   function _bancoList(arr,titulo) {
     var h='<div><div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.38);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(26,22,18,.1)">'+titulo+'</div>';
-    (arr||[]).forEach(function(b){h+='<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(26,22,18,.05)"><span style="font-size:12px">'+b.nombre+'</span><span style="font-family:DM Mono,monospace;font-size:12px;font-weight:500;color:var(--green)">'+_tesFmt(b.saldo)+'</span></div>';});
+    (arr||[]).forEach(function(b){var bCol=(b.saldo||0)<0?'var(--red)':'var(--green)';h+='<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(26,22,18,.05)"><span style="font-size:12px">'+b.nombre+'</span><span style="font-family:DM Mono,monospace;font-size:12px;font-weight:500;color:'+bCol+'">'+_tesFmt(b.saldo)+'</span></div>';});
     return h+'</div>';
   }
   bg.innerHTML = _bancoList(pos.bancos_peg,'Pecuaria El Garabí SA') + _bancoList(pos.bancos_bull,'Bulltrade SRL');
@@ -6425,7 +6425,8 @@ function _renderTesUI(d) {
 
 function _tesFmt(n){
   if(n==null)return'—';
-  return '$\u00a0'+Math.round(Math.abs(n)).toLocaleString('es-AR');
+  var neg = n < 0;
+  return (neg ? '−\u00a0' : '') + '$\u00a0' + Math.round(Math.abs(n)).toLocaleString('es-AR');
 }
 
 function tesSwitchVista(v){
@@ -6484,7 +6485,7 @@ function _tesRenderAcum(flujo){
   if(_tesAcumChart){_tesAcumChart.destroy();_tesAcumChart=null;}
   var vals=[flujo.saldo_inicial||0].concat(periodos.map(function(p){return p.saldo_acumulado||0;}));
   var lbls2=['Hoy'].concat(periodos.map(function(p){return p.label;}));
-  function fM(v){var a=Math.abs(v),s=a>=1e9?(a/1e9).toFixed(1)+'B':a>=1e6?(a/1e6).toFixed(0)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0);return(v>=0?'+':'-')+'$'+s;}
+  function fM(v){var a=Math.abs(v),s=(a/1e6).toFixed(1).replace('.',',')+' M';return(v>=0?'+':'-')+'$'+s;}
   var ptColors=vals.map(function(v){return v>=0?'#27613d':'#c0392b';});
   // Inline plugin to draw value labels above/below each point
   var _labelsPlugin={
@@ -6589,8 +6590,10 @@ function _renderTesVariaciones(histFin, currentTes) {
     return (v >= 0 ? '+' : '−') + ' $ ' + Math.round(Math.abs(v)).toLocaleString('es-AR');
   }
   function fmtAbs(v) {
-    return '$ ' + Math.round(Math.abs(v)).toLocaleString('es-AR');
+    var neg = v < 0;
+    return (neg ? '− ' : '') + '$ ' + Math.round(Math.abs(v)).toLocaleString('es-AR');
   }
+  function fmtAbsCol(v) { return v < 0 ? 'color:#c0392b' : ''; }
   function pct(delta, base) {
     if (!base) return '—';
     var p = (delta / Math.abs(base)) * 100;
@@ -6683,10 +6686,11 @@ function _renderTesVariaciones(histFin, currentTes) {
     var dCol = row.d > 0 ? 'var(--green)' : row.d < 0 ? 'var(--red)' : 'rgba(26,22,18,.4)';
     var rowBg = isTotal ? 'background:rgba(26,22,18,.03);' : '';
     var lpad = row.indent ? 'padding-left:24px;' : '';
+    var pvNeg = fmtAbsCol(row.pv), cvNeg = fmtAbsCol(row.cv);
     html += '<tr style="'+rowBg+'">'
       +'<td style="'+TD+';text-align:left;'+lpad+(isTotal?'font-weight:600;':'color:rgba(26,22,18,.7);')+'">'+row.lbl+'</td>'
-      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;color:rgba(26,22,18,.5)">'+fmtAbs(row.pv)+'</td>'
-      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;color:var(--ink)'+(isTotal?';font-weight:600':'')+'">'+fmtAbs(row.cv)+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;color:rgba(26,22,18,.5);'+pvNeg+'">'+fmtAbs(row.pv)+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;color:var(--ink)'+(isTotal?';font-weight:600':'')+(cvNeg?';'+cvNeg:'')+'">'+fmtAbs(row.cv)+'</td>'
       +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;font-weight:600;color:'+dCol+'">'+(row.d!==0?fmt(row.d):'—')+'</td>'
       +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;font-size:10px;color:'+dCol+'">'+pct(row.d,row.pv)+'</td>'
       +'<td style="'+TD+';text-align:left;font-size:10px;color:rgba(26,22,18,.4)">'+row.note+'</td>'
