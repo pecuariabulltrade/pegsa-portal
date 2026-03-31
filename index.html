@@ -3986,6 +3986,7 @@ function calcSim(tipo){
 
   // ── Cálculo de alimentación por etapas (3-stage diet system) ─────────────────
   var consumoDiario, alimentacion;
+  var stageResults = []; // para el cuadro de dieta
   if(tipo !== 'invernada'){
     var etapas3 = SIM_ETAPAS[tipo];
     var gvP = function(id){ var el=document.getElementById(pfx+'-'+id); return el?(parseFloat(el.value)||0):0; };
@@ -3996,20 +3997,28 @@ function calcSim(tipo){
     for(var ei=0; ei<etapas3.length; ei++){
       var et3=etapas3[ei];
       var sd = et3.dias!==null ? Math.min(et3.dias, dLeft) : dLeft;
-      if(sd<=0) continue;
+      // Leer composición desde los inputs del cuadro de dieta
+      var sn=ei+1;
+      var gd=function(ingr,sn2){ var el=document.getElementById(pfx+'-d'+sn2+'-'+ingr); return el?(parseFloat(el.value)||0):0; };
+      var c3=[gd('maiz',sn), gd('silo',sn), gd('gluten',sn), gd('nucleo',sn), gd('germen',sn)];
+      if(sd<=0){
+        stageResults.push({sd:0, wEnd:wNow, msTC:0, msPV:0, tcPV:0, cdS:0, stTC:0, stRac:0, stAlim:0, comp:c3});
+        continue;
+      }
       var wEnd = wNow + aumento*sd;
       var wAvg = (wNow+wEnd)/2;
-      var c3=et3.comp;
       // MS/TC de esta etapa = suma(comp_i × MS_ingr_i) / 100
       var msTC3=(c3[0]*SIM_MS_INGR[0]+c3[1]*SIM_MS_INGR[1]+c3[2]*SIM_MS_INGR[2]+c3[3]*SIM_MS_INGR[3]+c3[4]*SIM_MS_INGR[4])/100;
       // MS/PV lookup con PESO FIN etapa
       var msPV3=simLookupMS(msT3, wEnd);
       // Consumo diario TC = (MS/PV ÷ MS/TC) × peso_promedio_etapa
-      var cdS=(msPV3/msTC3)*wAvg;
+      var tcPV3 = msTC3>0 ? msPV3/msTC3 : 0;
+      var cdS=(tcPV3)*wAvg;
       var stTC=cdS*sd;
       // Costo ración esta etapa ($/kgTC c/IVA)
       var stRac=(c3[0]*maiz_neto3+c3[1]*silo3+c3[2]*gluten3+c3[3]*nucleo3+c3[4]*germen3)/100/1000*1.15;
       totTC+=stTC; totAlim+=stRac*stTC;
+      stageResults.push({sd:sd, wEnd:wEnd, wAvg:wAvg, msTC:msTC3, msPV:msPV3, tcPV:tcPV3, cdS:cdS, stTC:stTC, stRac:stRac, stAlim:stRac*stTC, comp:c3});
       wNow=wEnd; dLeft-=sd;
     }
     consumoDiario = totTC/dias;
@@ -4021,6 +4030,56 @@ function calcSim(tipo){
     if(tcEl2) tcEl2.value=(consumoDiario/pesoPromedio*100).toFixed(3);
     var adEl2=document.getElementById(pfx+'-ad');
     if(adEl2) adEl2.value=aumento.toFixed(3);
+    // ── Actualizar cuadro de dieta ─────────────────────────────────────────────
+    var ingrs=['maiz','silo','gluten','nucleo','germen'];
+    // Sumas por columna y ponderados
+    for(var ii=0;ii<etapas3.length;ii++){
+      var sr=stageResults[ii]||{comp:[0,0,0,0,0]};
+      var sumCol=sr.comp.reduce(function(a,b){return a+b;},0);
+      var sumEl=document.getElementById(pfx+'-dsum'+(ii+1));
+      if(sumEl){sumEl.textContent=sumCol.toFixed(0)+'%'; sumEl.className=Math.abs(sumCol-100)>0.5?'sdt-warn':'';}
+    }
+    // Columna ponderada por ingrediente
+    for(var ii2=0;ii2<ingrs.length;ii2++){
+      var wsum=0;
+      for(var jj=0;jj<stageResults.length;jj++) wsum+=(stageResults[jj].comp[ii2]||0)*(stageResults[jj].stTC||0);
+      var wEl=document.getElementById(pfx+'-dw-'+ingrs[ii2]);
+      if(wEl) wEl.textContent=(totTC>0?(wsum/totTC).toFixed(1):'—')+'%';
+    }
+    // Métricas calculadas (tbody dinámico)
+    var db=document.getElementById('simDieta-'+tipo);
+    if(db){
+      var labels=['E1','E2','E3']; var nc=etapas3.length; var rows='';
+      var fn1=function(v){return v>0?v.toFixed(1):'—';};
+      var fn2=function(v){return v>0?v.toFixed(2):'—';};
+      var fn3=function(v){return v>0?(v*100).toFixed(2)+'%':'—';};
+      var fnm=function(v){return v>0?'$'+Math.round(v).toLocaleString('es-AR'):'—';};
+      rows+='<tr class="sdt-calc"><td>Días etapa</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]?fn1(stageResults[i].sd):'—')+'</td>';
+      rows+='<td><b>'+fn1(dias)+'</b></td></tr>';
+      rows+='<tr class="sdt-calc"><td>MS dieta (%)</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]&&stageResults[i].sd>0?(stageResults[i].msTC*100).toFixed(2)+'%':'—')+'</td>';
+      rows+='<td>'+(totTC>0?(stageResults.reduce(function(a,s){return a+(s.msTC*s.stTC);},0)/totTC*100).toFixed(2)+'%':'—')+'</td></tr>';
+      rows+='<tr class="sdt-calc"><td>MS/PV</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]&&stageResults[i].sd>0?stageResults[i].msPV.toFixed(4):'—')+'</td>';
+      rows+='<td>—</td></tr>';
+      rows+='<tr class="sdt-calc"><td>TC/PV (%)</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]&&stageResults[i].sd>0?fn3(stageResults[i].tcPV):'—')+'</td>';
+      rows+='<td>'+(totTC>0&&dias>0?fn3(consumoDiario/pesoPromedio):'—')+'</td></tr>';
+      rows+='<tr class="sdt-calc"><td>kg TC/día</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]&&stageResults[i].sd>0?fn1(stageResults[i].cdS):'—')+'</td>';
+      rows+='<td>'+fn1(consumoDiario)+'</td></tr>';
+      rows+='<tr class="sdt-total"><td>Total TC (cab)</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]?fn1(stageResults[i].stTC):'—')+'</td>';
+      rows+='<td><b>'+fn1(totTC)+'</b></td></tr>';
+      rows+='<tr class="sdt-calc"><td>$/kg TC c/IVA</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]&&stageResults[i].sd>0?'$'+stageResults[i].stRac.toFixed(1):'—')+'</td>';
+      rows+='<td>$'+(totTC>0?(totAlim/totTC).toFixed(1):'—')+'</td></tr>';
+      rows+='<tr class="sdt-alim"><td>Alimentación ($)</td>';
+      for(var i=0;i<nc;i++) rows+='<td>'+(stageResults[i]?fnm(stageResults[i].stAlim):'—')+'</td>';
+      rows+='<td><b>'+fnm(totAlim)+'</b></td></tr>';
+      db.innerHTML=rows;
+    }
   } else {
     consumoDiario = consumoPct * pesoPromedio;
     alimentacion  = racion * consumoDiario * dias;
@@ -4127,6 +4186,21 @@ function calcSim(tipo){
     elTir.textContent = fp(tirAnual);
     elTir.style.color = tirAnual >= 0 ? '#6bc47a' : '#e74c3c';
   }
+}
+
+// Restaurar composición de dieta a los valores default del Excel
+function resetDieta(tipo){
+  var pfx=tipo==='terneros'?'tn':tipo==='terneras'?'ta':'va';
+  var def=SIM_ETAPAS[tipo];
+  if(!def) return;
+  var ingrs=['maiz','silo','gluten','nucleo','germen'];
+  for(var si=0;si<def.length;si++){
+    for(var ii=0;ii<ingrs.length;ii++){
+      var el=document.getElementById(pfx+'-d'+(si+1)+'-'+ingrs[ii]);
+      if(el) el.value=def[si].comp[ii];
+    }
+  }
+  calcSim(tipo);
 }
 
 function _applyInsumos(data){
