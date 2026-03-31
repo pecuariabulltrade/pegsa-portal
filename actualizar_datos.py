@@ -3868,19 +3868,39 @@ def actualizar_mercado_precios(carpeta, repo):
     log.info(f"  ✓ Negocios: {negocios['total_ventas']} ventas · {negocios['total_compras']} compras procesadas")
 
     # ── 6. Histórico diario ─────────────────────────────────────
-    nov_precio = next((h["precio"] for h in hacienda
-                       if "novillo" in h["categoria"].lower()
-                       and "especial" not in h["categoria"].lower()), 0)
-    ter_precio = next((h["precio"] for h in hacienda
-                       if "ternero" in h["categoria"].lower()), 0)
+    # Mapeo de substrings de categoría → clave JSON del histórico
+    HAC_HIST_KEYS = [
+        ("novillitos hasta", "nov_390"),      # Novillito ≤390 kg
+        ("novillitos 391",   "nov_430"),      # Novillito 391/430 kg
+        ("novillos 431",     "nov_460"),      # Novillo 431/460 kg
+        ("novillos 461",     "nov_490"),      # Novillo 461/490 kg
+        ("vaquillona",       "vaq_390"),      # Vaquillona ≤390 kg
+        ("vacas buenas",     "vac_buena"),    # Vaca Buena
+        ("vacas regulares",  "vac_regular"),  # Vaca Regular
+        ("vacas conserva",   "vac_conserva"), # Vaca Conserva
+        ("ternero",          "ternero"),      # Ternero
+        ("ternera",          "ternera"),      # Ternera
+    ]
 
-    hoy = {
-        "fecha":    today,
-        "maiz":     precio_maiz,
-        "soja":     precio_soja,
-        "novillo":  nov_precio,
-        "ternero":  ter_precio,
-    }
+    def _hac_hist(key_lower):
+        for h in hacienda:
+            if key_lower in h.get("categoria", "").lower():
+                p = h.get("precio", 0)
+                if p and p > 500:
+                    return p
+        return 0
+
+    hoy = {"fecha": today}
+    for _key, _field in HAC_HIST_KEYS:
+        hoy[_field] = _hac_hist(_key) or 0
+    # Granos
+    hoy["maiz"]  = precio_maiz
+    hoy["soja"]  = precio_soja
+    hoy["trigo"] = precio_trigo
+    hoy["sorgo"] = precio_sorgo
+    # Campo legado para compatibilidad con código anterior
+    hoy["novillo"] = hoy.get("nov_460") or hoy.get("nov_490") or 0
+    hoy["ternero"] = hoy.get("ternero") or 0
     historico = [h for h in historico if h.get("fecha") != today]
     historico.append(hoy)
     historico = sorted(historico, key=lambda x: x.get("fecha", ""))[-365:]
