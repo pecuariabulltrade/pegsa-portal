@@ -3783,8 +3783,9 @@ var SIM_MS_INGR = [0.88, 0.37, 0.42, 0.975, 0.98];
 // Lookup MS/PV se hace con PESO AL FINAL de cada etapa; consumo diario usa peso PROMEDIO etapa
 var SIM_ETAPAS = {
   terneros: [                              // hoja 'simulacion terneros (2)'
-    {comp:[37,20,31,4,8],   dias:10},      // Etapa 1: adaptación 10 días
-    {comp:[35,22,31,4,8],   dias:null}     // Etapa 2: engorde (días restantes)
+    {comp:[37,20,31,4,8],   dias:10},      // Etapa 1: adaptación 10 días (fijos)
+    {comp:[35,22,31,4,8],   dias:60},      // Etapa 2: desarrollo máx 60 días  ← fórmula Excel: IF(dias-10<60, dias-10, 60)
+    {comp:[36,22,30,4,8],   dias:null}     // Etapa 3: terminación (días restantes si estadía > 70 días)
   ],
   terneras: [                              // hoja 'simulacion terneras (3)'
     {comp:[38,23,26,4,9],   dias:10},      // Etapa 1: adaptación 10 días
