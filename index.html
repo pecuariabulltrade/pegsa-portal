@@ -3771,11 +3771,34 @@ function fp(n){ return (Number(n||0)*100).toFixed(1)+'%'; }
 
 // ── Tablas de lookup (desde hoja 'tabla' del Excel) ──────────────────
 // % engorde por categoría (feedlot) → ADP = avg_weight × pct / 100
-var SIM_ADP_PCT = {terneros:0.38, terneras:0.39, vacas:0.32, invernada:0.27};
+// % engorde por categoría: valor usado en hoja de simulación del Excel (tabla rows 37-40)
+// ADP = pesoPromedio × pct / 100
+var SIM_ADP_PCT = {terneros:0.34, terneras:0.38, vacas:0.32, invernada:0.27};
 
-// Composición dieta por categoría (% de cada ingrediente, base TC tal-cual)
-// Columna "Total" de la hoja de simulación del Excel
-// Orden: [maíz, silo, gluten, núcleo, germen]
+// MS% por ingrediente (materia seca / tal cual): maíz, silo, gluten, núcleo, germen
+var SIM_MS_INGR = [0.88, 0.37, 0.42, 0.975, 0.98];
+
+// Sistema de 3 etapas de dieta por categoría (extraído de las hojas de simulación del Excel)
+// comp=[maíz%,silo%,gluten%,núcleo%,germen%]; dias=días fijos (null=todos los restantes)
+// Lookup MS/PV se hace con PESO AL FINAL de cada etapa; consumo diario usa peso PROMEDIO etapa
+var SIM_ETAPAS = {
+  terneros: [                              // hoja 'simulacion terneros (2)'
+    {comp:[37,20,31,4,8],   dias:10},      // Etapa 1: adaptación 10 días
+    {comp:[35,22,31,4,8],   dias:null}     // Etapa 2: engorde (días restantes)
+  ],
+  terneras: [                              // hoja 'simulacion terneras (3)'
+    {comp:[38,23,26,4,9],   dias:10},      // Etapa 1: adaptación 10 días
+    {comp:[37,21,30,4,8],   dias:30},      // Etapa 2: crecimiento 30 días
+    {comp:[37,21,30,4,8],   dias:null}     // Etapa 3: terminación (días restantes)
+  ],
+  vacas: [                                 // hoja 'vacas'
+    {comp:[50,50,0,0,0],    dias:5},       // Etapa 1: adaptación 5 días (solo maíz+silo)
+    {comp:[32,21,31,4,12],  dias:30},      // Etapa 2: desarrollo 30 días
+    {comp:[33,20,31,4,12],  dias:null}     // Etapa 3: terminación (días restantes)
+  ]
+};
+
+// Composición dieta promedio ponderada (columna "Total" del Excel) — solo para referencia/calcRacion
 var SIM_DIETA = {
   terneros: [35.27343, 21.72657, 31.00000, 4.00000,  8.00000],
   terneras: [37.05847, 21.11693, 29.76614, 4.00000,  8.05847],
@@ -3859,20 +3882,18 @@ function calcSim(tipo){
 
   var pesoPromedio = (pesoE + pesoS) / 2;
 
-  // ── Auto-calc ADP & Consumo TC from lookup tables ────────────────
+  // ── Auto-calc ADP de tablas ────────────────────────────────────────
+  // (consumo TC y racion se calculan en el bloque de etapas más abajo)
   var aumento, consumoPct;
   if(tipo === 'invernada'){
     aumento    = G('ad');
     consumoPct = G('consumo')/100;
   } else {
     aumento = pesoPromedio * SIM_ADP_PCT[tipo] / 100;
+    // consumoPct se calculará por etapas; esto es solo fallback
     var msTable = tipo==='vacas' ? SIM_MS_TABLE_VAC : SIM_MS_TABLE_GEN;
     var msPct   = simLookupMS(msTable, pesoPromedio);
     consumoPct  = msPct / SIM_MSTC[tipo];
-    var adEl = document.getElementById(pfx+'-ad');
-    if(adEl) adEl.value = aumento.toFixed(3);
-    var tcEl = document.getElementById(pfx+'-consumo');
-    if(tcEl) tcEl.value = (consumoPct*100).toFixed(3);
   }
 
   // ── Auto-calc Precio Venta from pcarne × rendimiento ─────────────
@@ -3888,16 +3909,54 @@ function calcSim(tipo){
   if(!aumento) return;
 
   var dias = (pesoS - pesoE) / aumento;
-  var consumoDiario = consumoPct * pesoPromedio;
   var kgsProducidos = pesoS - pesoE;
+
+  // ── Cálculo de alimentación por etapas (3-stage diet system) ─────────────────
+  var consumoDiario, alimentacion;
+  if(tipo !== 'invernada'){
+    var etapas3 = SIM_ETAPAS[tipo];
+    var gvP = function(id){ var el=document.getElementById(pfx+'-'+id); return el?(parseFloat(el.value)||0):0; };
+    var maiz_neto3 = Math.max(0, gvP('maiz') - SIM_MAIZ_CONTRAFLETE + SIM_MAIZ_FLETE_LOCAL);
+    var silo3=gvP('silo'), gluten3=gvP('gluten'), nucleo3=gvP('nucleo'), germen3=gvP('germen');
+    var msT3 = tipo==='vacas' ? SIM_MS_TABLE_VAC : SIM_MS_TABLE_GEN;
+    var wNow=pesoE, dLeft=dias, totTC=0, totAlim=0;
+    for(var ei=0; ei<etapas3.length; ei++){
+      var et3=etapas3[ei];
+      var sd = et3.dias!==null ? Math.min(et3.dias, dLeft) : dLeft;
+      if(sd<=0) continue;
+      var wEnd = wNow + aumento*sd;
+      var wAvg = (wNow+wEnd)/2;
+      var c3=et3.comp;
+      // MS/TC de esta etapa = suma(comp_i × MS_ingr_i) / 100
+      var msTC3=(c3[0]*SIM_MS_INGR[0]+c3[1]*SIM_MS_INGR[1]+c3[2]*SIM_MS_INGR[2]+c3[3]*SIM_MS_INGR[3]+c3[4]*SIM_MS_INGR[4])/100;
+      // MS/PV lookup con PESO FIN etapa
+      var msPV3=simLookupMS(msT3, wEnd);
+      // Consumo diario TC = (MS/PV ÷ MS/TC) × peso_promedio_etapa
+      var cdS=(msPV3/msTC3)*wAvg;
+      var stTC=cdS*sd;
+      // Costo ración esta etapa ($/kgTC c/IVA)
+      var stRac=(c3[0]*maiz_neto3+c3[1]*silo3+c3[2]*gluten3+c3[3]*nucleo3+c3[4]*germen3)/100/1000*1.15;
+      totTC+=stTC; totAlim+=stRac*stTC;
+      wNow=wEnd; dLeft-=sd;
+    }
+    consumoDiario = totTC/dias;
+    alimentacion  = totAlim;
+    // Ración ponderada = costo total / TC total
+    racion = totTC>0 ? totAlim/totTC : racion;
+    if(racEl) racEl.value = Math.round(racion);
+    var tcEl2=document.getElementById(pfx+'-consumo');
+    if(tcEl2) tcEl2.value=(consumoDiario/pesoPromedio*100).toFixed(3);
+    var adEl2=document.getElementById(pfx+'-ad');
+    if(adEl2) adEl2.value=aumento.toFixed(3);
+  } else {
+    consumoDiario = consumoPct * pesoPromedio;
+    alimentacion  = racion * consumoDiario * dias;
+  }
 
   // ── Compra neta (por cab) ─────────────────────────────────────────
   var fleteC = (kmo * pflete) / 12000; // $/kg pie  (camión 12tn para compra)
   var gastoC = fleteC + pc * comC;
   var compraNeta = (pc + gastoC) * pesoE;
-
-  // ── Costos productivos (por cab) ─────────────────────────────────
-  var alimentacion  = racion * consumoDiario * dias;
   var hoteleriaTotal = hotel * dias;
   var totalCostos   = alimentacion + hoteleriaTotal + sanidad;
   var costoPorKg    = kgsProducidos > 0 ? totalCostos / kgsProducidos : 0;
