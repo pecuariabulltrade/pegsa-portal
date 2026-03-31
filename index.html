@@ -2779,6 +2779,22 @@ window.addEventListener('load', function(){
         <div id="simRes-terneros" style="background:var(--paper)"></div>
       </div>
     </div>
+    <!-- CUADRO DIETA full-width -->
+    <div class="sim-diet-wrap">
+      <div class="sim-diet-hdr"><span>🌽 Composición de Dieta por Etapas — Terneros</span><button class="sim-diet-reset" onclick="resetDieta('terneros')">↩ Restaurar valores Excel</button></div>
+      <table class="sim-diet-table">
+        <thead><tr><th>Ingrediente</th><th>Etapa 1</th><th>Etapa 2</th><th>Etapa 3</th><th>Ponderado</th></tr></thead>
+        <tbody>
+          <tr class="sdt-inp"><td>Maíz (%)</td><td><input class="sim-diet-input" id="tn-d1-maiz" type="number" min="0" max="100" value="37" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-maiz" type="number" min="0" max="100" value="35" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-maiz" type="number" min="0" max="100" value="36" onchange="calcSim('terneros')"></td><td id="tn-dw-maiz" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Silo (%)</td><td><input class="sim-diet-input" id="tn-d1-silo" type="number" min="0" max="100" value="20" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-silo" type="number" min="0" max="100" value="22" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-silo" type="number" min="0" max="100" value="22" onchange="calcSim('terneros')"></td><td id="tn-dw-silo" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Gluten (%)</td><td><input class="sim-diet-input" id="tn-d1-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-gluten" type="number" min="0" max="100" value="30" onchange="calcSim('terneros')"></td><td id="tn-dw-gluten" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Núcleo (%)</td><td><input class="sim-diet-input" id="tn-d1-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneros')"></td><td id="tn-dw-nucleo" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Germen (%)</td><td><input class="sim-diet-input" id="tn-d1-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneros')"></td><td id="tn-dw-germen" style="text-align:center">—</td></tr>
+          <tr class="sdt-sum"><td>Total (%)</td><td id="tn-dsum1">—</td><td id="tn-dsum2">—</td><td id="tn-dsum3">—</td><td>—</td></tr>
+        </tbody>
+        <tbody id="simDieta-terneros"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- TERNERAS panel -->
@@ -2834,6 +2850,22 @@ window.addEventListener('load', function(){
         <div id="simRes-terneras" style="background:var(--paper)"></div>
       </div>
     </div>
+    <!-- CUADRO DIETA full-width -->
+    <div class="sim-diet-wrap">
+      <div class="sim-diet-hdr"><span>🌽 Composición de Dieta por Etapas — Terneras</span><button class="sim-diet-reset" onclick="resetDieta('terneras')">↩ Restaurar valores Excel</button></div>
+      <table class="sim-diet-table">
+        <thead><tr><th>Ingrediente</th><th>Etapa 1</th><th>Etapa 2</th><th>Etapa 3</th><th>Ponderado</th></tr></thead>
+        <tbody>
+          <tr class="sdt-inp"><td>Maíz (%)</td><td><input class="sim-diet-input" id="ta-d1-maiz" type="number" min="0" max="100" value="38" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-maiz" type="number" min="0" max="100" value="37" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-maiz" type="number" min="0" max="100" value="37" onchange="calcSim('terneras')"></td><td id="ta-dw-maiz" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Silo (%)</td><td><input class="sim-diet-input" id="ta-d1-silo" type="number" min="0" max="100" value="23" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-silo" type="number" min="0" max="100" value="21" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-silo" type="number" min="0" max="100" value="21" onchange="calcSim('terneras')"></td><td id="ta-dw-silo" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Gluten (%)</td><td><input class="sim-diet-input" id="ta-d1-gluten" type="number" min="0" max="100" value="26" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-gluten" type="number" min="0" max="100" value="30" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-gluten" type="number" min="0" max="100" value="30" onchange="calcSim('terneras')"></td><td id="ta-dw-gluten" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Núcleo (%)</td><td><input class="sim-diet-input" id="ta-d1-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneras')"></td><td id="ta-dw-nucleo" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Germen (%)</td><td><input class="sim-diet-input" id="ta-d1-germen" type="number" min="0" max="100" value="9" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneras')"></td><td id="ta-dw-germen" style="text-align:center">—</td></tr>
+          <tr class="sdt-sum"><td>Total (%)</td><td id="ta-dsum1">—</td><td id="ta-dsum2">—</td><td id="ta-dsum3">—</td><td>—</td></tr>
+        </tbody>
+        <tbody id="simDieta-terneras"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- VACAS panel -->
@@ -2888,6 +2920,22 @@ window.addEventListener('load', function(){
         <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Resultados del Análisis</div>
         <div id="simRes-vacas" style="background:var(--paper)"></div>
       </div>
+    </div>
+    <!-- CUADRO DIETA full-width -->
+    <div class="sim-diet-wrap">
+      <div class="sim-diet-hdr"><span>🌽 Composición de Dieta por Etapas — Vacas</span><button class="sim-diet-reset" onclick="resetDieta('vacas')">↩ Restaurar valores Excel</button></div>
+      <table class="sim-diet-table">
+        <thead><tr><th>Ingrediente</th><th>Etapa 1</th><th>Etapa 2</th><th>Etapa 3</th><th>Ponderado</th></tr></thead>
+        <tbody>
+          <tr class="sdt-inp"><td>Maíz (%)</td><td><input class="sim-diet-input" id="va-d1-maiz" type="number" min="0" max="100" value="50" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-maiz" type="number" min="0" max="100" value="32" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-maiz" type="number" min="0" max="100" value="33" onchange="calcSim('vacas')"></td><td id="va-dw-maiz" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Silo (%)</td><td><input class="sim-diet-input" id="va-d1-silo" type="number" min="0" max="100" value="50" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-silo" type="number" min="0" max="100" value="21" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-silo" type="number" min="0" max="100" value="20" onchange="calcSim('vacas')"></td><td id="va-dw-silo" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Gluten (%)</td><td><input class="sim-diet-input" id="va-d1-gluten" type="number" min="0" max="100" value="0" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('vacas')"></td><td id="va-dw-gluten" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Núcleo (%)</td><td><input class="sim-diet-input" id="va-d1-nucleo" type="number" min="0" max="100" value="0" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('vacas')"></td><td id="va-dw-nucleo" style="text-align:center">—</td></tr>
+          <tr class="sdt-inp"><td>Germen (%)</td><td><input class="sim-diet-input" id="va-d1-germen" type="number" min="0" max="100" value="0" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-germen" type="number" min="0" max="100" value="12" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-germen" type="number" min="0" max="100" value="12" onchange="calcSim('vacas')"></td><td id="va-dw-germen" style="text-align:center">—</td></tr>
+          <tr class="sdt-sum"><td>Total (%)</td><td id="va-dsum1">—</td><td id="va-dsum2">—</td><td id="va-dsum3">—</td><td>—</td></tr>
+        </tbody>
+        <tbody id="simDieta-vacas"></tbody>
+      </table>
     </div>
   </div>
 
@@ -3171,6 +3219,30 @@ window.addEventListener('load', function(){
 .sim-res-table .sim-total{background:rgba(26,22,18,.04);font-weight:700}
 .sim-res-pos{color:#2d7a2d;font-weight:700}
 .sim-res-neg{color:#c0392b;font-weight:700}
+/* ── Cuadro de Dieta por Etapas ─────────────────────────────────── */
+.sim-diet-wrap{margin-top:20px;border-top:1px solid rgba(184,146,42,.18);padding-top:18px}
+.sim-diet-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sim-diet-hdr span{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.sim-diet-reset{font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.4);cursor:pointer;border:1px solid rgba(26,22,18,.15);padding:3px 9px;border-radius:2px;transition:all .15s;background:none}
+.sim-diet-reset:hover{color:var(--gold);border-color:rgba(184,146,42,.4)}
+.sim-diet-table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:11px}
+.sim-diet-table th{padding:6px 10px;background:rgba(184,146,42,.1);color:var(--gold);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;border:1px solid rgba(184,146,42,.2);text-align:center}
+.sim-diet-table th:first-child{text-align:left}
+.sim-diet-table td{padding:5px 10px;border:1px solid rgba(26,22,18,.09);color:var(--ink);vertical-align:middle}
+.sim-diet-table td:first-child{font-size:10px;color:rgba(26,22,18,.6);white-space:nowrap;font-weight:500}
+.sim-diet-table .sdt-calc td{background:rgba(245,240,232,.6);color:rgba(26,22,18,.5);font-size:10px;text-align:center}
+.sim-diet-table .sdt-calc td:first-child{color:rgba(26,22,18,.5);text-align:left}
+.sim-diet-table .sdt-total td{background:rgba(184,146,42,.07);font-weight:700;color:var(--ink);text-align:center}
+.sim-diet-table .sdt-total td:first-child{color:var(--gold);text-align:left}
+.sim-diet-table .sdt-alim td{background:rgba(39,97,61,.08);font-weight:700;color:#27613d;text-align:center}
+.sim-diet-table .sdt-alim td:first-child{color:#27613d;text-align:left}
+.sim-diet-table .sdt-sum td{background:rgba(26,22,18,.03);font-size:10px;text-align:center;color:rgba(26,22,18,.55)}
+.sim-diet-table .sdt-sum td:first-child{text-align:left}
+.sim-diet-input{width:62px;padding:4px 6px;border:1px solid rgba(26,22,18,.15);border-radius:2px;font-family:'DM Mono',monospace;font-size:11px;background:#fff;color:var(--ink);text-align:center;display:block;margin:0 auto}
+.sim-diet-input:focus{outline:none;border-color:rgba(184,146,42,.6)}
+.sdt-inp td{background:#fff;text-align:center}
+.sdt-inp td:first-child{background:rgba(245,240,232,.9);text-align:left}
+.sdt-warn{color:#c0392b!important;font-weight:700!important}
 .sim-res-neutral{color:rgba(26,22,18,.9);font-weight:600}
 </style>
 
