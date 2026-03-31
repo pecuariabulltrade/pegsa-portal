@@ -6110,7 +6110,9 @@ function tesRenderAcum(flujo) {
 //  TESORERÍA — Módulo 06
 // ══════════════════════════════════════════════
 var _tesData = null;
+var _tesHistFinData = null;   // financiero_historico.json para comparar cortes
 var _tesVista = 'semanal';
+var _tesAcumChart = null;     // instancia Chart.js del gráfico acumulado
 
 function initTesoreria() {
   if (_tesData) { _renderTesUI(_tesData); return; }
@@ -6127,9 +6129,16 @@ function recargarTesoreria() {
 
 async function cargarTesoreria() {
   try {
-    var resp = await fetch(STOCK_SB + '/tesoreria_ultimo.json', {}, {});
+    var results = await Promise.all([
+      fetch(STOCK_SB + '/tesoreria_ultimo.json'),
+      fetch(STOCK_SB + '/financiero_historico.json').catch(function(){ return null; })
+    ]);
+    var resp = results[0];
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     _tesData = await resp.json();
+    if (results[1] && results[1].ok) {
+      _tesHistFinData = await results[1].json();
+    }
     document.getElementById('tesLoading').style.display = 'none';
     document.getElementById('tesError').style.display = 'none';
     document.getElementById('tesData').style.display = 'block';
@@ -6404,9 +6413,14 @@ function _renderTesUI(d) {
   s6.appendChild(tblAcum);
   var svgBox=document.createElement('div');
   svgBox.style.cssText='background:#fff;border:1px solid rgba(26,22,18,.12);border-radius:2px;padding:20px 24px';
-  svgBox.innerHTML='<div id="tes-chart-lbl" style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:14px">Saldo acumulado proyectado — semana a semana</div><svg id="tes-svg-acum" viewBox="0 0 900 200" preserveAspectRatio="none" style="width:100%;height:200px;overflow:visible;display:block"></svg>';
+  svgBox.innerHTML='<div id="tes-chart-lbl" style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:14px">Saldo acumulado proyectado — semana a semana</div><div style="position:relative;height:260px"><canvas id="tes-canvas-acum"></canvas></div>';
   s6.appendChild(svgBox);
   tesSwitchVista('semanal');
+
+  // ── 7. Variaciones entre cortes ──
+  if (_tesHistFinData && (_tesHistFinData.cortes||[]).length >= 2) {
+    _renderTesVariaciones(_tesHistFinData, d);
+  }
 }
 
 function _tesFmt(n){
@@ -6463,24 +6477,232 @@ function _tesRenderAcum(flujo){
   h+='</tr></tbody>';
   var tbl=document.getElementById('tes-tbl-acum');
   if(tbl)tbl.innerHTML=h;
-  // SVG
-  var sv=document.getElementById('tes-svg-acum');
-  if(!sv)return;
-  var W=900,Hg=200,vals=[flujo.saldo_inicial||0].concat(periodos.map(function(p){return p.saldo_acumulado||0;}));
+
+  // ── Chart.js — gráfico saldo acumulado ──
+  var canvas=document.getElementById('tes-canvas-acum');
+  if(!canvas)return;
+  if(_tesAcumChart){_tesAcumChart.destroy();_tesAcumChart=null;}
+  var vals=[flujo.saldo_inicial||0].concat(periodos.map(function(p){return p.saldo_acumulado||0;}));
   var lbls2=['Hoy'].concat(periodos.map(function(p){return p.label;}));
-  var mn=Math.min.apply(null,vals),mxv=Math.max.apply(null,vals),pd=Math.max(Math.abs(mxv-mn)*.12,5e7);
-  mn-=pd;mxv+=pd;var rng=mxv-mn,xs=W/Math.max(vals.length-1,1);
-  function tx2(i){return i*xs;} function ty2(v){return Hg-(v-mn)/rng*(Hg-40)-20;}
-  var svg='';
-  if(mn<0&&mxv>0){var y0=ty2(0);svg+='<line x1="0" y1="'+y0+'" x2="'+W+'" y2="'+y0+'" stroke="rgba(26,22,18,.2)" stroke-width="1" stroke-dasharray="5,3"/><text x="4" y="'+(y0-4)+'" font-size="8" font-family="DM Mono,monospace" fill="rgba(26,22,18,.35)">$0</text>';}
-  vals.forEach(function(_,i){svg+='<line x1="'+tx2(i)+'" y1="0" x2="'+tx2(i)+'" y2="'+Hg+'" stroke="rgba(26,22,18,.04)" stroke-width="1"/><text x="'+tx2(i)+'" y="'+(Hg+14)+'" text-anchor="middle" font-size="8" font-family="DM Mono,monospace" fill="rgba(26,22,18,.35)">'+lbls2[i]+'</text>';});
-  var area='M '+tx2(0)+','+ty2(0)+' L '+tx2(0)+','+ty2(vals[0]);
-  vals.forEach(function(v,i){if(i>0)area+=' L '+tx2(i)+','+ty2(v);});
-  area+=' L '+tx2(vals.length-1)+','+ty2(0)+' Z';
-  svg+='<path d="'+area+'" fill="rgba(184,146,42,.07)"/>';
-  for(var i=1;i<vals.length;i++){var c3=vals[i]>=0?'#27613d':'#c0392b';svg+='<line x1="'+tx2(i-1)+'" y1="'+ty2(vals[i-1])+'" x2="'+tx2(i)+'" y2="'+ty2(vals[i])+'" stroke="'+c3+'" stroke-width="2.5"/>';}
-  vals.forEach(function(v,i){var c3=v>=0?'#27613d':'#c0392b',lb=(v>=0?'+':'\u2212')+'$\u00a0'+Math.round(Math.abs(v)).toLocaleString('es-AR');svg+='<circle cx="'+tx2(i)+'" cy="'+ty2(v)+'" r="'+(i===0?5:4)+'" fill="'+c3+'" stroke="white" stroke-width="2"/><text x="'+tx2(i)+'" y="'+(ty2(v)-8)+'" text-anchor="'+(i===0?'start':i===vals.length-1?'end':'middle')+'" font-size="9" font-family="DM Mono,monospace" fill="'+c3+'" font-weight="600">'+lb+'</text>';});
-  sv.innerHTML=svg;
+  function fM(v){var a=Math.abs(v),s=a>=1e9?(a/1e9).toFixed(1)+'B':a>=1e6?(a/1e6).toFixed(0)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0);return(v>=0?'+':'-')+'$'+s;}
+  var ptColors=vals.map(function(v){return v>=0?'#27613d':'#c0392b';});
+  // Inline plugin to draw value labels above/below each point
+  var _labelsPlugin={
+    id:'tesPointLabels',
+    afterDatasetsDraw:function(chart){
+      var ctx=chart.ctx,ds=chart.data.datasets[0],meta=chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font='600 9px DM Mono,monospace';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      meta.data.forEach(function(pt,i){
+        var v=ds.data[i];
+        if(v==null)return;
+        var col=v>=0?'#27613d':'#c0392b';
+        ctx.fillStyle=col;
+        var yOff=v>=0?-14:14;
+        ctx.fillText(fM(v),pt.x,pt.y+yOff);
+      });
+      ctx.restore();
+    }
+  };
+  _tesAcumChart=new Chart(canvas,{
+    type:'line',
+    data:{
+      labels:lbls2,
+      datasets:[{
+        data:vals,
+        segment:{
+          borderColor:function(ctx){
+            var v=vals[ctx.p1DataIndex]||0;return v>=0?'#27613d':'#c0392b';
+          }
+        },
+        pointBackgroundColor:ptColors,
+        pointBorderColor:'#fff',
+        pointBorderWidth:2,
+        pointRadius:5,
+        pointHoverRadius:8,
+        fill:{target:'origin',above:'rgba(39,97,61,.08)',below:'rgba(192,57,43,.08)'},
+        tension:0.2,
+        borderWidth:2.5
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      layout:{padding:{top:24,bottom:4}},
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(26,22,18,.93)',
+          titleFont:{family:'\'DM Mono\',monospace',size:10},
+          bodyFont:{family:'\'DM Mono\',monospace',size:11},
+          padding:10,
+          callbacks:{
+            title:function(items){return items[0].label;},
+            label:function(item){
+              var v=item.raw,sign=v>=0?'+':'−';
+              return '  Saldo: '+sign+' $ '+Math.round(Math.abs(v)).toLocaleString('es-AR');
+            },
+            labelColor:function(item){
+              var c=item.raw>=0?'#27613d':'#c0392b';return{borderColor:c,backgroundColor:c};
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{font:{family:'\'DM Mono\',monospace',size:9},color:'rgba(26,22,18,.45)',maxRotation:0},
+          grid:{color:'rgba(26,22,18,.04)'},
+          border:{color:'rgba(26,22,18,.1)'}
+        },
+        y:{
+          ticks:{
+            font:{family:'\'DM Mono\',monospace',size:9},
+            color:'rgba(26,22,18,.45)',
+            callback:function(v){return fM(v);}
+          },
+          grid:{color:'rgba(26,22,18,.06)'},
+          border:{dash:[4,4],color:'transparent'}
+        }
+      }
+    },
+    plugins:[_labelsPlugin]
+  });
+}
+
+// ── Variaciones entre cortes financieros ──────────────────────────────
+function _renderTesVariaciones(histFin, currentTes) {
+  var cortes = (histFin.cortes || []).slice().sort(function(a,b){ return a.fecha_corte < b.fecha_corte ? -1 : 1; });
+  if (cortes.length < 2) return;
+  var prev = cortes[cortes.length - 2];
+  var curr = cortes[cortes.length - 1];
+  var el   = document.getElementById('tesData');
+
+  // helpers
+  function posSum(pos, key) {
+    return (pos[key] || []).reduce(function(a,b){ return a + (b.saldo||0); }, 0);
+  }
+  function posVal(pos, key) { return pos[key] || 0; }
+  function fmt(v) {
+    return (v >= 0 ? '+' : '−') + ' $ ' + Math.round(Math.abs(v)).toLocaleString('es-AR');
+  }
+  function fmtAbs(v) {
+    return '$ ' + Math.round(Math.abs(v)).toLocaleString('es-AR');
+  }
+  function pct(delta, base) {
+    if (!base) return '—';
+    var p = (delta / Math.abs(base)) * 100;
+    return (p >= 0 ? '+' : '') + p.toFixed(1) + '%';
+  }
+  var pPos = prev.posicion || {};
+  var cPos = curr.posicion || {};
+  var pCheq = (prev.cheques || {}).total_cartera || 0;
+  var cCheq = (curr.cheques || {}).total_cartera || 0;
+
+  // Build rows: [label, prev, curr, delta, sign, note]
+  function mkRows() {
+    var rows = [];
+    function add(lbl, pv, cv, note, indent) {
+      var d = cv - pv;
+      rows.push({ lbl: lbl, pv: pv, cv: cv, d: d, note: note || '', indent: !!indent });
+    }
+    // DISPONIBILIDADES
+    rows.push({ header: true, lbl: 'DISPONIBILIDADES' });
+    var pBancPeg = posSum(pPos,'bancos_peg'), cBancPeg = posSum(cPos,'bancos_peg');
+    var pBancBull = posSum(pPos,'bancos_bull'), cBancBull = posSum(cPos,'bancos_bull');
+    add('Bancos Pecuaria', pBancPeg, cBancPeg, 'Saldo neto cuentas bancarias PEGSA', true);
+    add('Bancos Bulltrade', pBancBull, cBancBull, 'Saldo neto cuentas bancarias BULL', true);
+    var pFCI = posVal(pPos,'fci'), cFCI = posVal(cPos,'fci');
+    add('Inversiones (FCI / Bursátil)', pFCI, cFCI, 'Becerra + FIMA rescates/suscripciones', true);
+    var pEcheq = posVal(pPos,'echeq'), cEcheq = posVal(cPos,'echeq');
+    add('ECheqs al cobro', pEcheq, cEcheq, 'Cheques presentados al cobro', true);
+    var pDisp = posVal(pPos,'saldo_disponibilidades'), cDisp = posVal(cPos,'saldo_disponibilidades');
+    add('TOTAL DISPONIBLE', pDisp, cDisp, '');
+
+    // OBLIGACIONES
+    rows.push({ header: true, lbl: 'OBLIGACIONES DE PAGO' });
+    add('Cartera de cheques emitidos', pCheq, cCheq, 'Compromisos diferidos totales');
+    // Darwash debits
+    var pDwEg = 0, cDwEg = 0, pDwIng = 0, cDwIng = 0;
+    (prev.darwash || []).forEach(function(dw){
+      (dw.items||[]).forEach(function(it){ if(it.tipo==='egreso') pDwEg += Math.abs(it.monto||0); else pDwIng += it.monto||0; });
+    });
+    (curr.darwash || []).forEach(function(dw){
+      (dw.items||[]).forEach(function(it){ if(it.tipo==='egreso') cDwEg += Math.abs(it.monto||0); else cDwIng += it.monto||0; });
+    });
+    add('Obligaciones Darwash (hacienda egresos)', pDwEg, cDwEg, 'Total compromisos de pago Darwash', true);
+    add('Cobros Darwash (hacienda ingresos)', pDwIng, cDwIng, 'Total cobros esperados Darwash', true);
+
+    // COBROS PENDIENTES
+    rows.push({ header: true, lbl: 'COBROS DE HACIENDA PENDIENTES' });
+    var pVentas = 0, cVentas = 0;
+    ((prev.hacienda||{}).ventas||[]).forEach(function(v){ pVentas += v.monto||0; });
+    ((curr.hacienda||{}).ventas||[]).forEach(function(v){ cVentas += v.monto||0; });
+    add('Ventas de hacienda a cobrar', pVentas, cVentas, 'Facturas emitidas pendientes de cobro');
+    var pCompras = 0, cCompras = 0;
+    ((prev.hacienda||{}).compras||[]).forEach(function(v){ pCompras += v.monto||0; });
+    ((curr.hacienda||{}).compras||[]).forEach(function(v){ cCompras += v.monto||0; });
+    if (pCompras || cCompras) add('Compras de hacienda a pagar', pCompras, cCompras, 'Hacienda comprada pendiente de pago');
+
+    // USD
+    rows.push({ header: true, lbl: 'POSICIÓN USD' });
+    add('Dólares en ARS equivalente', posVal(pPos,'usd_ars'), posVal(cPos,'usd_ars'),
+        posVal(cPos,'usd_cant').toLocaleString('es-AR') + ' USD valuados a tipo de cambio');
+
+    return rows;
+  }
+
+  var rows = mkRows();
+  var TH = 'font-family:DM Mono,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.42);padding:9px 14px;background:rgba(26,22,18,.03);border-bottom:2px solid rgba(26,22,18,.1);white-space:nowrap;text-align:right;font-weight:400';
+  var TD = 'padding:8px 14px;border-bottom:1px solid rgba(26,22,18,.06);vertical-align:middle';
+
+  var fechaPrev = (prev.fecha_corte||'').split('-').reverse().join('/');
+  var fechaCurr = (curr.fecha_corte||'').split('-').reverse().join('/');
+
+  var html = '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Sección 7 · Variaciones entre Cortes</div>'
+    +'<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.45);margin-bottom:16px">Comparación <strong style="color:var(--ink)">' + fechaPrev + '</strong> → <strong style="color:var(--ink)">' + fechaCurr + '</strong> · Los cambios explican el movimiento del saldo acumulado al cierre.</div>';
+
+  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:8px"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:640px">';
+  html += '<thead><tr>'
+    +'<th style="'+TH+';text-align:left;min-width:220px">Concepto</th>'
+    +'<th style="'+TH+'">'+fechaPrev+'</th>'
+    +'<th style="'+TH+'">'+fechaCurr+'</th>'
+    +'<th style="'+TH+'">Variación $</th>'
+    +'<th style="'+TH+'">%</th>'
+    +'<th style="'+TH+';text-align:left">Nota</th>'
+    +'</tr></thead><tbody>';
+
+  rows.forEach(function(row) {
+    if (row.header) {
+      html += '<tr><td colspan="6" style="background:rgba(26,22,18,.04);font-family:DM Mono,monospace;font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;padding:7px 14px;border-bottom:1px solid rgba(26,22,18,.08);color:rgba(26,22,18,.5);font-weight:500">'+row.lbl+'</td></tr>';
+      return;
+    }
+    var isTotal = row.lbl.indexOf('TOTAL') === 0;
+    var dCol = row.d > 0 ? 'var(--green)' : row.d < 0 ? 'var(--red)' : 'rgba(26,22,18,.4)';
+    var rowBg = isTotal ? 'background:rgba(26,22,18,.03);' : '';
+    var lpad = row.indent ? 'padding-left:24px;' : '';
+    html += '<tr style="'+rowBg+'">'
+      +'<td style="'+TD+';text-align:left;'+lpad+(isTotal?'font-weight:600;':'color:rgba(26,22,18,.7);')+'">'+row.lbl+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;color:rgba(26,22,18,.5)">'+fmtAbs(row.pv)+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;color:var(--ink)'+(isTotal?';font-weight:600':'')+'">'+fmtAbs(row.cv)+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;font-weight:600;color:'+dCol+'">'+(row.d!==0?fmt(row.d):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;font-size:10px;color:'+dCol+'">'+pct(row.d,row.pv)+'</td>'
+      +'<td style="'+TD+';text-align:left;font-size:10px;color:rgba(26,22,18,.4)">'+row.note+'</td>'
+      +'</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;color:rgba(26,22,18,.35);line-height:1.7;margin-top:4px">'
+    +'✦ Verde = mejora la posición líquida &nbsp;·&nbsp; Rojo = consume posición líquida &nbsp;·&nbsp; '
+    +'Darwash son compensaciones de hacienda entre PEGSA y BULL.'
+    +'</div>';
+
+  var sec7 = document.createElement('div');
+  sec7.style.cssText = 'margin-bottom:36px';
+  sec7.innerHTML = html;
+  el.appendChild(sec7);
 }
 </script>
 
