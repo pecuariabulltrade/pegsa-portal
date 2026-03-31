@@ -2735,7 +2735,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="tn-silo" type="number" value="155482" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="tn-racion" type="number" value="221" onchange="calcSim('terneros')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Composición ración: Maíz 33.6% · Silo 22.1% · Gluten 29.2% · Núcleo 3.8% · Germen 11.3%</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
             <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="tn-hotel" type="number" value="310" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="tn-sanidad" type="number" value="7500" onchange="calcSim('terneros')"></div>
@@ -2796,7 +2796,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="ta-silo" type="number" value="155482" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="ta-racion" type="number" value="221" onchange="calcSim('terneras')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Composición ración: Maíz 33.6% · Silo 22.1% · Gluten 29.2% · Núcleo 3.8% · Germen 11.3%</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
             <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="ta-hotel" type="number" value="310" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="ta-sanidad" type="number" value="7500" onchange="calcSim('terneras')"></div>
@@ -2851,7 +2851,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="va-silo" type="number" value="155482" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="va-racion" type="number" value="221" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Composición ración: Maíz 33.6% · Silo 22.1% · Gluten 29.2% · Núcleo 3.8% · Germen 11.3%</div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
             <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="va-hotel" type="number" value="310" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="va-sanidad" type="number" value="7500" onchange="calcSim('vacas')"></div>
@@ -3773,6 +3773,20 @@ function fp(n){ return (Number(n||0)*100).toFixed(1)+'%'; }
 // % engorde por categoría (feedlot) → ADP = avg_weight × pct / 100
 var SIM_ADP_PCT = {terneros:0.38, terneras:0.39, vacas:0.32, invernada:0.27};
 
+// Composición dieta por categoría (% de cada ingrediente, base TC tal-cual)
+// Columna "Total" de la hoja de simulación del Excel
+// Orden: [maíz, silo, gluten, núcleo, germen]
+var SIM_DIETA = {
+  terneros: [35.27343, 21.72657, 31.00000, 4.00000,  8.00000],
+  terneras: [37.05847, 21.11693, 29.76614, 4.00000,  8.05847],
+  vacas:    [33.54376, 21.81818, 29.44212, 3.79898, 11.39695],
+  invernada:[100,      0,        0,        0,         0      ]
+};
+// Flete local fijo para calcular maíz neto en feedlot:
+// maíz_neto = pizarra − contraflete(37000) + flete_local(15000)
+var SIM_MAIZ_CONTRAFLETE = 37000;
+var SIM_MAIZ_FLETE_LOCAL = 15000;
+
 // Tabla MS/Peso Vivo para machos/hembras (MACHOS-HEMBRAS de 'tabla')
 var SIM_MS_TABLE_GEN = [
   [0,80,0.03089],[80,100,0.03115],[100,150,0.02913],[150,200,0.0275],
@@ -3790,16 +3804,20 @@ function simLookupMS(table, avgW){
   return table[table.length-1][2];
 }
 
-function calcRacion(pfx){
+function calcRacion(pfx, tipo){
   function gv(id){ var el=document.getElementById(pfx+'-'+id); return el ? (parseFloat(el.value)||0) : 0; }
-  var maiz   = gv('maiz');
+  var maiz_pizarra = gv('maiz');
   var gluten = gv('gluten');
   var nucleo = gv('nucleo');
   var germen = gv('germen');
   var silo   = gv('silo');
-  // Composición TC: Maíz 33.64%, Silo 22.15%, Gluten 29.16%, Núcleo 3.76%, Germen 11.29%
-  var cRaw = (0.3364*maiz + 0.2215*silo + 0.2916*gluten + 0.0376*nucleo + 0.1129*germen) / 1000;
-  return cRaw * 1.135; // factor IVA aproximado
+  // Precio neto del maíz en feedlot: pizarra - contraflete + flete_local
+  var maiz_neto = Math.max(0, maiz_pizarra - SIM_MAIZ_CONTRAFLETE + SIM_MAIZ_FLETE_LOCAL);
+  // Composición según categoría (% del total de ración, base tal-cual)
+  var comp = SIM_DIETA[tipo] || SIM_DIETA['terneros'];
+  // costo $/kgTC = Σ(proporción_i × precio_i_tn / 1000)
+  var cRaw = (comp[0]*maiz_neto + comp[1]*silo + comp[2]*gluten + comp[3]*nucleo + comp[4]*germen) / 100 / 1000;
+  return cRaw * 1.15; // factor IVA agropecuario
 }
 
 function calcSim(tipo){
@@ -3815,7 +3833,7 @@ function calcSim(tipo){
       var mzEl = document.getElementById(pfx+'-maiz');
       racVal = Math.round((parseFloat((mzEl||{}).value)||0) / 1000);
     } else {
-      racVal = Math.round(calcRacion(pfx));
+      racVal = Math.round(calcRacion(pfx, tipo));
     }
     racEl.value = racVal;
   }
@@ -3989,7 +4007,8 @@ function _applyInsumos(data){
       if(ins.germen    && document.getElementById(p+'-germen'))  document.getElementById(p+'-germen').value  = ins.germen;
       if(ins.silo      && document.getElementById(p+'-silo'))    document.getElementById(p+'-silo').value    = ins.silo;
       if(ins.hoteleria && document.getElementById(p+'-hotel'))   document.getElementById(p+'-hotel').value   = ins.hoteleria;
-      if(ins.flete_jaula && document.getElementById(p+'-pflete')) document.getElementById(p+'-pflete').value = ins.flete_jaula;
+      var fl = ins.flete_jaula || ins.flete_12tn;
+      if(fl && document.getElementById(p+'-pflete')) document.getElementById(p+'-pflete').value = fl;
       if(ins.guias     && document.getElementById(p+'-guias'))   document.getElementById(p+'-guias').value   = ins.guias;
     });
     var mzEl = document.getElementById('simPrecioMaiz');
