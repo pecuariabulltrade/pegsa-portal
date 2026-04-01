@@ -5905,26 +5905,27 @@ function renderConsumo(data) {
       fechaUltFmt = dp[2]+'/'+dp[1]+'/'+dp[0];
     } catch(e){}
 
+    var esProm = ult.es_promedio === true;
     secUlt.innerHTML =
       '<div class="section-header">'
       +'<span class="section-title">Último Día de Carga Registrado</span>'
-      +'<span class="section-sub">'+fechaUltFmt+' · dato real del sistema</span>'
+      +'<span class="section-sub">'+fechaUltFmt+(esProm ? ' · promedio diario del período reciente' : ' · dato real del sistema')+'</span>'
       +'</div>';
 
     // Dos tarjetas de totales del día
     var rowDay = document.createElement('div');
     rowDay.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px';
+    var subDia = esProm ? 'promedio diario (7 días) · todos los insumos' : 'total suministrado ese día · todos los insumos';
+    var subMs  = esProm ? 'promedio MS diario (7 días)' : 'equivalente en materia seca · ese día';
     rowDay.appendChild(makeCard(
-      'Total Tal Cual — '+fechaUltFmt,
+      (esProm ? 'Promedio Diario TC' : 'Total Tal Cual')+' — '+fechaUltFmt,
       fmtN(ult.total_tc)+' kg TC',
-      'total suministrado ese día · todos los insumos',
-      '#b8922a'
+      subDia, '#b8922a'
     ));
     rowDay.appendChild(makeCard(
-      'Total Materia Seca — '+fechaUltFmt,
+      (esProm ? 'Promedio Diario MS' : 'Total Materia Seca')+' — '+fechaUltFmt,
       fmtN(ult.total_ms)+' kg MS',
-      'equivalente en materia seca · ese día',
-      '#7b3f2a'
+      subMs, '#7b3f2a'
     ));
     secUlt.appendChild(rowDay);
 
