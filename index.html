@@ -3737,6 +3737,7 @@ function _segSimCat(tipo, pesoE, pesoS, pc, ins){
     pvInd:  Math.round(pvInd),
     pcInd:  Math.round(pcInd),
     racInd: Math.round(racInd*10)/10,
+    compraNeta: Math.round(compraNeta),
   };
 }
 
@@ -4066,6 +4067,28 @@ function renderNegocios(){
     html += '</tbody></table></div>';
 
     // Últimas compras registradas
+    // ── helper: mapea nombre de categoría → parámetros de simulación ──────
+    var _negCatMap = {
+      novillito:  {tipo:'terneros', pesoE:390, pesoS:500},
+      novillo:    {tipo:'terneros', pesoE:460, pesoS:500},
+      ternero:    {tipo:'terneros', pesoE:220, pesoS:490},
+      ternera:    {tipo:'terneras', pesoE:200, pesoS:450},
+      vaquillona: {tipo:'terneras', pesoE:350, pesoS:450},
+      vaca:       {tipo:'vacas',    pesoE:480, pesoS:600},
+      toro:       {tipo:'vacas',    pesoE:500, pesoS:600},
+    };
+    function _negCatSim(catNombre){
+      var n = (catNombre||'').toLowerCase().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').trim();
+      if(n.indexOf('novillito')>=0) return _negCatMap.novillito;
+      if(n.indexOf('novillo')>=0)   return _negCatMap.novillo;
+      if(n.indexOf('ternero')>=0)   return _negCatMap.ternero;
+      if(n.indexOf('ternera')>=0)   return _negCatMap.ternera;
+      if(n.indexOf('vaquillona')>=0) return _negCatMap.vaquillona;
+      if(n.indexOf('vaca')>=0)      return _negCatMap.vaca;
+      if(n.indexOf('toro')>=0)      return _negCatMap.toro;
+      return null;
+    }
+    var _compInsums = (MERCADO_DATA_CACHE && MERCADO_DATA_CACHE.insumos) ? MERCADO_DATA_CACHE.insumos : {};
     html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:24px 0 8px">Últimas Compras Registradas</div>';
     html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff">';
     html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
@@ -4074,18 +4097,43 @@ function renderNegocios(){
       +'<th style="'+TH+';text-align:left">Categoría</th>'
       +'<th style="'+TH+'">Cabezas</th>'
       +'<th style="'+TH+'">$/kg</th>'
+      +'<th style="'+TH+'">kg/cab</th>'
+      +'<th style="'+TH+'">Resultado</th>'
       +'<th style="'+TH+';text-align:left">Origen</th>'
       +'</tr></thead><tbody>';
     neg.compras.slice(-15).reverse().forEach(function(c){
+      var catSim = _negCatSim(c.categoria);
+      var pesoE  = (c.kg_cab > 0) ? c.kg_cab : (catSim ? catSim.pesoE : 0);
+      var pesoS  = catSim ? catSim.pesoS : 0;
+      var simRes = (catSim && pesoE && pesoS && c.precio_kg && _compInsums.maiz)
+        ? _segSimCat(catSim.tipo, pesoE, pesoS, c.precio_kg, _compInsums) : null;
+      // kg/cab display
+      var kgTxt = c.kg_cab > 0
+        ? c.kg_cab + ' kg'
+        : (catSim ? '<span style="color:rgba(26,22,18,.35)" title="Peso estimado por categoría">'+(catSim.pesoE)+'*</span>' : '—');
+      // Resultado display
+      var resTxt = '—';
+      var resStyle = 'color:rgba(26,22,18,.3)';
+      if(simRes && simRes.compraNeta > 0){
+        var roi = simRes.resEco / simRes.compraNeta * 100;
+        resStyle = 'font-weight:600;color:' + (roi >= 0 ? '#27613d' : '#c0392b');
+        resTxt   = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%'
+          + '<br><span style="font-weight:400;font-size:10px;opacity:.7">$'
+          + Number(simRes.resEco).toLocaleString('es-AR',{maximumFractionDigits:0})
+          + '/cab</span>';
+      }
       html += '<tr>'
         +'<td style="'+TD+';color:rgba(26,22,18,.5)">'+c.fecha+'</td>'
         +'<td style="'+TD+';font-weight:600">'+_negNormCat(c.categoria)+'</td>'
         +'<td style="'+TD+';text-align:right">'+c.cabezas+'</td>'
         +'<td style="'+TD+';text-align:right">'+(c.precio_kg?'$'+Number(c.precio_kg).toLocaleString('es-AR',{maximumFractionDigits:0}):'—')+'</td>'
+        +'<td style="'+TD+';text-align:right">'+kgTxt+'</td>'
+        +'<td style="'+TD+';text-align:right;'+resStyle+'">'+resTxt+'</td>'
         +'<td style="'+TD+';color:rgba(26,22,18,.5)">'+(c.origen||'—')+'</td>'
         +'</tr>';
     });
     html += '</tbody></table></div>';
+    html += '<div style="font-size:10px;color:rgba(26,22,18,.35);margin-top:6px;font-family:DM Mono,monospace">* Peso estimado por categoría (no registrado). Resultado simulado con parámetros actuales del simulador.</div>';
   }
 
   if(!html){
