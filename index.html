@@ -4086,33 +4086,48 @@ function calcSim(tipo){
   }
 
   // ── Compra neta (por cab) ─────────────────────────────────────────
-  var fleteC = (kmo * pflete) / 12000; // $/kg pie  (camión 12tn para compra)
+  // Flete compra: fórmula por categoría (extraída de hojas Excel individuales)
+  //   terneros:  (km×flete)/12000          — sin cargo fijo
+  //   terneras:  (km×flete+110000)/12000   — con cargo fijo 110,000
+  //   vacas:     (km×flete+11000)/13950    — camión ~14tn (13,950 kg cap.)
+  var fleteC;
+  if(tipo === 'vacas')       fleteC = (kmo * pflete + 11000) / 13950;
+  else if(tipo === 'terneras') fleteC = (kmo * pflete + 110000) / 12000;
+  else                         fleteC = (kmo * pflete) / 12000;  // terneros + invernada
   var gastoC = fleteC + pc * comC;
-  var compraNeta = (pc + gastoC) * pesoE;
+  var compraNeta    = (pc + gastoC) * pesoE;
+  var compraNeta_kg = compraNeta / pesoE;  // $/kg pie neto c/gastos
   var hoteleriaTotal = hotel * dias;
   var totalCostos   = alimentacion + hoteleriaTotal + sanidad;
   var costoPorKg    = kgsProducidos > 0 ? totalCostos / kgsProducidos : 0;
 
   // ── Venta neta (por cab) ──────────────────────────────────────────
-  // Camión de 19tn para faena (más grande que compra)
+  // Camión 19tn para faena (igual para todas las categorías)
   var fleteV = (kmd * pflete) / 19000; // $/kg pie
   var gastoVkgPie = fleteV + pv * comV + (pesoS > 0 ? guias/pesoS : 0) + pv * decomiso;
   var ventaNetaPorKg = pv - gastoVkgPie;
-  var ingresoVenta   = ventaNetaPorKg * pesoS * (1 - mort);
+  var ingresoVenta   = ventaNetaPorKg * pesoS;  // Excel: venta plena s/descuento mort
+
+  // ── Mortandad (Excel: costo separado, no descuento sobre venta) ───
+  // mort = tasa mensual (G('mort')/100); mortTotal = fracción real del lote perdida
+  var mortTotal = dias > 0 ? mort * dias / 30 : 0;
+  // Costo mort = peso_promedio × pct_perdido × precio_promedio (compra+venta)/2
+  var mortCost  = (pesoE + pesoS) / 2 * mortTotal * (ventaNetaPorKg + compraNeta_kg) / 2;
 
   // ── Resultado (por cab) ───────────────────────────────────────────
-  var resEco     = ingresoVenta - compraNeta - totalCostos;
+  var resEco     = ingresoVenta - compraNeta - mortCost - totalCostos;
   var resPorKg   = kgsProducidos > 0 ? resEco / kgsProducidos : 0;
-  // Resultado Comercial = ganancia/pérdida si hubieras vendido el peso de entrada a precio de venta
-  var compraNeta_kg = compraNeta / pesoE;
-  var resComercial  = (ventaNetaPorKg - compraNeta_kg) * pesoE;
+  // Resultado Comercial = pesoE × (venta_neta_kg − compra_neta_kg)  [Excel K16 = J6*(L5−L6)]
+  var resComercial  = pesoE * (ventaNetaPorKg - compraNeta_kg);
   var resProduccion = resEco - resComercial;
 
-  // ── Puntos de Equilibrio ──────────────────────────────────────────
-  var pesoVentaEfectivo = pesoS * (1 - mort);
-  var pvIndiferencia  = pesoVentaEfectivo > 0 ? (compraNeta + totalCostos) / pesoVentaEfectivo + gastoVkgPie : 0;
-  var pcIndiferencia  = (ingresoVenta - totalCostos - pesoE * fleteC) / (pesoE * (1 + comC));
-  var racIndiferencia = consumoDiario*dias > 0 ? (ingresoVenta - compraNeta - hoteleriaTotal - sanidad) / (consumoDiario*dias) : 0;
+  // ── Puntos de Equilibrio (fórmulas exactas del Excel) ────────────
+  // pvInd (pie) = ((costos+compra)/pesoS + fleteV + guias/pesoS) / (1−comV)  [Excel C35]
+  var pvIndiferencia  = pesoS > 0 ? ((totalCostos + compraNeta) / pesoS + fleteV + guias/pesoS) / (1 - comV) : 0;
+  // pcInd           = ((venta − costos) / pesoE − fleteC) / (1+comC)         [Excel C36]
+  var pcIndiferencia  = pesoE > 0 ? ((ingresoVenta - totalCostos) / pesoE - fleteC) / (1 + comC) : 0;
+  // racInd          = (saldo_cv − hotel − san) / totalTC                     [Excel C37 = (K8−K11−K12)/J10]
+  var racIndiferencia = consumoDiario*dias > 0 ? (ingresoVenta - compraNeta - mortCost - hoteleriaTotal - sanidad) / (consumoDiario*dias) : 0;
 
   // ── Análisis Financiero ───────────────────────────────────────────
   var capital  = compraNeta + totalCostos;
@@ -4153,7 +4168,7 @@ function calcSim(tipo){
   html += '<tr><td>Flete venta ('+f2(kmd)+' km, camión 19tn)</td><td>$'+fleteV.toFixed(1)+' / kg</td></tr>';
   if(decomiso>0) html += '<tr><td>Decomiso ('+G('decomiso').toFixed(2)+'%)</td><td>$'+f2(pv*decomiso)+' / kg</td></tr>';
   html += '<tr><td>Precio venta neto (c/gastos)</td><td>$'+f2(ventaNetaPorKg)+' / kg</td></tr>';
-  if(mort>0) html += '<tr><td>Mortandad ('+fp(mort)+')</td><td>−'+f2(pesoS*mort)+' kg efectivos</td></tr>';
+  if(mortTotal>0) html += '<tr><td>Mortandad ('+fp(mortTotal)+' total · '+fp(mort)+'/mes)</td><td>−$'+f2(mortCost)+' / cab</td></tr>';
   html += '<tr><td>Importe venta neto / cab</td><td>$'+f2(ingresoVenta)+'</td></tr>';
   if(pcarne>0) html += '<tr><td>Relación compra/venta bruta</td><td>'+rcv.toFixed(3)+'x &nbsp;|&nbsp; carne: '+rcvCarne.toFixed(3)+'x</td></tr>';
 
