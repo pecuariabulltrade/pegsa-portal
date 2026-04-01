@@ -2728,11 +2728,11 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="tn-maiz" type="number" value="236000" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="tn-gluten" type="number" value="130944" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="tn-nucleo" type="number" value="470500" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="tn-germen" type="number" value="235999" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="tn-silo" type="number" value="150910" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="tn-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
+            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="tn-gluten" type="number" value="130944" onchange="syncPrecios('gluten',this.value)"></div>
+            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="tn-nucleo" type="number" value="470500" onchange="syncPrecios('nucleo',this.value)"></div>
+            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="tn-germen" type="number" value="235999" onchange="syncPrecios('germen',this.value)"></div>
+            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="tn-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="tn-racion" type="number" value="221" onchange="calcSim('terneros')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
           <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
@@ -2805,11 +2805,11 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="ta-maiz" type="number" value="236000" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="ta-gluten" type="number" value="130944" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="ta-nucleo" type="number" value="470500" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="ta-germen" type="number" value="235999" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="ta-silo" type="number" value="150910" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="ta-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
+            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="ta-gluten" type="number" value="130944" onchange="syncPrecios('gluten',this.value)"></div>
+            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="ta-nucleo" type="number" value="470500" onchange="syncPrecios('nucleo',this.value)"></div>
+            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="ta-germen" type="number" value="235999" onchange="syncPrecios('germen',this.value)"></div>
+            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="ta-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="ta-racion" type="number" value="221" onchange="calcSim('terneras')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
           <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
@@ -2876,11 +2876,11 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="va-maiz" type="number" value="236000" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="va-gluten" type="number" value="130944" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="va-nucleo" type="number" value="470500" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="va-germen" type="number" value="235999" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="va-silo" type="number" value="150910" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="va-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
+            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="va-gluten" type="number" value="130944" onchange="syncPrecios('gluten',this.value)"></div>
+            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="va-nucleo" type="number" value="470500" onchange="syncPrecios('nucleo',this.value)"></div>
+            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="va-germen" type="number" value="235999" onchange="syncPrecios('germen',this.value)"></div>
+            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="va-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="va-racion" type="number" value="221" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
           <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
@@ -2947,7 +2947,7 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Suplementación</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="in-maiz" type="number" value="236000" onchange="calcSim('invernada')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="in-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="in-racion" type="number" value="221" onchange="calcSim('invernada')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
             <div><div class="sim-label">Verdeos y Pasturas ($/ha/año)</div><input class="sim-input" id="in-pasto" type="number" value="95338" onchange="calcSim('invernada')"></div>
             <div><div class="sim-label">Carga (cab/ha)</div><input class="sim-input" id="in-carga" type="number" step="0.1" value="1" onchange="calcSim('invernada')"></div>
@@ -3661,43 +3661,6 @@ function renderNegocios(){
     html += '</tbody></table></div>';
   }
 
-  // ── B. VENTAS — Resumen por categoría ──────────────────────
-  if(neg.resumen_cat && Object.keys(neg.resumen_cat).length){
-    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:28px 0 8px">Ventas por Categoría</div>';
-    html += '<table class="data-table"><thead><tr>'
-      +'<th>Categoría</th><th class="right">Operaciones</th><th class="right">Cabezas</th>'
-      +'<th class="right">Precio Prom. Carne</th><th class="right">Rinde Prom.</th>'
-      +'</tr></thead><tbody>';
-    Object.entries(neg.resumen_cat).forEach(function(e){
-      var k=e[0], v=e[1];
-      html += '<tr><td><strong>'+k+'</strong></td>'
-        +'<td class="right mono">'+v.ventas+'</td>'
-        +'<td class="right mono">'+v.cabezas+'</td>'
-        +'<td class="right mono">'+(v.precio_promedio?'$'+Number(v.precio_promedio).toLocaleString('es-AR'):'—')+'</td>'
-        +'<td class="right mono">'+(v.rinde_promedio?Number(v.rinde_promedio*100).toFixed(1)+'%':'—')+'</td>'
-        +'</tr>';
-    });
-    html += '</tbody></table>';
-  }
-
-  // ── C. VENTAS — Por frigorífico ─────────────────────────────
-  if(neg.resumen_frigo && Object.keys(neg.resumen_frigo).length){
-    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:24px 0 8px">Ventas por Frigorífico / Destino</div>';
-    html += '<table class="data-table"><thead><tr>'
-      +'<th>Frigorífico</th><th class="right">Operaciones</th><th class="right">Cabezas</th>'
-      +'<th class="right">Precio Prom. Carne</th>'
-      +'</tr></thead><tbody>';
-    Object.entries(neg.resumen_frigo).forEach(function(e){
-      var k=e[0], v=e[1];
-      html += '<tr><td><strong>'+k+'</strong></td>'
-        +'<td class="right mono">'+v.ventas+'</td>'
-        +'<td class="right mono">'+v.cabezas+'</td>'
-        +'<td class="right mono">'+(v.precio_promedio?'$'+Number(v.precio_promedio).toLocaleString('es-AR'):'—')+'</td>'
-        +'</tr>';
-    });
-    html += '</tbody></table>';
-  }
-
   if(!html){
     html = '<div style="padding:40px;text-align:center;color:rgba(26,22,18,.4);font-family:\'DM Mono\',monospace">Sin datos de negocios disponibles</div>';
   }
@@ -4168,8 +4131,13 @@ function calcSim(tipo){
   html += '<tr><td>Flete venta ('+f2(kmd)+' km, camión 19tn)</td><td>$'+fleteV.toFixed(1)+' / kg</td></tr>';
   if(decomiso>0) html += '<tr><td>Decomiso ('+G('decomiso').toFixed(2)+'%)</td><td>$'+f2(pv*decomiso)+' / kg</td></tr>';
   html += '<tr><td>Precio venta neto (c/gastos)</td><td>$'+f2(ventaNetaPorKg)+' / kg</td></tr>';
-  if(mortTotal>0) html += '<tr><td>Mortandad ('+fp(mortTotal)+' total · '+fp(mort)+'/mes)</td><td>−$'+f2(mortCost)+' / cab</td></tr>';
-  html += '<tr><td>Importe venta neto / cab</td><td>$'+f2(ingresoVenta)+'</td></tr>';
+  if(mortTotal>0){
+    html += '<tr><td>Importe venta bruto / cab</td><td>$'+f2(ingresoVenta)+'</td></tr>';
+    html += '<tr><td>Mortandad ('+fp(mortTotal)+' total · '+fp(mort)+'/mes)</td><td>−$'+f2(mortCost)+'</td></tr>';
+    html += '<tr><td><b>Importe venta neto / cab</b></td><td><b>$'+f2(ingresoVenta-mortCost)+'</b></td></tr>';
+  } else {
+    html += '<tr><td>Importe venta neto / cab</td><td>$'+f2(ingresoVenta)+'</td></tr>';
+  }
   if(pcarne>0) html += '<tr><td>Relación compra/venta bruta</td><td>'+rcv.toFixed(3)+'x &nbsp;|&nbsp; carne: '+rcvCarne.toFixed(3)+'x</td></tr>';
 
   html += '<tr><td colspan="2" class="sim-section">Resultado Económico</td></tr>';
@@ -4235,6 +4203,15 @@ function _applyInsumos(data){
     var mzEl = document.getElementById('simPrecioMaiz');
     if(mzEl && ins.maiz) mzEl.textContent = 'Maíz ref: $'+Number(ins.maiz).toLocaleString('es-AR')+'/tn · '+(data.fecha||'');
   }
+}
+
+// Sincroniza un precio de insumo en todos los tabs y recalcula todo
+function syncPrecios(campo, valor){
+  ['tn','ta','va','in'].forEach(function(p){
+    var el = document.getElementById(p+'-'+campo);
+    if(el) el.value = valor;
+  });
+  calcSim('terneros'); calcSim('terneras'); calcSim('vacas'); calcSim('invernada');
 }
 
 function initSimulador(){
