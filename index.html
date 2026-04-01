@@ -4099,6 +4099,7 @@ function renderNegocios(){
       +'<th style="'+TH+'">$/kg</th>'
       +'<th style="'+TH+'">kg/cab</th>'
       +'<th style="'+TH+'">Resultado</th>'
+      +'<th style="'+TH+'">Indif. Compra</th>'
       +'<th style="'+TH+';text-align:left">Origen</th>'
       +'</tr></thead><tbody>';
     neg.compras.slice(-15).reverse().forEach(function(c){
@@ -4122,6 +4123,20 @@ function renderNegocios(){
           + Number(simRes.resEco).toLocaleString('es-AR',{maximumFractionDigits:0})
           + '/cab</span>';
       }
+      // Indiferencia compra display
+      var pcIndTxt = '—';
+      var pcIndStyle = 'color:rgba(26,22,18,.3)';
+      if(simRes && simRes.pcInd > 0){
+        var diff = simRes.pcInd - c.precio_kg;
+        var diffPct = c.precio_kg > 0 ? (diff / c.precio_kg * 100) : 0;
+        var diffSign = diff >= 0 ? '+' : '';
+        // color: verde si pcInd > pc (hay margen), rojo si pcInd < pc (ya estamos por encima)
+        var pcIndColor = diff >= 0 ? '#27613d' : '#c0392b';
+        pcIndTxt  = '$' + Number(simRes.pcInd).toLocaleString('es-AR',{maximumFractionDigits:0})
+          + '/kg<br><span style="font-weight:400;font-size:10px;color:'+pcIndColor+'">'
+          + diffSign + diffPct.toFixed(1) + '% margen</span>';
+        pcIndStyle = 'font-weight:600;color:rgba(26,22,18,.75)';
+      }
       html += '<tr>'
         +'<td style="'+TD+';color:rgba(26,22,18,.5)">'+c.fecha+'</td>'
         +'<td style="'+TD+';font-weight:600">'+_negNormCat(c.categoria)+'</td>'
@@ -4129,6 +4144,7 @@ function renderNegocios(){
         +'<td style="'+TD+';text-align:right">'+(c.precio_kg?'$'+Number(c.precio_kg).toLocaleString('es-AR',{maximumFractionDigits:0}):'—')+'</td>'
         +'<td style="'+TD+';text-align:right">'+kgTxt+'</td>'
         +'<td style="'+TD+';text-align:right;'+resStyle+'">'+resTxt+'</td>'
+        +'<td style="'+TD+';text-align:right;'+pcIndStyle+'">'+pcIndTxt+'</td>'
         +'<td style="'+TD+';color:rgba(26,22,18,.5)">'+(c.origen||'—')+'</td>'
         +'</tr>';
     });
