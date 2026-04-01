@@ -3596,6 +3596,7 @@ def _leer_hoja_api(sheet_id, nombre_hoja, creds_file):
         if not values or len(values) < 2:
             return []
         headers = [str(h).strip().lower().replace(" ", "_") for h in values[0]]
+        log.info(f"    Columnas hoja '{nombre_hoja}': {headers}")
         rows = []
         for row in values[1:]:
             # Rellenar celdas vacías al final de la fila
@@ -3690,7 +3691,12 @@ def procesar_negocios(negocios_raw):
         try:
             fecha    = buscar_col(r, "fecha")
             cat      = buscar_col(r, "categ", "categoria", "tipo")
-            kg_cab   = _parse_ar_num(buscar_col(r, "kg_cab", "kg/cab", "peso", "kg_prom")) or 0
+            kg_cab_raw_v = buscar_col(r,
+                "kg_cab", "kg/cab", "peso", "kg_prom",
+                "promedio", "kilos", "kilo", "kg_promedio", "peso_prom",
+                "prom_kg", "kg/cabeza", "kgcab", "kg_entr", "kg_entrada",
+                "kg_comp", "kgs", "prom")
+            kg_cab   = _parse_ar_num(kg_cab_raw_v) or 0
             precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c",
                                                 "precio_carne", "precio")) or 0
             precio_p = _parse_ar_num(buscar_col(r, "precio_pie", "precio_vivo", "$/pie")) or 0
@@ -3716,7 +3722,25 @@ def procesar_negocios(negocios_raw):
         try:
             fecha    = buscar_col(r, "fecha")
             cat      = buscar_col(r, "categ", "categoria", "tipo")
-            kg_cab   = _parse_ar_num(buscar_col(r, "kg_cab", "kg/cab", "peso", "kg_prom")) or 0
+            # kg_cab: buscar por muchos nombres posibles; fallback numérico si todo falla
+            kg_cab_raw = buscar_col(r,
+                "kg_cab", "kg/cab", "peso", "kg_prom",
+                "promedio", "kilos", "kilo", "kg_promedio", "peso_prom",
+                "prom_kg", "kg/cabeza", "kgcab", "kg_entr", "kg_entrada",
+                "kg_comp", "kgs", "prom")
+            if not kg_cab_raw:
+                # Fallback: primer campo numérico 50–2000 que no sea precio ni cabezas
+                _precio_val = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
+                _cab_val    = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 0
+                _excl = {'precio', 'fecha', 'categ', 'origen', 'cab', 'frigo', 'destino',
+                         'vendedor', 'campo', 'proveedor', 'observ', 'nota', 'tipo'}
+                for _k, _v in r.items():
+                    if any(_ex in _k.lower() for _ex in _excl): continue
+                    _num = _parse_ar_num(_v or "")
+                    if _num and 50 <= _num <= 2000 and abs(_num - _precio_val) > 10 and abs(_num - _cab_val) > 5:
+                        kg_cab_raw = _v
+                        break
+            kg_cab   = _parse_ar_num(kg_cab_raw) or 0
             precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
             cabezas  = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 1
             origen   = buscar_col(r, "origen", "vendedor", "proveedor", "campo")
