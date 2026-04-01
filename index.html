@@ -504,6 +504,34 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
       <div class="kpi-cell"><div class="kpi-tag">Resultado Total</div><div class="kpi-num green">$9.191 M</div><div class="kpi-hint">Con tenencia · 18,97%</div></div>
       <div class="kpi-cell"><div class="kpi-tag">Superávit de Caja</div><div class="kpi-num gold">$3.803 M</div><div class="kpi-hint">Antes de aplicaciones</div></div>
     </div>
+    <!-- ── Live KPIs: stock · mercado · tesorería ── -->
+    <div class="kpi-strip" style="margin-top:0;grid-template-columns:repeat(5,1fr);border-top:1px solid rgba(184,146,42,.18)">
+      <div class="kpi-cell">
+        <div class="kpi-tag">Stock PEGSA</div>
+        <div class="kpi-num gold" id="hkpi-pegsa-cab">—</div>
+        <div class="kpi-hint" id="hkpi-pegsa-kg">Cargando…</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Stock Total (todas las empresas)</div>
+        <div class="kpi-num" id="hkpi-total-cab">—</div>
+        <div class="kpi-hint" id="hkpi-total-kg">Cargando…</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Novillo 461/490 kg</div>
+        <div class="kpi-num gold" id="hkpi-novillo">—</div>
+        <div class="kpi-hint" id="hkpi-novillo-var">Cañuelas · hoy</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Vaca Buena</div>
+        <div class="kpi-num gold" id="hkpi-vaca">—</div>
+        <div class="kpi-hint" id="hkpi-vaca-var">Cañuelas · hoy</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Tesorería · Cobertura</div>
+        <div class="kpi-num green" id="hkpi-tes-hasta">—</div>
+        <div class="kpi-hint" id="hkpi-tes-disp">Cargando…</div>
+      </div>
+    </div>
   </div>
   <div class="modules-section">
     <div class="modules-label">Módulos disponibles</div>
@@ -2580,9 +2608,10 @@ window.addEventListener('load', function(){
 
   <!-- Nav tabs -->
   <div class="nav-tabs">
-    <div class="nav-tab active" id="mercadoTabHacienda"    onclick="mercadoTab('hacienda',this)">🐄 Precios</div>
-    <div class="nav-tab"        id="mercadoTabNegocios"    onclick="mercadoTab('negocios',this)">📋 Negocios</div>
-    <div class="nav-tab"        id="mercadoTabHistorico"   onclick="mercadoTab('historico',this)">📊 Histórico</div>
+    <div class="nav-tab active" id="mercadoTabHacienda"      onclick="mercadoTab('hacienda',this)">🐄 Precios</div>
+    <div class="nav-tab"        id="mercadoTabNegocios"      onclick="mercadoTab('negocios',this)">📋 Negocios</div>
+    <div class="nav-tab"        id="mercadoTabHistorico"     onclick="mercadoTab('historico',this)">📊 Histórico</div>
+    <div class="nav-tab"        id="mercadoTabSeguimiento"   onclick="mercadoTab('seguimiento',this)">📈 Seguimiento</div>
   </div>
 
   <div id="mercadoLoading" style="text-align:center;padding:80px 0;color:rgba(26,22,18,.4);font-family:'DM Mono',monospace;font-size:12px">Cargando datos...</div>
@@ -2604,6 +2633,25 @@ window.addEventListener('load', function(){
 
     <!-- Panel Granos (vacío, mantenido para compatibilidad JS) -->
     <div id="panelMercadoCommodities" style="display:none"></div>
+
+    <!-- Panel Seguimiento Económico Diario -->
+    <div id="panelMercadoSeguimiento" style="display:none">
+      <div class="panel" style="display:block">
+        <div class="section-header">
+          <span class="section-title">Seguimiento Económico Diario</span>
+          <span class="section-sub">Simulación automática · 5 categorías Cañuelas · Precios del día</span>
+        </div>
+        <div class="nota-box">Resultado por cabeza según precios de hacienda e insumos del día. Los parámetros operativos (flete, comisiones, sanidad, etc.) se toman de los valores cargados en el Simulador.</div>
+        <div id="segHoyTabla" style="margin-top:16px"></div>
+        <div id="segChartWrap" style="margin-top:28px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:10px">Evolución histórica · seleccioná la métrica</div>
+          <div id="segMetricBtns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+          <div class="panel-chart-wrap" style="margin:0">
+            <canvas id="chartSeguimiento" style="max-height:380px"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Panel Negocios -->
     <div id="panelMercadoNegocios" style="display:none">
@@ -3295,7 +3343,7 @@ function tryLogin(){
   });
   const ls=document.getElementById('screenLogin');
   ls.style.opacity='0';ls.style.transition='opacity .35s ease';
-  setTimeout(()=>{showScreen('screenHome');document.body.style.background='var(--ink)';},350);
+  setTimeout(()=>{showScreen('screenHome');document.body.style.background='var(--ink)';loadHomeKpis();},350);
 }
 function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.classList.add('show');}
 function shake(){const b=document.querySelector('.login-box');b.style.animation='shake .4s ease';setTimeout(()=>b.style.animation='',400);}
@@ -3359,7 +3407,94 @@ function openModule(mod){
   window.scrollTo(0,0);
 }
 
-function goHome(){showScreen('screenHome');document.body.style.background='var(--ink)';window.scrollTo(0,0);}
+// ── HOME · Live KPIs ─────────────────────────────────────────────────────
+var _homeKpisLoaded = false;
+
+function loadHomeKpis(){
+  if(_homeKpisLoaded) return; // solo carga una vez por sesión
+  _homeKpisLoaded = true;
+
+  function fM(v){ // formatea millones: $1.234 M o $123 M
+    if(v==null||isNaN(v)) return '—';
+    var m = Math.abs(v)/1e6;
+    return (v<0?'−':'')+'$\u00a0'+(m>=10?Math.round(m).toLocaleString('es-AR'):m.toFixed(1))+'\u00a0M';
+  }
+  function fN(v,dec){
+    if(v==null||isNaN(v)) return '—';
+    return '$\u00a0'+Number(v).toLocaleString('es-AR', dec!=null?{maximumFractionDigits:dec}:{maximumFractionDigits:0});
+  }
+  function fVar(v){
+    if(!v) return '';
+    return v>0 ? ' ↑ +$'+Math.abs(v).toLocaleString('es-AR') : ' ↓ −$'+Math.abs(v).toLocaleString('es-AR');
+  }
+  function set(id,val){ var el=document.getElementById(id); if(el) el.textContent=val; }
+  function setC(id,val,cls){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.textContent = val;
+    if(cls){ el.className='kpi-num '+cls; }
+  }
+
+  // ── Stock ──────────────────────────────────────────────────
+  fetch(STOCK_SB+'/stock_kpis_2025.json',{})
+    .then(function(r){ return r.ok?r.json():null; })
+    .then(function(d){
+      if(!d||!d.kpis) return;
+      var k = d.kpis;
+      var pegsa = (k.por_propietario||{})['PEGSA'] || {};
+      // PEGSA
+      setC('hkpi-pegsa-cab', pegsa.cabezas ? Math.round(pegsa.cabezas).toLocaleString('es-AR')+' cab' : '—', 'gold');
+      set('hkpi-pegsa-kg', pegsa.ton_estimado ? Math.round(pegsa.ton_estimado).toLocaleString('es-AR')+' tn proyectadas' : '—');
+      // Total
+      setC('hkpi-total-cab', k.total_cabezas ? Number(k.total_cabezas).toLocaleString('es-AR')+' cab' : '—', '');
+      set('hkpi-total-kg', k.total_ton_estimado_hoy ? Math.round(k.total_ton_estimado_hoy).toLocaleString('es-AR')+' tn · '+k.total_establecimientos+' establec.' : '—');
+    })
+    .catch(function(){});
+
+  // ── Mercado: usa caché si ya cargó, sino fetch ─────────────
+  var mPromise = MERCADO_DATA_CACHE
+    ? Promise.resolve(MERCADO_DATA_CACHE)
+    : fetch(STOCK_SB+'/mercado_precios.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;});
+
+  mPromise.then(function(d){
+    if(!d||!d.hacienda) return;
+    var nov = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('461')>=0; });
+    var vac = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('vacas buenas')>=0; });
+    if(nov){
+      setC('hkpi-novillo', fN(nov.precio), 'gold');
+      set('hkpi-novillo-var', 'Cañuelas · '+d.fecha+(nov.variacion?fVar(nov.variacion):''));
+    }
+    if(vac){
+      setC('hkpi-vaca', fN(vac.precio), 'gold');
+      set('hkpi-vaca-var', 'Cañuelas · '+d.fecha+(vac.variacion?fVar(vac.variacion):''));
+    }
+  });
+
+  // ── Tesorería ──────────────────────────────────────────────
+  var tPromise = _tesData
+    ? Promise.resolve(_tesData)
+    : fetch(STOCK_SB+'/tesoreria_ultimo.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;});
+
+  tPromise.then(function(d){
+    if(!d) return;
+    // Total disponible = cartera de cheques a cobrar
+    var cheqTotal = (d.cheques||{}).total_cartera || 0;
+    // Cobertura: última semana con saldo_acumulado >= 0
+    var flujo = d.flujo || {};
+    var sems   = flujo.semanas || [];
+    var acum   = (flujo.series||{}).saldo_acumulado || [];
+    var hastaLabel = '—';
+    for(var i=acum.length-1; i>=0; i--){
+      if(acum[i]>=0){ hastaLabel=sems[i]||'—'; break; }
+    }
+    if(hastaLabel!=='—') hastaLabel='Hasta el '+hastaLabel;
+    var isPositive = hastaLabel !== '—';
+    setC('hkpi-tes-hasta', hastaLabel, isPositive?'green':'');
+    set('hkpi-tes-disp', 'Cartera cheqs: '+fM(cheqTotal)+' · Corte '+( d.fecha_corte||'').split('-').reverse().join('/'));
+  });
+}
+
+function goHome(){showScreen('screenHome');document.body.style.background='var(--ink)';window.scrollTo(0,0);loadHomeKpis();}
 function logout(){
   currentUser=null;chartsInited=false;
   document.querySelectorAll('.module-card[data-mod]').forEach(card=>{card.style.display='';});
@@ -3390,18 +3525,20 @@ var PRECIOS_COMMODITIES = [
 function mercadoTab(tab, el){
   document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico'].forEach(function(p){
+  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento'].forEach(function(p){
     document.getElementById(p).style.display='none';
   });
   var map = {
-    hacienda:  'panelMercadoHacienda',
-    negocios:  'panelMercadoNegocios',
-    historico: 'panelMercadoHistorico',
+    hacienda:     'panelMercadoHacienda',
+    negocios:     'panelMercadoNegocios',
+    historico:    'panelMercadoHistorico',
+    seguimiento:  'panelMercadoSeguimiento',
   };
   if(map[tab]){
     document.getElementById(map[tab]).style.display='block';
-    if(tab==='historico') renderHistoricoChart();
-    if(tab==='negocios')  renderNegocios();
+    if(tab==='historico')   renderHistoricoChart();
+    if(tab==='negocios')    renderNegocios();
+    if(tab==='seguimiento') _segRun(MERCADO_DATA_CACHE);
   }
 }
 
@@ -3488,6 +3625,296 @@ function initMercado(){
     renderTablaCommoditiesNueva();
     document.getElementById('mercadoLoading').style.display='none';
     document.getElementById('mercadoData').style.display='block';
+    // Pre-calcular seguimiento con datos del día (se muestra al abrir el tab)
+    if(MERCADO_DATA_CACHE) _segRun(MERCADO_DATA_CACHE);
+  });
+}
+
+// ══ SEGUIMIENTO ECONÓMICO DIARIO ════════════════════════════════════════════
+// Simula 5 categorías con precios del día (Cañuelas + insumos) y guarda
+// historial en localStorage para mostrar evolución de resultados y equilibrios.
+
+var SEG_CATS = [
+  {nombre:'Novillito',    tipo:'terneros', pesoE:390, pesoS:500, precioKey:'Novillitos hasta 390'},
+  {nombre:'Novillo',      tipo:'terneros', pesoE:460, pesoS:500, precioKey:'Novillos 431/460'},
+  {nombre:'Vaquillona',   tipo:'terneras', pesoE:350, pesoS:450, precioKey:'Vaquillonas hasta 390'},
+  {nombre:'Vaca Buena',   tipo:'vacas',    pesoE:500, pesoS:600, precioKey:'Vacas Buenas'},
+  {nombre:'Vaca Regular', tipo:'vacas',    pesoE:450, pesoS:600, precioKey:'Vacas Regulares'},
+];
+var SEG_COLORS  = ['#2980b9','#27ae60','#c0392b','#d4a23a','#8e44ad'];
+var SEG_METRICAS = [
+  {key:'resEco', label:'Resultado / cab ($)'},
+  {key:'pvInd',  label:'Equilibrio Precio Venta ($/kg)'},
+  {key:'pcInd',  label:'Equilibrio Precio Compra ($/kg)'},
+  {key:'racInd', label:'Equilibrio Precio Ración ($/kgTC)'},
+];
+var _segMetrica = 'resEco';
+var _segChart   = null;
+var SEG_LS_KEY  = 'pegsa_seg_v1';
+
+// ── Simulación pura (sin tocar DOM de resultados) ────────────────────────
+function _segSimCat(tipo, pesoE, pesoS, pc, ins){
+  var pfx = tipo==='terneros'?'tn': tipo==='terneras'?'ta':'va';
+  function gv(id){ var el=document.getElementById(pfx+'-'+id); return el?(parseFloat(el.value)||0):0; }
+
+  var kmo     = gv('kmo');
+  var kmd     = gv('kmd');
+  var pflete  = (ins.flete_12tn||0) || gv('pflete');
+  var comC    = gv('ccom')/100;
+  var comV    = gv('cvta')/100;
+  var guias   = (ins.guias||0)    || gv('guias');
+  var hotel   = (ins.hoteleria||0)|| gv('hotel');
+  var sanidad = (ins.sanidad||0)  || gv('sanidad');
+  var pcarne  = gv('pcarne');
+  var rend    = gv('rend')/100;
+  var decomiso= gv('decomiso')/100;
+  var mort    = gv('mort')/100;
+
+  var pesoPromedio = (pesoE + pesoS) / 2;
+  var aumento = pesoPromedio * SIM_ADP_PCT[tipo] / 100;
+  if(!aumento) return null;
+  var dias        = (pesoS - pesoE) / aumento;
+  var kgsProducidos = pesoS - pesoE;
+
+  // Precio venta
+  var pv = (pcarne && rend) ? pcarne * rend : gv('pv');
+  if(!pv) return null;
+
+  // Alimentación por etapas
+  var maiz_neto = Math.max(0, ins.maiz - SIM_MAIZ_CONTRAFLETE + SIM_MAIZ_FLETE_LOCAL);
+  var etapas3   = SIM_ETAPAS[tipo];
+  var msT3      = tipo==='vacas' ? SIM_MS_TABLE_VAC : SIM_MS_TABLE_GEN;
+  var wNow=pesoE, dLeft=dias, totTC=0, totAlim=0;
+  for(var ei=0; ei<etapas3.length; ei++){
+    var et3 = etapas3[ei];
+    var sd  = et3.dias!==null ? Math.min(et3.dias, dLeft) : dLeft;
+    if(sd<=0) break;
+    var wEnd    = wNow + aumento * sd;
+    var wAvg    = (wNow + wEnd) / 2;
+    var msPct   = simLookupMS(msT3, wEnd);
+    var consPct = msPct / SIM_MSTC[tipo];
+    var consDay = consPct * wAvg;
+    var c3      = et3.comp;
+    var stRac   = (c3[0]*maiz_neto + c3[1]*(ins.silo||0) + c3[2]*(ins.gluten||0) + c3[3]*(ins.nucleo||0) + c3[4]*(ins.germen||0))/100/1000*1.15;
+    totTC   += consDay * sd;
+    totAlim += stRac * consDay * sd;
+    wNow = wEnd; dLeft -= sd;
+  }
+  var consumoDiario  = dias>0 ? totTC/dias : 0;
+  var alimentacion   = totAlim;
+
+  // Compra
+  var fleteC;
+  if(tipo==='vacas')         fleteC = (kmo * pflete + 11000) / 13950;
+  else if(tipo==='terneras') fleteC = (kmo * pflete + 110000) / 12000;
+  else                       fleteC = (kmo * pflete) / 12000;
+  var compraNeta    = (pc + fleteC + pc * comC) * pesoE;
+  var compraNeta_kg = compraNeta / pesoE;
+  var hoteleriaTotal = hotel * dias;
+  var totalCostos   = alimentacion + hoteleriaTotal + sanidad;
+
+  // Venta
+  var fleteV      = (kmd * pflete) / 19000;
+  var gastoV      = fleteV + pv*comV + (pesoS>0 ? guias/pesoS : 0) + pv*decomiso;
+  var ventaNeta_kg= pv - gastoV;
+  var ingresoVenta= ventaNeta_kg * pesoS;
+
+  // Mortandad
+  var mortTotal = dias>0 ? mort*dias/30 : 0;
+  var mortCost  = (pesoE+pesoS)/2 * mortTotal * (ventaNeta_kg+compraNeta_kg)/2;
+
+  var resEco = ingresoVenta - compraNeta - mortCost - totalCostos;
+  var pvInd  = pesoS>0 ? ((totalCostos+compraNeta)/pesoS + fleteV + guias/pesoS)/(1-comV) : 0;
+  var pcInd  = pesoE>0 ? ((ingresoVenta-totalCostos)/pesoE - fleteC)/(1+comC) : 0;
+  var racInd = consumoDiario*dias>0 ? (ingresoVenta-compraNeta-mortCost-hoteleriaTotal-sanidad)/(consumoDiario*dias) : 0;
+
+  return {
+    pc:   Math.round(pc),
+    pv:   Math.round(pv),
+    dias: Math.round(dias),
+    alimentacion: Math.round(alimentacion),
+    resEco: Math.round(resEco),
+    pvInd:  Math.round(pvInd),
+    pcInd:  Math.round(pcInd),
+    racInd: Math.round(racInd*10)/10,
+  };
+}
+
+// ── LocalStorage helpers ──────────────────────────────────────────────────
+function _segCargar(){
+  try{ return JSON.parse(localStorage.getItem(SEG_LS_KEY)||'[]'); } catch(e){ return []; }
+}
+function _segGuardar(fecha, maiz, cats){
+  var hist = _segCargar();
+  hist = hist.filter(function(d){ return d.fecha!==fecha; }); // reemplazar mismo día
+  hist.push({fecha:fecha, maiz:maiz, cats:cats});
+  hist.sort(function(a,b){ return a.fecha<b.fecha?-1:1; });
+  if(hist.length>90) hist = hist.slice(hist.length-90);
+  try{ localStorage.setItem(SEG_LS_KEY, JSON.stringify(hist)); } catch(e){}
+}
+
+// ── Función principal: ejecuta simulación y guarda ────────────────────────
+function _segRun(data){
+  if(!data || !data.insumos) return;
+  var ins = data.insumos;
+  // Mapa de precios de hacienda: clave = nombre categoría
+  var hac = {};
+  if(data.hacienda) data.hacienda.forEach(function(h){ hac[h.categoria]=h.precio; });
+
+  var hoy = data.fecha || new Date().toISOString().slice(0,10);
+  var resultados = SEG_CATS.map(function(cat){
+    var pc = null;
+    Object.keys(hac).forEach(function(k){
+      if(k.toLowerCase().indexOf(cat.precioKey.toLowerCase())>=0) pc=hac[k];
+    });
+    if(!pc) return null;
+    var r = _segSimCat(cat.tipo, cat.pesoE, cat.pesoS, pc, ins);
+    return r ? Object.assign({nombre:cat.nombre}, r) : null;
+  });
+
+  var validos = resultados.filter(Boolean);
+  if(validos.length>0) _segGuardar(hoy, ins.maiz, validos);
+  _segRender(resultados, hoy);
+}
+
+// ── Render completo ───────────────────────────────────────────────────────
+function _segRender(hoyRes, fecha){
+  _segRenderTablaHoy(hoyRes, fecha);
+  _segRenderMetricBtns();
+  _segRenderChart();
+}
+
+function _segRenderTablaHoy(res, fecha){
+  var el = document.getElementById('segHoyTabla');
+  if(!el) return;
+  var html = '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">Resultado del día · '+fecha+'</div>';
+  html += '<div style="overflow-x:auto"><table class="data-table"><thead><tr>'
+    +'<th>Categoría</th>'
+    +'<th class="right">Compra<br><span style="font-weight:400;opacity:.6">$/kg pie</span></th>'
+    +'<th class="right">Venta<br><span style="font-weight:400;opacity:.6">$/kg pie</span></th>'
+    +'<th class="right">Resultado<br><span style="font-weight:400;opacity:.6">$/cab</span></th>'
+    +'<th class="right">Eq. Venta<br><span style="font-weight:400;opacity:.6">$/kg</span></th>'
+    +'<th class="right">Eq. Compra<br><span style="font-weight:400;opacity:.6">$/kg</span></th>'
+    +'<th class="right">Eq. Ración<br><span style="font-weight:400;opacity:.6">$/kgTC</span></th>'
+    +'</tr></thead><tbody>';
+  SEG_CATS.forEach(function(cat, i){
+    var r   = res && res[i];
+    var col = SEG_COLORS[i];
+    if(!r){
+      html += '<tr><td><strong style="color:'+col+'">'+cat.nombre+'</strong><br><span class="muted" style="font-size:10px">'+cat.pesoE+'→'+cat.pesoS+' kg</span></td>'
+        +'<td colspan="6" class="muted" style="text-align:center">Sin precio disponible</td></tr>';
+      return;
+    }
+    var resPos = r.resEco>=0;
+    var resCol = resPos ? 'color:var(--green);font-weight:700' : 'color:var(--red);font-weight:700';
+    var resPfx = resPos ? '+' : '';
+    html += '<tr>'
+      +'<td><strong style="color:'+col+'">'+cat.nombre+'</strong><br><span class="muted" style="font-size:10px">'+cat.pesoE+'→'+cat.pesoS+' kg · '+r.dias+'d</span></td>'
+      +'<td class="right mono">$'+Number(r.pc).toLocaleString('es-AR')+'</td>'
+      +'<td class="right mono">$'+Number(r.pv).toLocaleString('es-AR')+'</td>'
+      +'<td class="right mono" style="'+resCol+'">'+resPfx+'$'+Number(r.resEco).toLocaleString('es-AR')+'</td>'
+      +'<td class="right mono">$'+Number(r.pvInd).toLocaleString('es-AR')+'</td>'
+      +'<td class="right mono">$'+Number(r.pcInd).toLocaleString('es-AR')+'</td>'
+      +'<td class="right mono">$'+Number(r.racInd).toLocaleString('es-AR',{maximumFractionDigits:1})+'</td>'
+      +'</tr>';
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function _segRenderMetricBtns(){
+  var box = document.getElementById('segMetricBtns');
+  if(!box) return;
+  box.innerHTML = '';
+  SEG_METRICAS.forEach(function(m){
+    var active = m.key===_segMetrica;
+    var btn = document.createElement('button');
+    btn.textContent = m.label;
+    btn.style.cssText = 'padding:5px 12px;border-radius:2px;font-family:DM Mono,monospace;font-size:10px;cursor:pointer;transition:all .2s;'
+      +(active
+        ? 'background:var(--gold);color:var(--ink);border:1px solid var(--gold);font-weight:700;'
+        : 'background:transparent;color:rgba(26,22,18,.6);border:1px solid rgba(26,22,18,.2);');
+    btn.onclick = function(){ _segMetrica = m.key; _segRenderMetricBtns(); _segRenderChart(); };
+    box.appendChild(btn);
+  });
+}
+
+function _segRenderChart(){
+  var canvas = document.getElementById('chartSeguimiento');
+  if(!canvas) return;
+  var hist = _segCargar();
+  if(hist.length === 0){
+    if(_segChart){ _segChart.destroy(); _segChart=null; }
+    canvas.style.display='none';
+    var wrap = canvas.parentNode;
+    if(wrap && !wrap.querySelector('.seg-nodata')){
+      var msg = document.createElement('div');
+      msg.className = 'seg-nodata';
+      msg.style.cssText='padding:40px;text-align:center;color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:11px';
+      msg.textContent = 'Aún no hay historial. Se acumula automáticamente cada vez que se abren los precios del día.';
+      wrap.appendChild(msg);
+    }
+    return;
+  }
+  canvas.style.display='block';
+  var nodata = canvas.parentNode && canvas.parentNode.querySelector('.seg-nodata');
+  if(nodata) nodata.remove();
+
+  var labels = hist.map(function(d){
+    var p=d.fecha.split('-'); return p[2]+'/'+p[1]; // DD/MM
+  });
+
+  var metricaDef = SEG_METRICAS.find(function(m){ return m.key===_segMetrica; }) || SEG_METRICAS[0];
+
+  var datasets = SEG_CATS.map(function(cat, i){
+    var data = hist.map(function(d){
+      var c = d.cats && d.cats.find(function(c){ return c.nombre===cat.nombre; });
+      return c ? (c[_segMetrica]||null) : null;
+    });
+    return {
+      label: cat.nombre,
+      data: data,
+      borderColor: SEG_COLORS[i],
+      backgroundColor: SEG_COLORS[i]+'22',
+      borderWidth: 2,
+      pointRadius: hist.length<=15 ? 4 : 2,
+      pointHoverRadius: 6,
+      tension: 0.3,
+      spanGaps: true,
+    };
+  });
+
+  var yLabel = metricaDef.label;
+
+  if(_segChart){ _segChart.destroy(); _segChart=null; }
+  _segChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { position:'top', labels:{ font:{family:'DM Mono, monospace', size:10}, padding:12 } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx){
+              var v = ctx.parsed.y;
+              if(v===null) return ctx.dataset.label+': —';
+              return ctx.dataset.label+': $'+Number(v).toLocaleString('es-AR');
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ticks:{ font:{family:'DM Mono, monospace', size:9}, maxRotation:45 }, grid:{ color:'rgba(26,22,18,.07)' } },
+        y: {
+          ticks:{ font:{family:'DM Mono, monospace', size:9},
+                  callback:function(v){ return '$'+Number(v).toLocaleString('es-AR'); } },
+          grid:{ color:'rgba(26,22,18,.07)' },
+          title:{ display:true, text:yLabel, font:{family:'DM Mono, monospace', size:9} }
+        }
+      }
+    }
   });
 }
 
