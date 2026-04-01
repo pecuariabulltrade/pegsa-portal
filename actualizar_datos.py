@@ -1679,6 +1679,48 @@ def procesar_consumo(regs, cols, periodo):
     ), 1)
     log.info(f"  Total 7d: {total_7d:,.0f} kg  |  Días registrados: {n_dias}  |  Promedio diario: {prom_diario_total:,.1f} kg/día  |  MS: {prom_diario_total_ms:,.1f} kg MS/día")
 
+    # ── Último día registrado ─────────────────────────────────────────────
+    # Buscar la fecha más reciente con registros (en todo el año, no solo 7d)
+    ultimo_dia_date = None
+    for r in regs_anio:
+        try:
+            fd = pd.to_datetime(r.get(col_fecha), errors="coerce")
+            if fd is None or pd.isnull(fd): continue
+            fd_str = fd.strftime("%Y-%m-%d")
+            if ultimo_dia_date is None or fd_str > ultimo_dia_date:
+                ultimo_dia_date = fd_str
+        except: pass
+
+    ultimo_dia_ins = {}
+    total_ult_tc   = 0.0
+    if ultimo_dia_date:
+        for r in regs_anio:
+            try:
+                fd = pd.to_datetime(r.get(col_fecha), errors="coerce")
+                if fd is None or pd.isnull(fd): continue
+                if fd.strftime("%Y-%m-%d") != ultimo_dia_date: continue
+                desc = str(r.get(col_desc) or "Sin descripción").strip() if col_desc else "Sin descripción"
+                cod  = str(r.get(col_cod)  or "").strip()               if col_cod  else ""
+                kg   = to_num(r.get(col_kg, 0))
+                total_ult_tc += kg
+                if desc not in ultimo_dia_ins:
+                    ultimo_dia_ins[desc] = {"cod": cod, "kg": 0.0}
+                ultimo_dia_ins[desc]["kg"] += kg
+            except: pass
+
+    por_insumo_ult = sorted(
+        [{"desc": d, "cod": v["cod"],
+          "kg":       round(v["kg"], 1),
+          "ms_pct":   get_ms(d),
+          "kg_ms":    round(v["kg"] * get_ms(d) / 100, 1) if get_ms(d) is not None else None,
+          "pct_total": round(v["kg"] / max(total_ult_tc, 1) * 100, 1)}
+         for d, v in ultimo_dia_ins.items()],
+        key=lambda x: -x["kg"]
+    )
+    total_ult_ms = round(sum(r["kg_ms"] for r in por_insumo_ult if r["kg_ms"] is not None), 1)
+    if ultimo_dia_date:
+        log.info(f"  Último día: {ultimo_dia_date}  |  TC: {total_ult_tc:,.0f} kg  |  MS: {total_ult_ms:,.0f} kg")
+
     return {
         "meta": {
             "generado":    datetime.now().isoformat(),
@@ -1704,6 +1746,12 @@ def procesar_consumo(regs, cols, periodo):
             "promedio_diario_kg":    prom_diario_total,
             "promedio_diario_kg_ms": prom_diario_total_ms,
             "por_insumo":            por_insumo_7d,
+        },
+        "ultimo_dia": {
+            "fecha":      ultimo_dia_date,
+            "total_tc":   round(total_ult_tc, 1),
+            "total_ms":   total_ult_ms,
+            "por_insumo": por_insumo_ult,
         },
     }
 

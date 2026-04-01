@@ -5891,6 +5891,88 @@ function renderConsumo(data) {
     tb7.appendChild(tf);
     tbl7.appendChild(tb7); sec7.appendChild(tbl7); el.appendChild(sec7);
   }
+
+  // ── Último día de carga registrado ────────────────────────────────────
+  var ult = data.ultimo_dia || {};
+  if (ult.fecha && ult.total_tc) {
+    var secUlt = document.createElement('div');
+    secUlt.style.cssText = 'margin-bottom:36px';
+
+    // Formatear fecha legible
+    var fechaUltFmt = ult.fecha;
+    try {
+      var dp = ult.fecha.split('-');
+      fechaUltFmt = dp[2]+'/'+dp[1]+'/'+dp[0];
+    } catch(e){}
+
+    secUlt.innerHTML =
+      '<div class="section-header">'
+      +'<span class="section-title">Último Día de Carga Registrado</span>'
+      +'<span class="section-sub">'+fechaUltFmt+' · dato real del sistema</span>'
+      +'</div>';
+
+    // Dos tarjetas de totales del día
+    var rowDay = document.createElement('div');
+    rowDay.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px';
+    rowDay.appendChild(makeCard(
+      'Total Tal Cual — '+fechaUltFmt,
+      fmtN(ult.total_tc)+' kg TC',
+      'total suministrado ese día · todos los insumos',
+      '#b8922a'
+    ));
+    rowDay.appendChild(makeCard(
+      'Total Materia Seca — '+fechaUltFmt,
+      fmtN(ult.total_ms)+' kg MS',
+      'equivalente en materia seca · ese día',
+      '#7b3f2a'
+    ));
+    secUlt.appendChild(rowDay);
+
+    // Tabla desglose por insumo del último día
+    var ultIns = ult.por_insumo || [];
+    if (ultIns.length) {
+      var maxUlt = ultIns[0].kg || 1;
+      var tblUlt = document.createElement('table'); tblUlt.className = 'data-table';
+      tblUlt.innerHTML =
+        '<thead><tr>'
+        +'<th>#</th><th>Insumo</th>'
+        +'<th class="right">kg TC</th>'
+        +'<th class="right">% del día</th>'
+        +'<th class="right">MS %</th>'
+        +'<th class="right">kg MS</th>'
+        +'<th style="width:160px">Proporción TC</th>'
+        +'</tr></thead>';
+      var tbUlt = document.createElement('tbody');
+      ultIns.forEach(function(r, i) {
+        var barW = (r.kg / maxUlt * 100).toFixed(1);
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:11px;width:32px">'+(i+1)+'</td>'
+          +'<td><strong>'+r.desc+'</strong>'+(r.cod?' <span style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.35)">#'+r.cod+'</span>':'')+'</td>'
+          +'<td class="right mono" style="font-weight:700;color:#b8922a">'+fmtN(r.kg)+' kg</td>'
+          +'<td class="right mono" style="color:rgba(26,22,18,.55)">'+(r.pct_total != null ? r.pct_total+'%' : '—')+'</td>'
+          +'<td class="right mono" style="color:rgba(26,22,18,.5)">'+(r.ms_pct != null ? r.ms_pct+'%' : '—')+'</td>'
+          +'<td class="right mono" style="font-weight:700;color:#7b3f2a">'+(r.kg_ms != null ? fmtN(r.kg_ms)+' kg' : '—')+'</td>'
+          +'<td style="padding:6px 16px;vertical-align:middle">'
+            +'<div style="flex:1;background:rgba(26,22,18,.07);border-radius:2px;height:10px">'
+              +'<div style="background:#b8922a;height:100%;width:'+barW+'%;border-radius:2px"></div>'
+            +'</div>'
+          +'</td>';
+        tbUlt.appendChild(tr);
+      });
+      // Fila total
+      var tfUlt = document.createElement('tr'); tfUlt.className = 'total';
+      tfUlt.innerHTML = '<td></td><td><strong>TOTAL</strong></td>'
+        +'<td class="right"><strong>'+fmtN(ult.total_tc)+' kg</strong></td>'
+        +'<td class="right">100%</td><td></td>'
+        +'<td class="right" style="color:#7b3f2a"><strong>'+fmtN(ult.total_ms)+' kg</strong></td>'
+        +'<td></td>';
+      tbUlt.appendChild(tfUlt);
+      tblUlt.appendChild(tbUlt);
+      secUlt.appendChild(tblUlt);
+    }
+    el.appendChild(secUlt);
+  }
 }
 
 async function cargarMuertes() {
