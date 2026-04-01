@@ -4648,6 +4648,7 @@ function calcSim(tipo){
   html += '</table>';
 
   document.getElementById('simRes-'+tipo).innerHTML = html;
+  _simSave(); // persistir valores del usuario
 
   // Update global KPI strip
   if(tipo === SIM_ACTIVE_TAB){
@@ -4677,19 +4678,46 @@ function resetDieta(tipo){
   calcSim(tipo);
 }
 
+// ── Persistencia de preferencias del simulador ────────────────────────────
+// Maíz y Silo vienen del mercado (se actualizan solos).
+// Gluten, Germen, Núcleo y el resto de los parámetros se guardan en localStorage
+// para que no se reseteen al recargar el portal.
+var SIM_PREFS_KEY = 'pegsa_sim_prefs_v2';
+var SIM_MARKET_CAMPOS = ['maiz','silo']; // estos los actualiza el JSON; el resto: localStorage
+
+function _simSave(){
+  try{
+    var prefs = {};
+    // Todos los inputs del simulador que NO son readonly y NO son de mercado
+    var inputs = document.querySelectorAll('.sim-input:not([readonly]), .sim-diet-input:not([readonly])');
+    inputs.forEach(function(el){
+      if(!el.id) return;
+      // No guardar maíz ni silo (vienen del mercado)
+      var campo = el.id.split('-').slice(1).join('-');
+      if(SIM_MARKET_CAMPOS.indexOf(campo) >= 0) return;
+      prefs[el.id] = el.value;
+    });
+    localStorage.setItem(SIM_PREFS_KEY, JSON.stringify(prefs));
+  } catch(e){}
+}
+
+function _simLoad(){
+  try{
+    var prefs = JSON.parse(localStorage.getItem(SIM_PREFS_KEY) || '{}');
+    Object.keys(prefs).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && !el.readOnly && prefs[id] !== '') el.value = prefs[id];
+    });
+  } catch(e){}
+}
+
 function _applyInsumos(data){
   if(data && data.insumos){
     var ins = data.insumos;
+    // Solo aplicar desde el mercado: Maíz y Silo (los demás los maneja el usuario)
     ['tn','ta','va','in'].forEach(function(p){
-      if(ins.maiz      && document.getElementById(p+'-maiz'))    document.getElementById(p+'-maiz').value    = ins.maiz;
-      if(ins.gluten    && document.getElementById(p+'-gluten'))  document.getElementById(p+'-gluten').value  = ins.gluten;
-      if(ins.nucleo    && document.getElementById(p+'-nucleo'))  document.getElementById(p+'-nucleo').value  = ins.nucleo;
-      if(ins.germen    && document.getElementById(p+'-germen'))  document.getElementById(p+'-germen').value  = ins.germen;
-      if(ins.silo      && document.getElementById(p+'-silo'))    document.getElementById(p+'-silo').value    = ins.silo;
-      if(ins.hoteleria && document.getElementById(p+'-hotel'))   document.getElementById(p+'-hotel').value   = ins.hoteleria;
-      var fl = ins.flete_jaula || ins.flete_12tn;
-      if(fl && document.getElementById(p+'-pflete')) document.getElementById(p+'-pflete').value = fl;
-      if(ins.guias     && document.getElementById(p+'-guias'))   document.getElementById(p+'-guias').value   = ins.guias;
+      if(ins.maiz && document.getElementById(p+'-maiz')) document.getElementById(p+'-maiz').value = ins.maiz;
+      if(ins.silo && document.getElementById(p+'-silo')) document.getElementById(p+'-silo').value = ins.silo;
     });
     var mzEl = document.getElementById('simPrecioMaiz');
     if(mzEl && ins.maiz) mzEl.textContent = 'Maíz ref: $'+Number(ins.maiz).toLocaleString('es-AR')+'/tn · '+(data.fecha||'');
@@ -4703,26 +4731,30 @@ function syncPrecios(campo, valor){
     if(el) el.value = valor;
   });
   calcSim('terneros'); calcSim('terneras'); calcSim('vacas'); calcSim('invernada');
+  _simSave();
 }
 
 function initSimulador(){
   if(!SIM_INITED){
     SIM_INITED = true;
+    var _finInit = function(){
+      // Restaurar preferencias guardadas (sobreescribe defaults EXCEPTO maiz/silo que vienen del mercado)
+      _simLoad();
+      ['terneros','terneras','vacas','invernada'].forEach(function(t){ calcSim(t); });
+    };
     // Use cached data if already loaded from mercado module, else fetch
     if(MERCADO_DATA_CACHE){
-      _applyInsumos(MERCADO_DATA_CACHE);
-      ['terneros','terneras','vacas','invernada'].forEach(function(t){ calcSim(t); });
+      _applyInsumos(MERCADO_DATA_CACHE); // aplica solo maiz y silo del mercado
+      _finInit();
     } else {
       fetch(STOCK_SB+'/mercado_precios.json',{})
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(data){
           MERCADO_DATA_CACHE = data;
-          _applyInsumos(data);
-          ['terneros','terneras','vacas','invernada'].forEach(function(t){ calcSim(t); });
+          _applyInsumos(data); // aplica solo maiz y silo del mercado
+          _finInit();
         })
-        .catch(function(){
-          ['terneros','terneras','vacas','invernada'].forEach(function(t){ calcSim(t); });
-        });
+        .catch(function(){ _finInit(); });
     }
   } else {
     calcSim(SIM_ACTIVE_TAB);
