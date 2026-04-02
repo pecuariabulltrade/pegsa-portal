@@ -584,6 +584,12 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
         <div class="mod-desc">Evolución mensual de cabezas, kilogramos, insumos y posición financiera. Hasta 30 meses de historia.</div>
         <span class="mod-arrow">Abrir módulo →</span>
       </div>
+      <div class="module-card" data-mod="baseparams" onclick="openModule('baseparams')">
+        <span class="mod-badge live">● Configuración</span><span class="mod-icon">⚙️</span>
+        <div class="mod-tag">Config</div><div class="mod-title">Parámetros Base</div>
+        <div class="mod-desc">Parámetros operativos fijos para el cálculo automático del Seguimiento Diario y Compras del Módulo 5.</div>
+        <span class="mod-arrow">Abrir →</span>
+      </div>
     </div>
   </div>
 </div>
@@ -2763,7 +2769,6 @@ window.addEventListener('load', function(){
     <div class="nav-tab" id="simTabTerneras" onclick="simTab('terneras',this)">🐄 Terneras / Vaquillonas</div>
     <div class="nav-tab" id="simTabVacas" onclick="simTab('vacas',this)">🐮 Vacas</div>
     <div class="nav-tab" id="simTabInvernada" onclick="simTab('invernada',this)">🌿 Invernada / Recría</div>
-    <div class="nav-tab" id="simTabBaseParams" onclick="simTab('baseparams',this)">⚙️ Parámetros Base</div>
   </div>
 
   <!-- TERNEROS panel -->
@@ -3036,86 +3041,105 @@ window.addEventListener('load', function(){
     </div>
   </div>
 </div>
-<!-- PARÁMETROS BASE panel -->
-<div id="panelSimBaseParams" style="display:none;padding:32px 48px">
-  <div class="nota-box" style="margin-bottom:24px">
-    <strong>⚙️ Parámetros de Referencia para Cálculo Automático</strong><br>
-    Estos parámetros se usan en el <strong>Seguimiento Diario</strong> y en las <strong>Compras</strong> del Módulo 5, de forma independiente a los valores que tengas en el simulador sandbox. Guardados en el dispositivo.
-  </div>
+<!-- FIN screenSimulador -->
 
-  <!-- TERNEROS BASE -->
-  <div class="panel" style="margin-bottom:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐂 Terneros / Novillos</div>
-      <button onclick="bpCargarDesdeSim('terneros')" style="padding:5px 12px;background:rgba(184,146,42,.12);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↓ Cargar desde Simulador</button>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-      <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-tn-kmo" type="number" value="275" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-tn-kmd" type="number" value="640" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-tn-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-tn-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-tn-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-tn-guias" type="number" value="1725" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-tn-hotel" type="number" value="310" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-tn-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-tn-pcarne" type="number" value="8100" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-tn-rend" type="number" step="0.1" value="56" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-tn-decomiso" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-tn-mort" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
+<!-- ══════════════════════════════════════════
+     MÓDULO 09B — PARÁMETROS BASE
+══════════════════════════════════════════ -->
+<div id="screenBaseParams" class="screen" style="display:none">
+  <!-- Header -->
+  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">Configuración · Cálculo Automático</div>
+        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">PARÁMETROS BASE</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(212,168,75,.5);margin-top:6px">Terneros · Terneras · Vacas · Seguimiento Diario &amp; Compras</div>
+      </div>
+      <div>
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.08em">&#8592; Panel Principal</button>
+      </div>
     </div>
   </div>
 
-  <!-- TERNERAS BASE -->
-  <div class="panel" style="margin-bottom:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐄 Terneras / Vaquillonas</div>
-      <button onclick="bpCargarDesdeSim('terneras')" style="padding:5px 12px;background:rgba(184,146,42,.12);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↓ Cargar desde Simulador</button>
+  <!-- Content -->
+  <div style="padding:32px 48px;max-width:1200px">
+    <div class="nota-box" style="margin-bottom:28px">
+      Estos parámetros se usan para los cálculos automáticos del <strong>Seguimiento Diario</strong> y la tabla de <strong>Compras</strong> en el Módulo 5, independientemente de lo que tengas configurado en el Simulador sandbox. Si los valores operativos de la empresa cambian, actualizalos acá. Se guardan en este dispositivo.
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-      <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-ta-kmo" type="number" value="275" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-ta-kmd" type="number" value="640" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-ta-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-ta-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-ta-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-ta-guias" type="number" value="1725" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-ta-hotel" type="number" value="310" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-ta-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-ta-pcarne" type="number" value="7800" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-ta-rend" type="number" step="0.1" value="54" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-ta-decomiso" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-ta-mort" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-    </div>
-  </div>
 
-  <!-- VACAS BASE -->
-  <div class="panel" style="margin-bottom:24px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐮 Vacas</div>
-      <button onclick="bpCargarDesdeSim('vacas')" style="padding:5px 12px;background:rgba(184,146,42,.12);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↓ Cargar desde Simulador</button>
+    <!-- TERNEROS -->
+    <div class="panel" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐂 Terneros / Novillos</div>
+        <button onclick="bpCargarDesdeSim('terneros')" style="padding:5px 14px;background:rgba(184,146,42,.1);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↓ Copiar desde Simulador</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-tn-kmo" type="number" value="275" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-tn-kmd" type="number" value="640" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-tn-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-tn-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-tn-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-tn-guias" type="number" value="1725" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-tn-hotel" type="number" value="310" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-tn-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-tn-pcarne" type="number" value="8100" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-tn-rend" type="number" step="0.1" value="56" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-tn-decomiso" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-tn-mort" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-      <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-va-kmo" type="number" value="275" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-va-kmd" type="number" value="640" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-va-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-va-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-va-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-va-guias" type="number" value="1725" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-va-hotel" type="number" value="310" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-va-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-va-pcarne" type="number" value="7500" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-va-rend" type="number" step="0.1" value="52.5" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-va-decomiso" type="number" step="0.01" value="0.66" onchange="bpGuardar()"></div>
-      <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-va-mort" type="number" step="0.01" value="0.54" onchange="bpGuardar()"></div>
-    </div>
-  </div>
 
-  <div style="display:flex;gap:10px;align-items:center">
-    <button onclick="bpCargarDesdeSim('terneros');bpCargarDesdeSim('terneras');bpCargarDesdeSim('vacas')" style="padding:8px 18px;background:var(--gold);color:var(--ink);border:none;border-radius:2px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;font-weight:700;letter-spacing:.06em">↓ Cargar Todo desde Simulador</button>
-    <button onclick="bpRestaurarDefaults()" style="padding:8px 18px;background:transparent;color:rgba(26,22,18,.5);border:1px solid rgba(26,22,18,.2);border-radius:2px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↩ Restaurar Defaults</button>
-    <span id="bpGuardadoMsg" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);opacity:0;transition:opacity .5s">✓ Guardado</span>
+    <!-- TERNERAS -->
+    <div class="panel" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐄 Terneras / Vaquillonas</div>
+        <button onclick="bpCargarDesdeSim('terneras')" style="padding:5px 14px;background:rgba(184,146,42,.1);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↓ Copiar desde Simulador</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-ta-kmo" type="number" value="275" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-ta-kmd" type="number" value="640" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-ta-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-ta-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-ta-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-ta-guias" type="number" value="1725" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-ta-hotel" type="number" value="310" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-ta-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-ta-pcarne" type="number" value="7800" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-ta-rend" type="number" step="0.1" value="54" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-ta-decomiso" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-ta-mort" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
+      </div>
+    </div>
+
+    <!-- VACAS -->
+    <div class="panel" style="margin-bottom:28px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐮 Vacas</div>
+        <button onclick="bpCargarDesdeSim('vacas')" style="padding:5px 14px;background:rgba(184,146,42,.1);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↓ Copiar desde Simulador</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-va-kmo" type="number" value="275" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-va-kmd" type="number" value="640" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-va-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-va-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-va-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-va-guias" type="number" value="1725" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-va-hotel" type="number" value="310" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-va-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-va-pcarne" type="number" value="7500" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-va-rend" type="number" step="0.1" value="52.5" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-va-decomiso" type="number" step="0.01" value="0.66" onchange="bpGuardar()"></div>
+        <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-va-mort" type="number" step="0.01" value="0.54" onchange="bpGuardar()"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center">
+      <button onclick="bpCargarDesdeSim('terneros');bpCargarDesdeSim('terneras');bpCargarDesdeSim('vacas')" style="padding:9px 20px;background:var(--gold);color:var(--ink);border:none;border-radius:2px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;font-weight:700;letter-spacing:.06em">↓ Copiar Todo desde Simulador</button>
+      <button onclick="bpRestaurarDefaults()" style="padding:9px 20px;background:transparent;color:rgba(26,22,18,.5);border:1px solid rgba(26,22,18,.2);border-radius:2px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;letter-spacing:.06em">↩ Restaurar Defaults</button>
+      <span id="bpGuardadoMsg" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);opacity:0;transition:opacity .5s">✓ Guardado</span>
+    </div>
   </div>
 </div>
-<!-- FIN screenSimulador -->
 
 <!-- ══════════════════════════════════════════
      MÓDULO 08 — HISTÓRICO & EVOLUCIÓN
@@ -3396,8 +3420,8 @@ window.addEventListener('load', function(){
 const USERS={
   'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA', modules:['stock','insumos']},
   'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA', modules:['tesoreria']},
-  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico']},
-  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico']},
+  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','baseparams']},
+  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','baseparams']},
 };
 const PERIODS={'2025':{available:true},'2024':{available:false}};
 let currentUser=null, selectedPeriod='2025', chartsInited=false;
@@ -3477,6 +3501,13 @@ function openModule(mod){
     document.body.style.background='var(--paper)';
     window.scrollTo(0,0);
     initHistorico();
+    return;
+  }
+  if(mod==='baseparams'){
+    showScreen('screenBaseParams');
+    document.body.style.background='var(--paper)';
+    window.scrollTo(0,0);
+    bpRenderUI();
     return;
   }
   showScreen('screenReport');
@@ -4377,9 +4408,7 @@ function simTab(tab, el){
   ['terneros','terneras','vacas','invernada'].forEach(function(t){
     document.getElementById('panelSim'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'block':'none';
   });
-  var bpPanel = document.getElementById('panelSimBaseParams');
-  if(bpPanel) bpPanel.style.display = tab==='baseparams'?'block':'none';
-  if(tab!=='baseparams') calcSim(tab);
+  calcSim(tab);
 }
 
 function f2(n){ return Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0}); }
