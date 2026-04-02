@@ -3555,7 +3555,136 @@ def scrape_canuelas():
 
 
 # ──────────────────────────────────────────────────────────────
-# 7b. Granos — BCR Cámara Arbitral Precios de Pizarra
+# 7b. Hacienda — Mercado Agroganadero (MAG)
+# ──────────────────────────────────────────────────────────────
+def scrape_mag_hacienda():
+    """Devuelve lista de {categoria, precio, variacion, unidad} o [].
+    Scraping del Mercado Agroganadero:
+      GET https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000502
+    Tabla: Categoría | Mínimo | Máximo | Promedio | Mediana | Cabezas | Importe | Kgs | Prom.Kgs
+    Precios formato AR: '4247,242' → 4247.242 $/kg
+    Las categorías de salida mantienen los mismos nombres que Cañuelas para compatibilidad.
+    """
+    import re
+    url = "https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000502"
+    text = _http_get(url)
+    if not text:
+        log.info("  ℹ MAG Hacienda: sin respuesta de red")
+        return []
+
+    def _mag_precio(s):
+        """Parsea precio MAG: '4.247,242' o '4247,242' → 4247.242"""
+        s = str(s or "").strip().replace(" ", "")
+        if not s:
+            return None
+        # En MAG la coma es siempre decimal: quitar puntos de miles, coma→punto
+        s = s.replace(".", "").replace(",", ".")
+        try:
+            v = float(s)
+            return v if 500 < v < 30_000 else None
+        except Exception:
+            return None
+
+    # Parsear todas las filas de la tabla
+    hacienda_raw = []  # [(categoria_mag, promedio)]
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
+    for row in rows:
+        cells_raw = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row, re.DOTALL | re.IGNORECASE)
+        if len(cells_raw) < 4:
+            continue
+        cells = [re.sub(r'<[^>]+>', '', c).strip() for c in cells_raw]
+        cat = cells[0]
+        if not cat or len(cat) < 3:
+            continue
+        cat_low = cat.lower()
+        # Saltar encabezados, subtotales y totales
+        if any(x in cat_low for x in ['categor', 'subtotal', 'total', 'promedio']):
+            continue
+        # Columna Promedio está en índice 3 (Categoría=0, Mínimo=1, Máximo=2, Promedio=3)
+        precio = _mag_precio(cells[3] if len(cells) > 3 else "")
+        if not precio:
+            continue
+        hacienda_raw.append((cat, precio))
+
+    if not hacienda_raw:
+        log.info("  ℹ MAG Hacienda: sin filas en tabla — intentando parser alternativo")
+        # Fallback: buscar pares Categoría+Promedio con regex más agresivo
+        matches = re.findall(
+            r'([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ\s./+]+?)\s*[\|;]\s*[\d.,]+\s*[\|;]\s*[\d.,]+\s*[\|;]\s*([\d.,]+)',
+            text
+        )
+        for cat, prom_s in matches:
+            cat = cat.strip()
+            precio = _mag_precio(prom_s)
+            if precio and cat and len(cat) >= 4:
+                hacienda_raw.append((cat, precio))
+
+    if not hacienda_raw:
+        log.info("  ℹ MAG Hacienda: sin datos parseables")
+        return []
+
+    log.debug(f"    MAG raw rows: {hacienda_raw}")
+
+    # ── Mapeo MAG → nombres de salida compatibles con el portal ──
+    # Formato: (grupo_requerido_en_cat_UPPER, tipo_en_cat_lower, sub_en_cat_lower, nombre_salida)
+    MAG_MAP = [
+        ("NOVILLITOS", "esp",           "h 390",   "Novillitos hasta 390 Kg."),
+        ("NOVILLITOS", "esp",           "+ 390",   "Novillitos 391/430 Kg."),
+        ("NOVILLOS",   "esp",           "+ 430",   "Novillos 431/460 Kg."),
+        ("NOVILLOS",   "reg",           "+ 430",   "Novillos 461/490 Kg."),
+        ("VAQUILLONAS","esp",           "h 390",   "Vaquillonas hasta 390 Kg."),
+        ("VACAS",      "esp",           "",        "Vacas Buenas"),
+        ("VACAS",      "reg",           "",        "Vacas Regulares"),
+        ("VACAS",      "con",           "buen",    "Vacas Conserva"),
+    ]
+
+    result_map = {}  # nombre_salida → precio
+    for cat_mag, precio in hacienda_raw:
+        cat_up  = cat_mag.upper()
+        cat_low = cat_mag.lower()
+        for grupo, tipo, sub, out_name in MAG_MAP:
+            if grupo not in cat_up:
+                continue
+            if tipo and tipo not in cat_low:
+                continue
+            if sub and sub.lower() not in cat_low:
+                continue
+            if out_name not in result_map:   # primer match gana
+                result_map[out_name] = precio
+            break
+
+    # Construir lista final en orden estándar
+    ORDER = [
+        "Novillitos hasta 390 Kg.",
+        "Novillitos 391/430 Kg.",
+        "Novillos 431/460 Kg.",
+        "Novillos 461/490 Kg.",
+        "Vaquillonas hasta 390 Kg.",
+        "Vacas Buenas",
+        "Vacas Regulares",
+        "Vacas Conserva",
+    ]
+    hacienda = []
+    for cat_name in ORDER:
+        if cat_name in result_map:
+            hacienda.append({
+                "categoria": cat_name,
+                "precio":    round(result_map[cat_name], 2),
+                "variacion": 0,
+                "unidad":    "$/kg + IVA"
+            })
+
+    if hacienda:
+        log.info(f"  ✓ MAG Hacienda: {len(hacienda)} categorías — "
+                 + " | ".join(f"{h['categoria'].split()[0]} ${h['precio']:,.0f}" for h in hacienda))
+    else:
+        log.info("  ℹ MAG Hacienda: sin categorías mapeadas (raw: "
+                 + ", ".join(c for c, _ in hacienda_raw[:5]) + ")")
+    return hacienda
+
+
+# ──────────────────────────────────────────────────────────────
+# 7c. Granos — BCR Cámara Arbitral Precios de Pizarra
 # ──────────────────────────────────────────────────────────────
 def scrape_bcr_pizarra():
     """Devuelve {maiz, soja, trigo, sorgo} en $/tn o {} si falla."""
@@ -3883,18 +4012,19 @@ def actualizar_mercado_precios(carpeta, repo):
                 return c.get("precio", default)
         return default
 
-    # ── 2. Hacienda — Cañuelas ──────────────────────────────────
-    log.info("  → Scraping Mercado de Cañuelas...")
-    hacienda = scrape_canuelas()
+    # ── 2. Hacienda — Mercado Agroganadero (MAG) ────────────────
+    log.info("  → Scraping Mercado Agroganadero (MAG)...")
+    hacienda = scrape_mag_hacienda()
     if not hacienda:
         hacienda = existing.get("hacienda", [
-            {"categoria": "Novillo especial", "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
-            {"categoria": "Novillo",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
-            {"categoria": "Vaca",             "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
-            {"categoria": "Vaquillona",       "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
-            {"categoria": "Ternero",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
-            {"categoria": "Ternera",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
-            {"categoria": "Novillito",        "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Novillitos hasta 390 Kg.", "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Novillitos 391/430 Kg.",   "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Novillos 431/460 Kg.",     "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Novillos 461/490 Kg.",     "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Vaquillonas hasta 390 Kg.","precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Vacas Buenas",             "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Vacas Regulares",          "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Vacas Conserva",           "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
         ])
         log.info("  ℹ Usando precios anteriores de hacienda")
 
@@ -3984,7 +4114,7 @@ def actualizar_mercado_precios(carpeta, repo):
     # ── 8. Armar y guardar JSONs ────────────────────────────────
     mercado_json = {
         "fecha":       today,
-        "fuente":      "Cañuelas · BCR Cámara Arbitral",
+        "fuente":      "MAG · BCR Cámara Arbitral",
         "hacienda":    hacienda,
         "commodities": commodities,
         "insumos":     insumos,

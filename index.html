@@ -519,12 +519,12 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
       <div class="kpi-cell">
         <div class="kpi-tag">Novillo 461/490 kg</div>
         <div class="kpi-num gold" id="hkpi-novillo">—</div>
-        <div class="kpi-hint" id="hkpi-novillo-var">Cañuelas · hoy</div>
+        <div class="kpi-hint" id="hkpi-novillo-var">MAG · hoy</div>
       </div>
       <div class="kpi-cell">
         <div class="kpi-tag">Vaca Buena</div>
         <div class="kpi-num gold" id="hkpi-vaca">—</div>
-        <div class="kpi-hint" id="hkpi-vaca-var">Cañuelas · hoy</div>
+        <div class="kpi-hint" id="hkpi-vaca-var">MAG · hoy</div>
       </div>
       <div class="kpi-cell">
         <div class="kpi-tag">Tesorería · Cobertura</div>
@@ -2620,8 +2620,8 @@ window.addEventListener('load', function(){
     <!-- Panel Hacienda + Granos (combinado) -->
     <div id="panelMercadoHacienda" style="display:block">
       <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado de Cañuelas · Por categoría</span></div>
-        <div class="nota-box" id="mercadoHaciendaFuente">Fuente: <strong>Mercado de Cañuelas</strong> · Actualización automática diaria.</div>
+        <div class="section-header"><span class="section-title">Precios de Hacienda</span><span class="section-sub">Mercado Agroganadero (MAG) · Por categoría</span></div>
+        <div class="nota-box" id="mercadoHaciendaFuente">Fuente: <strong>Mercado Agroganadero (MAG)</strong> · Actualización automática diaria.</div>
         <div id="mercadoHaciendaTabla"></div>
       </div>
       <div class="panel" style="display:block;margin-top:24px">
@@ -2639,7 +2639,7 @@ window.addEventListener('load', function(){
       <div class="panel" style="display:block">
         <div class="section-header">
           <span class="section-title">Seguimiento Económico Diario</span>
-          <span class="section-sub">Simulación automática · 5 categorías Cañuelas · Precios del día</span>
+          <span class="section-sub">Simulación automática · 5 categorías MAG · Precios del día</span>
         </div>
         <div class="nota-box">Resultado por cabeza según precios de hacienda e insumos del día. Los parámetros operativos (flete, comisiones, sanidad, etc.) se toman de los valores cargados en el Simulador.</div>
         <div id="segHoyTabla" style="margin-top:16px"></div>
@@ -2665,7 +2665,7 @@ window.addEventListener('load', function(){
     <!-- Panel Histórico -->
     <div id="panelMercadoHistorico" style="display:none">
       <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Evolución Histórica de Precios</span><span class="section-sub">Todas las categorías · $/kg en pie · Cañuelas</span></div>
+        <div class="section-header"><span class="section-title">Evolución Histórica de Precios</span><span class="section-sub">Todas las categorías · $/kg en pie · MAG</span></div>
         <div id="mercadoHistNoData" class="nota-box" style="display:none">Aún no hay suficientes datos históricos. Se acumulan automáticamente con cada actualización diaria.</div>
         <div id="mercadoHistoricoChart" style="background:white;border:1px solid var(--border);padding:24px;border-radius:2px">
           <div id="mercadoHistFiltros" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
@@ -3462,11 +3462,11 @@ function loadHomeKpis(){
     var vac = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('vacas buenas')>=0; });
     if(nov){
       setC('hkpi-novillo', fN(nov.precio), 'gold');
-      set('hkpi-novillo-var', 'Cañuelas · '+d.fecha+(nov.variacion?fVar(nov.variacion):''));
+      set('hkpi-novillo-var', 'MAG · '+d.fecha+(nov.variacion?fVar(nov.variacion):''));
     }
     if(vac){
       setC('hkpi-vaca', fN(vac.precio), 'gold');
-      set('hkpi-vaca-var', 'Cañuelas · '+d.fecha+(vac.variacion?fVar(vac.variacion):''));
+      set('hkpi-vaca-var', 'MAG · '+d.fecha+(vac.variacion?fVar(vac.variacion):''));
     }
   });
 
@@ -3596,7 +3596,7 @@ function initMercado(){
       if(data.hacienda) data.hacienda.forEach(function(d){
         var found = PRECIOS_HACIENDA.find(function(h){ return h.categoria===d.categoria; });
         if(found){ found.precio=d.precio; found.variacion=d.variacion||0; }
-        else PRECIOS_HACIENDA.push({categoria:d.categoria, unidad:d.unidad||'$/kg en pie', precio:d.precio, variacion:d.variacion||0, ref:'Cañuelas'});
+        else PRECIOS_HACIENDA.push({categoria:d.categoria, unidad:d.unidad||'$/kg en pie', precio:d.precio, variacion:d.variacion||0, ref:'MAG'});
       });
       if(data.commodities) data.commodities.forEach(function(d){
         var found = PRECIOS_COMMODITIES.find(function(c){ return c.nombre===d.nombre; });
@@ -3631,7 +3631,7 @@ function initMercado(){
 }
 
 // ══ SEGUIMIENTO ECONÓMICO DIARIO ════════════════════════════════════════════
-// Simula 5 categorías con precios del día (Cañuelas + insumos) y guarda
+// Simula 5 categorías con precios del día (MAG + insumos) y guarda
 // historial en localStorage para mostrar evolución de resultados y equilibrios.
 
 var SEG_CATS = [
@@ -3934,7 +3934,7 @@ function renderTablaHaciendaNueva(){
       +'<td class="right mono">'+fmtPrecio(r.precio)+'</td>'
       +'<td class="right mono">'+varStr+'</td>'
       +'<td class="muted">'+r.unidad+'</td>'
-      +'<td class="muted">'+(r.ref||'Cañuelas')+'</td></tr>';
+      +'<td class="muted">'+(r.ref||'MAG')+'</td></tr>';
   });
   html += '</tbody></table>';
   document.getElementById('mercadoHaciendaTabla').innerHTML = html;
