@@ -2778,21 +2778,20 @@ window.addEventListener('load', function(){
       <div>
         <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
 
-        <!-- Costos ración -->
+        <!-- Precios compra/venta -->
         <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="tn-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="tn-gluten" type="number" value="130944" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="tn-nucleo" type="number" value="470500" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="tn-germen" type="number" value="235999" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="tn-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="tn-racion" type="number" value="221" onchange="calcSim('terneros')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="tn-hotel" type="number" value="310" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="tn-sanidad" type="number" value="7500" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="tn-pc" type="number" value="4250" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Km origen</div><input class="sim-input" id="tn-kmo" type="number" value="275" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="tn-pcarne" type="number" value="8100" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Km destino</div><input class="sim-input" id="tn-kmd" type="number" value="640" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="tn-rend" type="number" step="0.1" value="56" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="tn-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="tn-pflete" type="number" value="2750" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="tn-guias" type="number" value="1725" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="tn-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="tn-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
           </div>
         </div>
 
@@ -2809,20 +2808,21 @@ window.addEventListener('load', function(){
           </div>
         </div>
 
-        <!-- Precios compra/venta -->
+        <!-- Costos ración -->
         <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="tn-pc" type="number" value="4250" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="tn-kmo" type="number" value="275" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="tn-pcarne" type="number" value="8100" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="tn-kmd" type="number" value="640" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="tn-rend" type="number" step="0.1" value="56" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="tn-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="tn-pflete" type="number" value="2750" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="tn-guias" type="number" value="1725" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="tn-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="tn-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="tn-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
+            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="tn-gluten" type="number" value="130944" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="tn-nucleo" type="number" value="470500" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="tn-germen" type="number" value="235999" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="tn-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="tn-racion" type="number" value="221" onchange="calcSim('terneros')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="tn-hotel" type="number" value="310" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="tn-sanidad" type="number" value="7500" onchange="calcSim('terneros')"></div>
           </div>
         </div>
       </div>
@@ -2857,19 +2857,18 @@ window.addEventListener('load', function(){
       <div>
         <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
         <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="ta-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="ta-gluten" type="number" value="130944" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="ta-nucleo" type="number" value="470500" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="ta-germen" type="number" value="235999" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="ta-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="ta-racion" type="number" value="221" onchange="calcSim('terneras')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="ta-hotel" type="number" value="310" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="ta-sanidad" type="number" value="7500" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="ta-pc" type="number" value="4000" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Km origen</div><input class="sim-input" id="ta-kmo" type="number" value="275" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="ta-pcarne" type="number" value="7800" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Km destino</div><input class="sim-input" id="ta-kmd" type="number" value="640" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="ta-rend" type="number" step="0.1" value="54" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="ta-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="ta-pflete" type="number" value="2750" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="ta-guias" type="number" value="1725" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="ta-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="ta-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
           </div>
         </div>
         <div class="panel" style="display:block;margin-bottom:16px">
@@ -2884,18 +2883,19 @@ window.addEventListener('load', function(){
           </div>
         </div>
         <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="ta-pc" type="number" value="4000" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="ta-kmo" type="number" value="275" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="ta-pcarne" type="number" value="7800" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="ta-kmd" type="number" value="640" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="ta-rend" type="number" step="0.1" value="54" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="ta-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="ta-pflete" type="number" value="2750" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="ta-guias" type="number" value="1725" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="ta-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="ta-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="ta-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
+            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="ta-gluten" type="number" value="130944" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="ta-nucleo" type="number" value="470500" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="ta-germen" type="number" value="235999" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="ta-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="ta-racion" type="number" value="221" onchange="calcSim('terneras')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="ta-hotel" type="number" value="310" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="ta-sanidad" type="number" value="7500" onchange="calcSim('terneras')"></div>
           </div>
         </div>
       </div>
@@ -2928,19 +2928,18 @@ window.addEventListener('load', function(){
       <div>
         <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
         <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="va-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="va-gluten" type="number" value="130944" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="va-nucleo" type="number" value="470500" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="va-germen" type="number" value="235999" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="va-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="va-racion" type="number" value="221" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="va-hotel" type="number" value="310" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="va-sanidad" type="number" value="7500" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="va-pc" type="number" value="3450" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Km origen</div><input class="sim-input" id="va-kmo" type="number" value="275" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="va-pcarne" type="number" value="7500" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Km destino</div><input class="sim-input" id="va-kmd" type="number" value="640" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="va-rend" type="number" step="0.1" value="52.5" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="va-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="va-pflete" type="number" value="2750" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="va-guias" type="number" value="1725" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="va-ccom" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="va-cvta" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
           </div>
         </div>
         <div class="panel" style="display:block;margin-bottom:16px">
@@ -2955,18 +2954,19 @@ window.addEventListener('load', function(){
           </div>
         </div>
         <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Insumos y Ración</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="va-pc" type="number" value="3450" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="va-kmo" type="number" value="275" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="va-pcarne" type="number" value="7500" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="va-kmd" type="number" value="640" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="va-rend" type="number" step="0.1" value="52.5" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="va-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="va-pflete" type="number" value="2750" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="va-guias" type="number" value="1725" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="va-ccom" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="va-cvta" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="va-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
+            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="va-gluten" type="number" value="130944" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="va-nucleo" type="number" value="470500" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="va-germen" type="number" value="235999" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="va-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="va-racion" type="number" value="221" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="va-hotel" type="number" value="310" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="va-sanidad" type="number" value="7500" onchange="calcSim('vacas')"></div>
           </div>
         </div>
       </div>
