@@ -4028,6 +4028,36 @@ def actualizar_mercado_precios(carpeta, repo):
         ])
         log.info("  ℹ Usando precios anteriores de hacienda")
 
+    # ── 2b. Variación respecto al día anterior (desde historico) ─
+    # MAG no publica variación diaria → la calculamos nosotros
+    if hacienda and historico:
+        hist_prev = sorted(
+            [h for h in historico if h.get("fecha", "") < today],
+            key=lambda x: x.get("fecha", ""), reverse=True
+        )
+        prev = hist_prev[0] if hist_prev else None
+        if prev:
+            # Mapeo: substring de categoría → clave en historico
+            CAT_TO_HIST = [
+                ("novillitos hasta", "nov_390"),
+                ("novillitos 391",   "nov_430"),
+                ("novillos 431",     "nov_460"),
+                ("novillos 461",     "nov_490"),
+                ("vaquillona",       "vaq_390"),
+                ("vacas buenas",     "vac_buena"),
+                ("vacas regulares",  "vac_regular"),
+                ("vacas conserva",   "vac_conserva"),
+            ]
+            for h in hacienda:
+                cat_low = h["categoria"].lower()
+                for key, hist_key in CAT_TO_HIST:
+                    if key in cat_low:
+                        prev_precio = float(prev.get(hist_key) or 0)
+                        if prev_precio > 500:
+                            h["variacion"] = round(h["precio"] - prev_precio, 2)
+                        break
+            log.info(f"  ✓ Variaciones calculadas vs {prev.get('fecha','?')}")
+
     # ── 3. Granos — BCR Pizarra ─────────────────────────────────
     log.info("  → Scraping BCR Precios de Pizarra...")
     granos = scrape_bcr_pizarra()
