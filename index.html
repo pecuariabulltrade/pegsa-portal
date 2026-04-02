@@ -2618,6 +2618,7 @@ window.addEventListener('load', function(){
     <div class="nav-tab"        id="mercadoTabNegocios"      onclick="mercadoTab('negocios',this)">📋 Negocios</div>
     <div class="nav-tab"        id="mercadoTabHistorico"     onclick="mercadoTab('historico',this)">📊 Histórico</div>
     <div class="nav-tab"        id="mercadoTabSeguimiento"   onclick="mercadoTab('seguimiento',this)">📈 Seguimiento</div>
+    <div class="nav-tab"        id="mercadoTabAnalisis"      onclick="mercadoTab('analisis',this)">🔍 Análisis Compras</div>
   </div>
 
   <div id="mercadoLoading" style="text-align:center;padding:80px 0;color:rgba(26,22,18,.4);font-family:'DM Mono',monospace;font-size:12px">Cargando datos...</div>
@@ -2665,6 +2666,18 @@ window.addEventListener('load', function(){
         <div class="section-header"><span class="section-title">Negocios Ejecutados</span><span class="section-sub">Google Sheets · Cargas / Ventas · Compras</span></div>
         <div id="mercadoNegociosMsg" class="nota-box"></div>
         <div id="mercadoNegociosBody"></div>
+      </div>
+    </div>
+
+    <!-- Panel Análisis Compras -->
+    <div id="panelMercadoAnalisis" style="display:none">
+      <div class="panel" style="display:block">
+        <div class="section-header">
+          <span class="section-title">Análisis Histórico de Compras</span>
+          <span class="section-sub">Resultado por tropa · Por categoría y proveedor · Precio de indiferencia</span>
+        </div>
+        <div class="nota-box" style="margin-bottom:0">Resultado calculado con los <strong>Parámetros Base</strong> actuales. El peso por cabeza se toma del registro; si no está disponible se estima por categoría. Todas las compras disponibles en la planilla.</div>
+        <div id="analisisBody" style="margin-top:20px"></div>
       </div>
     </div>
 
@@ -3637,7 +3650,7 @@ var PRECIOS_COMMODITIES = [
 function mercadoTab(tab, el){
   document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento'].forEach(function(p){
+  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoAnalisis'].forEach(function(p){
     document.getElementById(p).style.display='none';
   });
   var map = {
@@ -3645,12 +3658,14 @@ function mercadoTab(tab, el){
     negocios:     'panelMercadoNegocios',
     historico:    'panelMercadoHistorico',
     seguimiento:  'panelMercadoSeguimiento',
+    analisis:     'panelMercadoAnalisis',
   };
   if(map[tab]){
     document.getElementById(map[tab]).style.display='block';
     if(tab==='historico')   renderHistoricoChart();
     if(tab==='negocios')    renderNegocios();
     if(tab==='seguimiento') _segRun(MERCADO_DATA_CACHE);
+    if(tab==='analisis')    renderAnalisis();
   }
 }
 
@@ -4375,6 +4390,288 @@ function _histRenderChart(){
       }
     }
   });
+}
+
+// ── Análisis histórico de compras ────────────────────────────────────────────
+function _analNormCat(cat){
+  if(!cat) return 'Sin categoría';
+  var c = cat.toLowerCase().trim();
+  if(c.indexOf('novillito')>=0) return 'Novillito';
+  if(c.indexOf('novillo')>=0)   return 'Novillo';
+  if(c.indexOf('ternero')>=0||c.indexOf('ternero macho')>=0) return 'Ternero';
+  if(c.indexOf('ternera')>=0)   return 'Ternera';
+  if(c.indexOf('vaquillona')>=0||c.indexOf('vaq')>=0) return 'Vaquillona';
+  if(c.indexOf('vaca holando')>=0) return 'Vaca Holando';
+  if(c.indexOf('vaca')>=0)      return 'Vaca';
+  if(c.indexOf('toro')>=0)      return 'Toro';
+  return cat.charAt(0).toUpperCase()+cat.slice(1).toLowerCase();
+}
+function _analCatToTipo(cat){
+  var c = cat.toLowerCase();
+  if(c==='ternero'||c==='ternero macho') return 'terneros';
+  if(c==='ternera')   return 'terneras';
+  if(c==='vaca'||c==='vaca holando') return 'vacas';
+  if(c==='vaquillona') return 'terneras';
+  // novillos/novillitos → terneros (categoría más cercana)
+  return 'terneros';
+}
+function _analCatPesoE(cat){
+  var c = cat.toLowerCase();
+  if(c==='ternero'||c==='ternero macho') return 220;
+  if(c==='ternera') return 200;
+  if(c==='novillito') return 390;
+  if(c==='novillo')   return 460;
+  if(c==='vaquillona') return 350;
+  if(c==='vaca'||c==='vaca holando') return 480;
+  if(c==='toro') return 500;
+  return 400;
+}
+function _analCatPesoS(cat){
+  var c = cat.toLowerCase();
+  if(c==='ternero'||c==='ternero macho') return 430;
+  if(c==='ternera') return 380;
+  if(c==='novillito') return 490;
+  if(c==='novillo')   return 490;
+  if(c==='vaquillona') return 450;
+  if(c==='vaca'||c==='vaca holando') return 620;
+  if(c==='toro') return 650;
+  return 490;
+}
+function _analFechaMes(f){
+  // "30/03/26" o "09/03/26" → "2026-03"
+  if(!f) return '';
+  var p = f.split('/');
+  if(p.length===3){
+    var yr = p[2].length===2 ? '20'+p[2] : p[2];
+    return yr+'-'+(p[1].length===1?'0'+p[1]:p[1]);
+  }
+  // "2026-03-30" format
+  if(f.indexOf('-')>=0) return f.slice(0,7);
+  return f;
+}
+function _analMesLabel(m){
+  var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var p = m.split('-');
+  if(p.length===2){ var mi=parseInt(p[1])-1; return meses[mi]+" '"+p[0].slice(2); }
+  return m;
+}
+
+function renderAnalisis(){
+  var el = document.getElementById('analisisBody');
+  if(!el) return;
+  var neg = NEGOCIOS_DATA_CACHE;
+  if(!neg || !neg.compras || !neg.compras.length){
+    el.innerHTML='<div style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:12px;padding:24px 0">Sin datos de compras disponibles. Ejecutá la actualización.</div>';
+    return;
+  }
+  var ins = (MERCADO_DATA_CACHE && MERCADO_DATA_CACHE.insumos) ? MERCADO_DATA_CACHE.insumos : {};
+  var bp  = bpGet();
+
+  // Calcular resultado para cada compra
+  var filas = [];
+  neg.compras.forEach(function(c){
+    var catNorm = _analNormCat(c.categoria);
+    var tipo    = _analCatToTipo(catNorm);
+    var pesoE   = c.kg_cab > 0 ? c.kg_cab : _analCatPesoE(catNorm);
+    var pesoS   = _analCatPesoS(catNorm);
+    var mes     = _analFechaMes(c.fecha);
+    if(!c.precio_kg || !ins.maiz) { filas.push({cat:catNorm,origen:c.origen||'Sin datos',mes:mes,cab:c.cabezas||1,res:null,pcInd:null,pc:c.precio_kg}); return; }
+    var bpTipo  = bp[tipo] || null;
+    var sim     = _segSimCat(tipo, pesoE, pesoS, c.precio_kg, ins, bpTipo);
+    filas.push({
+      cat:    catNorm,
+      origen: (c.origen||'Sin datos').trim(),
+      mes:    mes,
+      cab:    c.cabezas||1,
+      pc:     c.precio_kg,
+      res:    sim ? sim.resEco : null,
+      pcInd:  sim ? sim.pcInd  : null,
+      pv:     sim ? sim.pv     : null,
+      dias:   sim ? sim.dias   : null,
+    });
+  });
+
+  var filasCon = filas.filter(function(f){ return f.res!==null; });
+  var meses    = Array.from(new Set(filas.map(function(f){return f.mes;}))).filter(Boolean).sort();
+  var cats     = Array.from(new Set(filas.map(function(f){return f.cat;}))).sort();
+  var origs    = Array.from(new Set(filas.map(function(f){return f.origen;}))).filter(function(o){return o&&o!=='Sin datos';}).sort();
+
+  function fmtRes(res, cab){
+    if(res===null) return '<span style="color:rgba(26,22,18,.3)">—</span>';
+    var pos = res>=0;
+    var col = pos?'#27613d':'#c0392b';
+    var pfx = pos?'+':'';
+    return '<span style="color:'+col+';font-weight:600">'+pfx+'$'+Number(res).toLocaleString('es-AR',{maximumFractionDigits:0})+'/cab</span>';
+  }
+  function fmtPct(roi){
+    if(roi===null) return '<span style="color:rgba(26,22,18,.3)">—</span>';
+    var pos=roi>=0; var col=pos?'#27613d':'#c0392b';
+    return '<span style="color:'+col+';font-weight:600">'+(pos?'+':'')+roi.toFixed(1)+'%</span>';
+  }
+  function bgCell(roi){
+    if(roi===null) return 'background:rgba(26,22,18,.03)';
+    if(roi>=10)  return 'background:rgba(39,97,61,.13)';
+    if(roi>=0)   return 'background:rgba(39,97,61,.06)';
+    if(roi>=-10) return 'background:rgba(192,57,43,.06)';
+    return 'background:rgba(192,57,43,.13)';
+  }
+  function avgGroup(arr){
+    var v=arr.filter(function(x){return x.res!==null;});
+    if(!v.length) return null;
+    // peso por cabezas
+    var totCab=0, totRes=0, totPc=0, totInd=0;
+    v.forEach(function(f){ totCab+=f.cab; totRes+=f.res*f.cab; totPc+=f.pc*f.cab; totInd+=(f.pcInd||0)*f.cab; });
+    return {res:totRes/totCab, pc:totPc/totCab, pcInd:totInd/totCab, cab:totCab, tropas:v.length};
+  }
+  function roi(avg){ if(!avg||!avg.pc) return null; return avg.res/avg.pc*100; }
+
+  var TH = 'font-family:DM Mono,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.42);padding:7px 10px;background:rgba(26,22,18,.03);border-bottom:2px solid rgba(26,22,18,.1);white-space:nowrap;text-align:right;font-weight:400';
+  var TD = 'padding:6px 10px;border-bottom:1px solid rgba(26,22,18,.06);font-family:DM Mono,monospace;font-size:11px;vertical-align:middle';
+  var html = '';
+
+  // ── 1. Tabla resumen global por Categoría ───────────────────────
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resultado acumulado por Categoría</div>';
+  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html += '<thead><tr>'
+    +'<th style="'+TH+';text-align:left">Categoría</th>'
+    +'<th style="'+TH+'">Tropas</th>'
+    +'<th style="'+TH+'">Cabezas</th>'
+    +'<th style="'+TH+'">Precio prom</th>'
+    +'<th style="'+TH+'">Indif. prom</th>'
+    +'<th style="'+TH+'">Desvío</th>'
+    +'<th style="'+TH+'">Resultado prom</th>'
+    +'<th style="'+TH+'">ROI</th>'
+    +'</tr></thead><tbody>';
+  cats.forEach(function(cat){
+    var grupo = filas.filter(function(f){return f.cat===cat;});
+    var avg   = avgGroup(grupo);
+    var r     = roi(avg);
+    var desv  = avg ? avg.pcInd - avg.pc : null;
+    var desvCol = desv===null?'rgba(26,22,18,.3)':desv>=0?'#27613d':'#c0392b';
+    html += '<tr>'
+      +'<td style="'+TD+'"><strong>'+cat+'</strong></td>'
+      +'<td style="'+TD+';text-align:right">'+(avg?avg.tropas:'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(avg?Number(avg.cab).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(avg?'$'+Math.round(avg.pc).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(avg&&avg.pcInd?'$'+Math.round(avg.pcInd).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right;color:'+desvCol+';font-weight:600">'+(desv!==null?(desv>=0?'+':'')+Math.round(desv).toLocaleString('es-AR')+'$/kg':'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+fmtRes(avg?avg.res:null)+'</td>'
+      +'<td style="'+TD+';text-align:right">'+fmtPct(r)+'</td>'
+      +'</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // ── 2. Tabla resumen global por Proveedor ───────────────────────
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resultado acumulado por Proveedor / Origen</div>';
+  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html += '<thead><tr>'
+    +'<th style="'+TH+';text-align:left">Proveedor</th>'
+    +'<th style="'+TH+'">Tropas</th>'
+    +'<th style="'+TH+'">Cabezas</th>'
+    +'<th style="'+TH+'">Precio prom</th>'
+    +'<th style="'+TH+'">Indif. prom</th>'
+    +'<th style="'+TH+'">Desvío</th>'
+    +'<th style="'+TH+'">Resultado prom</th>'
+    +'<th style="'+TH+'">ROI</th>'
+    +'</tr></thead><tbody>';
+  origs.forEach(function(orig){
+    var grupo = filas.filter(function(f){return f.origen===orig;});
+    var avg   = avgGroup(grupo);
+    var r     = roi(avg);
+    var desv  = avg ? avg.pcInd - avg.pc : null;
+    var desvCol = desv===null?'rgba(26,22,18,.3)':desv>=0?'#27613d':'#c0392b';
+    html += '<tr>'
+      +'<td style="'+TD+'"><strong>'+orig+'</strong></td>'
+      +'<td style="'+TD+';text-align:right">'+(avg?avg.tropas:'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(avg?Number(avg.cab).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(avg?'$'+Math.round(avg.pc).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(avg&&avg.pcInd?'$'+Math.round(avg.pcInd).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right;color:'+desvCol+';font-weight:600">'+(desv!==null?(desv>=0?'+':'')+Math.round(desv).toLocaleString('es-AR')+'$/kg':'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+fmtRes(avg?avg.res:null)+'</td>'
+      +'<td style="'+TD+';text-align:right">'+fmtPct(r)+'</td>'
+      +'</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // ── 3. Matriz mes × categoría ───────────────────────────────────
+  if(meses.length>1){
+    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">ROI por Mes × Categoría</div>';
+    html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html += '<thead><tr><th style="'+TH+';text-align:left">Categoría</th>';
+    meses.forEach(function(m){ html+='<th style="'+TH+'">'+_analMesLabel(m)+'</th>'; });
+    html += '<th style="'+TH+'">Total</th></tr></thead><tbody>';
+    cats.forEach(function(cat){
+      html += '<tr><td style="'+TD+'"><strong>'+cat+'</strong></td>';
+      meses.forEach(function(m){
+        var g = filas.filter(function(f){return f.cat===cat&&f.mes===m;});
+        var avg=avgGroup(g); var r=roi(avg);
+        html += '<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+(r!==null?fmtPct(r):'<span style="opacity:.3">—</span>')+'</td>';
+      });
+      var avgTot=avgGroup(filas.filter(function(f){return f.cat===cat;})); var rTot=roi(avgTot);
+      html += '<td style="'+TD+';text-align:right;font-weight:700">'+fmtPct(rTot)+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    // ── 4. Matriz mes × proveedor ───────────────────────────────────
+    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">ROI por Mes × Proveedor</div>';
+    html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html += '<thead><tr><th style="'+TH+';text-align:left">Proveedor</th>';
+    meses.forEach(function(m){ html+='<th style="'+TH+'">'+_analMesLabel(m)+'</th>'; });
+    html += '<th style="'+TH+'">Total</th></tr></thead><tbody>';
+    origs.forEach(function(orig){
+      html += '<tr><td style="'+TD+'"><strong>'+orig+'</strong></td>';
+      meses.forEach(function(m){
+        var g=filas.filter(function(f){return f.origen===orig&&f.mes===m;});
+        var avg=avgGroup(g); var r=roi(avg);
+        html += '<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+(r!==null?fmtPct(r):'<span style="opacity:.3">—</span>')+'</td>';
+      });
+      var avgTot=avgGroup(filas.filter(function(f){return f.origen===orig;})); var rTot=roi(avgTot);
+      html += '<td style="'+TD+';text-align:right;font-weight:700">'+fmtPct(rTot)+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // ── 5. Detalle tropa por tropa ────────────────────────────────────
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Detalle por Tropa · Últimas '+Math.min(filas.length,30)+'</div>';
+  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html += '<thead><tr>'
+    +'<th style="'+TH+';text-align:left">Fecha</th>'
+    +'<th style="'+TH+';text-align:left">Categoría</th>'
+    +'<th style="'+TH+';text-align:left">Proveedor</th>'
+    +'<th style="'+TH+'">Cab.</th>'
+    +'<th style="'+TH+'">$/kg</th>'
+    +'<th style="'+TH+'">Indif.</th>'
+    +'<th style="'+TH+'">Desvío</th>'
+    +'<th style="'+TH+'">Resultado</th>'
+    +'<th style="'+TH+'">ROI</th>'
+    +'</tr></thead><tbody>';
+  var detalle = filas.slice().reverse().slice(0,30);
+  detalle.forEach(function(f){
+    var desv = (f.pcInd&&f.pc) ? f.pcInd-f.pc : null;
+    var desvCol = desv===null?'rgba(26,22,18,.3)':desv>=0?'#27613d':'#c0392b';
+    var r = (f.res!==null&&f.pc) ? f.res/f.pc*100 : null;
+    html += '<tr>'
+      +'<td style="'+TD+';white-space:nowrap">'+f.mes+'</td>'
+      +'<td style="'+TD+'"><strong>'+f.cat+'</strong></td>'
+      +'<td style="'+TD+'">'+f.origen+'</td>'
+      +'<td style="'+TD+';text-align:right">'+Number(f.cab).toLocaleString('es-AR')+'</td>'
+      +'<td style="'+TD+';text-align:right">$'+Math.round(f.pc||0).toLocaleString('es-AR')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+(f.pcInd?'$'+Math.round(f.pcInd).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="'+TD+';text-align:right;color:'+desvCol+';font-weight:600">'+(desv!==null?(desv>=0?'+':'')+Math.round(desv).toLocaleString('es-AR')+'$/kg':'—')+'</td>'
+      +'<td style="'+TD+';text-align:right">'+fmtRes(f.res)+'</td>'
+      +'<td style="'+TD+';text-align:right">'+fmtPct(r)+'</td>'
+      +'</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  el.innerHTML = html;
 }
 
 function renderHistoricoChart(){

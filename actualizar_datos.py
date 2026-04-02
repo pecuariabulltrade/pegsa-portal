@@ -3895,7 +3895,11 @@ def procesar_negocios(negocios_raw):
         except Exception:
             pass
 
-    for r in negocios_raw.get("compras", []):
+    # Log columnas del primer registro de COMPRAS para diagnóstico
+    _compras_raw = negocios_raw.get("compras", [])
+    if _compras_raw:
+        log.info(f"  ℹ COMPRAS columnas detectadas: {list(_compras_raw[0].keys())}")
+    for r in _compras_raw:
         try:
             fecha    = buscar_col(r, "fecha")
             cat      = buscar_col(r, "categ", "categoria", "tipo")
@@ -3904,18 +3908,30 @@ def procesar_negocios(negocios_raw):
                 "kg_cab", "kg/cab", "peso", "kg_prom",
                 "promedio", "kilos", "kilo", "kg_promedio", "peso_prom",
                 "prom_kg", "kg/cabeza", "kgcab", "kg_entr", "kg_entrada",
-                "kg_comp", "kgs", "prom")
+                "kg_comp", "kgs", "prom", "kg_p", "p_kg", "kg_prom",
+                "kg_entrada", "peso_entrada", "peso_compra", "kg_compra",
+                "entrada", "kg_promedio_compra")
             if not kg_cab_raw:
-                # Fallback: primer campo numérico 50–2000 que no sea precio ni cabezas
+                # Fallback A: buscar clave que comience con "kg" (excluyendo precio)
+                for _k, _v in r.items():
+                    if _k.startswith('kg') and 'precio' not in _k and 'total' not in _k and _v:
+                        _num = _parse_ar_num(_v)
+                        if _num and 50 <= _num <= 2000:
+                            kg_cab_raw = _v
+                            log.info(f"    ℹ kg_cab encontrado en columna '{_k}': {_v}")
+                            break
+            if not kg_cab_raw:
+                # Fallback B: primer campo numérico 50–2000 que no sea precio ni cabezas
                 _precio_val = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
                 _cab_val    = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 0
-                _excl = {'precio', 'fecha', 'categ', 'origen', 'cab', 'frigo', 'destino',
-                         'vendedor', 'campo', 'proveedor', 'observ', 'nota', 'tipo'}
+                _excl = {'precio', 'fecha', 'categ', 'origen', 'frigo', 'destino',
+                         'vendedor', 'campo', 'proveedor', 'observ', 'nota', 'tipo', 'total'}
                 for _k, _v in r.items():
                     if any(_ex in _k.lower() for _ex in _excl): continue
                     _num = _parse_ar_num(_v or "")
                     if _num and 50 <= _num <= 2000 and abs(_num - _precio_val) > 10 and abs(_num - _cab_val) > 5:
                         kg_cab_raw = _v
+                        log.info(f"    ℹ kg_cab hallado por fallback en columna '{_k}': {_v}")
                         break
             kg_cab   = _parse_ar_num(kg_cab_raw) or 0
             precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
