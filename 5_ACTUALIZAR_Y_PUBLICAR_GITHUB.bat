@@ -24,8 +24,8 @@ git add *.json 2>nul
 echo.
 echo [3/4] Commit...
 git diff --cached --quiet
-if not errorlevel 1 (
-  git commit -m "Actualizacion automatica de datos"
+if errorlevel 1 (
+  git commit -m "Actualizacion automatica %date% %time:~0,8%"
 ) else (
   echo No hay cambios para publicar.
 )
