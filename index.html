@@ -2374,9 +2374,9 @@ window.addEventListener('load', function(){
         <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);margin-top:4px">Tipos de hacienda</div>
       </div>
       <div style="background:var(--ink);padding:18px 20px">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">&Uacute;ltima Actualizaci&oacute;n</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">&Uacute;lt. Registro WinCampo</div>
         <div id="kpi-fecha" style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:rgba(212,168,75,.8)">&#8212;</div>
-        <div style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);margin-top:4px">Desde WinCampo</div>
+        <div id="kpi-fecha-sub" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.3);margin-top:4px">último reparto registrado</div>
       </div>
     </div>
   </div>
@@ -2807,6 +2807,10 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="tn-guias" type="number" value="1725" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="tn-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="tn-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
+            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Tasa CF anual (%)</div><input class="sim-input" id="tn-tcf" type="number" step="1" value="32" onchange="calcSim('terneros')" style="border-color:rgba(26,22,18,.2)"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro compra (días)</div><input class="sim-input" id="tn-pcf-com" type="number" value="30" onchange="calcSim('terneros')" style="border-color:rgba(26,22,18,.2)"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro venta (días)</div><input class="sim-input" id="tn-pcf-vta" type="number" value="30" onchange="calcSim('terneros')" style="border-color:rgba(26,22,18,.2)"></div>
           </div>
         </div>
 
@@ -2884,6 +2888,10 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="ta-guias" type="number" value="1725" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="ta-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="ta-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
+            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Tasa CF anual (%)</div><input class="sim-input" id="ta-tcf" type="number" step="1" value="32" onchange="calcSim('terneras')" style="border-color:rgba(26,22,18,.2)"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro compra (días)</div><input class="sim-input" id="ta-pcf-com" type="number" value="30" onchange="calcSim('terneras')" style="border-color:rgba(26,22,18,.2)"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro venta (días)</div><input class="sim-input" id="ta-pcf-vta" type="number" value="30" onchange="calcSim('terneras')" style="border-color:rgba(26,22,18,.2)"></div>
           </div>
         </div>
         <div class="panel" style="display:block;margin-bottom:16px">
@@ -2955,6 +2963,10 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="va-guias" type="number" value="1725" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="va-ccom" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="va-cvta" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
+            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Tasa CF anual (%)</div><input class="sim-input" id="va-tcf" type="number" step="1" value="32" onchange="calcSim('vacas')" style="border-color:rgba(26,22,18,.2)"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro compra (días)</div><input class="sim-input" id="va-pcf-com" type="number" value="30" onchange="calcSim('vacas')" style="border-color:rgba(26,22,18,.2)"></div>
+            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro venta (días)</div><input class="sim-input" id="va-pcf-vta" type="number" value="30" onchange="calcSim('vacas')" style="border-color:rgba(26,22,18,.2)"></div>
           </div>
         </div>
         <div class="panel" style="display:block;margin-bottom:16px">
@@ -5147,6 +5159,67 @@ function calcSim(tipo){
   html += '<tr><td>Precio venta indiferencia (en pie)</td><td>$'+f2(pvIndiferencia)+' / kg &nbsp;<span class="'+(pv>=pvIndiferencia?'sim-res-pos':'sim-res-neg')+'">('+(pv>=pvIndiferencia?'+':'')+f2(pv-pvIndiferencia)+')</span></td></tr>';
   html += '<tr><td>Precio compra indiferencia (en pie)</td><td>$'+f2(pcIndiferencia)+' / kg &nbsp;<span class="'+(pc<=pcIndiferencia?'sim-res-pos':'sim-res-neg')+'">('+(pc<=pcIndiferencia?'+':'')+f2(pc-pcIndiferencia)+')</span></td></tr>';
   html += '<tr><td>Precio ración indiferencia</td><td>$'+f2(racIndiferencia)+' / kgTC</td></tr>';
+
+  // ── Impositivo + Costo Financiero (informativo) ───────────────────────────
+  if(tipo !== 'invernada'){
+    // Inputs CF
+    var tcf     = (G('tcf') || 32) / 100;           // tasa anual CF (default 32%)
+    var pcfCom  = G('pcf-com') || 30;                // plazo cobro compra
+    var pcfVta  = G('pcf-vta') || 30;                // plazo cobro venta
+
+    // Días financiamiento (Excel: K33 = C7 - I33 + J33)
+    var diasFin     = Math.max(0, dias - pcfCom + pcfVta);
+    var tasaAplicar = tcf / 365 * diasFin;
+
+    // Costo financiero
+    var cfHacienda = tasaAplicar * compraNeta;       // Excel: L33 × K6 (compra neta importe)
+    var cfAlimento = tasaAplicar * totalCostos;      // Excel: L34 × K14 (total costos productivos)
+    var cfTotal    = cfHacienda + cfAlimento;
+
+    // Impositivo (ganadería, sin ahorros CF propios)
+    // Ret. Ganancias: -2% sobre ingreso venta neto (Excel K19 ≈ -2% × K5)
+    var retGcias = -0.02 * ingresoVenta;
+    // IVA ganadería (simplificado desde fórmula Excel K20):
+    //   Débito:  venta_bruta × 10.5%
+    //   Crédito: comVta × venta × 10.5% + compra_bruta × 10.5% + fleteC × 21% + fleteV × 21% + alimentacion × 10.5% + hoteleria × 21% + sanidad × 21%
+    var ventaBruta  = pv * pesoS;
+    var compraBruta = pc * (1 + comC) * pesoE;
+    var ivaDebito   = ventaBruta * 0.105;
+    var ivaCredito  = (comV * ventaBruta * 0.105)
+                    + (compraBruta * 0.105)
+                    + (fleteC * pesoE * 0.21)
+                    + (fleteV * pesoS * 0.21)
+                    + (alimentacion * 0.105)
+                    + (hoteleriaTotal * 0.21)
+                    + (sanidad * 0.21);
+    var ivaNeto     = ivaDebito - ivaCredito;
+    var impNeto     = retGcias + ivaNeto;             // total impositivo neto
+
+    // Resultados finales
+    var resConImp   = resEco + impNeto;               // res económico + efecto impositivo (sin CF)
+    var resConCF    = resEco - cfTotal;               // res económico - CF (antes de impuestos) [Excel M37]
+    var resFinal    = resEco + impNeto - cfTotal;     // resultado final completo [Excel M39]
+
+    var impColor  = impNeto  >= 0 ? 'sim-res-pos' : 'sim-res-neg';
+    var rciColor  = resConImp >= 0 ? 'sim-res-pos' : 'sim-res-neg';
+    var rccColor  = resConCF  >= 0 ? 'sim-res-pos' : 'sim-res-neg';
+    var rfColor   = resFinal  >= 0 ? 'sim-res-pos' : 'sim-res-neg';
+
+    html += '<tr><td colspan="2" class="sim-section" style="opacity:.7;font-style:italic">Impositivo · solo informativo</td></tr>';
+    html += '<tr style="opacity:.85"><td>Ret. Ganancias <span style="font-size:9px;opacity:.6">(2% s/venta neta)</span></td><td class="sim-res-neg">$'+f2(retGcias)+' / cab</td></tr>';
+    html += '<tr style="opacity:.85"><td>IVA neto ganadería <span style="font-size:9px;opacity:.6">(débito 10.5% − créditos)</span></td><td class="'+(ivaNeto>=0?'sim-res-pos':'sim-res-neg')+'">$'+f2(ivaNeto)+' / cab</td></tr>';
+    html += '<tr style="opacity:.85"><td>Impositivo neto ganadería</td><td class="'+impColor+'">$'+f2(impNeto)+' / cab</td></tr>';
+    html += '<tr class="sim-total" style="opacity:.85"><td>RESULTADO CON IMPUESTOS <span style="font-size:9px;font-weight:normal;opacity:.6">(sin CF)</span></td><td class="'+rciColor+'">$'+f2(resConImp)+' / cab</td></tr>';
+
+    html += '<tr><td colspan="2" class="sim-section" style="opacity:.7;font-style:italic">Costo Financiero · solo informativo</td></tr>';
+    html += '<tr style="opacity:.85"><td>Tasa anual / días fin. <span style="font-size:9px;opacity:.6">('+Math.round(diasFin)+' días = '+Math.round(dias)+' eng. − '+Math.round(pcfCom)+' com. + '+Math.round(pcfVta)+' vta.)</span></td><td>'+(tcf*100).toFixed(1)+'% → '+(tasaAplicar*100).toFixed(2)+'% período</td></tr>';
+    html += '<tr style="opacity:.85"><td>CF hacienda</td><td>$'+f2(cfHacienda)+' / cab</td></tr>';
+    html += '<tr style="opacity:.85"><td>CF alimento + hotelería + sanidad</td><td>$'+f2(cfAlimento)+' / cab</td></tr>';
+    html += '<tr style="opacity:.85"><td>CF total</td><td class="sim-res-neg">$'+f2(cfTotal)+' / cab</td></tr>';
+    html += '<tr class="sim-total" style="opacity:.85"><td>RESULTADO CON CF <span style="font-size:9px;font-weight:normal;opacity:.6">(antes impuestos)</span></td><td class="'+rccColor+'">$'+f2(resConCF)+' / cab</td></tr>';
+    html += '<tr class="sim-total" style="background:rgba(26,22,18,.06)"><td><b>RESULTADO FINAL</b> <span style="font-size:9px;font-weight:normal;opacity:.6">(con impuestos y CF)</span></td><td class="'+rfColor+'"><b>$'+f2(resFinal)+' / cab</b></td></tr>';
+  }
+
   html += '</table>';
 
   document.getElementById('simRes-'+tipo).innerHTML = html;
@@ -5363,7 +5436,16 @@ async function cargarDesdeOneDrive() {
     document.getElementById('kpi-tons').textContent       = Number(Math.round(kpis.total_ton_estimado_hoy*1000||0)).toLocaleString('es-AR')+' kg';
     document.getElementById('kpi-peso').textContent       = stockFmt(kpis.kg_promedio_estimado)+' kg';
     document.getElementById('kpi-categorias').textContent = Object.keys(kpis.por_categoria_final||kpis.por_categoria||{}).length;
-    document.getElementById('kpi-fecha').textContent      = meta.generado ? new Date(meta.generado).toLocaleString('es-AR') : '-';
+    // Último dato real registrado en WinCampo (ULTIMA_FECHA_REPARTO o FECHA_ULTIMA_PESADA)
+    var fechaUltDato = kpis.fecha_ultimo_dato || null;
+    if(fechaUltDato){
+      var _fp = fechaUltDato.split('-');
+      document.getElementById('kpi-fecha').textContent = (_fp[2]||'?')+'/'+(_fp[1]||'?')+'/'+(_fp[0]||'?');
+      document.getElementById('kpi-fecha-sub').textContent = 'último reparto · script: '+(meta.generado ? meta.generado.slice(0,10) : '—');
+    } else {
+      document.getElementById('kpi-fecha').textContent = meta.generado ? meta.generado.slice(0,10).split('-').reverse().join('/') : '—';
+      document.getElementById('kpi-fecha-sub').textContent = 'fecha de generación del script';
+    }
     document.getElementById('stockLoading').style.display = 'none';
     document.getElementById('stockData').style.display    = 'block';
     stockRenderCategoria('secCategorias', kpis.por_categoria_final||kpis.por_categoria||{}, kpis.por_categoria_desglose||{}, kpis.total_cabezas||1);
