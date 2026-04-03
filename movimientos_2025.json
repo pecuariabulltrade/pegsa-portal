@@ -1,45 +1,35 @@
 {
   "meta": {
-    "generado": "2026-04-02T23:06:35.234204",
+    "generado": "2026-04-03T00:06:57.113142",
     "periodo": "2025",
     "mes_actual": "2026-04",
     "nombre_mes": "Abril 2026",
     "mes_anterior": "2026-03",
     "nombre_mes_ant": "Marzo 2026",
-    "desde_anio": "2025-04-02",
-    "hasta": "2026-04-02",
+    "desde_anio": "2025-04-03",
+    "hasta": "2026-04-03",
     "filtros": "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos."
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 19719,
-      "kg_ingresado": 7129784.0,
-      "kg_promedio_ingreso": 361.6,
-      "cabezas_egresadas": 21030,
-      "kg_egresado": 11254231.5,
-      "kg_promedio_egreso": 535.2,
-      "saldo_cabezas": -1311,
-      "saldo_kg": -4124447.5
+      "cabezas_ingresadas": 19600,
+      "kg_ingresado": 7094147.0,
+      "kg_promedio_ingreso": 361.9,
+      "cabezas_egresadas": 20832,
+      "kg_egresado": 11142174.5,
+      "kg_promedio_egreso": 534.9,
+      "saldo_cabezas": -1232,
+      "saldo_kg": -4048027.5
     },
     "ingresos": {
-      "total_cabezas": 19719,
-      "total_kg": 7129784.0,
-      "kg_promedio": 361.6,
+      "total_cabezas": 19600,
+      "total_kg": 7094147.0,
+      "kg_promedio": 361.9,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 16157,
-          "kg": 6039143.0,
-          "kg_promedio": 373.8
-        },
-        "ZAMBRONI NICANOR": {
-          "cabezas": 99,
-          "kg": 21367.0,
-          "kg_promedio": 215.8
-        },
-        "RICARDO BAILO": {
-          "cabezas": 268,
-          "kg": 72717.0,
-          "kg_promedio": 271.3
+          "cabezas": 16112,
+          "kg": 6019829.0,
+          "kg_promedio": 373.6
         },
         "LAS TAPERAS": {
           "cabezas": 900,
@@ -55,6 +45,16 @@
           "cabezas": 1211,
           "kg": 475323.0,
           "kg_promedio": 392.5
+        },
+        "ZAMBRONI NICANOR": {
+          "cabezas": 54,
+          "kg": 12112.0,
+          "kg_promedio": 224.3
+        },
+        "RICARDO BAILO": {
+          "cabezas": 239,
+          "kg": 65649.0,
+          "kg_promedio": 274.7
         },
         "PECUARIA DESCANSO": {
           "cabezas": 40,
@@ -74,24 +74,24 @@
       },
       "por_categoria": {
         "VACA": {
-          "cabezas": 9795,
-          "kg": 4401530.7,
-          "kg_promedio": 449.4
-        },
-        "TORO": {
-          "cabezas": 130,
-          "kg": 60903.0,
-          "kg_promedio": 468.5
+          "cabezas": 9753,
+          "kg": 4384350.7,
+          "kg_promedio": 449.5
         },
         "TERNERO": {
-          "cabezas": 3035,
-          "kg": 656006.1,
-          "kg_promedio": 216.1
+          "cabezas": 2961,
+          "kg": 639683.1,
+          "kg_promedio": 216.0
         },
         "VAQUILLONA": {
           "cabezas": 942,
           "kg": 315095.0,
           "kg_promedio": 334.5
+        },
+        "TORO": {
+          "cabezas": 127,
+          "kg": 58769.0,
+          "kg_promedio": 462.7
         },
         "NOVILLO": {
           "cabezas": 2243,
@@ -111,9 +111,9 @@
       },
       "por_mes": {
         "2025-04": {
-          "cabezas": 1940,
-          "kg": 797327.0,
-          "kg_promedio": 411.0
+          "cabezas": 1821,
+          "kg": 761690.0,
+          "kg_promedio": 418.3
         },
         "2025-05": {
           "cabezas": 1971,
@@ -179,11 +179,11 @@
       "top10_origen": [
         {
           "nombre": "DARWASH SA",
-          "cabezas": 7281,
+          "cabezas": 7207,
           "por_categoria": {
             "VACA": 2210,
-            "TERNERO": 1666,
             "NOVILLITO": 1635,
+            "TERNERO": 1592,
             "TERNERA": 991,
             "NOVILLO": 419,
             "VAQUILLONA": 352,
@@ -283,14 +283,14 @@
       ]
     },
     "egresos": {
-      "total_cabezas": 21030,
-      "total_kg": 11254231.5,
-      "kg_promedio": 535.2,
+      "total_cabezas": 20832,
+      "total_kg": 11142174.5,
+      "kg_promedio": 534.9,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 16417,
-          "kg": 8971885.5,
-          "kg_promedio": 546.5
+          "cabezas": 16219,
+          "kg": 8859828.5,
+          "kg_promedio": 546.3
         },
         "EL YULTO SAS": {
           "cabezas": 309,
@@ -350,9 +350,9 @@
       },
       "por_categoria": {
         "VACA": {
-          "cabezas": 10271,
-          "kg": 6047735.4,
-          "kg_promedio": 588.8
+          "cabezas": 10077,
+          "kg": 5937928.4,
+          "kg_promedio": 589.3
         },
         "TERNERO": {
           "cabezas": 3866,
@@ -370,9 +370,9 @@
           "kg_promedio": 550.9
         },
         "VAQUILLONA": {
-          "cabezas": 1027,
-          "kg": 490911.5,
-          "kg_promedio": 478.0
+          "cabezas": 1023,
+          "kg": 488661.5,
+          "kg_promedio": 477.7
         },
         "NOVILLITO": {
           "cabezas": 1405,
@@ -442,16 +442,16 @@
           "kg_promedio": 580.2
         },
         "2025-04": {
-          "cabezas": 1392,
-          "kg": 695980.0,
-          "kg_promedio": 500.0
+          "cabezas": 1194,
+          "kg": 583923.0,
+          "kg_promedio": 489.0
         }
       },
       "por_tipo_egreso": {
         "VENTA": {
-          "cabezas": 21030,
-          "kg": 11254231.5,
-          "kg_promedio": 535.2
+          "cabezas": 20832,
+          "kg": 11142174.5,
+          "kg_promedio": 534.9
         },
         "MUERTE": {
           "cabezas": 426,
@@ -462,10 +462,10 @@
       "top10_destino": [
         {
           "nombre": "FRIG. RIOPLATENCE",
-          "cabezas": 8174,
+          "cabezas": 7976,
           "por_categoria": {
-            "VACA": 7827,
-            "VAQUILLONA": 101,
+            "VACA": 7633,
+            "VAQUILLONA": 97,
             "NOVILLITO": 97,
             "TERNERA": 90,
             "TERNERO": 38,
