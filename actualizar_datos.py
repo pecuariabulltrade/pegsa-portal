@@ -414,18 +414,6 @@ def calcular_kpis(registros, columnas):
     por_cat_final       = agrupar("CATEGORIA_FINAL")  if "CATEGORIA_FINAL" in registros[0] else {}
     por_cat_desglose    = agrupar_cat_desglose()      if "CATEGORIA_FINAL" in registros[0] else {}
 
-    # ── Última fecha de dato real registrada en WinCampo ──────────────────
-    col_frep = "ULTIMA_FECHA_REPARTO" if "ULTIMA_FECHA_REPARTO" in registros[0] else None
-    col_fpes = "FECHA_ULTIMA_PESADA"  if "FECHA_ULTIMA_PESADA"  in registros[0] else None
-    fecha_ultimo_dato = None
-    for r in registros:
-        for col in filter(None, [col_frep, col_fpes]):
-            v = r.get(col)
-            if v:
-                s = str(v)[:10]  # tomar solo YYYY-MM-DD
-                if s > (fecha_ultimo_dato or ''):
-                    fecha_ultimo_dato = s
-
     return {
         "total_cabezas":          int(total_cab),
         "total_kg_estimado_hoy":  round(total_kg_est),
@@ -441,7 +429,6 @@ def calcular_kpis(registros, columnas):
         "por_categoria_final":    por_cat_final,
         "por_establecimiento_categoria": agrupar_est_cat() if "NOMBRE_CORRAL" in registros[0] else {},
         "por_categoria_desglose":        por_cat_desglose,
-        "fecha_ultimo_dato":             fecha_ultimo_dato,
     }
 
 # ═══════════════════════════════════════════════════════════
@@ -1692,48 +1679,6 @@ def procesar_consumo(regs, cols, periodo):
     ), 1)
     log.info(f"  Total 7d: {total_7d:,.0f} kg  |  Días registrados: {n_dias}  |  Promedio diario: {prom_diario_total:,.1f} kg/día  |  MS: {prom_diario_total_ms:,.1f} kg MS/día")
 
-    # ── Último día registrado ─────────────────────────────────────────────
-    # Buscar la fecha más reciente con registros (en todo el año, no solo 7d)
-    ultimo_dia_date = None
-    for r in regs_anio:
-        try:
-            fd = pd.to_datetime(r.get(col_fecha), errors="coerce")
-            if fd is None or pd.isnull(fd): continue
-            fd_str = fd.strftime("%Y-%m-%d")
-            if ultimo_dia_date is None or fd_str > ultimo_dia_date:
-                ultimo_dia_date = fd_str
-        except: pass
-
-    ultimo_dia_ins = {}
-    total_ult_tc   = 0.0
-    if ultimo_dia_date:
-        for r in regs_anio:
-            try:
-                fd = pd.to_datetime(r.get(col_fecha), errors="coerce")
-                if fd is None or pd.isnull(fd): continue
-                if fd.strftime("%Y-%m-%d") != ultimo_dia_date: continue
-                desc = str(r.get(col_desc) or "Sin descripción").strip() if col_desc else "Sin descripción"
-                cod  = str(r.get(col_cod)  or "").strip()               if col_cod  else ""
-                kg   = to_num(r.get(col_kg, 0))
-                total_ult_tc += kg
-                if desc not in ultimo_dia_ins:
-                    ultimo_dia_ins[desc] = {"cod": cod, "kg": 0.0}
-                ultimo_dia_ins[desc]["kg"] += kg
-            except: pass
-
-    por_insumo_ult = sorted(
-        [{"desc": d, "cod": v["cod"],
-          "kg":       round(v["kg"], 1),
-          "ms_pct":   get_ms(d),
-          "kg_ms":    round(v["kg"] * get_ms(d) / 100, 1) if get_ms(d) is not None else None,
-          "pct_total": round(v["kg"] / max(total_ult_tc, 1) * 100, 1)}
-         for d, v in ultimo_dia_ins.items()],
-        key=lambda x: -x["kg"]
-    )
-    total_ult_ms = round(sum(r["kg_ms"] for r in por_insumo_ult if r["kg_ms"] is not None), 1)
-    if ultimo_dia_date:
-        log.info(f"  Último día: {ultimo_dia_date}  |  TC: {total_ult_tc:,.0f} kg  |  MS: {total_ult_ms:,.0f} kg")
-
     return {
         "meta": {
             "generado":    datetime.now().isoformat(),
@@ -1759,12 +1704,6 @@ def procesar_consumo(regs, cols, periodo):
             "promedio_diario_kg":    prom_diario_total,
             "promedio_diario_kg_ms": prom_diario_total_ms,
             "por_insumo":            por_insumo_7d,
-        },
-        "ultimo_dia": {
-            "fecha":      ultimo_dia_date,
-            "total_tc":   round(total_ult_tc, 1),
-            "total_ms":   total_ult_ms,
-            "por_insumo": por_insumo_ult,
         },
     }
 
@@ -2649,14 +2588,7 @@ def main():
 
         prom_diario_ms = cs.get("promedio_diario_kg_ms", 0)
         prom_diario_tc = cs.get("promedio_diario_kg", 0)
-        # Usar ADP del último mes disponible (más representativo del período actual)
-        # Si no hay datos mensuales, caer al ADP general del período
-        _por_mes_prod = prod_data.get("por_mes", {})
-        _ultimo_mes   = max(_por_mes_prod.keys()) if _por_mes_prod else None
-        adp_prom      = (_por_mes_prod[_ultimo_mes].get("adp_promedio") or 0) if _ultimo_mes else 0
-        if not adp_prom:
-            adp_prom = g.get("adp_promedio", 0) or 0
-        log.info(f"  ADP usado para conversión: {adp_prom} kg/día (mes {_ultimo_mes or 'general'})")
+        adp_prom       = g.get("adp_promedio", 0) or 0
 
         log.info(f"  Denominador: {'El Haras' if usando_haras else 'PEGSA total (Haras no encontrado)'}")
         log.info(f"  Cabezas     : {cab_haras:,}")
@@ -3568,136 +3500,7 @@ def scrape_canuelas():
 
 
 # ──────────────────────────────────────────────────────────────
-# 7b. Hacienda — Mercado Agroganadero (MAG)
-# ──────────────────────────────────────────────────────────────
-def scrape_mag_hacienda():
-    """Devuelve lista de {categoria, precio, variacion, unidad} o [].
-    Scraping del Mercado Agroganadero:
-      GET https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000502
-    Tabla: Categoría | Mínimo | Máximo | Promedio | Mediana | Cabezas | Importe | Kgs | Prom.Kgs
-    Precios formato AR: '4247,242' → 4247.242 $/kg
-    Las categorías de salida mantienen los mismos nombres que Cañuelas para compatibilidad.
-    """
-    import re
-    url = "https://www.mercadoagroganadero.com.ar/dll/hacienda1.dll/haciinfo000502"
-    text = _http_get(url)
-    if not text:
-        log.info("  ℹ MAG Hacienda: sin respuesta de red")
-        return []
-
-    def _mag_precio(s):
-        """Parsea precio MAG: '4.247,242' o '4247,242' → 4247.242"""
-        s = str(s or "").strip().replace(" ", "")
-        if not s:
-            return None
-        # En MAG la coma es siempre decimal: quitar puntos de miles, coma→punto
-        s = s.replace(".", "").replace(",", ".")
-        try:
-            v = float(s)
-            return v if 500 < v < 30_000 else None
-        except Exception:
-            return None
-
-    # Parsear todas las filas de la tabla
-    hacienda_raw = []  # [(categoria_mag, promedio)]
-    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
-    for row in rows:
-        cells_raw = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row, re.DOTALL | re.IGNORECASE)
-        if len(cells_raw) < 4:
-            continue
-        cells = [re.sub(r'<[^>]+>', '', c).strip() for c in cells_raw]
-        cat = cells[0]
-        if not cat or len(cat) < 3:
-            continue
-        cat_low = cat.lower()
-        # Saltar encabezados, subtotales y totales
-        if any(x in cat_low for x in ['categor', 'subtotal', 'total', 'promedio']):
-            continue
-        # Columna Promedio está en índice 3 (Categoría=0, Mínimo=1, Máximo=2, Promedio=3)
-        precio = _mag_precio(cells[3] if len(cells) > 3 else "")
-        if not precio:
-            continue
-        hacienda_raw.append((cat, precio))
-
-    if not hacienda_raw:
-        log.info("  ℹ MAG Hacienda: sin filas en tabla — intentando parser alternativo")
-        # Fallback: buscar pares Categoría+Promedio con regex más agresivo
-        matches = re.findall(
-            r'([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ\s./+]+?)\s*[\|;]\s*[\d.,]+\s*[\|;]\s*[\d.,]+\s*[\|;]\s*([\d.,]+)',
-            text
-        )
-        for cat, prom_s in matches:
-            cat = cat.strip()
-            precio = _mag_precio(prom_s)
-            if precio and cat and len(cat) >= 4:
-                hacienda_raw.append((cat, precio))
-
-    if not hacienda_raw:
-        log.info("  ℹ MAG Hacienda: sin datos parseables")
-        return []
-
-    log.debug(f"    MAG raw rows: {hacienda_raw}")
-
-    # ── Mapeo MAG → nombres de salida compatibles con el portal ──
-    # Formato: (grupo_requerido_en_cat_UPPER, tipo_en_cat_lower, sub_en_cat_lower, nombre_salida)
-    MAG_MAP = [
-        ("NOVILLITOS", "esp",           "h 390",   "Novillitos hasta 390 Kg."),
-        ("NOVILLITOS", "esp",           "+ 390",   "Novillitos 391/430 Kg."),
-        ("NOVILLOS",   "esp",           "+ 430",   "Novillos 431/460 Kg."),
-        ("NOVILLOS",   "reg",           "+ 430",   "Novillos 461/490 Kg."),
-        ("VAQUILLONAS","esp",           "h 390",   "Vaquillonas hasta 390 Kg."),
-        ("VACAS",      "esp",           "",        "Vacas Buenas"),
-        ("VACAS",      "reg",           "",        "Vacas Regulares"),
-        ("VACAS",      "con",           "buen",    "Vacas Conserva"),
-    ]
-
-    result_map = {}  # nombre_salida → precio
-    for cat_mag, precio in hacienda_raw:
-        cat_up  = cat_mag.upper()
-        cat_low = cat_mag.lower()
-        for grupo, tipo, sub, out_name in MAG_MAP:
-            if grupo not in cat_up:
-                continue
-            if tipo and tipo not in cat_low:
-                continue
-            if sub and sub.lower() not in cat_low:
-                continue
-            if out_name not in result_map:   # primer match gana
-                result_map[out_name] = precio
-            break
-
-    # Construir lista final en orden estándar
-    ORDER = [
-        "Novillitos hasta 390 Kg.",
-        "Novillitos 391/430 Kg.",
-        "Novillos 431/460 Kg.",
-        "Novillos 461/490 Kg.",
-        "Vaquillonas hasta 390 Kg.",
-        "Vacas Buenas",
-        "Vacas Regulares",
-        "Vacas Conserva",
-    ]
-    hacienda = []
-    for cat_name in ORDER:
-        if cat_name in result_map:
-            hacienda.append({
-                "categoria": cat_name,
-                "precio":    round(result_map[cat_name], 2),
-                "variacion": 0,
-                "unidad":    "$/kg + IVA"
-            })
-
-    if hacienda:
-        log.info(f"  ✓ MAG Hacienda: {len(hacienda)} categorías — "
-                 + " | ".join(f"{h['categoria'].split()[0]} ${h['precio']:,.0f}" for h in hacienda))
-    else:
-        log.info("  ℹ MAG Hacienda: sin categorías mapeadas (raw: "
-                 + ", ".join(c for c, _ in hacienda_raw[:5]) + ")")
-    return hacienda
-
-
-# ──────────────────────────────────────────────────────────────
-# 7c. Granos — BCR Cámara Arbitral Precios de Pizarra
+# 7b. Granos — BCR Cámara Arbitral Precios de Pizarra
 # ──────────────────────────────────────────────────────────────
 def scrape_bcr_pizarra():
     """Devuelve {maiz, soja, trigo, sorgo} en $/tn o {} si falla."""
@@ -3786,7 +3589,6 @@ def _leer_hoja_api(sheet_id, nombre_hoja, creds_file):
         if not values or len(values) < 2:
             return []
         headers = [str(h).strip().lower().replace(" ", "_") for h in values[0]]
-        log.info(f"    Columnas hoja '{nombre_hoja}': {headers}")
         rows = []
         for row in values[1:]:
             # Rellenar celdas vacías al final de la fila
@@ -3881,12 +3683,13 @@ def procesar_negocios(negocios_raw):
         try:
             fecha    = buscar_col(r, "fecha")
             cat      = buscar_col(r, "categ", "categoria", "tipo")
-            kg_cab_raw_v = buscar_col(r,
-                "kg_cab", "kg/cab", "peso", "kg_prom",
-                "promedio", "kilos", "kilo", "kg_promedio", "peso_prom",
-                "prom_kg", "kg/cabeza", "kgcab", "kg_entr", "kg_entrada",
-                "kg_comp", "kgs", "prom")
-            kg_cab   = _parse_ar_num(kg_cab_raw_v) or 0
+            kg_cab   = _parse_ar_num(buscar_col(r, "kg_cab", "kg/cab", "peso", "kg_prom")) or 0
+            # Fallback: columna con nombre exactamente "kg" (no capturada por buscar_col)
+            if not kg_cab:
+                for _k, _v in r.items():
+                    if _k.strip().lower() == 'kg' and _v:
+                        kg_cab = _parse_ar_num(_v) or 0
+                        break
             precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c",
                                                 "precio_carne", "precio")) or 0
             precio_p = _parse_ar_num(buscar_col(r, "precio_pie", "precio_vivo", "$/pie")) or 0
@@ -3908,45 +3711,17 @@ def procesar_negocios(negocios_raw):
         except Exception:
             pass
 
-    # Log columnas del primer registro de COMPRAS para diagnóstico
-    _compras_raw = negocios_raw.get("compras", [])
-    if _compras_raw:
-        log.info(f"  ℹ COMPRAS columnas detectadas: {list(_compras_raw[0].keys())}")
-    for r in _compras_raw:
+    for r in negocios_raw.get("compras", []):
         try:
             fecha    = buscar_col(r, "fecha")
             cat      = buscar_col(r, "categ", "categoria", "tipo")
-            # kg_cab: buscar por muchos nombres posibles; fallback numérico si todo falla
-            kg_cab_raw = buscar_col(r,
-                "kg_cab", "kg/cab", "peso", "kg_prom",
-                "promedio", "kilos", "kilo", "kg_promedio", "peso_prom",
-                "prom_kg", "kg/cabeza", "kgcab", "kg_entr", "kg_entrada",
-                "kg_comp", "kgs", "prom", "kg_p", "p_kg", "kg_prom",
-                "kg_entrada", "peso_entrada", "peso_compra", "kg_compra",
-                "entrada", "kg_promedio_compra")
-            if not kg_cab_raw:
-                # Fallback A: buscar clave que comience con "kg" (excluyendo precio)
+            kg_cab   = _parse_ar_num(buscar_col(r, "kg_cab", "kg/cab", "peso", "kg_prom")) or 0
+            # Fallback: columna con nombre exactamente "kg" (no capturada por buscar_col)
+            if not kg_cab:
                 for _k, _v in r.items():
-                    if _k.startswith('kg') and 'precio' not in _k and 'total' not in _k and _v:
-                        _num = _parse_ar_num(_v)
-                        if _num and 50 <= _num <= 2000:
-                            kg_cab_raw = _v
-                            log.info(f"    ℹ kg_cab encontrado en columna '{_k}': {_v}")
-                            break
-            if not kg_cab_raw:
-                # Fallback B: primer campo numérico 50–2000 que no sea precio ni cabezas
-                _precio_val = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
-                _cab_val    = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 0
-                _excl = {'precio', 'fecha', 'categ', 'origen', 'frigo', 'destino',
-                         'vendedor', 'campo', 'proveedor', 'observ', 'nota', 'tipo', 'total'}
-                for _k, _v in r.items():
-                    if any(_ex in _k.lower() for _ex in _excl): continue
-                    _num = _parse_ar_num(_v or "")
-                    if _num and 50 <= _num <= 2000 and abs(_num - _precio_val) > 10 and abs(_num - _cab_val) > 5:
-                        kg_cab_raw = _v
-                        log.info(f"    ℹ kg_cab hallado por fallback en columna '{_k}': {_v}")
+                    if _k.strip().lower() == 'kg' and _v:
+                        kg_cab = _parse_ar_num(_v) or 0
                         break
-            kg_cab   = _parse_ar_num(kg_cab_raw) or 0
             precio   = _parse_ar_num(buscar_col(r, "precio_kg", "precio/kg", "precio_c", "precio")) or 0
             cabezas  = _parse_ar_num(buscar_col(r, "cabezas", "cantidad", "cab")) or 1
             origen   = buscar_col(r, "origen", "vendedor", "proveedor", "campo")
@@ -4041,51 +3816,20 @@ def actualizar_mercado_precios(carpeta, repo):
                 return c.get("precio", default)
         return default
 
-    # ── 2. Hacienda — Mercado Agroganadero (MAG) ────────────────
-    log.info("  → Scraping Mercado Agroganadero (MAG)...")
-    hacienda = scrape_mag_hacienda()
+    # ── 2. Hacienda — Cañuelas ──────────────────────────────────
+    log.info("  → Scraping Mercado de Cañuelas...")
+    hacienda = scrape_canuelas()
     if not hacienda:
         hacienda = existing.get("hacienda", [
-            {"categoria": "Novillitos hasta 390 Kg.", "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Novillitos 391/430 Kg.",   "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Novillos 431/460 Kg.",     "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Novillos 461/490 Kg.",     "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Vaquillonas hasta 390 Kg.","precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Vacas Buenas",             "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Vacas Regulares",          "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
-            {"categoria": "Vacas Conserva",           "precio": 0, "variacion": 0, "unidad": "$/kg + IVA"},
+            {"categoria": "Novillo especial", "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Novillo",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Vaca",             "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Vaquillona",       "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Ternero",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Ternera",          "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
+            {"categoria": "Novillito",        "precio": 0, "variacion": 0, "unidad": "$/kg en pie"},
         ])
         log.info("  ℹ Usando precios anteriores de hacienda")
-
-    # ── 2b. Variación respecto al día anterior (desde historico) ─
-    # MAG no publica variación diaria → la calculamos nosotros
-    if hacienda and historico:
-        hist_prev = sorted(
-            [h for h in historico if h.get("fecha", "") < today],
-            key=lambda x: x.get("fecha", ""), reverse=True
-        )
-        prev = hist_prev[0] if hist_prev else None
-        if prev:
-            # Mapeo: substring de categoría → clave en historico
-            CAT_TO_HIST = [
-                ("novillitos hasta", "nov_390"),
-                ("novillitos 391",   "nov_430"),
-                ("novillos 431",     "nov_460"),
-                ("novillos 461",     "nov_490"),
-                ("vaquillona",       "vaq_390"),
-                ("vacas buenas",     "vac_buena"),
-                ("vacas regulares",  "vac_regular"),
-                ("vacas conserva",   "vac_conserva"),
-            ]
-            for h in hacienda:
-                cat_low = h["categoria"].lower()
-                for key, hist_key in CAT_TO_HIST:
-                    if key in cat_low:
-                        prev_precio = float(prev.get(hist_key) or 0)
-                        if prev_precio > 500:
-                            h["variacion"] = round(h["precio"] - prev_precio, 2)
-                        break
-            log.info(f"  ✓ Variaciones calculadas vs {prev.get('fecha','?')}")
 
     # ── 3. Granos — BCR Pizarra ─────────────────────────────────
     log.info("  → Scraping BCR Precios de Pizarra...")
@@ -4129,39 +3873,19 @@ def actualizar_mercado_precios(carpeta, repo):
     log.info(f"  ✓ Negocios: {negocios['total_ventas']} ventas · {negocios['total_compras']} compras procesadas")
 
     # ── 6. Histórico diario ─────────────────────────────────────
-    # Mapeo de substrings de categoría → clave JSON del histórico
-    HAC_HIST_KEYS = [
-        ("novillitos hasta", "nov_390"),      # Novillito ≤390 kg
-        ("novillitos 391",   "nov_430"),      # Novillito 391/430 kg
-        ("novillos 431",     "nov_460"),      # Novillo 431/460 kg
-        ("novillos 461",     "nov_490"),      # Novillo 461/490 kg
-        ("vaquillona",       "vaq_390"),      # Vaquillona ≤390 kg
-        ("vacas buenas",     "vac_buena"),    # Vaca Buena
-        ("vacas regulares",  "vac_regular"),  # Vaca Regular
-        ("vacas conserva",   "vac_conserva"), # Vaca Conserva
-        ("ternero",          "ternero"),      # Ternero
-        ("ternera",          "ternera"),      # Ternera
-    ]
+    nov_precio = next((h["precio"] for h in hacienda
+                       if "novillo" in h["categoria"].lower()
+                       and "especial" not in h["categoria"].lower()), 0)
+    ter_precio = next((h["precio"] for h in hacienda
+                       if "ternero" in h["categoria"].lower()), 0)
 
-    def _hac_hist(key_lower):
-        for h in hacienda:
-            if key_lower in h.get("categoria", "").lower():
-                p = h.get("precio", 0)
-                if p and p > 500:
-                    return p
-        return 0
-
-    hoy = {"fecha": today}
-    for _key, _field in HAC_HIST_KEYS:
-        hoy[_field] = _hac_hist(_key) or 0
-    # Granos
-    hoy["maiz"]  = precio_maiz
-    hoy["soja"]  = precio_soja
-    hoy["trigo"] = precio_trigo
-    hoy["sorgo"] = precio_sorgo
-    # Campo legado para compatibilidad con código anterior
-    hoy["novillo"] = hoy.get("nov_460") or hoy.get("nov_490") or 0
-    hoy["ternero"] = hoy.get("ternero") or 0
+    hoy = {
+        "fecha":    today,
+        "maiz":     precio_maiz,
+        "soja":     precio_soja,
+        "novillo":  nov_precio,
+        "ternero":  ter_precio,
+    }
     historico = [h for h in historico if h.get("fecha") != today]
     historico.append(hoy)
     historico = sorted(historico, key=lambda x: x.get("fecha", ""))[-365:]
@@ -4173,7 +3897,7 @@ def actualizar_mercado_precios(carpeta, repo):
     # ── 8. Armar y guardar JSONs ────────────────────────────────
     mercado_json = {
         "fecha":       today,
-        "fuente":      "MAG · BCR Cámara Arbitral",
+        "fuente":      "Cañuelas · BCR Cámara Arbitral",
         "hacienda":    hacienda,
         "commodities": commodities,
         "insumos":     insumos,

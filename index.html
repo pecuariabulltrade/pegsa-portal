@@ -3883,6 +3883,7 @@ function _segSimCat(tipo, pesoE, pesoS, pc, ins, bp){
     pcInd:  Math.round(pcInd),
     racInd: Math.round(racInd*10)/10,
     compraNeta: Math.round(compraNeta),
+    ingresoVenta: Math.round(ingresoVenta),
   };
 }
 
@@ -4499,17 +4500,27 @@ function renderAnalisis(){
       mes:    mes,
       cab:    c.cabezas||1,
       pc:     c.precio_kg,
-      res:    sim ? sim.resEco : null,
-      pcInd:  sim ? sim.pcInd  : null,
-      pv:     sim ? sim.pv     : null,
-      dias:   sim ? sim.dias   : null,
+      res:    sim ? sim.resEco      : null,
+      pcInd:  sim ? sim.pcInd       : null,
+      pv:     sim ? sim.pv          : null,
+      dias:   sim ? sim.dias        : null,
+      ingV:   sim ? sim.ingresoVenta: null,
     });
   });
+
+  // Filtro acumulativo: solo datos desde 01/03/2026
+  var CORTE_ACUM = '2026-03';
+  var filasAcum = filas.filter(function(f){ return f.mes && f.mes >= CORTE_ACUM; });
 
   var filasCon = filas.filter(function(f){ return f.res!==null; });
   var meses    = Array.from(new Set(filas.map(function(f){return f.mes;}))).filter(Boolean).sort();
   var cats     = Array.from(new Set(filas.map(function(f){return f.cat;}))).sort();
   var origs    = Array.from(new Set(filas.map(function(f){return f.origen;}))).filter(function(o){return o&&o!=='Sin datos';}).sort();
+
+  // Sets para las tablas acumulativas (solo desde 01/03/2026)
+  var mesesAcum  = Array.from(new Set(filasAcum.map(function(f){return f.mes;}))).filter(Boolean).sort();
+  var catsAcum   = Array.from(new Set(filasAcum.map(function(f){return f.cat;}))).sort();
+  var origsAcum  = Array.from(new Set(filasAcum.map(function(f){return f.origen;}))).filter(function(o){return o&&o!=='Sin datos';}).sort();
 
   function fmtRes(res, cab){
     if(res===null) return '<span style="color:rgba(26,22,18,.3)">—</span>';
@@ -4534,18 +4545,20 @@ function renderAnalisis(){
     var v=arr.filter(function(x){return x.res!==null;});
     if(!v.length) return null;
     // peso por cabezas
-    var totCab=0, totRes=0, totPc=0, totInd=0;
-    v.forEach(function(f){ totCab+=f.cab; totRes+=f.res*f.cab; totPc+=f.pc*f.cab; totInd+=(f.pcInd||0)*f.cab; });
-    return {res:totRes/totCab, pc:totPc/totCab, pcInd:totInd/totCab, cab:totCab, tropas:v.length};
+    var totCab=0, totRes=0, totPc=0, totInd=0, totIngV=0;
+    v.forEach(function(f){ totCab+=f.cab; totRes+=f.res*f.cab; totPc+=f.pc*f.cab; totInd+=(f.pcInd||0)*f.cab; totIngV+=(f.ingV||0)*f.cab; });
+    return {res:totRes/totCab, pc:totPc/totCab, pcInd:totInd/totCab, ingV:totIngV/totCab, cab:totCab, tropas:v.length};
   }
-  function roi(avg){ if(!avg||!avg.pc) return null; return avg.res/avg.pc*100; }
+  // Rentabilidad sobre monto de venta: resultado / ingreso_venta
+  function roi(avg){ if(!avg||!avg.ingV) return null; return avg.res/avg.ingV*100; }
 
   var TH = 'font-family:DM Mono,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.42);padding:7px 10px;background:rgba(26,22,18,.03);border-bottom:2px solid rgba(26,22,18,.1);white-space:nowrap;text-align:right;font-weight:400';
   var TD = 'padding:6px 10px;border-bottom:1px solid rgba(26,22,18,.06);font-family:DM Mono,monospace;font-size:11px;vertical-align:middle';
   var html = '';
 
-  // ── 1. Tabla resumen global por Categoría ───────────────────────
-  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resultado acumulado por Categoría</div>';
+  // ── 1. Tabla resumen acumulado por Categoría (desde 01/03/2026) ──
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Resultado acumulado por Categoría</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;color:rgba(26,22,18,.4);margin-bottom:10px">Datos desde 01/03/2026 · Rent. s/Vta. = resultado / monto venta neto por cab</div>';
   html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
   html += '<thead><tr>'
@@ -4556,10 +4569,10 @@ function renderAnalisis(){
     +'<th style="'+TH+'">Indif. prom</th>'
     +'<th style="'+TH+'">Desvío</th>'
     +'<th style="'+TH+'">Resultado prom</th>'
-    +'<th style="'+TH+'">ROI</th>'
+    +'<th style="'+TH+'">Rent. s/Vta.</th>'
     +'</tr></thead><tbody>';
-  cats.forEach(function(cat){
-    var grupo = filas.filter(function(f){return f.cat===cat;});
+  catsAcum.forEach(function(cat){
+    var grupo = filasAcum.filter(function(f){return f.cat===cat;});
     var avg   = avgGroup(grupo);
     var r     = roi(avg);
     var desv  = avg ? avg.pcInd - avg.pc : null;
@@ -4572,13 +4585,15 @@ function renderAnalisis(){
       +'<td style="'+TD+';text-align:right">'+(avg&&avg.pcInd?'$'+Math.round(avg.pcInd).toLocaleString('es-AR'):'—')+'</td>'
       +'<td style="'+TD+';text-align:right;color:'+desvCol+';font-weight:600">'+(desv!==null?(desv>=0?'+':'')+Math.round(desv).toLocaleString('es-AR')+'$/kg':'—')+'</td>'
       +'<td style="'+TD+';text-align:right">'+fmtRes(avg?avg.res:null)+'</td>'
-      +'<td style="'+TD+';text-align:right">'+fmtPct(r)+'</td>'
+      +'<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+fmtPct(r)+'</td>'
       +'</tr>';
   });
+  if(!catsAcum.length) html += '<tr><td colspan="8" style="'+TD+';color:rgba(26,22,18,.4);text-align:center;padding:20px">Sin compras registradas desde 01/03/2026</td></tr>';
   html += '</tbody></table></div>';
 
-  // ── 2. Tabla resumen global por Proveedor ───────────────────────
-  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resultado acumulado por Proveedor / Origen</div>';
+  // ── 2. Tabla resumen acumulado por Proveedor (desde 01/03/2026) ──
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Resultado acumulado por Proveedor / Origen</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:9px;color:rgba(26,22,18,.4);margin-bottom:10px">Datos desde 01/03/2026 · Rent. s/Vta. = resultado / monto venta neto por cab</div>';
   html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
   html += '<thead><tr>'
@@ -4589,10 +4604,10 @@ function renderAnalisis(){
     +'<th style="'+TH+'">Indif. prom</th>'
     +'<th style="'+TH+'">Desvío</th>'
     +'<th style="'+TH+'">Resultado prom</th>'
-    +'<th style="'+TH+'">ROI</th>'
+    +'<th style="'+TH+'">Rent. s/Vta.</th>'
     +'</tr></thead><tbody>';
-  origs.forEach(function(orig){
-    var grupo = filas.filter(function(f){return f.origen===orig;});
+  origsAcum.forEach(function(orig){
+    var grupo = filasAcum.filter(function(f){return f.origen===orig;});
     var avg   = avgGroup(grupo);
     var r     = roi(avg);
     var desv  = avg ? avg.pcInd - avg.pc : null;
@@ -4605,47 +4620,48 @@ function renderAnalisis(){
       +'<td style="'+TD+';text-align:right">'+(avg&&avg.pcInd?'$'+Math.round(avg.pcInd).toLocaleString('es-AR'):'—')+'</td>'
       +'<td style="'+TD+';text-align:right;color:'+desvCol+';font-weight:600">'+(desv!==null?(desv>=0?'+':'')+Math.round(desv).toLocaleString('es-AR')+'$/kg':'—')+'</td>'
       +'<td style="'+TD+';text-align:right">'+fmtRes(avg?avg.res:null)+'</td>'
-      +'<td style="'+TD+';text-align:right">'+fmtPct(r)+'</td>'
+      +'<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+fmtPct(r)+'</td>'
       +'</tr>';
   });
+  if(!origsAcum.length) html += '<tr><td colspan="8" style="'+TD+';color:rgba(26,22,18,.4);text-align:center;padding:20px">Sin compras registradas desde 01/03/2026</td></tr>';
   html += '</tbody></table></div>';
 
-  // ── 3. Matriz mes × categoría ───────────────────────────────────
-  if(meses.length>1){
-    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">ROI por Mes × Categoría</div>';
+  // ── 3. Matriz mes × categoría (desde 01/03/2026) ────────────────
+  if(mesesAcum.length>1){
+    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Rentabilidad s/Vta. por Mes × Categoría</div>';
     html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
     html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
     html += '<thead><tr><th style="'+TH+';text-align:left">Categoría</th>';
-    meses.forEach(function(m){ html+='<th style="'+TH+'">'+_analMesLabel(m)+'</th>'; });
+    mesesAcum.forEach(function(m){ html+='<th style="'+TH+'">'+_analMesLabel(m)+'</th>'; });
     html += '<th style="'+TH+'">Total</th></tr></thead><tbody>';
-    cats.forEach(function(cat){
+    catsAcum.forEach(function(cat){
       html += '<tr><td style="'+TD+'"><strong>'+cat+'</strong></td>';
-      meses.forEach(function(m){
-        var g = filas.filter(function(f){return f.cat===cat&&f.mes===m;});
+      mesesAcum.forEach(function(m){
+        var g = filasAcum.filter(function(f){return f.cat===cat&&f.mes===m;});
         var avg=avgGroup(g); var r=roi(avg);
         html += '<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+(r!==null?fmtPct(r):'<span style="opacity:.3">—</span>')+'</td>';
       });
-      var avgTot=avgGroup(filas.filter(function(f){return f.cat===cat;})); var rTot=roi(avgTot);
+      var avgTot=avgGroup(filasAcum.filter(function(f){return f.cat===cat;})); var rTot=roi(avgTot);
       html += '<td style="'+TD+';text-align:right;font-weight:700">'+fmtPct(rTot)+'</td>';
       html += '</tr>';
     });
     html += '</tbody></table></div>';
 
-    // ── 4. Matriz mes × proveedor ───────────────────────────────────
-    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">ROI por Mes × Proveedor</div>';
+    // ── 4. Matriz mes × proveedor (desde 01/03/2026) ─────────────────
+    html += '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Rentabilidad s/Vta. por Mes × Proveedor</div>';
     html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
     html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
     html += '<thead><tr><th style="'+TH+';text-align:left">Proveedor</th>';
-    meses.forEach(function(m){ html+='<th style="'+TH+'">'+_analMesLabel(m)+'</th>'; });
+    mesesAcum.forEach(function(m){ html+='<th style="'+TH+'">'+_analMesLabel(m)+'</th>'; });
     html += '<th style="'+TH+'">Total</th></tr></thead><tbody>';
-    origs.forEach(function(orig){
+    origsAcum.forEach(function(orig){
       html += '<tr><td style="'+TD+'"><strong>'+orig+'</strong></td>';
-      meses.forEach(function(m){
-        var g=filas.filter(function(f){return f.origen===orig&&f.mes===m;});
+      mesesAcum.forEach(function(m){
+        var g=filasAcum.filter(function(f){return f.origen===orig&&f.mes===m;});
         var avg=avgGroup(g); var r=roi(avg);
         html += '<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+(r!==null?fmtPct(r):'<span style="opacity:.3">—</span>')+'</td>';
       });
-      var avgTot=avgGroup(filas.filter(function(f){return f.origen===orig;})); var rTot=roi(avgTot);
+      var avgTot=avgGroup(filasAcum.filter(function(f){return f.origen===orig;})); var rTot=roi(avgTot);
       html += '<td style="'+TD+';text-align:right;font-weight:700">'+fmtPct(rTot)+'</td>';
       html += '</tr>';
     });
