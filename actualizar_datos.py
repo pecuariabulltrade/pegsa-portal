@@ -414,6 +414,18 @@ def calcular_kpis(registros, columnas):
     por_cat_final       = agrupar("CATEGORIA_FINAL")  if "CATEGORIA_FINAL" in registros[0] else {}
     por_cat_desglose    = agrupar_cat_desglose()      if "CATEGORIA_FINAL" in registros[0] else {}
 
+    # ── Última fecha de dato real registrada en WinCampo ──────────────────
+    col_frep = "ULTIMA_FECHA_REPARTO" if "ULTIMA_FECHA_REPARTO" in registros[0] else None
+    col_fpes = "FECHA_ULTIMA_PESADA"  if "FECHA_ULTIMA_PESADA"  in registros[0] else None
+    fecha_ultimo_dato = None
+    for r in registros:
+        for col in filter(None, [col_frep, col_fpes]):
+            v = r.get(col)
+            if v:
+                s = str(v)[:10]  # tomar solo YYYY-MM-DD
+                if s > (fecha_ultimo_dato or ''):
+                    fecha_ultimo_dato = s
+
     return {
         "total_cabezas":          int(total_cab),
         "total_kg_estimado_hoy":  round(total_kg_est),
@@ -429,6 +441,7 @@ def calcular_kpis(registros, columnas):
         "por_categoria_final":    por_cat_final,
         "por_establecimiento_categoria": agrupar_est_cat() if "NOMBRE_CORRAL" in registros[0] else {},
         "por_categoria_desglose":        por_cat_desglose,
+        "fecha_ultimo_dato":             fecha_ultimo_dato,
     }
 
 # ═══════════════════════════════════════════════════════════

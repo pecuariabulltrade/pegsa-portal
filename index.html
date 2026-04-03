@@ -2690,6 +2690,8 @@ window.addEventListener('load', function(){
           <div id="mercadoHistFiltros" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
           <canvas id="chartMercadoHistorico" style="max-height:360px"></canvas>
         </div>
+        <!-- Tabla variación porcentual -->
+        <div id="mercadoHistTablaWrap" style="margin-top:20px;overflow-x:auto"></div>
       </div>
     </div>
 
@@ -4330,6 +4332,7 @@ function _histBuildFiltros(){
       _histVisible[field] = !_histVisible[field];
       _histBuildFiltros();
       _histRenderChart();
+      _histRenderTabla();
     };
     box.appendChild(btn);
   });
@@ -4693,6 +4696,88 @@ function renderHistoricoChart(){
   }
   _histBuildFiltros();
   _histRenderChart();
+  _histRenderTabla();
+}
+
+// ── Tabla variación porcentual histórico ──────────────────────────────────────
+function _histRenderTabla(){
+  var wrap = document.getElementById('mercadoHistTablaWrap');
+  if(!wrap) return;
+  var data = MERCADO_DATA_CACHE;
+  if(!data || !data.historico || data.historico.length < 2){ wrap.innerHTML=''; return; }
+
+  // Series visibles
+  var visibles = _histSeries.filter(function(s){ return !!_histVisible[s[0]]; });
+  if(!visibles.length){ wrap.innerHTML=''; return; }
+
+  // Últimas 90 entradas, invertidas (más reciente primero)
+  var hist = data.historico.slice(-90).reverse();
+
+  // Helper: valor de un campo (granos /1000 igual que gráfico)
+  function getVal(row, s){
+    var v = row[s[0]];
+    if((v==null||v===0) && s[0]==='nov_460') v = row['novillo']||null;
+    if((v==null||v===0) && s[0]==='ternero') v = row['ternero']||null;
+    if(v==null||v===0) return null;
+    return s[4] ? v/1000 : v;
+  }
+
+  // Construir HTML
+  var th = '<thead><tr><th style="position:sticky;left:0;background:#f5f2ec;z-index:2;white-space:nowrap;padding:6px 10px;font-family:DM Mono,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid rgba(26,22,18,.15);border-right:1px solid rgba(26,22,18,.08)">Fecha</th>';
+  visibles.forEach(function(s){
+    th += '<th style="padding:6px 10px;font-family:DM Mono,monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:'+s[2]+';white-space:nowrap;border-bottom:2px solid '+s[2]+';text-align:right;min-width:110px">'+s[1]+'</th>';
+  });
+  th += '</tr></thead>';
+
+  var rows = '';
+  for(var i=0;i<hist.length;i++){
+    var row = hist[i];
+    var prev = hist[i+1] || null;
+    var dateStr = row.fecha ? row.fecha.slice(0,7) : '—'; // yyyy-mm → show as mm/yyyy
+    var parts = dateStr.split('-');
+    var label = parts.length===2 ? parts[1]+'/'+parts[0] : dateStr;
+
+    var bgRow = i%2===0 ? 'background:#faf8f4' : 'background:#fff';
+    var tr = '<tr style="'+bgRow+'">';
+    tr += '<td style="position:sticky;left:0;z-index:1;'+(i%2===0?'background:#faf8f4':'background:#fff')+';padding:5px 10px;font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.7);white-space:nowrap;border-right:1px solid rgba(26,22,18,.08)">'+label+'</td>';
+
+    visibles.forEach(function(s){
+      var cur = getVal(row, s);
+      var pre = prev ? getVal(prev, s) : null;
+
+      var priceStr = cur!=null ? '$'+Number(cur).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—';
+      var pctStr = '';
+      var pctColor = 'rgba(26,22,18,.4)';
+      var pctBg = 'transparent';
+
+      if(cur!=null && pre!=null && pre!==0){
+        var pct = ((cur - pre)/pre)*100;
+        var abs = Math.abs(pct);
+        pctStr = (pct>0?'+':'')+pct.toFixed(1)+'%';
+        if(pct>0){
+          pctColor = '#1a6b3c';
+          pctBg = 'rgba(26,107,60,.08)';
+        } else if(pct<0){
+          pctColor = '#b5341a';
+          pctBg = 'rgba(181,52,26,.08)';
+        }
+      }
+
+      tr += '<td style="padding:5px 10px;text-align:right;vertical-align:middle">'
+          + '<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.8)">'+priceStr+'</div>'
+          + (pctStr ? '<div style="font-family:DM Mono,monospace;font-size:9px;color:'+pctColor+';background:'+pctBg+';display:inline-block;padding:1px 5px;border-radius:2px;margin-top:2px">'+pctStr+'</div>' : '<div style="font-size:9px;color:rgba(26,22,18,.25);margin-top:2px">—</div>')
+          + '</td>';
+    });
+    tr += '</tr>';
+    rows += tr;
+  }
+
+  wrap.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:10px;padding-top:4px">Variación mensual de precios ($/kg en pie)</div>'
+    + '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:2px">'
+    + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
+    + th
+    + '<tbody>'+rows+'</tbody>'
+    + '</table></div>';
 }
 
 // ── SIMULADOR FEEDLOT ─────────────────────────────────────────
