@@ -3879,12 +3879,28 @@ def actualizar_mercado_precios(carpeta, repo):
     ter_precio = next((h["precio"] for h in hacienda
                        if "ternero" in h["categoria"].lower()), 0)
 
+    def _hprice(*substrings):
+        """Primer precio de hacienda cuya categoría contiene todos los substrings (case-insensitive)."""
+        for h in hacienda:
+            cat = h.get("categoria", "").lower()
+            if all(s in cat for s in substrings):
+                return h.get("precio", 0) or 0
+        return 0
+
     hoy = {
-        "fecha":    today,
-        "maiz":     precio_maiz,
-        "soja":     precio_soja,
-        "novillo":  nov_precio,
-        "ternero":  ter_precio,
+        "fecha":        today,
+        "nov_390":      _hprice("novillito", "390"),
+        "nov_430":      _hprice("novillito", "430"),
+        "nov_460":      _hprice("460"),
+        "nov_490":      _hprice("490"),
+        "vaq_390":      _hprice("vaquillon"),
+        "vac_buena":    _hprice("buena"),
+        "vac_regular":  _hprice("regular"),
+        "vac_conserva": _hprice("conserva"),
+        "ternero":      ter_precio,
+        "maiz":         precio_maiz,
+        "soja":         precio_soja,
+        "novillo":      nov_precio,
     }
     historico = [h for h in historico if h.get("fecha") != today]
     historico.append(hoy)
