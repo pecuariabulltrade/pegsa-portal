@@ -1562,7 +1562,7 @@ def procesar_consumo(regs, cols, periodo):
 
     hoy       = date.today()
     hace_anio = hoy - timedelta(days=365)
-    hace_7d   = hoy - timedelta(days=7)
+    hace_30d  = hoy - timedelta(days=30)   # ventana amplia para detectar días con registros
 
     # Columnas exactas confirmadas por screenshot
     col_fecha   = "FECHA"      if "FECHA"      in (regs[0] if regs else {}) else next((c for c in cols if c.upper()=="FECHA"), None)
@@ -1579,13 +1579,13 @@ def procesar_consumo(regs, cols, periodo):
             "meta": {"generado": datetime.now().isoformat(), "periodo": periodo,
                      "tabla": "v_PB_ConsumoDetallado", "registros": 0},
             "anual": {"total_kg": 0, "por_insumo": []},
-            "semanal": {"desde": str(hace_7d), "hasta": str(hoy), "total_kg_7d": 0,
-                        "promedio_diario_kg": 0, "por_insumo": []},
+            "semanal": {"desde": str(hoy), "hasta": str(hoy), "total_kg_3d": 0,
+                        "promedio_diario_kg": 0, "promedio_diario_kg_ms": 0, "por_insumo": []},
         }
 
-    # Parsear fechas y filtrar último año
-    regs_anio = []
-    regs_7d   = []
+    # Parsear fechas y filtrar último año + últimos 30 días
+    regs_anio      = []
+    regs_recientes = []   # últimos 30 días (ventana para encontrar los 3 días con datos)
     for r in regs:
         try:
             f = pd.to_datetime(r.get(col_fecha), errors="coerce")
@@ -1593,12 +1593,27 @@ def procesar_consumo(regs, cols, periodo):
             fd = f.date()
             if fd < hace_anio: continue
             regs_anio.append(r)
-            if fd >= hace_7d:
-                regs_7d.append(r)
+            if fd >= hace_30d:
+                regs_recientes.append(r)
         except:
             continue
 
-    log.info(f"  Registros último año: {len(regs_anio):,}  |  Últimos 7 días: {len(regs_7d):,}")
+    # ── Detectar los últimos 3 días únicos con registros ──
+    dias_recientes_set = set()
+    for r in regs_recientes:
+        try:
+            f = pd.to_datetime(r.get(col_fecha), errors="coerce")
+            if f and not pd.isnull(f):
+                dias_recientes_set.add(f.date().strftime("%Y-%m-%d"))
+        except: pass
+    ultimos_3_dias = set(sorted(dias_recientes_set, reverse=True)[:3])
+    regs_3d = [r for r in regs_recientes
+               if not pd.isnull(pd.to_datetime(r.get(col_fecha), errors="coerce"))
+               and pd.to_datetime(r.get(col_fecha), errors="coerce").date().strftime("%Y-%m-%d") in ultimos_3_dias]
+    desde_3d = min(ultimos_3_dias) if ultimos_3_dias else str(hoy)
+    hasta_3d = max(ultimos_3_dias) if ultimos_3_dias else str(hoy)
+
+    log.info(f"  Registros último año: {len(regs_anio):,}  |  Últimos 3 días registrados: {sorted(ultimos_3_dias)}")
 
     # Tabla de materia seca por insumo (nombre exacto → % MS)
     MS_PCT = {
@@ -1636,20 +1651,18 @@ def procesar_consumo(regs, cols, periodo):
     for ins in por_insumo_anual[:5]:
         log.info(f"    {ins['desc']:<30} {ins['kg']:>12,.1f} kg")
 
-    # ── Promedio diario últimos 7 días registrados ──
-    # Contar días únicos con registros (no asumir 7 días con datos)
+    # ── Promedio diario últimos 3 días registrados ──
     semanal_por_ins = {}
     dias_con_datos  = set()
-    total_7d = 0.0
-    for r in regs_7d:
+    total_3d = 0.0
+    for r in regs_3d:
         desc = str(r.get(col_desc) or "Sin descripción").strip() if col_desc else "Sin descripción"
         cod  = str(r.get(col_cod)  or "").strip()               if col_cod  else ""
         kg   = to_num(r.get(col_kg, 0))
-        total_7d += kg
+        total_3d += kg
         if desc not in semanal_por_ins:
             semanal_por_ins[desc] = {"cod": cod, "kg": 0.0, "dias": set()}
         semanal_por_ins[desc]["kg"] += kg
-        # Registrar día único
         try:
             fd = pd.to_datetime(r.get(col_fecha), errors="coerce")
             if fd and not pd.isnull(fd):
@@ -1658,26 +1671,28 @@ def procesar_consumo(regs, cols, periodo):
                 semanal_por_ins[desc]["dias"].add(dia_str)
         except: pass
 
-    # Divisor = días únicos con registros (mínimo 1)
+    # Divisor = días únicos con registros en los últimos 3 (mínimo 1)
     n_dias = max(len(dias_con_datos), 1)
-    log.info(f"  Días únicos con registros en ventana 7d: {n_dias} ({sorted(dias_con_datos)})")
+    log.info(f"  Últimos 3 días con registros: {n_dias} ({sorted(dias_con_datos)})")
 
-    por_insumo_7d = sorted(
+    por_insumo_3d = sorted(
         [{"desc": d, "cod": v["cod"],
-          "kg_7d": round(v["kg"], 1),
+          "kg_3d": round(v["kg"], 1),
           "dias_registrados": len(v["dias"]),
           "promedio_diario":    round(v["kg"] / max(len(v["dias"]), 1), 1),
           "ms_pct":             get_ms(d),
           "promedio_diario_ms": round(v["kg"] / max(len(v["dias"]), 1) * get_ms(d) / 100, 1)
                                 if get_ms(d) is not None else None}
          for d, v in semanal_por_ins.items()],
-        key=lambda x: -x["kg_7d"]
+        key=lambda x: -x["kg_3d"]
     )
-    prom_diario_total    = round(total_7d / n_dias, 1)
+    prom_diario_total    = round(total_3d / n_dias, 1)
     prom_diario_total_ms = round(sum(
-        r["promedio_diario_ms"] for r in por_insumo_7d if r["promedio_diario_ms"] is not None
+        r["promedio_diario_ms"] for r in por_insumo_3d if r["promedio_diario_ms"] is not None
     ), 1)
-    log.info(f"  Total 7d: {total_7d:,.0f} kg  |  Días registrados: {n_dias}  |  Promedio diario: {prom_diario_total:,.1f} kg/día  |  MS: {prom_diario_total_ms:,.1f} kg MS/día")
+    # % MS global = kg MS / kg TC × 100
+    pct_ms_global = round(prom_diario_total_ms / prom_diario_total * 100, 1) if prom_diario_total > 0 else 0.0
+    log.info(f"  Total 3d: {total_3d:,.0f} kg  |  Días: {n_dias}  |  Prom diario TC: {prom_diario_total:,.1f} kg/día  |  MS: {prom_diario_total_ms:,.1f} kg/día  |  %MS: {pct_ms_global:.1f}%")
 
     return {
         "meta": {
@@ -1688,7 +1703,7 @@ def procesar_consumo(regs, cols, periodo):
             "desde_anual": str(hace_anio),
             "hasta":       str(hoy),
             "registros_anio": len(regs_anio),
-            "registros_7d":   len(regs_7d),
+            "registros_3d":   len(regs_3d),
         },
         "anual": {
             "total_kg":    round(total_anual, 1),
@@ -1696,14 +1711,15 @@ def procesar_consumo(regs, cols, periodo):
             "por_insumo":  por_insumo_anual,
         },
         "semanal": {
-            "desde":                 str(hace_7d),
-            "hasta":                 str(hoy),
+            "desde":                 desde_3d,
+            "hasta":                 hasta_3d,
             "dias_registrados":      n_dias,
             "dias_detalle":          sorted(dias_con_datos),
-            "total_kg_7d":           round(total_7d, 1),
+            "total_kg_3d":           round(total_3d, 1),
             "promedio_diario_kg":    prom_diario_total,
             "promedio_diario_kg_ms": prom_diario_total_ms,
-            "por_insumo":            por_insumo_7d,
+            "pct_ms_global":         pct_ms_global,
+            "por_insumo":            por_insumo_3d,
         },
     }
 

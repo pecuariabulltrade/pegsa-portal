@@ -2387,6 +2387,7 @@ window.addEventListener('load', function(){
     <div class="nav-tab"        id="stockTabMovimientos"  onclick="stockTab('movimientos',this)" >&#128200; Movimientos</div>
     <div class="nav-tab"        id="stockTabMuertes"      onclick="stockTab('muertes',this)"     >&#128128; Muertes</div>
     <div class="nav-tab"        id="stockTabProductivo"   onclick="stockTab('productivo',this)"  >&#128200; Productivo</div>
+    <div class="nav-tab"        id="stockTabMateriaSeca"  onclick="stockTab('materiaseca',this)" >&#127807; % MS</div>
   </div>
   <div style="padding:40px 48px">
     <div id="stockLoading" style="text-align:center;padding:80px 0">
@@ -2436,6 +2437,15 @@ window.addEventListener('load', function(){
           <div style="font-family:'DM Mono',monospace;font-size:13px;margin-top:12px;opacity:.5">Cargando parámetros productivos...</div>
         </div>
         <div id="productivoContent" style="display:none"></div>
+      </div>
+
+      <!-- % MATERIA SECA -->
+      <div id="panelMateriaSeca" style="display:none">
+        <div id="materiasecaLoading" style="text-align:center;padding:60px 0">
+          <div style="font-size:28px;animation:spin 1.2s linear infinite;display:inline-block">&#8635;</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;margin-top:12px;opacity:.5">Cargando datos de materia seca...</div>
+        </div>
+        <div id="materiasecaContent" style="display:none"></div>
       </div>
 
       <!-- TESORERÍA -->
@@ -5798,7 +5808,8 @@ window.stockTab = function(name, el) {
   document.getElementById('panelMovimientos').style.display  = name === 'movimientos'  ? 'block' : 'none';
   document.getElementById('panelMuertes').style.display      = name === 'muertes'      ? 'block' : 'none';
   document.getElementById('panelProductivo').style.display   = name === 'productivo'   ? 'block' : 'none';
-  ['stockTabResumen','stockTabPegsa','stockTabGraficos','stockTabMovimientos','stockTabMuertes','stockTabProductivo'].forEach(function(id){
+  document.getElementById('panelMateriaSeca').style.display  = name === 'materiaseca'  ? 'block' : 'none';
+  ['stockTabResumen','stockTabPegsa','stockTabGraficos','stockTabMovimientos','stockTabMuertes','stockTabProductivo','stockTabMateriaSeca'].forEach(function(id){
     var t = document.getElementById(id);
     if (t) t.classList.remove('active');
   });
@@ -5808,6 +5819,7 @@ window.stockTab = function(name, el) {
   if (name === 'movimientos') cargarMovimientos();
   if (name === 'muertes')     cargarMuertes();
   if (name === 'productivo')  cargarProductivo();
+  if (name === 'materiaseca') cargarMateriaSeca();
 };
 
 
@@ -6463,8 +6475,9 @@ function renderConsumo(data) {
   var promDiario   = semanal.promedio_diario_kg    || 0;
   var promDiarioMs = semanal.promedio_diario_kg_ms || 0;
   var insumos      = (anual.por_insumo || []).length;
-  var nDias        = semanal.dias_registrados || 7;
-  var subProm      = 'promedio diario · '+nDias+' día'+(nDias!==1?'s':'')+' con registros · '+semanal.desde+' → '+semanal.hasta;
+  var nDias        = semanal.dias_registrados || 3;
+  var pctMsGlobal  = semanal.pct_ms_global   || (promDiario > 0 ? Math.round(promDiarioMs / promDiario * 1000) / 10 : 0);
+  var subProm      = 'últ. '+nDias+' días registrados · '+semanal.desde+' → '+semanal.hasta;
 
   grid.style.gridTemplateColumns = 'repeat(2,1fr)';
   grid.style.marginBottom = '12px';
@@ -6474,9 +6487,10 @@ function renderConsumo(data) {
   el.appendChild(grid);
   // Fila 2: promedios diarios
   var grid2b = document.createElement('div');
-  grid2b.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px';
+  grid2b.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px';
   grid2b.appendChild(makeCard('Prom. Diario TC', fmtN(promDiario)+' kg/día', subProm, '#1a5276'));
   grid2b.appendChild(makeCard('Prom. Diario MS', fmtN(promDiarioMs)+' kg MS/día', 'materia seca · '+nDias+' días registrados', '#2e6b6b'));
+  grid2b.appendChild(makeCard('% Materia Seca', pctMsGlobal.toFixed(1).replace('.',',')+' %', 'MS ÷ TC · últimos '+nDias+' días registrados', '#5b4fcf'));
   grid2b.appendChild(makeCard('Insumos distintos', insumos, 'tipos de alimento en el año', 'rgba(26,22,18,.85)'));
   el.appendChild(grid2b);
 
@@ -6516,17 +6530,17 @@ function renderConsumo(data) {
   if (porIns7.length) {
     var maxProm = porIns7[0].promedio_diario || 1;
     var sec7 = document.createElement('div'); sec7.style.cssText = 'margin-bottom:36px';
-    var nDias7 = semanal.dias_registrados || 7;
-    sec7.innerHTML = '<div class="section-header"><span class="section-title">Promedio Diario — Últimos '+nDias7+' días registrados</span><span class="section-sub">'+semanal.desde+' → '+semanal.hasta+' · '+fmtN(semanal.total_kg_7d)+' kg totales ÷ '+nDias7+' días</span></div>';
+    var nDias7 = semanal.dias_registrados || 3;
+    sec7.innerHTML = '<div class="section-header"><span class="section-title">Promedio Diario — Últimos '+nDias7+' días registrados</span><span class="section-sub">'+semanal.desde+' → '+semanal.hasta+' · '+fmtN(semanal.total_kg_3d)+' kg totales ÷ '+nDias7+' días</span></div>';
     var tbl7 = document.createElement('table'); tbl7.className = 'data-table';
-    tbl7.innerHTML = '<thead><tr><th>#</th><th>Insumo</th><th class="right">Total 7 días TC</th><th class="right">Prom. kg/día TC</th><th class="right">MS %</th><th class="right">Prom. kg/día MS</th><th style="width:140px">Proporción</th></tr></thead>';
+    tbl7.innerHTML = '<thead><tr><th>#</th><th>Insumo</th><th class="right">Total '+nDias7+' días TC</th><th class="right">Prom. kg/día TC</th><th class="right">MS %</th><th class="right">Prom. kg/día MS</th><th style="width:140px">Proporción</th></tr></thead>';
     var tb7 = document.createElement('tbody');
     porIns7.forEach(function(r, i) {
       var barW = (r.promedio_diario / maxProm * 100).toFixed(1);
       var tr = document.createElement('tr');
       tr.innerHTML = '<td style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:13px;width:32px">'+(i+1)+'</td>'
         +'<td><strong>'+r.desc+'</strong>'+(r.cod ? ' <span style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.35)">#'+r.cod+'</span>' : '')+'</td>'
-        +'<td class="right mono" style="color:rgba(26,22,18,.6)">'+fmtN(r.kg_7d)+' kg</td>'
+        +'<td class="right mono" style="color:rgba(26,22,18,.6)">'+fmtN(r.kg_3d)+' kg</td>'
         +'<td class="right mono" style="font-weight:700;color:#1a5276">'+fmtD(r.promedio_diario,1)+' kg/día</td>'
         +'<td class="right mono" style="color:rgba(26,22,18,.5)">'+(r.ms_pct != null ? r.ms_pct+'%' : '—')+'</td>'
         +'<td class="right mono" style="font-weight:700;color:#2e6b6b">'+(r.promedio_diario_ms != null ? fmtD(r.promedio_diario_ms,1)+' kg/día' : '—')+'</td>'
@@ -6542,7 +6556,7 @@ function renderConsumo(data) {
     // Fila total
     var tf = document.createElement('tr'); tf.className = 'total';
     tf.innerHTML = '<td></td><td><strong>TOTAL</strong></td>'
-      +'<td class="right"><strong>'+fmtN(semanal.total_kg_7d)+' kg</strong></td>'
+      +'<td class="right"><strong>'+fmtN(semanal.total_kg_3d)+' kg</strong></td>'
       +'<td class="right" style="color:#1a5276"><strong>'+fmtD(semanal.promedio_diario_kg,1)+' kg/día</strong></td>'
       +'<td></td>'
       +'<td class="right" style="color:#2e6b6b"><strong>'+fmtD(semanal.promedio_diario_kg_ms,1)+' kg MS/día</strong></td>'
@@ -6632,6 +6646,209 @@ function renderConsumo(data) {
       secUlt.appendChild(tblUlt);
     }
     el.appendChild(secUlt);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  % MATERIA SECA — pestaña dedicada
+// ══════════════════════════════════════════════════════════
+async function cargarMateriaSeca() {
+  var contentEl = document.getElementById('materiasecaContent');
+  var loading   = document.getElementById('materiasecaLoading');
+  // Reutilizar datos ya cargados en Productivo
+  if (_consumoData) {
+    if (loading)   loading.style.display  = 'none';
+    if (contentEl) { contentEl.style.display = 'block'; contentEl.innerHTML = ''; }
+    renderMateriaSeca(_consumoData);
+    return;
+  }
+  if (loading)   loading.style.display  = 'block';
+  if (contentEl) contentEl.style.display = 'none';
+  try {
+    var resp = await fetch(STOCK_SB + '/consumo_' + STOCK_PER + '.json', {});
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    _consumoData = await resp.json();
+    if (loading)   loading.style.display  = 'none';
+    if (contentEl) { contentEl.style.display = 'block'; contentEl.innerHTML = ''; }
+    renderMateriaSeca(_consumoData);
+  } catch(e) {
+    if (loading) loading.innerHTML =
+      '<div style="padding:60px;text-align:center">'
+      + '<div style="font-size:28px">⚠</div>'
+      + '<div style="font-family:\'Playfair Display\',serif;font-size:18px;margin-top:12px">No se encontró consumo_'+STOCK_PER+'.json</div>'
+      + '<div style="font-family:\'DM Mono\',monospace;font-size:13px;color:rgba(26,22,18,.4);margin-top:8px">Ejecutá 2_EJECUTAR_AHORA.bat para generar el archivo</div>'
+      + '</div>';
+  }
+}
+
+function renderMateriaSeca(data) {
+  var el = document.getElementById('materiasecaContent');
+  if (!el || !data) return;
+
+  var anual   = data.anual   || {};
+  var semanal = data.semanal || {};
+
+  function fmtN(n)   { return n != null ? Number(Math.round(n||0)).toLocaleString('es-AR') : '—'; }
+  function fmtD(n,d) { return n != null ? Number(n).toFixed(d!=null?d:1).replace('.',',') : '—'; }
+
+  // ── % MS globales ──
+  var totalTc  = anual.total_kg    || 0;
+  var totalMs  = anual.total_kg_ms || 0;
+  var pctAnual = totalTc > 0 ? (totalMs / totalTc * 100) : 0;
+
+  var promTc   = semanal.promedio_diario_kg    || 0;
+  var promMs   = semanal.promedio_diario_kg_ms || 0;
+  var pctRec   = semanal.pct_ms_global || (promTc > 0 ? promMs / promTc * 100 : 0);
+  var nDias    = semanal.dias_registrados || 3;
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'margin-bottom:32px';
+  hdr.innerHTML =
+    '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l);margin-bottom:6px">ANÁLISIS DE MATERIA SECA</div>'
+   +'<div style="font-family:\'Playfair Display\',serif;font-size:28px;font-weight:700;margin-bottom:6px">% Materia Seca / Tal Cual</div>'
+   +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.4)">'
+   +'MS % = kg Materia Seca ÷ kg Tal Cual × 100 &nbsp;·&nbsp; por insumo y global'
+   +'</div>';
+  el.appendChild(hdr);
+  el.appendChild(document.createElement('hr')).style.cssText = 'border:none;border-top:1px solid rgba(26,22,18,.1);margin:0 0 32px';
+
+  // ── Cards resumen ──
+  function makeCard(label, value, sub, color, bgColor) {
+    var c = document.createElement('div');
+    c.style.cssText = 'padding:20px 24px;border:1px solid rgba(26,22,18,.1);border-radius:2px;background:'+(bgColor||'#fff');
+    c.innerHTML =
+      '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:8px">'+label+'</div>'
+     +'<div style="font-family:\'Playfair Display\',serif;font-size:34px;font-weight:700;color:'+(color||'rgba(26,22,18,.9)')+'">'+value+'</div>'
+     +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.4);margin-top:6px">'+sub+'</div>';
+    return c;
+  }
+  var gridMs = document.createElement('div');
+  gridMs.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:36px';
+  gridMs.appendChild(makeCard(
+    '% MS Últimos '+nDias+' días',
+    fmtD(pctRec,1)+' %',
+    semanal.desde+' → '+semanal.hasta+' · '+fmtN(promMs)+' kgMS ÷ '+fmtN(promTc)+' kgTC por día',
+    '#5b4fcf', 'rgba(91,79,207,.04)'
+  ));
+  gridMs.appendChild(makeCard(
+    '% MS Anual',
+    fmtD(pctAnual,1)+' %',
+    'último año · '+fmtN(totalMs)+' kg MS ÷ '+fmtN(totalTc)+' kg TC total',
+    '#7b3f2a', 'rgba(123,63,42,.04)'
+  ));
+  el.appendChild(gridMs);
+
+  // ── Barra visual de % MS global ──
+  var barSec = document.createElement('div');
+  barSec.style.cssText = 'margin-bottom:36px;padding:20px 24px;border:1px solid rgba(26,22,18,.1);border-radius:2px;background:#fff';
+  var barPct = Math.min(pctRec, 100).toFixed(1);
+  barSec.innerHTML =
+    '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:12px">% MS Global — Últimos '+nDias+' días registrados</div>'
+   +'<div style="display:flex;align-items:center;gap:16px">'
+     +'<div style="flex:1;background:rgba(26,22,18,.07);border-radius:4px;height:20px;overflow:hidden">'
+       +'<div style="background:linear-gradient(90deg,#5b4fcf,#8b7cf7);height:100%;width:'+barPct+'%;border-radius:4px;transition:width .6s ease"></div>'
+     +'</div>'
+     +'<div style="font-family:\'Playfair Display\',serif;font-size:20px;font-weight:700;color:#5b4fcf;min-width:60px;text-align:right">'+fmtD(pctRec,1)+' %</div>'
+   +'</div>'
+   +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.4);margin-top:8px">'
+     +fmtN(promMs)+' kg MS/día &nbsp;÷&nbsp; '+fmtN(promTc)+' kg TC/día'
+   +'</div>';
+  el.appendChild(barSec);
+
+  // ── Tabla por insumo — Reciente (últimos 3 días) ──
+  var porIns3 = semanal.por_insumo || [];
+  if (porIns3.length) {
+    var secRec = document.createElement('div');
+    secRec.style.cssText = 'margin-bottom:36px';
+    secRec.innerHTML = '<div class="section-header"><span class="section-title">% MS por Insumo — Últimos '+nDias+' días</span><span class="section-sub">'+semanal.desde+' → '+semanal.hasta+' · kg MS ÷ kg TC por cada insumo</span></div>';
+    var tblR = document.createElement('table'); tblR.className = 'data-table';
+    tblR.innerHTML = '<thead><tr>'
+      +'<th>#</th><th>Insumo</th>'
+      +'<th class="right">Prom. kg/día TC</th>'
+      +'<th class="right">% MS</th>'
+      +'<th class="right">Prom. kg/día MS</th>'
+      +'<th style="width:180px">MS / TC</th>'
+      +'</tr></thead>';
+    var tbR = document.createElement('tbody');
+    var maxPromTc = porIns3.reduce(function(m,r){ return Math.max(m, r.promedio_diario||0); }, 1);
+    porIns3.forEach(function(r, i) {
+      var msPct  = r.ms_pct != null ? r.ms_pct : null;
+      var barW   = ((r.promedio_diario || 0) / maxPromTc * 100).toFixed(1);
+      // Color del % MS: verde > 80%, naranja 40-80%, rojo < 40% (silo)
+      var msColor = msPct == null ? 'rgba(26,22,18,.4)' : msPct >= 80 ? '#27613d' : msPct >= 40 ? '#b8922a' : '#c0392b';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:13px;width:32px">'+(i+1)+'</td>'
+       +'<td><strong>'+r.desc+'</strong>'+(r.cod ? ' <span style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.35)">#'+r.cod+'</span>' : '')+'</td>'
+       +'<td class="right mono" style="color:#1a5276;font-weight:700">'+fmtD(r.promedio_diario,1)+' kg/día</td>'
+       +'<td class="right mono" style="color:'+msColor+';font-weight:700;font-size:15px">'+(msPct != null ? fmtD(msPct,1)+' %' : '—')+'</td>'
+       +'<td class="right mono" style="color:#2e6b6b;font-weight:700">'+(r.promedio_diario_ms != null ? fmtD(r.promedio_diario_ms,1)+' kg/día' : '—')+'</td>'
+       +'<td style="padding:6px 16px;vertical-align:middle">'
+         +'<div style="display:flex;align-items:center;gap:8px">'
+           +'<div style="flex:1;background:rgba(26,22,18,.07);border-radius:2px;height:12px">'
+             +'<div style="background:linear-gradient(90deg,#5b4fcf,#8b7cf7);height:100%;width:'+barW+'%;border-radius:2px"></div>'
+           +'</div>'
+         +'</div>'
+       +'</td>';
+      tbR.appendChild(tr);
+    });
+    // Fila total
+    var tfR = document.createElement('tr'); tfR.className = 'total';
+    tfR.innerHTML = '<td></td><td><strong>TOTAL</strong></td>'
+      +'<td class="right"><strong>'+fmtD(promTc,1)+' kg/día</strong></td>'
+      +'<td class="right" style="color:#5b4fcf;font-weight:700;font-size:15px"><strong>'+fmtD(pctRec,1)+' %</strong></td>'
+      +'<td class="right" style="color:#2e6b6b"><strong>'+fmtD(promMs,1)+' kg/día</strong></td>'
+      +'<td></td>';
+    tbR.appendChild(tfR);
+    tblR.appendChild(tbR); secRec.appendChild(tblR); el.appendChild(secRec);
+  }
+
+  // ── Tabla por insumo — Anual ──
+  var porInsA = anual.por_insumo || [];
+  if (porInsA.length) {
+    var secA = document.createElement('div');
+    secA.style.cssText = 'margin-bottom:36px';
+    secA.innerHTML = '<div class="section-header"><span class="section-title">% MS por Insumo — Anual</span><span class="section-sub">último año · kg MS ÷ kg TC totales</span></div>';
+    var tblA = document.createElement('table'); tblA.className = 'data-table';
+    tblA.innerHTML = '<thead><tr>'
+      +'<th>#</th><th>Insumo</th>'
+      +'<th class="right">Total kg TC</th>'
+      +'<th class="right">% MS</th>'
+      +'<th class="right">Total kg MS</th>'
+      +'<th style="width:180px">Participación TC</th>'
+      +'</tr></thead>';
+    var tbA = document.createElement('tbody');
+    var maxKgA = (porInsA[0] && porInsA[0].kg) || 1;
+    porInsA.forEach(function(r, i) {
+      var msPct  = r.ms_pct != null ? r.ms_pct : null;
+      var barW   = ((r.kg || 0) / maxKgA * 100).toFixed(1);
+      var msColor = msPct == null ? 'rgba(26,22,18,.4)' : msPct >= 80 ? '#27613d' : msPct >= 40 ? '#b8922a' : '#c0392b';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:13px;width:32px">'+(i+1)+'</td>'
+       +'<td><strong>'+r.desc+'</strong>'+(r.cod ? ' <span style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.35)">#'+r.cod+'</span>' : '')+'</td>'
+       +'<td class="right mono" style="color:#b8922a;font-weight:700">'+fmtN(r.kg)+' kg</td>'
+       +'<td class="right mono" style="color:'+msColor+';font-weight:700;font-size:15px">'+(msPct != null ? fmtD(msPct,1)+' %' : '—')+'</td>'
+       +'<td class="right mono" style="color:#7b3f2a;font-weight:700">'+(r.kg_ms != null ? fmtN(r.kg_ms)+' kg' : '—')+'</td>'
+       +'<td style="padding:6px 16px;vertical-align:middle">'
+         +'<div style="display:flex;align-items:center;gap:8px">'
+           +'<div style="flex:1;background:rgba(26,22,18,.07);border-radius:2px;height:12px">'
+             +'<div style="background:linear-gradient(90deg,#b8922a,#d4a84b);height:100%;width:'+barW+'%;border-radius:2px"></div>'
+           +'</div>'
+         +'</div>'
+       +'</td>';
+      tbA.appendChild(tr);
+    });
+    // Fila total
+    var tfA = document.createElement('tr'); tfA.className = 'total';
+    tfA.innerHTML = '<td></td><td><strong>TOTAL</strong></td>'
+      +'<td class="right"><strong>'+fmtN(totalTc)+' kg</strong></td>'
+      +'<td class="right" style="color:#7b3f2a;font-weight:700;font-size:15px"><strong>'+fmtD(pctAnual,1)+' %</strong></td>'
+      +'<td class="right" style="color:#7b3f2a"><strong>'+fmtN(totalMs)+' kg</strong></td>'
+      +'<td></td>';
+    tbA.appendChild(tfA);
+    tblA.appendChild(tbA); secA.appendChild(tblA); el.appendChild(secA);
   }
 }
 
