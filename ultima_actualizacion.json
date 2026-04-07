@@ -1,5 +1,5 @@
 {
-  "generado": "2026-04-07T15:00:02.546143",
+  "generado": "2026-04-07T18:00:02.764837",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
@@ -10,40 +10,40 @@
     "stock_insumos": {
       "ok": true,
       "registros": 7,
-      "total_kg": 2037979.61
+      "total_kg": 2094778.61
     },
     "movimientos": {
       "ok": true
     },
     "muertes": {
       "ok": true,
-      "total_anio": 296,
-      "total_mes_ant": 26,
-      "tasa_mensual_pct": 1.095
+      "total_anio": 0,
+      "total_mes_ant": 0,
+      "tasa_mensual_pct": 0.0
     },
     "muertes_30d": {
       "ok": true,
-      "total_30d": 26,
-      "tasa_mensual_pct": 0.317
+      "total_30d": 0,
+      "tasa_mensual_pct": 0.0
     },
     "productivo": {
       "ok": true,
-      "adp_promedio": 1.528,
-      "estadia_promedio": 128.1,
-      "cabezas": 15607
+      "adp_promedio": null,
+      "estadia_promedio": null,
+      "cabezas": 0
     },
     "consumo": {
       "ok": true,
-      "total_anual_kg": 41320258.6,
-      "promedio_diario_kg": 100734.6
+      "total_anual_kg": 0,
+      "promedio_diario_kg": 0
     },
     "indicadores": {
       "ok": true,
       "denominador": "El Haras",
-      "pct_peso_vivo": 1.81,
-      "consumo_cab_tc": 13.45,
-      "consumo_cab_ms": 8.46,
-      "conversion": 5.54
+      "pct_peso_vivo": 0.0,
+      "consumo_cab_tc": 0.0,
+      "consumo_cab_ms": 0.0,
+      "conversion": null
     },
     "tesoreria": {
       "ok": true,
@@ -52,9 +52,8 @@
       "saldo_disp": -96155391.71999991
     },
     "historico": {
-      "ok": true,
-      "snapshots": 13,
-      "rango": "2025-04 → 2026-04"
+      "ok": false,
+      "error": "list index out of range"
     },
     "comportamiento_historico": {
       "ok": true,
