@@ -4275,8 +4275,9 @@ function renderNegocios(){
       // Resultado display
       var resTxt = '—';
       var resStyle = 'color:rgba(26,22,18,.3)';
-      if(simRes && simRes.compraNeta > 0){
-        var roi = simRes.resEco / simRes.compraNeta * 100;
+      if(simRes && simRes.ingresoVenta > 0){
+        // Rent. s/Vta. = resultado / ingreso_venta (mismo criterio que Análisis Compra)
+        var roi = simRes.resEco / simRes.ingresoVenta * 100;
         resStyle = 'font-weight:600;color:' + (roi >= 0 ? '#27613d' : '#c0392b');
         resTxt   = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%'
           + '<br><span style="font-weight:400;font-size:12px;opacity:.7">$'
@@ -4442,6 +4443,7 @@ function _analCatToTipo(cat){
   return 'terneros';
 }
 function _analCatPesoE(cat){
+  // ⚠ Debe coincidir con _negCatMap en renderNegocio
   var c = cat.toLowerCase();
   if(c==='ternero'||c==='ternero macho') return 220;
   if(c==='ternera') return 200;
@@ -4453,15 +4455,16 @@ function _analCatPesoE(cat){
   return 400;
 }
 function _analCatPesoS(cat){
+  // ⚠ Debe coincidir con _negCatMap en renderNegocio
   var c = cat.toLowerCase();
-  if(c==='ternero'||c==='ternero macho') return 430;
-  if(c==='ternera') return 380;
-  if(c==='novillito') return 490;
-  if(c==='novillo')   return 490;
+  if(c==='ternero'||c==='ternero macho') return 490;  // era 430
+  if(c==='ternera') return 450;                        // era 380
+  if(c==='novillito') return 500;                      // era 490
+  if(c==='novillo')   return 500;                      // era 490 → igual al mapa de Negocio
   if(c==='vaquillona') return 450;
-  if(c==='vaca'||c==='vaca holando') return 620;
-  if(c==='toro') return 650;
-  return 490;
+  if(c==='vaca'||c==='vaca holando') return 600;       // era 620
+  if(c==='toro') return 600;                           // era 650
+  return 500;
 }
 function _analFechaMes(f){
   // "30/03/26" o "09/03/26" → "2026-03"
@@ -4691,13 +4694,14 @@ function renderAnalisis(){
     +'<th style="'+TH+'">Indif.</th>'
     +'<th style="'+TH+'">Desvío</th>'
     +'<th style="'+TH+'">Resultado</th>'
-    +'<th style="'+TH+'">ROI</th>'
+    +'<th style="'+TH+'">Rent. s/Vta.</th>'
     +'</tr></thead><tbody>';
   var detalle = filas.slice().reverse().slice(0,30);
   detalle.forEach(function(f){
     var desv = (f.pcInd&&f.pc) ? f.pcInd-f.pc : null;
     var desvCol = desv===null?'rgba(26,22,18,.3)':desv>=0?'#27613d':'#c0392b';
-    var r = (f.res!==null&&f.pc) ? f.res/f.pc*100 : null;
+    // Rentabilidad s/Vta. = resultado/cab ÷ ingreso_venta/cab (mismo criterio que tablas acumuladas)
+    var r = (f.res!==null && f.ingV && f.ingV>0) ? f.res/f.ingV*100 : null;
     html += '<tr>'
       +'<td style="'+TD+';white-space:nowrap">'+f.mes+'</td>'
       +'<td style="'+TD+'"><strong>'+f.cat+'</strong></td>'
