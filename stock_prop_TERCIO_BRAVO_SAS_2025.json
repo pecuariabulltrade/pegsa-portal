@@ -9,17 +9,17 @@
     "total_establecimientos": 1,
     "total_propietarios": 1,
     "por_categoria": {
-      "TH": {
-        "cabezas": 259.0,
-        "kg_estimado": 84954,
-        "ton_estimado": 84.95,
-        "kg_promedio": 328.0
-      },
       "TM": {
         "cabezas": 273.0,
         "kg_estimado": 71709,
         "ton_estimado": 71.71,
         "kg_promedio": 262.7
+      },
+      "TH": {
+        "cabezas": 259.0,
+        "kg_estimado": 84954,
+        "ton_estimado": 84.95,
+        "kg_promedio": 328.0
       }
     },
     "por_propietario": {
@@ -39,32 +39,20 @@
       }
     },
     "por_clasificacion": {
-      "Hembra": {
-        "cabezas": 259.0,
-        "kg_estimado": 84954,
-        "ton_estimado": 84.95,
-        "kg_promedio": 328.0
-      },
       "Macho": {
         "cabezas": 273.0,
         "kg_estimado": 71709,
         "ton_estimado": 71.71,
         "kg_promedio": 262.7
+      },
+      "Hembra": {
+        "cabezas": 259.0,
+        "kg_estimado": 84954,
+        "ton_estimado": 84.95,
+        "kg_promedio": 328.0
       }
     },
     "por_categoria_final": {
-      "vaquillona": {
-        "cabezas": 220.0,
-        "kg_estimado": 75454,
-        "ton_estimado": 75.45,
-        "kg_promedio": 343.0
-      },
-      "novillo": {
-        "cabezas": 42.0,
-        "kg_estimado": 14700,
-        "ton_estimado": 14.7,
-        "kg_promedio": 350.0
-      },
       "ternero": {
         "cabezas": 146.0,
         "kg_estimado": 33974,
@@ -82,22 +70,22 @@
         "kg_estimado": 23035,
         "ton_estimado": 23.04,
         "kg_promedio": 271.0
+      },
+      "vaquillona": {
+        "cabezas": 220.0,
+        "kg_estimado": 75454,
+        "ton_estimado": 75.45,
+        "kg_promedio": 343.0
+      },
+      "novillo": {
+        "cabezas": 42.0,
+        "kg_estimado": 14700,
+        "ton_estimado": 14.7,
+        "kg_promedio": 350.0
       }
     },
     "por_establecimiento_categoria": {
       "La Panchita": {
-        "vaquillona": {
-          "cabezas": 220.0,
-          "kg_estimado": 75453.8000000001,
-          "ton_estimado": 75.45,
-          "kg_promedio": 343.0
-        },
-        "novillo": {
-          "cabezas": 42.0,
-          "kg_estimado": 14700.0,
-          "ton_estimado": 14.7,
-          "kg_promedio": 350.0
-        },
         "ternero": {
           "cabezas": 146.0,
           "kg_estimado": 33974.200000000055,
@@ -115,46 +103,22 @@
           "kg_estimado": 23035.0,
           "ton_estimado": 23.04,
           "kg_promedio": 271.0
+        },
+        "vaquillona": {
+          "cabezas": 220.0,
+          "kg_estimado": 75453.8,
+          "ton_estimado": 75.45,
+          "kg_promedio": 343.0
+        },
+        "novillo": {
+          "cabezas": 42.0,
+          "kg_estimado": 14700.0,
+          "ton_estimado": 14.7,
+          "kg_promedio": 350.0
         }
       }
     },
     "por_categoria_desglose": {
-      "vaquillona": {
-        "por_establecimiento": {
-          "La Panchita": {
-            "cabezas": 220.0,
-            "kg_estimado": 75453.8000000001,
-            "ton_estimado": 75.45,
-            "kg_promedio": 343.0
-          }
-        },
-        "por_propietario": {
-          "TERCIO BRAVO SAS": {
-            "cabezas": 220.0,
-            "kg_estimado": 75453.8000000001,
-            "ton_estimado": 75.45,
-            "kg_promedio": 343.0
-          }
-        }
-      },
-      "novillo": {
-        "por_establecimiento": {
-          "La Panchita": {
-            "cabezas": 42.0,
-            "kg_estimado": 14700.0,
-            "ton_estimado": 14.7,
-            "kg_promedio": 350.0
-          }
-        },
-        "por_propietario": {
-          "TERCIO BRAVO SAS": {
-            "cabezas": 42.0,
-            "kg_estimado": 14700.0,
-            "ton_estimado": 14.7,
-            "kg_promedio": 350.0
-          }
-        }
-      },
       "ternero": {
         "por_establecimiento": {
           "La Panchita": {
@@ -206,6 +170,42 @@
             "kg_estimado": 23035.0,
             "ton_estimado": 23.04,
             "kg_promedio": 271.0
+          }
+        }
+      },
+      "vaquillona": {
+        "por_establecimiento": {
+          "La Panchita": {
+            "cabezas": 220.0,
+            "kg_estimado": 75453.8,
+            "ton_estimado": 75.45,
+            "kg_promedio": 343.0
+          }
+        },
+        "por_propietario": {
+          "TERCIO BRAVO SAS": {
+            "cabezas": 220.0,
+            "kg_estimado": 75453.8,
+            "ton_estimado": 75.45,
+            "kg_promedio": 343.0
+          }
+        }
+      },
+      "novillo": {
+        "por_establecimiento": {
+          "La Panchita": {
+            "cabezas": 42.0,
+            "kg_estimado": 14700.0,
+            "ton_estimado": 14.7,
+            "kg_promedio": 350.0
+          }
+        },
+        "por_propietario": {
+          "TERCIO BRAVO SAS": {
+            "cabezas": 42.0,
+            "kg_estimado": 14700.0,
+            "ton_estimado": 14.7,
+            "kg_promedio": 350.0
           }
         }
       }
