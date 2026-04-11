@@ -3183,15 +3183,15 @@ window.addEventListener('load', function(){
 ══════════════════════════════════════════ -->
 <div id="screenHistorico" class="screen" style="display:none">
   <!-- Header -->
-  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+  <div style="background:var(--ink);color:var(--cream);padding:24px 40px 20px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.6);margin-bottom:6px">Evolución histórica · Hasta 30 meses</div>
-        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">HISTÓRICO &amp; EVOLUCIÓN</div>
-        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(212,168,75,.5);margin-top:6px;letter-spacing:.06em">Cabezas · Kilogramos · Insumos · Posición Financiera</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(212,168,75,.55);margin-bottom:5px">Módulo 08 · Evolución histórica</div>
+        <div style="font-family:'Playfair Display',serif;font-size:34px;font-weight:700;line-height:1.1">Histórico &amp; Evolución</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,.35);margin-top:5px;letter-spacing:.04em">Cabezas · Kilogramos · Insumos · Posición financiera</div>
       </div>
-      <div style="text-align:right">
-        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.08em">&#8592; Panel Principal</button>
+      <div>
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:2px;color:rgba(255,255,255,.6);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:.08em;transition:all .15s" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#8592; Panel Principal</button>
       </div>
     </div>
   </div>
@@ -3203,17 +3203,17 @@ window.addEventListener('load', function(){
     <div class="nav-tab"        id="histTabReal"    onclick="histTab('real',this)">🐄 Real Mensual</div>
   </div>
 
-  <div style="padding:32px 48px;background:var(--paper);min-height:calc(100vh - 200px)">
+  <div style="padding:28px 40px;background:var(--paper);min-height:calc(100vh - 180px)">
 
     <!-- ── PANEL DIARIO ── -->
     <div id="panelHistDiario" style="display:block">
 
-      <!-- Selector de período y filtros -->
-      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;margin-bottom:24px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45)">Período</span>
+      <!-- Barra de controles -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:16px 20px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:20px;align-items:center">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.4);white-space:nowrap">Período</span>
           <select id="selDiarioPer" onchange="histDiarioPeriodo(parseInt(this.value))"
-            style="font-family:'DM Mono',monospace;font-size:13px;padding:6px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;color:var(--ink);cursor:pointer;min-width:140px">
+            style="font-family:'DM Mono',monospace;font-size:12px;padding:7px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#faf8f4;color:var(--ink);cursor:pointer;width:100%">
             <option value="30">Últimos 30 días</option>
             <option value="60">Últimos 60 días</option>
             <option value="90">Últimos 90 días</option>
@@ -3221,36 +3221,47 @@ window.addEventListener('load', function(){
             <option value="0">Todo el historial</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45)">Ver por</span>
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:220px">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.4);white-space:nowrap">Desglose</span>
           <select id="selDiarioFil" onchange="histDiarioFiltro(this.value)"
-            style="font-family:'DM Mono',monospace;font-size:13px;padding:6px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;color:var(--ink);cursor:pointer;min-width:170px">
+            style="font-family:'DM Mono',monospace;font-size:12px;padding:7px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#faf8f4;color:var(--ink);cursor:pointer;width:100%">
             <option value="total">Total general</option>
-            <option value="propietario">Propietario / Hotelero</option>
-            <option value="establecimiento">Establecimiento</option>
+            <option value="propietario">Por propietario / Hotelero</option>
+            <option value="establecimiento">Por establecimiento</option>
           </select>
         </div>
+        <div id="histDiarioGenLabel" style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.35);white-space:nowrap"></div>
       </div>
 
       <!-- KPIs rápidos -->
-      <div id="histDiarioKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px"></div>
+      <div id="histDiarioKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
 
-      <!-- Gráfico cabezas diario -->
-      <div class="panel" style="margin-bottom:24px">
-        <div class="section-header">
-          <span class="section-title">Cabezas en Stock — Evolución Diaria</span>
-          <span class="section-sub" id="dSubCab">últimos 30 días · total</span>
+      <!-- Contenedor dinámico (charts o no-data) -->
+      <div id="histDiarioCharts">
+        <!-- Gráfico cabezas diario -->
+        <div class="panel" style="margin-bottom:20px">
+          <div class="section-header">
+            <span class="section-title">Cabezas en Stock — Evolución Diaria</span>
+            <span class="section-sub" id="dSubCab">últimos 30 días · total</span>
+          </div>
+          <div style="position:relative;height:280px"><canvas id="chartDiarioCabezas"></canvas></div>
         </div>
-        <div style="position:relative;height:300px"><canvas id="chartDiarioCabezas"></canvas></div>
+
+        <!-- Gráfico kg diario -->
+        <div class="panel">
+          <div class="section-header">
+            <span class="section-title">Kilogramos Estimados — Evolución Diaria</span>
+            <span class="section-sub" id="dSubKg">últimos 30 días · total</span>
+          </div>
+          <div style="position:relative;height:280px"><canvas id="chartDiarioKg"></canvas></div>
+        </div>
       </div>
 
-      <!-- Gráfico kg diario -->
-      <div class="panel">
-        <div class="section-header">
-          <span class="section-title">Kilogramos Estimados — Evolución Diaria</span>
-          <span class="section-sub" id="dSubKg">últimos 30 días · total</span>
-        </div>
-        <div style="position:relative;height:300px"><canvas id="chartDiarioKg"></canvas></div>
+      <!-- Panel no-data para filtros sin datos acumulados aún -->
+      <div id="histDiarioNoData" style="display:none;background:#fff;border:1px solid var(--border);border-radius:3px;padding:52px 32px;text-align:center">
+        <div style="font-size:36px;margin-bottom:16px;opacity:.35">📊</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:rgba(26,22,18,.55);margin-bottom:8px">Sin datos para este desglose</div>
+        <div id="histDiarioNoDataMsg" style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,22,18,.4);line-height:1.7;max-width:420px;margin:0 auto"></div>
       </div>
     </div>
 
@@ -8702,10 +8713,28 @@ function histDiarioFiltro(tipo){
 }
 
 function _renderHistDiario(dias, filtro){
-  var noData = '<div style="text-align:center;padding:60px 0;font-family:\'DM Mono\',monospace;font-size:13px;color:rgba(26,22,18,.4)">Sin datos diarios aún. Se acumulan automáticamente con cada ejecución del actualizador.</div>';
+  var chartsEl  = document.getElementById('histDiarioCharts');
+  var noDataEl  = document.getElementById('histDiarioNoData');
+  var noDataMsg = document.getElementById('histDiarioNoDataMsg');
+  var kpisEl    = document.getElementById('histDiarioKpis');
+  var genLbl    = document.getElementById('histDiarioGenLabel');
+
+  function showNoData(msg){
+    if(chartsEl)  chartsEl.style.display = 'none';
+    if(noDataEl)  noDataEl.style.display = 'block';
+    if(noDataMsg) noDataMsg.innerHTML = msg;
+    if(kpisEl)    kpisEl.innerHTML = '';
+    _destroyChart('chartDiarioCabezas');
+    _destroyChart('chartDiarioKg');
+  }
+  function showCharts(){
+    if(chartsEl) chartsEl.style.display = 'block';
+    if(noDataEl) noDataEl.style.display = 'none';
+  }
+
   if(!_histDiario || !_histDiario.snapshots || !_histDiario.snapshots.length){
-    document.getElementById('histDiarioKpis').innerHTML='';
-    document.getElementById('chartDiarioCabezas').parentElement.innerHTML=noData;
+    if(kpisEl) kpisEl.innerHTML='';
+    showNoData('Sin datos diarios aún.<br>Se acumulan automáticamente con cada ejecución del actualizador de datos.');
     return;
   }
 
@@ -8715,6 +8744,12 @@ function _renderHistDiario(dias, filtro){
   var labels = snaps.map(function(s){
     var d=s.fecha.split('-'); return d[2]+'/'+d[1]; // DD/MM
   });
+
+  // Mostrar fecha de generación
+  if(genLbl && _histDiario.generado){
+    var gd = new Date(_histDiario.generado);
+    genLbl.textContent = 'Actualizado ' + gd.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + gd.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  }
 
   // KPIs rápidos
   var ultimo = snaps[snaps.length-1];
@@ -8760,10 +8795,23 @@ function _renderHistDiario(dias, filtro){
     }];
   } else {
     var keyMap = {propietario:'por_propietario', establecimiento:'por_establecimiento', categoria:'por_categoria'};
+    var nomFiltroLabel = {propietario:'propietarios / hoteleros', establecimiento:'establecimientos', categoria:'categorías'};
     var key = keyMap[filtro];
     var claveSet = {};
     snaps.forEach(function(s){ Object.keys(s.hacienda[key]||{}).forEach(function(k){ claveSet[k]=1; }); });
     var claves = Object.keys(claveSet);
+
+    // Sin claves → aún no hay datos acumulados para este desglose
+    if(!claves.length){
+      var nomDesglose = nomFiltroLabel[filtro] || filtro;
+      showNoData(
+        'No hay datos desglosados por <strong>'+nomDesglose+'</strong> en el historial guardado aún.<br><br>'
+        + 'Los datos se acumulan día a día con cada ejecución del actualizador. '
+        + 'Ejecutá <code>ACTUALIZAR_PORTAL_AUTO.bat</code> y en la próxima corrida este gráfico se irá poblando.'
+      );
+      return;
+    }
+
     dsCab = claves.map(function(k,i){
       return {
         label: k,
@@ -8781,6 +8829,7 @@ function _renderHistDiario(dias, filtro){
       };
     });
   }
+  showCharts();
 
   // Tick: mostrar solo cada N labels para no saturar eje X
   var maxTicks = 12;

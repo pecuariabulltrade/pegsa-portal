@@ -2170,8 +2170,16 @@ def recalcular_stock_diario_desde_movimientos(
         for p, v in kpis_hoy.get("por_propietario", {}).items()
     }
 
+    # Snapshots de establecimiento (NOMBRE_CORRAL) para hoy
+    est_hoy = {
+        e: {"cabezas": int(v.get("cabezas", 0)),
+            "kg_estimado": int(v.get("kg_estimado", 0))}
+        for e, v in kpis_hoy.get("por_establecimiento", {}).items()
+    }
+
     log.info(f"  Baseline hoy ({hoy}): {total_cab_hoy:,} cab · {total_kg_hoy/1000:,.0f} t")
     log.info(f"  Propietarios baseline: {list(prop_hoy.keys())}")
+    log.info(f"  Establecimientos baseline: {list(est_hoy.keys())}")
 
     # ── 2. Resolución de columnas ─────────────────────────────
     def _fc(cols, *keys):
@@ -2275,6 +2283,24 @@ def recalcular_stock_diario_desde_movimientos(
     _hist_prop[_hoy_str] = prop_hoy
     log.info(f"  por_propietario acumulado: {len(_hist_prop)} fechas con datos")
 
+    # ── 5b. Cargar historial acumulado de por_establecimiento ─────
+    # Misma estrategia que por_propietario: conservar histórico guardado;
+    # hoy se sobreescribe con la vista actual.
+    _hist_est = {}   # {fecha_str: {establecimiento: {cabezas, kg_estimado}}}
+    if _diario_path.exists():
+        try:
+            with open(_diario_path, encoding="utf-8") as _fh2:
+                _old2 = json.load(_fh2)
+            for _s in _old2.get("snapshots", []):
+                _fs3 = _s.get("fecha", "")
+                _pe  = (_s.get("hacienda") or {}).get("por_establecimiento")
+                if _fs3 and _pe:
+                    _hist_est[_fs3] = _pe
+        except Exception:
+            pass
+    _hist_est[_hoy_str] = est_hoy
+    log.info(f"  por_establecimiento acumulado: {len(_hist_est)} fechas con datos")
+
     # ── 6. Running balance hacia atrás desde hoy ──────────────
     snapshots = []
     cab_d = total_cab_hoy
@@ -2292,6 +2318,7 @@ def recalcular_stock_diario_desde_movimientos(
 
         kg_d      = int(cab_d * avg_kg_hoy)
         prop_snap = _hist_prop.get(fs, {})   # datos reales si existen
+        est_snap  = _hist_est.get(fs, {})    # datos reales si existen
 
         snapshots.append({
             "fecha": fs,
@@ -2299,7 +2326,7 @@ def recalcular_stock_diario_desde_movimientos(
                 "total_cabezas":       int(cab_d),
                 "total_kg_estimado":   kg_d,
                 "por_propietario":     prop_snap,
-                "por_establecimiento": {},
+                "por_establecimiento": est_snap,
                 "por_categoria":       {}
             }
         })
