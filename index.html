@@ -6363,6 +6363,100 @@ function renderProductivo(data) {
   secGral.appendChild(grid2);
   el.appendChild(secGral);
 
+  // ── Sección ADP Real 90 días vs Teórico ──
+  var porCat90 = data.por_categoria_90d || {};
+  var cats90   = Object.keys(porCat90);
+  if (cats90.length) {
+    var sec90 = document.createElement('div');
+    sec90.style.cssText = 'margin-bottom:40px';
+    sec90.innerHTML =
+      '<div class="section-header">'
+      +'<span class="section-title">ADP Real — Últimos 90 Días</span>'
+      +'<span class="section-sub">ADP observado vs teórico por categoría · rango controlado ±10%</span>'
+      +'</div>';
+
+    // Cards por categoría (grid responsive)
+    var gridADP = document.createElement('div');
+    gridADP.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-bottom:16px';
+
+    cats90.sort(function(a,b){ return (porCat90[b].cabezas||0)-(porCat90[a].cabezas||0); });
+    cats90.forEach(function(cat) {
+      var d       = porCat90[cat];
+      var obs     = d.adp_promedio;
+      var teo     = d.adp_teorico;
+      var cal     = d.adp_calibrado;
+      var varPct  = d.variacion_pct;
+      var ajust   = d.ajustado;
+      var minR    = d.adp_min_range;
+      var maxR    = d.adp_max_range;
+
+      // Color semáforo
+      var dotColor = '#27613d'; // dentro del rango
+      var dotLabel = 'Dentro del rango';
+      if (ajust) { dotColor = '#b8922a'; dotLabel = 'Ajustado al límite'; }
+
+      // Barra progreso: obs relativo al rango [teo*0.85, teo*1.15]
+      var barMin  = teo ? teo * 0.85 : 0;
+      var barMax  = teo ? teo * 1.15 : 2;
+      var barPct  = obs != null ? Math.min(100, Math.max(0, (obs - barMin) / (barMax - barMin) * 100)) : 50;
+      var midPct  = 50; // posición del valor teórico en la barra
+      var zonePct = 100/3; // ±10% ocupa ~33% del rango visible
+
+      var varStr  = varPct != null ? (varPct >= 0 ? '+' : '') + varPct.toFixed(1) + '%' : '—';
+      var varCol  = varPct == null ? 'rgba(26,22,18,.4)' : (Math.abs(varPct) <= 10 ? '#27613d' : '#b8922a');
+
+      var card = document.createElement('div');
+      card.style.cssText = 'padding:18px 20px;border:1px solid rgba(26,22,18,.1);border-radius:2px;background:#fff';
+      card.innerHTML =
+        // Encabezado categoría + estado
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+        +'<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.5)">'+cat+'</div>'
+        +'<div style="display:flex;align-items:center;gap:5px">'
+        +'<div style="width:7px;height:7px;border-radius:50%;background:'+dotColor+'"></div>'
+        +'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:'+dotColor+'">'+dotLabel+'</div>'
+        +'</div></div>'
+        // Valor principal: ADP observado
+        +'<div style="font-family:\'Playfair Display\',serif;font-size:26px;font-weight:700;color:rgba(26,22,18,.9);line-height:1">'
+        +(obs != null ? fmtD(obs,3) : '—')
+        +'<span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:400;color:rgba(26,22,18,.4);margin-left:4px">kg/día</span>'
+        +'</div>'
+        // Teórico + variación
+        +'<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:5px">'
+        +'Teórico: '+(teo != null ? fmtD(teo,3) : '—')+' kg/día &nbsp;'
+        +'<span style="color:'+varCol+';font-weight:600">'+varStr+'</span>'
+        +'</div>'
+        // Barra de rango
+        +'<div style="margin-top:10px">'
+        +'<div style="position:relative;background:rgba(26,22,18,.06);border-radius:2px;height:5px">'
+        // Zona permitida (verde claro, de 40% a 60% del ancho = ±10% sobre teórico)
+        +'<div style="position:absolute;left:'+((midPct-zonePct/2)).toFixed(1)+'%;width:'+(zonePct).toFixed(1)+'%;height:100%;background:rgba(39,97,61,.18);border-radius:2px"></div>'
+        // Posición observada
+        +(obs != null ? '<div style="position:absolute;left:'+barPct.toFixed(1)+'%;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:'+dotColor+';top:-2px;border:2px solid #fff;box-shadow:0 0 0 1px '+dotColor+'"></div>' : '')
+        +'</div>'
+        +'<div style="display:flex;justify-content:space-between;font-family:\'DM Mono\',monospace;font-size:10px;color:rgba(26,22,18,.3);margin-top:3px">'
+        +'<span>'+(minR != null ? fmtD(minR,3) : '—')+'</span>'
+        +'<span style="color:rgba(26,22,18,.45)">±10% teo.</span>'
+        +'<span>'+(maxR != null ? fmtD(maxR,3) : '—')+'</span>'
+        +'</div>'
+        +'</div>'
+        // Calibrado
+        +(cal != null ? '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:rgba(26,22,18,.35);margin-top:6px;border-top:1px solid rgba(26,22,18,.06);padding-top:6px">ADG usado en historial: <strong style="color:rgba(26,22,18,.6)">'+fmtD(cal,3)+' kg/día</strong></div>' : '')
+        // Sub-nota cabezas
+        +'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:rgba(26,22,18,.3);margin-top:4px">'+fmtN(d.cabezas)+' cabezas analizadas</div>';
+      gridADP.appendChild(card);
+    });
+    sec90.appendChild(gridADP);
+
+    // Nota explicativa
+    var nota = document.createElement('div');
+    nota.style.cssText = 'background:rgba(26,22,18,.03);border:1px solid rgba(26,22,18,.08);border-radius:2px;padding:12px 16px;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.5);line-height:1.7';
+    nota.innerHTML = '📐 <strong style="color:rgba(26,22,18,.65)">Metodología:</strong> ADP observado = promedio ponderado de <em>AdpSinDebaste</em> en egresos por VENTA de los últimos 90 días · '
+      +'Rango controlado: el valor usado en la estimación de masa histórica se clampea a ±10% del ADP teórico de tabla · '
+      +'Si no hay egresos recientes de una categoría, se usa el valor teórico de tabla.';
+    sec90.appendChild(nota);
+    el.appendChild(sec90);
+  }
+
   // ── Tabla por categoría ──
   var cats = Object.keys(porCat);
   if (cats.length) {
