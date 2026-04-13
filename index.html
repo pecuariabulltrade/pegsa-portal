@@ -2828,7 +2828,7 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Parámetros Productivos</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="tn-pe" type="number" value="400" onchange="calcSim('terneros')"></div>
+            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="tn-pe" type="number" value="330" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Peso Salida (kg/cab)</div><input class="sim-input" id="tn-ps" type="number" value="500" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="tn-mort" type="number" step="0.01" value="0" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="tn-decomiso" type="number" step="0.01" value="0" onchange="calcSim('terneros')"></div>
@@ -2907,7 +2907,7 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Parámetros Productivos</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="ta-pe" type="number" value="250" onchange="calcSim('terneras')"></div>
+            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="ta-pe" type="number" value="300" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Peso Salida (kg/cab)</div><input class="sim-input" id="ta-ps" type="number" value="450" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="ta-mort" type="number" step="0.01" value="0" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="ta-decomiso" type="number" step="0.01" value="0" onchange="calcSim('terneras')"></div>
@@ -2982,7 +2982,7 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:16px">
           <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Parámetros Productivos</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="va-pe" type="number" value="450" onchange="calcSim('vacas')"></div>
+            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="va-pe" type="number" value="500" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Peso Salida (kg/cab)</div><input class="sim-input" id="va-ps" type="number" value="600" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="va-mort" type="number" step="0.001" value="0.54" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="va-decomiso" type="number" step="0.01" value="0.66" onchange="calcSim('vacas')"></div>
@@ -4864,7 +4864,7 @@ function fp(n){ return (Number(n||0)*100).toFixed(1)+'%'; }
 // % engorde por categoría (feedlot) → ADP = avg_weight × pct / 100
 // % engorde por categoría: valor usado en hoja de simulación del Excel (tabla rows 37-40)
 // ADP = pesoPromedio × pct / 100
-var SIM_ADP_PCT = {terneros:0.34, terneras:0.38, vacas:0.32, invernada:0.27};
+var SIM_ADP_PCT = {terneros:0.37, terneras:0.38, vacas:0.32, invernada:0.27};
 
 // MS% por ingrediente (materia seca / tal cual): maíz, silo, gluten, núcleo, germen
 var SIM_MS_INGR = [0.88, 0.37, 0.42, 0.975, 0.98];
@@ -4910,7 +4910,7 @@ var SIM_MS_TABLE_GEN = [
 // Tabla MS/Peso Vivo para VACAS
 var SIM_MS_TABLE_VAC = [[0,380,0.0293],[380,9999,0.0273]];
 // Ratio MS/TC (materia seca / tal cual) por categoría
-var SIM_MSTC = {terneros:0.6384, terneras:0.6384, vacas:0.6483, invernada:0.6384};
+var SIM_MSTC = {terneros:0.6384, terneras:0.6472, vacas:0.6483, invernada:0.6384};
 
 function simLookupMS(table, avgW){
   for(var i=0;i<table.length;i++){
