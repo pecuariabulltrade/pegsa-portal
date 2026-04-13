@@ -2832,7 +2832,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Peso Salida (kg/cab)</div><input class="sim-input" id="tn-ps" type="number" value="500" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="tn-mort" type="number" step="0.01" value="0" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="tn-decomiso" type="number" step="0.01" value="0" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día)</div><input class="sim-input sim-calc" id="tn-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día) <span id="tn-subcat" style="font-style:italic;font-weight:400;font-size:0.82em;opacity:0.75"></span></div><input class="sim-input sim-calc" id="tn-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Consumo TC auto (% PV)</div><input class="sim-input sim-calc" id="tn-consumo" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
         </div>
@@ -2911,7 +2911,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Peso Salida (kg/cab)</div><input class="sim-input" id="ta-ps" type="number" value="450" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="ta-mort" type="number" step="0.01" value="0" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="ta-decomiso" type="number" step="0.01" value="0" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día)</div><input class="sim-input sim-calc" id="ta-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día) <span id="ta-subcat" style="font-style:italic;font-weight:400;font-size:0.82em;opacity:0.75"></span></div><input class="sim-input sim-calc" id="ta-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Consumo TC auto (% PV)</div><input class="sim-input sim-calc" id="ta-consumo" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
         </div>
@@ -3837,7 +3837,7 @@ function _segSimCat(tipo, pesoE, pesoS, pc, ins, bp){
   var mort    = gv('mort')/100;
 
   var pesoPromedio = (pesoE + pesoS) / 2;
-  var aumento = pesoPromedio * SIM_ADP_PCT[tipo] / 100;
+  var aumento = pesoPromedio * _simAdpPct(tipo, pesoE) / 100;
   if(!aumento) return null;
   var dias        = (pesoS - pesoE) / aumento;
   var kgsProducidos = pesoS - pesoE;
@@ -4861,10 +4861,33 @@ function f2(n){ return Number(n||0).toLocaleString('es-AR',{minimumFractionDigit
 function fp(n){ return (Number(n||0)*100).toFixed(1)+'%'; }
 
 // ── Tablas de lookup (desde hoja 'tabla' del Excel) ──────────────────
-// % engorde por categoría (feedlot) → ADP = avg_weight × pct / 100
-// % engorde por categoría: valor usado en hoja de simulación del Excel (tabla rows 37-40)
-// ADP = pesoPromedio × pct / 100
-var SIM_ADP_PCT = {terneros:0.37, terneras:0.38, vacas:0.32, invernada:0.27};
+// "Tabla de nico Engordes": % engorde según tipo y peso de ENTRADA
+// ADP (kg/día) = pesoPromedio × _simAdpPct(tipo, pesoE) / 100
+// Machos (terneros): ternero <250kg → 39% | novillito 250-350 → 37% | novillo ≥350 → 34%
+// Hembras (terneras): 38% en todo el rango (ternera y vaquillona coinciden)
+// Vacas: 32%   Invernada: 27%
+function _simAdpPct(tipo, pesoE){
+  if(tipo === 'terneros'){
+    if(pesoE <  250) return 0.39;   // ternero
+    if(pesoE <  350) return 0.37;   // novillito
+    return 0.34;                     // novillo ≥ 350 kg
+  }
+  if(tipo === 'terneras') return 0.38;  // ternera / vaquillona
+  if(tipo === 'vacas')    return 0.32;
+  return 0.27; // invernada (manual)
+}
+// Tabla de referencia (para mostrar sub-categoría en UI)
+function _simSubcat(tipo, pesoE){
+  if(tipo === 'terneros'){
+    if(pesoE <  250) return 'Ternero';
+    if(pesoE <  350) return 'Novillito';
+    return 'Novillo';
+  }
+  if(tipo === 'terneras'){
+    return pesoE < 250 ? 'Ternera' : 'Vaquillona';
+  }
+  return '';
+}
 
 // MS% por ingrediente (materia seca / tal cual): maíz, silo, gluten, núcleo, germen
 var SIM_MS_INGR = [0.88, 0.37, 0.42, 0.975, 0.98];
@@ -4981,7 +5004,7 @@ function calcSim(tipo){
     aumento    = G('ad');
     consumoPct = G('consumo')/100;
   } else {
-    aumento = pesoPromedio * SIM_ADP_PCT[tipo] / 100;
+    aumento = pesoPromedio * _simAdpPct(tipo, pesoE) / 100;
     // consumoPct se calculará por etapas; esto es solo fallback
     var msTable = tipo==='vacas' ? SIM_MS_TABLE_VAC : SIM_MS_TABLE_GEN;
     var msPct   = simLookupMS(msTable, pesoPromedio);
@@ -5049,6 +5072,8 @@ function calcSim(tipo){
     if(tcEl2) tcEl2.value=(consumoDiario/pesoPromedio*100).toFixed(3);
     var adEl2=document.getElementById(pfx+'-ad');
     if(adEl2) adEl2.value=aumento.toFixed(3);
+    var subcatEl=document.getElementById(pfx+'-subcat');
+    if(subcatEl){ var sc=_simSubcat(tipo,pesoE); subcatEl.textContent=sc?'· '+sc:''; }
     // ── Actualizar cuadro de dieta ─────────────────────────────────────────────
     var ingrs=['maiz','silo','gluten','nucleo','germen'];
     // Sumas por columna y ponderados
@@ -5168,7 +5193,8 @@ function calcSim(tipo){
   html += '<tr><td colspan="2" class="sim-section">Productivo</td></tr>';
   html += '<tr><td>Días en engorde</td><td><b>'+Math.round(dias)+'</b> días · '+ciclos.toFixed(2)+' ciclos/año</td></tr>';
   html += '<tr><td>Kgs a producir / cab</td><td>'+f2(kgsProducidos)+' kg</td></tr>';
-  html += '<tr><td>ADP (Aumento Diario de Peso)</td><td>'+aumento.toFixed(3)+' kg/día</td></tr>';
+  var subcatLabel = _simSubcat(tipo, pesoE);
+  html += '<tr><td>ADP (Aumento Diario de Peso)</td><td>'+aumento.toFixed(3)+' kg/día'+(subcatLabel?' <span style="color:rgba(26,22,18,.45);font-size:0.88em">· '+subcatLabel+'</span>':'')+'</td></tr>';
   html += '<tr><td>Consumo diario TC</td><td>'+consumoDiario.toFixed(1)+' kg/día · total '+f2(consumoDiario*dias)+' kgTC/cab</td></tr>';
 
   html += '<tr><td colspan="2" class="sim-section">Costos de Producción</td></tr>';
