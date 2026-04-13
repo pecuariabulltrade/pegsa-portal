@@ -4515,20 +4515,23 @@ function renderAnalisis(){
     var pesoE   = c.kg_cab > 0 ? c.kg_cab : _analCatPesoE(catNorm);
     var pesoS   = _analCatPesoS(catNorm);
     var mes     = _analFechaMes(c.fecha);
-    if(!c.precio_kg || !ins.maiz) { filas.push({cat:catNorm,origen:c.origen||'Sin datos',mes:mes,cab:c.cabezas||1,res:null,pcInd:null,pc:c.precio_kg}); return; }
+    if(!c.precio_kg || !ins.maiz) { filas.push({cat:catNorm,origen:c.origen||'Sin datos',mes:mes,cab:c.cabezas||1,res:null,pcInd:null,pc:c.precio_kg,pesoE:pesoE,pesoS:pesoS,pesoEreal:c.kg_cab>0}); return; }
     var bpTipo  = bp[tipo] || null;
     var sim     = _segSimCat(tipo, pesoE, pesoS, c.precio_kg, ins, bpTipo);
     filas.push({
-      cat:    catNorm,
-      origen: (c.origen||'Sin datos').trim(),
-      mes:    mes,
-      cab:    c.cabezas||1,
-      pc:     c.precio_kg,
-      res:    sim ? sim.resEco      : null,
-      pcInd:  sim ? sim.pcInd       : null,
-      pv:     sim ? sim.pv          : null,
-      dias:   sim ? sim.dias        : null,
-      ingV:   sim ? sim.ingresoVenta: null,
+      cat:      catNorm,
+      origen:   (c.origen||'Sin datos').trim(),
+      mes:      mes,
+      cab:      c.cabezas||1,
+      pc:       c.precio_kg,
+      pesoE:    pesoE,
+      pesoS:    pesoS,
+      pesoEreal: c.kg_cab > 0,
+      res:      sim ? sim.resEco      : null,
+      pcInd:    sim ? sim.pcInd       : null,
+      pv:       sim ? sim.pv          : null,
+      dias:     sim ? sim.dias        : null,
+      ingV:     sim ? sim.ingresoVenta: null,
     });
   });
 
@@ -4702,6 +4705,7 @@ function renderAnalisis(){
     +'<th style="'+TH+';text-align:left">Proveedor</th>'
     +'<th style="'+TH+'">Cab.</th>'
     +'<th style="'+TH+'">$/kg</th>'
+    +'<th style="'+TH+'">kg/cab</th>'
     +'<th style="'+TH+'">Indif.</th>'
     +'<th style="'+TH+'">Desvío</th>'
     +'<th style="'+TH+'">Resultado</th>'
@@ -4711,14 +4715,20 @@ function renderAnalisis(){
   detalle.forEach(function(f){
     var desv = (f.pcInd&&f.pc) ? f.pcInd-f.pc : null;
     var desvCol = desv===null?'rgba(26,22,18,.3)':desv>=0?'#27613d':'#c0392b';
-    // Rentabilidad s/Vta. = resultado/cab ÷ ingreso_venta/cab (mismo criterio que tablas acumuladas)
     var r = (f.res!==null && f.ingV && f.ingV>0) ? f.res/f.ingV*100 : null;
+    // kg/cab: entrada real o estimada → salida estimada
+    var kgCell = f.pesoE
+      ? (f.pesoEreal
+          ? '<span style="font-weight:600">'+f.pesoE+'</span><span style="color:rgba(26,22,18,.35);font-size:11px"> →'+f.pesoS+'</span>'
+          : '<span style="color:rgba(26,22,18,.45)" title="Peso estimado por categoría">'+f.pesoE+'*</span><span style="color:rgba(26,22,18,.25);font-size:11px"> →'+f.pesoS+'</span>')
+      : '—';
     html += '<tr>'
       +'<td style="'+TD+';white-space:nowrap">'+f.mes+'</td>'
       +'<td style="'+TD+'"><strong>'+f.cat+'</strong></td>'
       +'<td style="'+TD+'">'+f.origen+'</td>'
       +'<td style="'+TD+';text-align:right">'+Number(f.cab).toLocaleString('es-AR')+'</td>'
       +'<td style="'+TD+';text-align:right">$'+Math.round(f.pc||0).toLocaleString('es-AR')+'</td>'
+      +'<td style="'+TD+';text-align:right;font-family:DM Mono,monospace;font-size:12px">'+kgCell+'</td>'
       +'<td style="'+TD+';text-align:right">'+(f.pcInd?'$'+Math.round(f.pcInd).toLocaleString('es-AR'):'—')+'</td>'
       +'<td style="'+TD+';text-align:right;color:'+desvCol+';font-weight:600">'+(desv!==null?(desv>=0?'+':'')+Math.round(desv).toLocaleString('es-AR')+'$/kg':'—')+'</td>'
       +'<td style="'+TD+';text-align:right">'+fmtRes(f.res)+'</td>'
