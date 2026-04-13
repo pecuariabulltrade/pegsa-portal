@@ -3839,6 +3839,7 @@ function _segSimCat(tipo, pesoE, pesoS, pc, ins, bp){
   var pesoPromedio = (pesoE + pesoS) / 2;
   var aumento = pesoPromedio * _simAdpPct(tipo, pesoE) / 100;
   if(!aumento) return null;
+  if(pesoE >= pesoS) return null;
   var dias        = (pesoS - pesoE) / aumento;
   var kgsProducidos = pesoS - pesoE;
 
@@ -4450,6 +4451,7 @@ function _analCatToTipo(cat){
   if(c==='ternera')   return 'terneras';
   if(c==='vaca'||c==='vaca holando') return 'vacas';
   if(c==='vaquillona') return 'terneras';
+  if(c==='toro') return 'vacas';
   // novillos/novillitos → terneros (categoría más cercana)
   return 'terneros';
 }
@@ -5022,6 +5024,7 @@ function calcSim(tipo){
   }
 
   if(!aumento) return;
+  if(pesoE >= pesoS) return;
 
   var dias = (pesoS - pesoE) / aumento;
   var kgsProducidos = pesoS - pesoE;
