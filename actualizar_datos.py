@@ -82,15 +82,22 @@ CLASIFICACION_MAP = {
 }
 
 # Tabla 1: engorde diario en kg/dia segun clasificacion y peso de ingreso
+# Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx" — muestra anual real
+#   Hembra  0-250  → ternero hembra: ADP obs=1.18  (era 1.21, -2.5%)
+#   Hembra 250+    → vaquillona:      ADP obs=1.38  (era 1.31, +5.3%)
+#   Macho   0-250  → ternero macho:   ADP obs=1.26  (era 1.23, +2.4%)
+#   Macho  250-350 → novillito:       ADP obs=1.43  (era 1.35, +5.9%)
+#   Macho  350-550 → novillo pesado:  ADP obs=1.59  (era 1.57, +1.3% — sin cambio)
+#   Vaca    0-650  → vacas engorde:   ADP obs=1.62  (era 1.72, -5.8%)
 ENGORDE_DIARIO = [
-    ("Hembra", 0,    250,  1.21),
-    ("Hembra", 250,  1000, 1.31),
-    ("Macho",  0,    250,  1.23),
-    ("Macho",  250,  350,  1.35),
+    ("Hembra", 0,    250,  1.18),
+    ("Hembra", 250,  1000, 1.38),
+    ("Macho",  0,    250,  1.26),
+    ("Macho",  250,  350,  1.43),
     ("Macho",  350,  550,  1.57),
     ("Macho",  550,  1000, 1.10),
     ("Toro",   0,    1000, 1.60),
-    ("Vaca",   0,    650,  1.72),
+    ("Vaca",   0,    650,  1.62),
     ("Vaca",   650,  1000, 1.00),
 ]
 
@@ -1406,16 +1413,27 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     """
     Parámetros productivos desde v_PB_Egresos.
     Métricas: AdpSinDebaste (engorde diario) y Estadia (días en feedlot).
-    Filtra MotivoSalida = VENTA.
-    - Ventana larga (365 días): general, por_categoria, por_mes
-    - Ventana corta (90 días):  por_categoria_90d + adp_teorico por clasificacion
+    Filtra MotivoSalida = VENTA. Últimos 365 días por FechaSalida.
     """
     from datetime import date, timedelta
     import pandas as pd
 
     hoy        = date.today()
     hace_anio  = hoy - timedelta(days=365)
-    hace_90    = hoy - timedelta(days=90)
+    hace_90d   = hoy - timedelta(days=90)
+
+    # ADP teórico por categoría — valores reales observados (muestra anual)
+    # Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx"
+    #   N=13869 cabezas · promedio feedlot entero: 1.51 kg/día
+    _ADP_TEO = {
+        'TERNERO':    1.26,   # ternero macho,  N=621,  pesoE_prom=169, días_prom=231
+        'TERNERA':    1.18,   # ternero hembra, N=255,  pesoE_prom=176, días_prom=204
+        'NOVILLITO':  1.43,   # novillito,      N=3387, pesoE_prom=277, días_prom=146
+        'NOVILLO':    1.59,   # novillo pesado, N=997,  pesoE_prom=429, días_prom=96
+        'VAQUILLONA': 1.38,   # vaquillona,     N=2267, pesoE_prom=268, días_prom=135
+        'VACA':       1.62,   # vacas engorde,  N=8209, pesoE_prom=440, días_prom=95
+        'TORO':       1.60,   # toro (sin datos propios, referencia anterior)
+    }
 
     # Detectar columnas
     def fc(nombres):
@@ -1436,9 +1454,8 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     log.info(f"  Productivo | fecha={col_fecha} motivo={col_motivo} adp={col_adp} estadia={col_estadia} cat={col_cat} cab={col_cab} rfid={col_rfid}")
     log.info(f"  Todas las columnas de v_PB_Egresos: {cols_egr}")
 
-    # Filtrar con todos los criterios de calidad (ventana: último año)
-    regs     = []   # últimos 365 días
-    regs_90d = []   # últimos 90 días (subconjunto de regs)
+    # Filtrar con todos los criterios de calidad
+    regs = []
     excl = {"motivo": 0, "rfid": 0, "estadia": 0, "adp": 0, "fecha": 0}
     for r in regs_egr:
         # 1) Filtro fecha (último año)
@@ -1466,11 +1483,13 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         adp = to_num(r.get(col_adp)) if col_adp else None
         if adp is None or not (0 < adp <= 5): excl["adp"] += 1; continue
 
-        regs.append(r)
+        # Marcar si cae en los últimos 90 días
+        r = dict(r)
         try:
-            if f.date() >= hace_90:
-                regs_90d.append(r)
-        except: pass
+            r['_en_90d'] = (f.date() >= hace_90d)
+        except:
+            r['_en_90d'] = False
+        regs.append(r)
 
     log.info(f"  Registros totales: {len(regs_egr):,}")
     log.info(f"  Excluidos por fecha:   {excl['fecha']:,}")
@@ -1539,48 +1558,38 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             if mes != "Sin fecha":
                 por_mes[mes] = calc_stats(mes_regs[mes])
 
-    # ── Por categoría — últimos 90 días ───────────────────────────────────
-    # Incluye: adp observado + adp teórico de la tabla ENGORDE_DIARIO + rango ±10%
-    CLAMP_PCT = 0.10  # margen de variación permitido sobre el teórico
+    # Por categoría — últimos 90 días con comparación vs ADP teórico
+    regs_90d    = [r for r in regs if r.get('_en_90d')]
     por_cat_90d = {}
-    gral_90d    = calc_stats(regs_90d) if regs_90d else {}
-
     if col_cat and regs_90d:
-        cat_regs_90d = {}
+        cat_regs_90 = {}
         for r in regs_90d:
-            cat = str(r.get(col_cat) or "Sin datos").strip()
-            cat_regs_90d.setdefault(cat, []).append(r)
-        for cat, rows in sorted(cat_regs_90d.items()):
-            stats = calc_stats(rows)
-            # Buscar ADP teórico para esta categoría (usando clasificación)
-            clas    = get_clasificacion(cat)   # "Macho" / "Hembra" / "Vaca" / "Toro"
-            # Peso de ingreso promedio aproximado: 250 kg (sin dato de KG_INGRESO en egresos)
-            adp_teo = get_engorde(clas, 250)
-            adp_obs = stats.get("adp_promedio")
-            # Rango controlado: ±CLAMP_PCT sobre el teórico
-            adp_min_range = round(adp_teo * (1 - CLAMP_PCT), 3)
-            adp_max_range = round(adp_teo * (1 + CLAMP_PCT), 3)
-            # ADG calibrado (clamped)
-            if adp_obs is not None and adp_teo > 0:
-                adp_cal = round(max(adp_min_range, min(adp_max_range, adp_obs)), 3)
-                variacion_pct = round((adp_obs - adp_teo) / adp_teo * 100, 1)
-                ajustado = adp_obs < adp_min_range or adp_obs > adp_max_range
+            cat = str(r.get(col_cat) or "Sin datos").strip().upper()
+            cat_regs_90.setdefault(cat, []).append(r)
+        for cat, rows in sorted(cat_regs_90.items()):
+            st = calc_stats(rows)
+            obs = st.get('adp_promedio')
+            teo = _ADP_TEO.get(cat)
+            # Variación % entre observado y teórico
+            var_pct = round((obs - teo) / teo * 100, 2) if (obs is not None and teo) else None
+            # Calibrado: clampear obs a ±10% del teórico
+            if obs is not None and teo:
+                lo, hi = teo * 0.90, teo * 1.10
+                cal     = round(max(lo, min(hi, obs)), 4)
+                ajust   = (obs < lo or obs > hi)
             else:
-                adp_cal        = None
-                variacion_pct  = None
-                ajustado       = False
-            stats.update({
-                "adp_teorico":    round(adp_teo, 3) if adp_teo else None,
-                "adp_calibrado":  adp_cal,
-                "adp_min_range":  adp_min_range,
-                "adp_max_range":  adp_max_range,
-                "variacion_pct":  variacion_pct,
-                "ajustado":       ajustado,
-                "clasificacion":  clas,
-            })
-            por_cat_90d[cat] = stats
-
-    log.info(f"  ADP 90d: {len(regs_90d)} registros · {len(por_cat_90d)} categorías")
+                cal   = obs
+                ajust = False
+            por_cat_90d[cat] = {
+                **st,
+                "adp_teorico":   round(teo, 4) if teo else None,
+                "adp_calibrado": cal,
+                "variacion_pct": var_pct,
+                "ajustado":      ajust,
+                "adp_min_range": round(teo * 0.90, 4) if teo else None,
+                "adp_max_range": round(teo * 1.10, 4) if teo else None,
+            }
+    log.info(f"  por_categoria_90d: {len(por_cat_90d)} categorías ({len(regs_90d)} registros en 90d)")
 
     return {
         "meta": {
@@ -1588,19 +1597,15 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             "periodo":             periodo,
             "tabla":               "v_PB_Egresos",
             "ventana":             "365 días",
-            "ventana_corta":       "90 días",
             "filtros":             "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
             "registros_totales":   len(regs_egr),
             "registros_filtrados": len(regs),
-            "registros_90d":       len(regs_90d),
             "excluidos":           excl,
             "col_adp":             col_adp,
             "col_estadia":         col_estadia,
             "col_rfid":            col_rfid,
-            "clamp_pct":           CLAMP_PCT,
         },
         "general":          general,
-        "general_90d":      gral_90d,
         "por_categoria":    por_cat,
         "por_categoria_90d": por_cat_90d,
         "por_mes":          por_mes,
@@ -2226,99 +2231,8 @@ def recalcular_stock_diario_desde_movimientos(
         for p, v in kpis_hoy.get("por_propietario", {}).items()
     }
 
-    # Snapshots de establecimiento (NOMBRE_CORRAL) para hoy
-    est_hoy = {
-        e: {"cabezas": int(v.get("cabezas", 0)),
-            "kg_estimado": int(v.get("kg_estimado", 0))}
-        for e, v in kpis_hoy.get("por_establecimiento", {}).items()
-    }
-
     log.info(f"  Baseline hoy ({hoy}): {total_cab_hoy:,} cab · {total_kg_hoy/1000:,.0f} t")
     log.info(f"  Propietarios baseline: {list(prop_hoy.keys())}")
-    log.info(f"  Establecimientos baseline: {list(est_hoy.keys())}")
-
-    # ── 1b. Fleet ADG calibrado desde egresos reales (últimos 90 días) ──────
-    # Estrategia:
-    #   a) ADG teórico fleet: promedio ponderado de ENGORDE_DIARIO_KG del stock actual
-    #   b) ADG observado: promedio ponderado de AdpSinDebaste de egresos VENTA (90d)
-    #      agrupado por clasificacion (Macho/Hembra/Vaca/Toro)
-    #   c) Por clasificacion: clamp el observado a ±10% del teórico
-    #   d) Fleet ADG = promedio ponderado por composicion del stock actual
-    CLAMP_PCT_ADG = 0.10
-
-    # a) Teórico por clasificacion desde stock actual
-    _col_edkg = _fc(cols_stock, "ENGORDE_DIARIO_KG", "engorde_diario_kg")
-    _col_cls  = _fc(cols_stock, "CLASIFICACION",     "clasificacion")
-    _col_cabs = _fc(cols_stock, "CANTIDAD",          "cabezas")
-    clas_adg_teo = {}   # {clasificacion: weighted_sum}
-    clas_adg_cab = {}   # {clasificacion: total_cab}
-    if _col_edkg and _col_cls and _col_cabs:
-        for r in (regs_stock or []):
-            clas = str(r.get(_col_cls) or "").strip()
-            cab  = float(r.get(_col_cabs) or 0)
-            edkg = float(r.get(_col_edkg) or 0)
-            if clas and cab > 0:
-                clas_adg_teo[clas] = clas_adg_teo.get(clas, 0) + edkg * cab
-                clas_adg_cab[clas] = clas_adg_cab.get(clas, 0) + cab
-    for clas in list(clas_adg_teo.keys()):
-        if clas_adg_cab.get(clas, 0) > 0:
-            clas_adg_teo[clas] = clas_adg_teo[clas] / clas_adg_cab[clas]
-    # Fallback fleet teórico (promedio global)
-    _adg_teo_total = sum(
-        clas_adg_teo.get(c, 0) * clas_adg_cab.get(c, 0)
-        for c in clas_adg_teo
-    )
-    _adg_teo_fleet = _adg_teo_total / max(sum(clas_adg_cab.values()), 1)
-    log.info(f"  ADG teórico fleet (stock): {_adg_teo_fleet:.3f} kg/día · claves: {list(clas_adg_teo.keys())}")
-
-    # b) Observado desde egresos (últimos 90 días, solo VENTA, ADP 0-5)
-    _hace_90     = hoy - _td(days=90)
-    _col_fe      = _fc(cols_egr, "FechaSalida","fechasalida","fecha_salida","fecha")
-    _col_mot     = _fc(cols_egr, "MotivoSalida","motivosalida","motivo_salida","motivo")
-    _col_adp_e   = _fc(cols_egr, "AdpSinDebaste","adpsindebaste","adp_sin_debaste","adp")
-    _col_cat_e   = _fc(cols_egr, "Categoria","categoria","category","cat")
-    _col_cab_e   = _fc(cols_egr, "Cantidad","cantidad","cabezas")
-    _col_est_e   = _fc(cols_egr, "Estadia","estadia","estadía","dias_estadia")
-    obs_adg_sum  = {}   # {clasificacion: weighted_adp_sum}
-    obs_adg_cab  = {}   # {clasificacion: total_cab}
-    import pandas as _pd
-    for r in (regs_egr or []):
-        try:
-            f = _pd.to_datetime(r.get(_col_fe), errors="coerce") if _col_fe else None
-            if f is None or _pd.isnull(f) or f.date() < _hace_90: continue
-        except: continue
-        if _col_mot:
-            mot = str(r.get(_col_mot) or "").strip().upper()
-            if "VENTA" not in mot: continue
-        if _col_est_e:
-            est = to_num(r.get(_col_est_e))
-            if est is None or not (30 < est < 365): continue
-        adp = to_num(r.get(_col_adp_e)) if _col_adp_e else None
-        if adp is None or not (0 < adp <= 5): continue
-        cat_raw = str(r.get(_col_cat_e) or "").strip() if _col_cat_e else ""
-        clas    = get_clasificacion(cat_raw) if cat_raw else "Sin clasificar"
-        cab     = float(r.get(_col_cab_e) or 1) if _col_cab_e else 1.0
-        obs_adg_sum[clas] = obs_adg_sum.get(clas, 0) + adp * cab
-        obs_adg_cab[clas] = obs_adg_cab.get(clas, 0) + cab
-    # Por clasificacion: promediar y clampear
-    cal_per_clas = {}
-    for clas in set(list(obs_adg_sum.keys()) + list(clas_adg_teo.keys())):
-        adg_obs = (obs_adg_sum[clas] / obs_adg_cab[clas]) if obs_adg_cab.get(clas, 0) > 0 else None
-        # Fallback teórico: tabla ENGORDE_DIARIO con peso medio de ingreso 250 kg
-        adg_teo = clas_adg_teo.get(clas) or get_engorde(clas, 250) or _adg_teo_fleet or 1.2
-        if adg_obs is not None:
-            adg_min = adg_teo * (1 - CLAMP_PCT_ADG)
-            adg_max = adg_teo * (1 + CLAMP_PCT_ADG)
-            cal_per_clas[clas] = max(adg_min, min(adg_max, adg_obs))
-        else:
-            cal_per_clas[clas] = adg_teo  # sin datos recientes → usar teórico
-        log.info(f"    ADG [{clas}] teo={adg_teo:.3f} obs={adg_obs} cal={cal_per_clas[clas]:.3f}")
-
-    # d) Fleet ADG ponderado por composición del stock actual
-    _fleet_w   = sum(cal_per_clas.get(c, _adg_teo_fleet) * clas_adg_cab.get(c, 0) for c in clas_adg_cab)
-    _fleet_tot = sum(clas_adg_cab.values()) or 1
-    fleet_adg  = _fleet_w / _fleet_tot if _fleet_tot > 0 else (_adg_teo_fleet or 1.2)
-    log.info(f"  ADG fleet calibrado: {fleet_adg:.3f} kg/día (vs teórico {_adg_teo_fleet:.3f})")
 
     # ── 2. Resolución de columnas ─────────────────────────────
     def _fc(cols, *keys):
@@ -2422,24 +2336,6 @@ def recalcular_stock_diario_desde_movimientos(
     _hist_prop[_hoy_str] = prop_hoy
     log.info(f"  por_propietario acumulado: {len(_hist_prop)} fechas con datos")
 
-    # ── 5b. Cargar historial acumulado de por_establecimiento ─────
-    # Misma estrategia que por_propietario: conservar histórico guardado;
-    # hoy se sobreescribe con la vista actual.
-    _hist_est = {}   # {fecha_str: {establecimiento: {cabezas, kg_estimado}}}
-    if _diario_path.exists():
-        try:
-            with open(_diario_path, encoding="utf-8") as _fh2:
-                _old2 = json.load(_fh2)
-            for _s in _old2.get("snapshots", []):
-                _fs3 = _s.get("fecha", "")
-                _pe  = (_s.get("hacienda") or {}).get("por_establecimiento")
-                if _fs3 and _pe:
-                    _hist_est[_fs3] = _pe
-        except Exception:
-            pass
-    _hist_est[_hoy_str] = est_hoy
-    log.info(f"  por_establecimiento acumulado: {len(_hist_est)} fechas con datos")
-
     # ── 6. Running balance hacia atrás desde hoy ──────────────
     snapshots = []
     cab_d = total_cab_hoy
@@ -2455,12 +2351,8 @@ def recalcular_stock_diario_desde_movimientos(
             egr_n   = egr_total.get(fs_next, 0)
             cab_d   = max(0, cab_d - ing_n + egr_n)
 
-        # Peso promedio ese día: retroceder `i` días × ADG calibrado
-        # min 150 kg para no llegar a valores absurdos en períodos muy largos
-        avg_kg_d  = max(150.0, avg_kg_hoy - i * fleet_adg)
-        kg_d      = int(cab_d * avg_kg_d)
+        kg_d      = int(cab_d * avg_kg_hoy)
         prop_snap = _hist_prop.get(fs, {})   # datos reales si existen
-        est_snap  = _hist_est.get(fs, {})    # datos reales si existen
 
         snapshots.append({
             "fecha": fs,
@@ -2468,7 +2360,7 @@ def recalcular_stock_diario_desde_movimientos(
                 "total_cabezas":       int(cab_d),
                 "total_kg_estimado":   kg_d,
                 "por_propietario":     prop_snap,
-                "por_establecimiento": est_snap,
+                "por_establecimiento": {},
                 "por_categoria":       {}
             }
         })
@@ -2477,14 +2369,11 @@ def recalcular_stock_diario_desde_movimientos(
     snapshots.sort(key=lambda s: s["fecha"])
 
     diario = {
-        "generado":       datetime.now().isoformat(),
-        "periodo":        periodo,
-        "metodo":         "running_balance",
-        "adg_fleet_kg":   round(fleet_adg, 3),
-        "adg_teo_fleet":  round(_adg_teo_fleet, 3),
-        "avg_kg_hoy":     round(avg_kg_hoy, 1),
-        "dias":           len(snapshots),
-        "snapshots":      snapshots,
+        "generado":  datetime.now().isoformat(),
+        "periodo":   periodo,
+        "metodo":    "running_balance",
+        "dias":      len(snapshots),
+        "snapshots": snapshots,
     }
     guardar(diario, carpeta, "stock_diario.json")
     log.info(f"  ✓ stock_diario.json — {len(snapshots)} días · running balance")
