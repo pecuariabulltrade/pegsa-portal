@@ -2845,7 +2845,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="tn-gluten" type="number" value="130944" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="tn-nucleo" type="number" value="470500" onchange="calcSim('terneros')"></div>
             <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="tn-germen" type="number" value="235999" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="tn-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Silo ($/tn)</div><input class="sim-input sim-calc" id="tn-silo" type="number" value="150910" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold);cursor:default" title="Calculado: (Maíz × 0.86 × 7400) / 11640"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="tn-racion" type="number" value="221" onchange="calcSim('terneros')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
           <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
@@ -2922,7 +2922,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="ta-gluten" type="number" value="130944" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="ta-nucleo" type="number" value="470500" onchange="calcSim('terneras')"></div>
             <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="ta-germen" type="number" value="235999" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="ta-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Silo ($/tn)</div><input class="sim-input sim-calc" id="ta-silo" type="number" value="150910" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold);cursor:default" title="Calculado: (Maíz × 0.86 × 7400) / 11640"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="ta-racion" type="number" value="221" onchange="calcSim('terneras')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
           <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
@@ -2997,7 +2997,7 @@ window.addEventListener('load', function(){
             <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="va-gluten" type="number" value="130944" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="va-nucleo" type="number" value="470500" onchange="calcSim('vacas')"></div>
             <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="va-germen" type="number" value="235999" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Silo ($/tn)</div><input class="sim-input" id="va-silo" type="number" value="150910" onchange="syncPrecios('silo',this.value)"></div>
+            <div><div class="sim-label" style="color:var(--gold)">↳ Silo ($/tn)</div><input class="sim-input sim-calc" id="va-silo" type="number" value="150910" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold);cursor:default" title="Calculado: (Maíz × 0.86 × 7400) / 11640"></div>
             <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="va-racion" type="number" value="221" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
           </div>
           <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel</div>
@@ -5338,7 +5338,7 @@ function resetDieta(tipo){
 // Gluten, Germen, Núcleo y el resto de los parámetros se guardan en localStorage
 // para que no se reseteen al recargar el portal.
 var SIM_PREFS_KEY = 'pegsa_sim_prefs_v2';
-var SIM_MARKET_CAMPOS = ['maiz','silo']; // estos los actualiza el JSON; el resto: localStorage
+var SIM_MARKET_CAMPOS = ['maiz','silo']; // maiz viene del JSON; silo se calcula del maíz
 
 function _simSave(){
   try{
@@ -5369,14 +5369,27 @@ function _simLoad(){
 function _applyInsumos(data){
   if(data && data.insumos){
     var ins = data.insumos;
-    // Solo aplicar desde el mercado: Maíz y Silo (los demás los maneja el usuario)
+    // Aplicar maíz desde el mercado; silo se calcula automáticamente del maíz
     ['tn','ta','va','in'].forEach(function(p){
       if(ins.maiz && document.getElementById(p+'-maiz')) document.getElementById(p+'-maiz').value = ins.maiz;
-      if(ins.silo && document.getElementById(p+'-silo')) document.getElementById(p+'-silo').value = ins.silo;
     });
+    // Recalcular silo en todos los tabs feedlot
+    if(ins.maiz){
+      var siloAuto = _calcSiloFromMaiz(ins.maiz);
+      ['tn','ta','va'].forEach(function(p){
+        var el = document.getElementById(p+'-silo');
+        if(el){ el.value = siloAuto; }
+      });
+    }
     var mzEl = document.getElementById('simPrecioMaiz');
     if(mzEl && ins.maiz) mzEl.textContent = 'Maíz ref: $'+Number(ins.maiz).toLocaleString('es-AR')+'/tn · '+(data.fecha||'');
   }
+}
+
+// Calcula el precio del silo a partir del maíz: (maiz × 0.86 × 7400) / 11640
+function _calcSiloFromMaiz(maizVal){
+  var mz = parseFloat(maizVal) || 0;
+  return Math.round((mz * 0.86 * 7400) / 11640);
 }
 
 // Sincroniza un precio de insumo en todos los tabs y recalcula todo
@@ -5385,6 +5398,14 @@ function syncPrecios(campo, valor){
     var el = document.getElementById(p+'-'+campo);
     if(el) el.value = valor;
   });
+  // Si cambió el maíz, recalcular silo automáticamente
+  if(campo === 'maiz'){
+    var siloVal = _calcSiloFromMaiz(valor);
+    ['tn','ta','va'].forEach(function(p){
+      var el = document.getElementById(p+'-silo');
+      if(el){ el.value = siloVal; }
+    });
+  }
   calcSim('terneros'); calcSim('terneras'); calcSim('vacas'); calcSim('invernada');
   _simSave();
 }
