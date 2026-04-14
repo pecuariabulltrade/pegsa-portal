@@ -83,21 +83,22 @@ CLASIFICACION_MAP = {
 
 # Tabla 1: engorde diario en kg/dia segun clasificacion y peso de ingreso
 # Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx" — muestra anual real
-#   Hembra  0-250  → ternero hembra: ADP obs=1.18  (era 1.21, -2.5%)
-#   Hembra 250+    → vaquillona:      ADP obs=1.38  (era 1.31, +5.3%)
-#   Macho   0-250  → ternero macho:   ADP obs=1.26  (era 1.23, +2.4%)
-#   Macho  250-350 → novillito:       ADP obs=1.43  (era 1.35, +5.9%)
-#   Macho  350-550 → novillo pesado:  ADP obs=1.59  (era 1.57, +1.3% — sin cambio)
-#   Vaca    0-650  → vacas engorde:   ADP obs=1.62  (era 1.72, -5.8%)
+#   Filtros por categoría: días en feedlot + rango peso de entrada (igual que Excel)
+#   Hembra  0-250  → ternero hembra: ADP obs=1.32  (días 100-450, pesoE 0-200,   N=19)
+#   Hembra 250+    → vaquillona:      ADP obs=1.35  (días 30-350,  pesoE 200-400, N=685)
+#   Macho   0-250  → ternero macho:   ADP obs=1.37  (días 100-450, pesoE 0-200,   N=87)
+#   Macho  250-350 → novillito:       ADP obs=1.49  (días 30-350,  pesoE 200-400, N=691)
+#   Macho  350-550 → novillo pesado:  ADP obs=1.23  (días 30-350,  pesoE 350-750, N=188)
+#   Vaca    0-650  → vacas engorde:   ADP obs=1.40  (días 30-350,  pesoE 0-750,   N=1727)
 ENGORDE_DIARIO = [
-    ("Hembra", 0,    250,  1.18),
-    ("Hembra", 250,  1000, 1.38),
-    ("Macho",  0,    250,  1.26),
-    ("Macho",  250,  350,  1.43),
-    ("Macho",  350,  550,  1.57),
+    ("Hembra", 0,    250,  1.32),
+    ("Hembra", 250,  1000, 1.35),
+    ("Macho",  0,    250,  1.37),
+    ("Macho",  250,  350,  1.49),
+    ("Macho",  350,  550,  1.23),
     ("Macho",  550,  1000, 1.10),
     ("Toro",   0,    1000, 1.60),
-    ("Vaca",   0,    650,  1.62),
+    ("Vaca",   0,    650,  1.40),
     ("Vaca",   650,  1000, 1.00),
 ]
 
@@ -1446,17 +1447,29 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     hace_anio  = hoy - timedelta(days=365)
     hace_90d   = hoy - timedelta(days=90)
 
-    # ADP teórico por categoría — valores reales observados (muestra anual)
-    # Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx"
-    #   N=13869 cabezas · promedio feedlot entero: 1.51 kg/día
+    # ADP teórico por categoría — con filtros por estadía Y peso de entrada (igual que Excel)
+    # Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx" — hoja resumen
+    #   feedlot entero (días 30-400, pesoE 50-500): ADP=1.376
     _ADP_TEO = {
-        'TERNERO':    1.26,   # ternero macho,  N=621,  pesoE_prom=169, días_prom=231
-        'TERNERA':    1.18,   # ternero hembra, N=255,  pesoE_prom=176, días_prom=204
-        'NOVILLITO':  1.43,   # novillito,      N=3387, pesoE_prom=277, días_prom=146
-        'NOVILLO':    1.59,   # novillo pesado, N=997,  pesoE_prom=429, días_prom=96
-        'VAQUILLONA': 1.38,   # vaquillona,     N=2267, pesoE_prom=268, días_prom=135
-        'VACA':       1.62,   # vacas engorde,  N=8209, pesoE_prom=440, días_prom=95
+        'TERNERO':    1.371,  # ternero macho:   días 100-450, pesoE 0-200,   N=87
+        'TERNERA':    1.324,  # ternero hembra:  días 100-450, pesoE 0-200,   N=19
+        'NOVILLITO':  1.489,  # novillito:       días 30-350,  pesoE 200-400, N=691
+        'NOVILLO':    1.231,  # novillos pesado: días 30-350,  pesoE 350-750, N=188
+        'VAQUILLONA': 1.346,  # vaquillona:      días 30-350,  pesoE 200-400, N=685
+        'VACA':       1.399,  # vacas engorde:   días 30-350,  pesoE 0-750,   N=1727
         'TORO':       1.60,   # toro (sin datos propios, referencia anterior)
+    }
+
+    # Filtros per-categoría: estadía (días) y peso de entrada (kg)
+    # Replica exactamente los rangos de la hoja "resumen" del Excel
+    _CAT_FILTROS = {
+        'TERNERO':    {'est_min': 100, 'est_max': 450, 'pe_min':   0, 'pe_max': 200},
+        'TERNERA':    {'est_min': 100, 'est_max': 450, 'pe_min':   0, 'pe_max': 200},
+        'NOVILLITO':  {'est_min':  30, 'est_max': 350, 'pe_min': 200, 'pe_max': 400},
+        'NOVILLO':    {'est_min':  30, 'est_max': 350, 'pe_min': 350, 'pe_max': 750},
+        'VAQUILLONA': {'est_min':  30, 'est_max': 350, 'pe_min': 200, 'pe_max': 400},
+        'VACA':       {'est_min':  30, 'est_max': 350, 'pe_min':   0, 'pe_max': 750},
+        'TORO':       {'est_min':  30, 'est_max': 400, 'pe_min':   0, 'pe_max': 1000},
     }
 
     # Detectar columnas
@@ -1474,8 +1487,9 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     col_cat     = fc(["Categoria","categoria","category","cat"])
     col_cab     = fc(["Cantidad","cantidad","cabezas"])
     col_rfid    = fc(["RFID","rfid"])
+    col_pesoe   = fc(["KgIngreso","kgingreso","PesoEntrada","pesoentrada","peso_entrada","kg_entrada","KgEntrada"])
 
-    log.info(f"  Productivo | fecha={col_fecha} motivo={col_motivo} adp={col_adp} estadia={col_estadia} cat={col_cat} cab={col_cab} rfid={col_rfid}")
+    log.info(f"  Productivo | fecha={col_fecha} motivo={col_motivo} adp={col_adp} estadia={col_estadia} cat={col_cat} cab={col_cab} rfid={col_rfid} pesoe={col_pesoe}")
     log.info(f"  Todas las columnas de v_PB_Egresos: {cols_egr}")
 
     # Filtrar con todos los criterios de calidad
@@ -1499,9 +1513,9 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             rfid = str(r.get(col_rfid) or "").strip()
             if rfid and not rfid.isdigit(): excl["rfid"] += 1; continue
 
-        # 4) Estadia > 30 y < 365
+        # 4) Estadia: rango amplio 0-450 días (el filtro fino se aplica por categoría)
         est = to_num(r.get(col_estadia)) if col_estadia else None
-        if est is None or not (30 < est < 365): excl["estadia"] += 1; continue
+        if est is None or not (0 < est <= 450): excl["estadia"] += 1; continue
 
         # 5) AdpSinDebaste entre 0 y 5
         adp = to_num(r.get(col_adp)) if col_adp else None
@@ -1509,6 +1523,9 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
 
         # Marcar si cae en los últimos 90 días
         r = dict(r)
+        # Guardar peso de entrada para filtros per-categoría
+        if col_pesoe:
+            r['_pesoe'] = to_num(r.get(col_pesoe))
         try:
             r['_en_90d'] = (f.date() >= hace_90d)
         except:
@@ -1527,25 +1544,41 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         return {
             "meta": {"generado": datetime.now().isoformat(), "periodo": periodo, "tabla": "v_PB_Egresos",
                      "ventana": "365 días",
-                     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
+                     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 0-450d | ADP 0-5 | filtros per-cat (est+pesoE)",
                      "registros_filtrados": 0},
             "general": {}, "por_categoria": {}, "por_mes": {}
         }
 
     # Función para calcular promedios ponderados por cabezas
-    def calc_stats(rows):
+    # cat: si se provee, aplica los filtros de estadía y peso de entrada de _CAT_FILTROS
+    def calc_stats(rows, cat=None):
+        filt = _CAT_FILTROS.get(cat.upper() if cat else '', {}) if cat else {}
+        est_min = filt.get('est_min', 0)
+        est_max = filt.get('est_max', 9999)
+        pe_min  = filt.get('pe_min',  0)
+        pe_max  = filt.get('pe_max',  9999)
         adp_vals, est_vals = [], []
+        cab_ok = 0
         for r in rows:
-            cab = to_num(r.get(col_cab, 1) if col_cab else 1) or 1
-            adp = to_num(r.get(col_adp) if col_adp else None)
-            est = to_num(r.get(col_estadia) if col_estadia else None)
-            if adp > 0:
+            cab  = to_num(r.get(col_cab, 1) if col_cab else 1) or 1
+            est  = to_num(r.get(col_estadia) if col_estadia else None)
+            adp  = to_num(r.get(col_adp) if col_adp else None)
+            peso = r.get('_pesoe') if cat else None
+            # Filtro per-categoría: estadía
+            if cat and est is not None:
+                if not (est_min <= est <= est_max):
+                    continue
+            # Filtro per-categoría: peso de entrada (solo si columna disponible)
+            if cat and col_pesoe and peso is not None:
+                if not (pe_min <= peso <= pe_max):
+                    continue
+            cab_ok += int(round(cab))
+            if adp is not None and adp > 0:
                 adp_vals.extend([adp] * int(round(cab)))
-            if est > 0:
+            if est is not None and est > 0:
                 est_vals.extend([est] * int(round(cab)))
-        total_cab = len(adp_vals) or len(est_vals) or len(rows)
         return {
-            "cabezas":       len(rows),
+            "cabezas":       cab_ok or len(rows),
             "adp_promedio":  round(sum(adp_vals)/len(adp_vals), 3) if adp_vals else None,
             "adp_min":       round(min(adp_vals), 3) if adp_vals else None,
             "adp_max":       round(max(adp_vals), 3) if adp_vals else None,
@@ -1566,7 +1599,7 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             cat = str(r.get(col_cat) or "Sin datos").strip()
             cat_regs.setdefault(cat, []).append(r)
         for cat, rows in sorted(cat_regs.items()):
-            por_cat[cat] = calc_stats(rows)
+            por_cat[cat] = calc_stats(rows, cat=cat)
 
     # Por mes
     por_mes = {}
@@ -1591,7 +1624,7 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             cat = str(r.get(col_cat) or "Sin datos").strip().upper()
             cat_regs_90.setdefault(cat, []).append(r)
         for cat, rows in sorted(cat_regs_90.items()):
-            st = calc_stats(rows)
+            st = calc_stats(rows, cat=cat)
             obs = st.get('adp_promedio')
             teo = _ADP_TEO.get(cat)
             # Variación % entre observado y teórico
