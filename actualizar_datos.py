@@ -489,9 +489,10 @@ def _agrupar_movimientos(regs, col_fecha, col_prop, col_cat, col_cab, col_kg,
     """
     import pandas as pd
 
-    por_prop  = {}
-    por_cat   = {}
-    por_mes   = {}
+    por_prop      = {}
+    por_cat       = {}
+    por_mes       = {}
+    por_mes_det   = {}   # {mes: {cabezas, kg, por_categoria:{}, por_propietario:{}}}
     total_cab = 0
     total_kg  = 0
 
@@ -523,6 +524,17 @@ def _agrupar_movimientos(regs, col_fecha, col_prop, col_cat, col_cab, col_kg,
             key[grupo]["cabezas"] += cab
             key[grupo]["kg"]      += kg
 
+        # Detalle por mes: desglose por categoría y propietario dentro de cada mes
+        if mes not in por_mes_det:
+            por_mes_det[mes] = {"cabezas": 0, "kg": 0, "por_categoria": {}, "por_propietario": {}}
+        por_mes_det[mes]["cabezas"] += cab
+        por_mes_det[mes]["kg"]      += kg
+        for grp, slot in [(cat, "por_categoria"), (prop, "por_propietario")]:
+            if grp not in por_mes_det[mes][slot]:
+                por_mes_det[mes][slot][grp] = {"cabezas": 0, "kg": 0}
+            por_mes_det[mes][slot][grp]["cabezas"] += cab
+            por_mes_det[mes][slot][grp]["kg"]      += kg
+
     # Redondear y calcular kg_promedio
     for d in [por_prop, por_cat, por_mes]:
         for k in d:
@@ -530,13 +542,25 @@ def _agrupar_movimientos(regs, col_fecha, col_prop, col_cat, col_cab, col_kg,
             d[k]["kg"]         = round(d[k]["kg"], 1)
             d[k]["kg_promedio"] = round(d[k]["kg"] / d[k]["cabezas"], 1) if d[k]["cabezas"] > 0 else 0
 
+    for mes_k, mv in por_mes_det.items():
+        mv["cabezas"] = round(mv["cabezas"])
+        mv["kg"]      = round(mv["kg"], 1)
+        mv["kg_promedio"] = round(mv["kg"] / mv["cabezas"], 1) if mv["cabezas"] > 0 else 0
+        for slot in ("por_categoria", "por_propietario"):
+            for grp in mv[slot]:
+                g = mv[slot][grp]
+                g["cabezas"]    = round(g["cabezas"])
+                g["kg"]         = round(g["kg"], 1)
+                g["kg_promedio"] = round(g["kg"] / g["cabezas"], 1) if g["cabezas"] > 0 else 0
+
     return {
-        "total_cabezas":   round(total_cab),
-        "total_kg":        round(total_kg, 1),
-        "kg_promedio":     round(total_kg / total_cab, 1) if total_cab > 0 else 0,
-        "por_propietario": por_prop,
-        "por_categoria":   por_cat,
-        "por_mes":         por_mes,
+        "total_cabezas":    round(total_cab),
+        "total_kg":         round(total_kg, 1),
+        "kg_promedio":      round(total_kg / total_cab, 1) if total_cab > 0 else 0,
+        "por_propietario":  por_prop,
+        "por_categoria":    por_cat,
+        "por_mes":          por_mes,
+        "por_mes_detalle":  dict(sorted(por_mes_det.items())),  # ordenado cronológico
     }
 
 

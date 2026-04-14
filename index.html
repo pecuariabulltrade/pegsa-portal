@@ -7416,6 +7416,273 @@ function renderMovimientos(data) {
     +'</div>';
   el.appendChild(hdr);
 
+  // ══════════════════════════════════════════════════════════
+  // ── FILTRO DE MESES ──────────────────────────────────────
+  // ══════════════════════════════════════════════════════════
+  var ingDet = (anio.ingresos  || {}).por_mes_detalle || {};
+  var egrDet = (anio.egresos   || {}).por_mes_detalle || {};
+  var todosMeses = Array.from(new Set(Object.keys(ingDet).concat(Object.keys(egrDet))))
+    .filter(function(m){ return m !== 'Sin fecha'; }).sort();
+
+  var MESES_LABEL = {
+    '01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
+    '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'
+  };
+  function labelMes(m) {
+    var p = m.split('-'); return (MESES_LABEL[p[1]] || p[1]) + ' ' + p[0];
+  }
+
+  // Estado del filtro (meses seleccionados)
+  var selMeses = todosMeses.length ? [todosMeses[todosMeses.length - 1]] : [];
+
+  // ── Panel de filtro ──
+  var filtroPan = document.createElement('div');
+  filtroPan.style.cssText = 'margin-bottom:32px;padding:20px 24px;background:#fff;border:1px solid rgba(26,22,18,.1);border-radius:2px';
+
+  var filtroTit = document.createElement('div');
+  filtroTit.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:12px';
+  filtroTit.textContent = 'Filtrar por período';
+  filtroPan.appendChild(filtroTit);
+
+  // Botones rápidos
+  var quickRow = document.createElement('div');
+  quickRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px';
+
+  function makeQuickBtn(label, meses) {
+    var b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;padding:5px 12px;border:1px solid rgba(26,22,18,.2);border-radius:2px;background:#fff;cursor:pointer;letter-spacing:.06em';
+    b.addEventListener('click', function(){
+      selMeses = meses.slice();
+      actualizarFiltro();
+    });
+    return b;
+  }
+
+  // Botón: último mes
+  if (todosMeses.length >= 1) {
+    quickRow.appendChild(makeQuickBtn('Último mes', [todosMeses[todosMeses.length-1]]));
+  }
+  // Botón: últimos 3 meses
+  if (todosMeses.length >= 3) {
+    quickRow.appendChild(makeQuickBtn('Últimos 3 meses', todosMeses.slice(-3)));
+  }
+  // Botón: últimos 6 meses
+  if (todosMeses.length >= 6) {
+    quickRow.appendChild(makeQuickBtn('Últimos 6 meses', todosMeses.slice(-6)));
+  }
+  // Botón: todo el año
+  quickRow.appendChild(makeQuickBtn('Todo el año', todosMeses.slice()));
+  filtroPan.appendChild(quickRow);
+
+  // Chips de meses individuales (multi-select)
+  var chipsRow = document.createElement('div');
+  chipsRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px';
+  var chipEls = {};
+  todosMeses.forEach(function(m) {
+    var chip = document.createElement('button');
+    chip.textContent = labelMes(m);
+    chip.dataset.mes = m;
+    chip.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;padding:5px 10px;border-radius:2px;cursor:pointer;transition:all .15s;letter-spacing:.04em';
+    chip.addEventListener('click', function(){
+      var idx = selMeses.indexOf(m);
+      if (idx >= 0) {
+        if (selMeses.length > 1) selMeses.splice(idx, 1);
+      } else {
+        selMeses.push(m);
+        selMeses.sort();
+      }
+      actualizarFiltro();
+    });
+    chipEls[m] = chip;
+    chipsRow.appendChild(chip);
+  });
+  filtroPan.appendChild(chipsRow);
+
+  // Label resultado
+  var filtroRes = document.createElement('div');
+  filtroRes.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4);margin-top:10px';
+  filtroPan.appendChild(filtroRes);
+
+  el.appendChild(filtroPan);
+
+  // Contenedor dinámico del filtro
+  var filtroContent = document.createElement('div');
+  filtroContent.id = 'movFiltroContent';
+  el.appendChild(filtroContent);
+
+  // ── Función helper: agregar dicts de {cabezas,kg} ──
+  function sumarGrupos(dictsArray) {
+    var res = {};
+    dictsArray.forEach(function(d) {
+      Object.keys(d).forEach(function(k) {
+        if (!res[k]) res[k] = {cabezas:0, kg:0};
+        res[k].cabezas += (d[k].cabezas || 0);
+        res[k].kg      += (d[k].kg      || 0);
+      });
+    });
+    // calcular kg_promedio
+    Object.keys(res).forEach(function(k) {
+      res[k].cabezas    = Math.round(res[k].cabezas);
+      res[k].kg         = Math.round(res[k].kg * 10) / 10;
+      res[k].kg_promedio = res[k].cabezas > 0 ? Math.round(res[k].kg / res[k].cabezas * 10)/10 : 0;
+    });
+    return res;
+  }
+
+  // ── Función principal que redibuja al cambiar selección ──
+  function actualizarFiltro() {
+    // Actualizar estilo de chips
+    todosMeses.forEach(function(m) {
+      var activo = selMeses.indexOf(m) >= 0;
+      chipEls[m].style.background = activo ? 'rgba(26,22,18,.85)' : '#fff';
+      chipEls[m].style.color      = activo ? '#fff' : 'rgba(26,22,18,.7)';
+      chipEls[m].style.border     = activo ? '1px solid rgba(26,22,18,.85)' : '1px solid rgba(26,22,18,.2)';
+    });
+
+    // Label período
+    if (selMeses.length === 1) {
+      filtroRes.textContent = 'Período: ' + labelMes(selMeses[0]);
+    } else {
+      filtroRes.textContent = 'Período: ' + labelMes(selMeses[0]) + ' → ' + labelMes(selMeses[selMeses.length-1]) + ' (' + selMeses.length + ' meses)';
+    }
+
+    // Agregar datos de los meses seleccionados
+    var ingCat  = sumarGrupos(selMeses.map(function(m){ return (ingDet[m]||{}).por_categoria   || {}; }));
+    var ingProp = sumarGrupos(selMeses.map(function(m){ return (ingDet[m]||{}).por_propietario || {}; }));
+    var egrCat  = sumarGrupos(selMeses.map(function(m){ return (egrDet[m]||{}).por_categoria   || {}; }));
+    var egrProp = sumarGrupos(selMeses.map(function(m){ return (egrDet[m]||{}).por_propietario || {}; }));
+
+    // Totales
+    var totIngCab = Object.values(ingDet).filter(function(_,i){ return selMeses.indexOf(todosMeses[i]) >= 0; });
+    var ingTotCab = selMeses.reduce(function(s,m){ return s + ((ingDet[m]||{}).cabezas||0); }, 0);
+    var ingTotKg  = selMeses.reduce(function(s,m){ return s + ((ingDet[m]||{}).kg||0); }, 0);
+    var egrTotCab = selMeses.reduce(function(s,m){ return s + ((egrDet[m]||{}).cabezas||0); }, 0);
+    var egrTotKg  = selMeses.reduce(function(s,m){ return s + ((egrDet[m]||{}).kg||0); }, 0);
+    var saldoCab  = ingTotCab - egrTotCab;
+    var saldoKg   = ingTotKg  - egrTotKg;
+
+    // Construir HTML del panel filtrado
+    var fc = filtroContent;
+    fc.innerHTML = '';
+
+    // KPIs resumen del período
+    var kpiPer = document.createElement('div');
+    kpiPer.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:rgba(26,22,18,.07);border:1px solid rgba(184,146,42,.25);margin-bottom:32px';
+    function kpiCell(label, val, sub, color) {
+      var c = document.createElement('div');
+      c.style.cssText = 'background:#fff;padding:18px 22px;border-left:3px solid '+(color||'transparent');
+      c.innerHTML = '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:6px">'+label+'</div>'
+        +'<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;line-height:1'+(color?';color:'+color:'')+'">'+(val||'—')+'</div>'
+        +'<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.38);margin-top:4px">'+sub+'</div>';
+      return c;
+    }
+    kpiPer.appendChild(kpiCell('Ingresos', movFmt(ingTotCab)+' cab', movFmtKg(ingTotKg), '#27613d'));
+    kpiPer.appendChild(kpiCell('Egresos',  movFmt(egrTotCab)+' cab', movFmtKg(egrTotKg), '#c0392b'));
+    kpiPer.appendChild(kpiCell('Saldo',    (saldoCab>=0?'+':'')+movFmt(saldoCab)+' cab', (saldoKg>=0?'+':'')+movFmtKg(saldoKg), saldoCab>=0?'#27613d':'#c0392b'));
+    fc.appendChild(kpiPer);
+
+    // ── Tablas por categoría y propietario ──
+    var hasCatDet  = Object.keys(ingCat).length  > 0 || Object.keys(egrCat).length  > 0;
+    var hasPropDet = Object.keys(ingProp).length > 0 || Object.keys(egrProp).length > 0;
+
+    if (hasCatDet || hasPropDet) {
+      // Dos columnas: Ingresos | Egresos
+      var cols2 = document.createElement('div');
+      cols2.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px';
+
+      function panelDet(titulo, colorBorder, catObj, propObj) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'padding:20px 22px;border:1px solid rgba(26,22,18,.1);border-left:4px solid '+colorBorder+';border-radius:2px;background:#fff';
+        wrap.innerHTML = '<div style="font-family:\'Playfair Display\',serif;font-size:16px;font-weight:700;margin-bottom:16px;color:'+colorBorder+'">'+titulo+'</div>';
+
+        function miniTabla(label, obj) {
+          if (!Object.keys(obj).length) {
+            wrap.innerHTML += '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.35);margin-bottom:12px">'+label+': sin detalle (disponible al correr pipeline)</div>';
+            return;
+          }
+          var arr = Object.entries(obj).sort(function(a,b){ return (b[1].cabezas||0)-(a[1].cabezas||0); });
+          var totC = arr.reduce(function(s,e){ return s+(e[1].cabezas||0); },0);
+          var tbl = '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.38);margin-bottom:6px;margin-top:14px">'+label+'</div>';
+          tbl += '<table class="data-table" style="font-size:12px"><thead><tr><th>'+label+'</th><th class="right">Cab.</th><th class="right">%</th><th class="right">Kg prom.</th></tr></thead><tbody>';
+          arr.forEach(function(e) {
+            var pct = totC > 0 ? (e[1].cabezas/totC*100).toFixed(1) : '0.0';
+            tbl += '<tr><td><strong>'+e[0]+'</strong></td>'
+              +'<td class="right mono">'+movFmt(e[1].cabezas)+'</td>'
+              +'<td class="right mono">'+pct+'%</td>'
+              +'<td class="right mono">'+movFmtKg(e[1].kg_promedio)+'</td></tr>';
+          });
+          tbl += '<tr class="total"><td><strong>Total</strong></td><td class="right"><strong>'+movFmt(totC)+'</strong></td><td class="right"><strong>100%</strong></td><td class="right">—</td></tr>';
+          tbl += '</tbody></table>';
+          wrap.innerHTML += tbl;
+        }
+
+        miniTabla('Por Categoría',   catObj);
+        miniTabla('Por Propietario', propObj);
+        return wrap;
+      }
+
+      cols2.appendChild(panelDet('↑ Ingresos', '#27613d', ingCat, ingProp));
+      cols2.appendChild(panelDet('↓ Egresos',  '#c0392b', egrCat, egrProp));
+      fc.appendChild(cols2);
+    } else {
+      // Sin detalle aún — mostrar aviso
+      var aviso = document.createElement('div');
+      aviso.style.cssText = 'padding:20px;background:rgba(26,22,18,.03);border:1px solid rgba(26,22,18,.08);border-radius:2px;font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.45);margin-bottom:32px';
+      aviso.innerHTML = '📋 El detalle por categoría y propietario estará disponible a partir de la próxima actualización del pipeline (requiere reconectar con SQL Server).';
+      fc.appendChild(aviso);
+    }
+
+    // ── Evolución mensual del período seleccionado ──
+    if (selMeses.length > 1) {
+      var secEvo = document.createElement('div');
+      secEvo.style.cssText = 'margin-bottom:32px';
+      secEvo.innerHTML = '<div class="section-header"><span class="section-title">Evolución del período</span><span class="section-sub">mes a mes · ingresos vs egresos</span></div>';
+      var tEvo = document.createElement('table'); tEvo.className = 'data-table';
+      tEvo.innerHTML = '<thead><tr><th>Mes</th><th class="right">Cab. Ingr.</th><th class="right">Kg Ingr.</th><th class="right">Cab. Egr.</th><th class="right">Kg Egr.</th><th class="right">Saldo Cab.</th></tr></thead>';
+      var tbEvo = document.createElement('tbody');
+      var totIC2=0,totIK2=0,totEC2=0,totEK2=0;
+      selMeses.forEach(function(m) {
+        var ii = ingDet[m] || {cabezas:0,kg:0};
+        var ee = egrDet[m] || {cabezas:0,kg:0};
+        var dc = (ii.cabezas||0) - (ee.cabezas||0);
+        totIC2+=ii.cabezas||0; totIK2+=ii.kg||0; totEC2+=ee.cabezas||0; totEK2+=ee.kg||0;
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td><strong>'+labelMes(m)+'</strong></td>'
+          +'<td class="right mono">'+movFmt(ii.cabezas)+'</td>'
+          +'<td class="right mono" style="color:#27613d">'+movFmtKg(ii.kg)+'</td>'
+          +'<td class="right mono">'+movFmt(ee.cabezas)+'</td>'
+          +'<td class="right mono" style="color:#c0392b">'+movFmtKg(ee.kg)+'</td>'
+          +'<td class="right mono" style="color:'+(dc>=0?'#27613d':'#c0392b')+';font-weight:600">'+(dc>=0?'+':'')+movFmt(dc)+'</td>';
+        tbEvo.appendChild(tr);
+      });
+      var tfEvo = document.createElement('tr'); tfEvo.className='total';
+      var sd2=totIC2-totEC2;
+      tfEvo.innerHTML='<td><strong>TOTAL</strong></td>'
+        +'<td class="right"><strong>'+movFmt(totIC2)+'</strong></td>'
+        +'<td class="right"><strong>'+movFmtKg(totIK2)+'</strong></td>'
+        +'<td class="right"><strong>'+movFmt(totEC2)+'</strong></td>'
+        +'<td class="right"><strong>'+movFmtKg(totEK2)+'</strong></td>'
+        +'<td class="right" style="color:'+(sd2>=0?'#27613d':'#c0392b')+';font-size:14px"><strong>'+(sd2>=0?'+':'')+movFmt(sd2)+'</strong></td>';
+      tbEvo.appendChild(tfEvo);
+      tEvo.appendChild(tbEvo);
+      secEvo.appendChild(tEvo);
+      fc.appendChild(secEvo);
+    }
+
+    // Divisor antes del bloque anual existente
+    var div = document.createElement('hr');
+    div.style.cssText = 'border:none;border-top:2px solid var(--border-strong);margin:32px 0 36px';
+    fc.appendChild(div);
+    var lblAnual = document.createElement('div');
+    lblAnual.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.35);margin-bottom:20px';
+    lblAnual.textContent = '▸ Resumen anual (últimos 12 meses) a continuación';
+    fc.appendChild(lblAnual);
+  }
+
+  // Inicializar con último mes seleccionado
+  actualizarFiltro();
+
   // ── Helper: construir una grilla de 3 cards KPI ──
   function makeKpiRow(kpis, borderColor) {
     var wrap = document.createElement('div');
