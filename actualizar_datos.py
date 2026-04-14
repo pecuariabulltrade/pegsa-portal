@@ -1572,9 +1572,9 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             teo = _ADP_TEO.get(cat)
             # Variación % entre observado y teórico
             var_pct = round((obs - teo) / teo * 100, 2) if (obs is not None and teo) else None
-            # Calibrado: clampear obs a ±20% del teórico
+            # Calibrado: clampear obs a ±15% del teórico
             if obs is not None and teo:
-                lo, hi = teo * 0.80, teo * 1.20
+                lo, hi = teo * 0.85, teo * 1.15
                 cal     = round(max(lo, min(hi, obs)), 4)
                 ajust   = (obs < lo or obs > hi)
             else:
@@ -1586,8 +1586,8 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
                 "adp_calibrado": cal,
                 "variacion_pct": var_pct,
                 "ajustado":      ajust,
-                "adp_min_range": round(teo * 0.80, 4) if teo else None,
-                "adp_max_range": round(teo * 1.20, 4) if teo else None,
+                "adp_min_range": round(teo * 0.85, 4) if teo else None,
+                "adp_max_range": round(teo * 1.15, 4) if teo else None,
             }
     log.info(f"  por_categoria_90d: {len(por_cat_90d)} categorías ({len(regs_90d)} registros en 90d)")
 
