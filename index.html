@@ -4869,16 +4869,13 @@ function fp(n){ return (Number(n||0)*100).toFixed(1)+'%'; }
 // Hembras (terneras): 38% en todo el rango (ternera y vaquillona coinciden)
 // Vacas: 32%   Invernada: 27%
 function _simAdpPct(tipo, pesoE){
-  // Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx" — muestra anual real
   if(tipo === 'terneros'){
-    if(pesoE <  250) return 0.39;   // ternero macho   · obs 1.26 kg/día · era 0.39 ✓
-    if(pesoE <  350) return 0.37;   // novillito       · obs 1.43 kg/día · era 0.37 ✓
-    return 0.31;                     // novillo ≥350kg  · obs 1.59 kg/día · era 0.34 (-7.5%)
+    if(pesoE <  250) return 0.39;   // ternero
+    if(pesoE <  350) return 0.37;   // novillito
+    return 0.34;                     // novillo ≥ 350 kg
   }
-  if(tipo === 'terneras'){
-    return pesoE < 250 ? 0.40 : 0.38; // <250: t.hembra obs 1.18 (+4.7%) · ≥250: vaquillona obs 1.38 ✓
-  }
-  if(tipo === 'vacas')    return 0.32;  // vaca engorde · obs 1.62 vs fórmula 1.65 · -2.1% — sin cambio
+  if(tipo === 'terneras') return 0.38;  // ternera / vaquillona
+  if(tipo === 'vacas')    return 0.32;
   return 0.27; // invernada (manual)
 }
 // Tabla de referencia (para mostrar sub-categoría en UI)
