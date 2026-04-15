@@ -9632,16 +9632,26 @@ function _renderValuacion(){
   }
   function fKg(v){ return v ? (v/1000).toFixed(0)+'t' : '—'; }
 
+  // helper: total_usd explícito o derivado de total_pesos / bna_tc_venta
+  function _totalUSDval(s){
+    var c_ = s.componentes || {}, pr_ = s.precios || {};
+    if(c_.total_usd != null) return c_.total_usd;
+    if(c_.total_pesos != null && pr_.bna_tc_venta) return Math.round(c_.total_pesos / pr_.bna_tc_venta);
+    return null;
+  }
+
   // ── KPIs último mes disponible ──
   var ult = snaps[snaps.length-1];
   var c   = ult.componentes || {};
   var pr  = ult.precios || {};
   function fUSD(v){ if(v==null) return '—'; var abs=Math.abs(v),sign=v<0?'−':''; if(abs>=1e6) return sign+'U$S\u00a0'+(abs/1e6).toFixed(2)+'M'; return sign+'U$S\u00a0'+Math.round(abs).toLocaleString('es-AR'); }
+  var _tcDisp = pr.bna_tc_venta ? 'TC BNA $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD' : 'TC BNA no disponible';
   var kpiDefs = [
     { label:'Hacienda PEGSA',   value: fM(c.hacienda_pesos),   sub: (pr.mag_indice ? '@ $'+pr.mag_indice.toFixed(0)+'/kg MAG' : 'índice MAG') },
     { label:'Insumos (M+S)',    value: fM(c.insumos_pesos),    sub: fKg(c.maiz_kg)+' maíz · '+fKg(c.soja_kg)+' soja' },
+    { label:'USD (en $)',       value: fM(c.usd_pesos),        sub: c.usd_cant ? Math.round(c.usd_cant).toLocaleString('es-AR')+' USD · '+_tcDisp : _tcDisp },
     { label:'Patrimonio en $',  value: fM(c.total_pesos),      sub: ult.periodo+' · todos los componentes' },
-    { label:'Patrimonio en USD',value: fUSD(c.total_usd),      sub: pr.bna_tc_venta ? 'TC BNA $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD' : 'TC BNA no disponible' },
+    { label:'Patrimonio en USD',value: fUSD(_totalUSDval(ult)), sub: _tcDisp },
   ];
   var kpiHtml = kpiDefs.map(function(k){
     var isTotal = k.label==='Patrimonio Total';
@@ -9719,7 +9729,7 @@ function _renderValuacion(){
   // ── Gráfico USD ──
   var dsUSD = [{
     label: 'Patrimonio total (U$S)',
-    data: snaps.map(function(s){ var v=s.componentes&&s.componentes.total_usd; return v!=null?Math.round(v/1000):null; }),
+    data: snaps.map(function(s){ var v=_totalUSDval(s); return v!=null?Math.round(v/1000):null; }),
     borderColor: '#2d6a8a', backgroundColor: 'rgba(45,106,138,.1)',
     tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
   }];
@@ -9749,12 +9759,13 @@ function _renderValuacion(){
   var thL = 'style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border)"';
   var html = '<table class="data-table" style="width:100%;border-collapse:collapse">'
     +'<thead><tr><th '+thL+'>Período</th><th '+thS+'>Índice MAG ($/kg)</th><th '+thS+'>Maíz BCR ($/ton)</th><th '+thS+'>Soja BCR ($/ton)</th><th '+thS+'>TC BNA ($/USD)</th>'
-    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>Total $</th><th '+thS+'>Total USD</th></tr></thead><tbody>';
+    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>USD (en $)</th><th '+thS+'>Total $</th><th '+thS+'>Total USD</th></tr></thead><tbody>';
 
   snaps.slice().reverse().forEach(function(s){
     var p = s.precios||{}, c2 = s.componentes||{};
     var tdR = 'style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;padding:8px 10px;border-bottom:1px solid var(--border)"';
     var tdL = 'style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap"';
+    var tdUSD = 'style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;padding:8px 10px;border-bottom:1px solid var(--border);color:rgba(138,45,138,.9)"';
     html += '<tr>'
       +'<td '+tdL+'>'+s.periodo+'</td>'
       +'<td '+tdR+'>'+(p.mag_indice!=null ? p.mag_indice.toLocaleString('es-AR',{minimumFractionDigits:3}) : '—')+'</td>'
@@ -9764,8 +9775,9 @@ function _renderValuacion(){
       +'<td '+tdR+'>'+fM(c2.hacienda_pesos)+'</td>'
       +'<td '+tdR+'>'+fM(c2.insumos_pesos)+'</td>'
       +'<td '+tdR+'>'+fM(c2.financiero_pesos)+'</td>'
+      +'<td '+tdUSD+'>'+(c2.usd_pesos!=null ? fM(c2.usd_pesos) : (c2.usd_cant ? Math.round(c2.usd_cant).toLocaleString('es-AR')+'\u00a0USD' : '—'))+'</td>'
       +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--gold)">'+fM(c2.total_pesos)+'</td>'
-      +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:#2d6a8a">'+fUSD(c2.total_usd)+'</td>'
+      +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:#2d6a8a">'+fUSD(_totalUSDval(s))+'</td>'
       +'</tr>';
   });
   document.getElementById('valTablaPrecios').innerHTML = html+'</tbody></table>';
