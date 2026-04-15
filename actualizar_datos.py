@@ -216,26 +216,38 @@ def conectar(cfg):
     auth = cfg["SQL"]["autenticacion"].lower()
 
     if auth == "windows":
-        cs = (f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-              f"SERVER={srv};DATABASE={db};"
-              f"Trusted_Connection=yes;TrustServerCertificate=yes;")
+        cs_base = (f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+                   f"SERVER={srv};DATABASE={db};"
+                   f"Trusted_Connection=yes;TrustServerCertificate=yes;")
     else:
         u = cfg["SQL"]["usuario"]
         p = cfg["SQL"]["contrasena"]
-        cs = (f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-              f"SERVER={srv};DATABASE={db};"
-              f"UID={u};PWD={p};TrustServerCertificate=yes;")
+        cs_base = (f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+                   f"SERVER={srv};DATABASE={db};"
+                   f"UID={u};PWD={p};TrustServerCertificate=yes;")
+
+    # Intentar primero con cifrado (default Driver 18), luego sin cifrado si falla SSL
+    connection_strings = [
+        cs_base,
+        cs_base + "Encrypt=no;",
+    ]
 
     log.info(f"Conectando a  {srv}  /  {db}  ...")
-    try:
-        conn = pyodbc.connect(cs, timeout=20)
-        log.info("Conexion SQL OK")
-        return conn
-    except Exception as e:
-        log.error(f"No se pudo conectar: {e}")
-        log.error("  Verifica: 1. VPN conectada  2. WinCampo corriendo  3. Usuario/contrasena")
-        esperar_si_interactivo("\nPresiona Enter para cerrar...")
-        sys.exit(1)
+    last_error = None
+    for cs in connection_strings:
+        try:
+            conn = pyodbc.connect(cs, timeout=20)
+            log.info("Conexion SQL OK")
+            return conn
+        except Exception as e:
+            last_error = e
+            if "Encrypt" not in cs:
+                log.warning(f"Conexion cifrada fallo, reintentando sin cifrado...")
+                continue
+    log.error(f"No se pudo conectar: {last_error}")
+    log.error("  Verifica: 1. VPN conectada  2. WinCampo corriendo  3. Usuario/contrasena")
+    esperar_si_interactivo("\nPresiona Enter para cerrar...")
+    sys.exit(1)
 
 # ═══════════════════════════════════════════════════════════
 #  EXTRACCION Y ENRIQUECIMIENTO
@@ -2060,6 +2072,65 @@ def _scrap_bna_tc_historico(periodo):
     return last_venta
 
 
+def _scrap_mep_tc_ambito(periodo):
+    """
+    Obtiene el dólar MEP promedio mensual desde la API de Ambito.
+    Las empresas argentinas usan dólar MEP como referencia de valuación.
+    periodo: "YYYY-MM"
+    Retorna float (promedio mensual) o None si falla.
+    Fuente: https://mercados.ambito.com/dolar/mep/historico-general/{d}/{m}/{a}/{d}/{m}/{a}
+    """
+    import urllib.request, calendar
+    from datetime import date
+
+    try:
+        year, month = int(periodo[:4]), int(periodo[5:7])
+    except Exception:
+        return None
+
+    last_day = calendar.monthrange(year, month)[1]
+    d_ini = f'01/{month:02d}/{year}'
+    d_fin = f'{last_day:02d}/{month:02d}/{year}'
+    url = (f'https://mercados.ambito.com/dolar/mep/historico-general/'
+           f'01/{month:02d}/{year}/{last_day:02d}/{month:02d}/{year}')
+    try:
+        req = urllib.request.Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; PEGSA-Bot/1.0)')
+        req.add_header('Referer', 'https://www.ambito.com/contenidos/dolar-mep-historico.html')
+        req.add_header('Accept', 'application/json, text/plain, */*')
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read()
+    except Exception as e:
+        log.debug(f'    MEP TC Ambito {periodo}: request error: {e}')
+        return None
+
+    try:
+        import json as _json
+        obj = _json.loads(raw)
+        # Respuesta: lista de [["fecha","valor",...], ...] con cabecera en [0]
+        rows = obj if isinstance(obj, list) else obj.get('data', [])
+        valores = []
+        for row in rows:
+            if not isinstance(row, list) or len(row) < 2:
+                continue
+            cell = str(row[1]).replace(',', '.').strip()
+            try:
+                v = float(cell)
+                if v > 100:
+                    valores.append(v)
+            except Exception:
+                pass
+        if valores:
+            promedio = round(sum(valores) / len(valores), 2)
+            log.info(f'    MEP TC Ambito {periodo}: ${promedio:,.2f}/USD (promedio {len(valores)} días)')
+            return promedio
+        log.debug(f'    MEP TC Ambito {periodo}: sin valores válidos en respuesta')
+        return None
+    except Exception as e:
+        log.debug(f'    MEP TC Ambito {periodo}: parse error: {e}')
+        return None
+
+
 def _scrap_bna_tc():
     """
     Scraping BNA: devuelve el tipo de cambio dólar Billete Venta del día actual.
@@ -2161,26 +2232,26 @@ def actualizar_valuacion(carpeta, snaps_historico):
     """
     val_path = Path(carpeta) / 'valuacion_historica.json'
 
-    # ── TC aproximados por mes (BNA billete venta cierre de mes) ──
-    # Usados como fallback cuando scraping falla. Fuente: BNA histórico.
-    # Solo se usan si no hay TC real disponible (scraping o implícito).
+    # ── TC Dólar MEP promedio mensual — Fuente: Ambito historico ──
+    # Usados como fallback cuando scraping en tiempo real falla.
+    # Valores = promedio de cotizaciones diarias del mes. Fuente: ambito.com/dolar-mep-historico
     _TC_APROX = {
-        '2024-12': 1059.0,
-        '2025-01': 1059.0,
-        '2025-02': 1059.0,
-        '2025-03': 1059.0,
-        '2025-04': 1173.0,   # devaluación banda cambiaria abr-2025
-        '2025-05': 1230.0,
-        '2025-06': 1255.0,
-        '2025-07': 1290.0,
-        '2025-08': 1310.0,
-        '2025-09': 1340.0,
-        '2025-10': 1370.0,
-        '2025-11': 1395.0,
-        '2025-12': 1415.0,
-        '2026-01': 1420.0,
-        '2026-02': 1425.0,
-        '2026-03': 1430.0,
+        '2024-12': 1111.0,
+        '2025-01': 1165.0,
+        '2025-02': 1198.0,
+        '2025-03': 1262.0,
+        '2025-04': 1245.0,   # banda cambiaria abr-2025
+        '2025-05': 1160.0,
+        '2025-06': 1189.0,
+        '2025-07': 1276.0,
+        '2025-08': 1269.0,
+        '2025-09': 1435.0,
+        '2025-10': 1498.0,
+        '2025-11': 1466.0,
+        '2025-12': 1483.0,
+        '2026-01': 1478.0,
+        '2026-02': 1393.0,
+        '2026-03': 1422.0,
     }
 
     # ── Cargar caché existente ──
@@ -2258,24 +2329,28 @@ def actualizar_valuacion(carpeta, snaps_historico):
         if bcr_soja is None:
             bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
 
-        # ── 1b. BNA TC: caché real → scraping histórico → TC aproximado por mes ──
+        # ── 1b. TC Dólar MEP: caché real → Ambito MEP → BNA histórico → aprox tabla ──
+        # Las empresas argentinas usan dólar MEP como referencia de valuación.
         bna_tc = cached.get('bna_tc_venta')   # solo TC reales en caché
         if bna_tc is None:
             if periodo == _periodo_hoy:
                 bna_tc = _bna_tc_hoy
             else:
-                # Scraping BNA histórico (último día hábil del mes)
-                bna_tc = _scrap_bna_tc_historico(periodo)
-                if bna_tc:
-                    log.info(f'    BNA TC {periodo}: ${bna_tc:,.2f} (scraping BNA histórico)')
-            # Fallback: TC aproximado por mes (tabla conocida)
+                # 1) Intentar MEP promedio mensual desde Ambito (fuente preferida)
+                bna_tc = _scrap_mep_tc_ambito(periodo)
+                # 2) Fallback: BNA histórico (último día hábil del mes)
+                if bna_tc is None:
+                    bna_tc = _scrap_bna_tc_historico(periodo)
+                    if bna_tc:
+                        log.info(f'    BNA TC {periodo}: ${bna_tc:,.2f} (scraping BNA histórico)')
+            # Fallback: TC aproximado por mes (promedios MEP Ambito conocidos)
             if bna_tc is None:
                 bna_tc = _TC_APROX.get(periodo)
                 if bna_tc:
-                    log.info(f'    BNA TC {periodo}: ${bna_tc:,.0f} (aproximado — tabla mensual)')
+                    log.info(f'    MEP TC {periodo}: ${bna_tc:,.0f} (tabla mensual MEP — aproximado)')
             # Último fallback: TC actual del día
             if bna_tc is None and _bna_tc_hoy:
-                log.info(f'    BNA TC {periodo}: ${_bna_tc_hoy:,.0f} (TC actual como fallback)')
+                log.info(f'    TC {periodo}: ${_bna_tc_hoy:,.0f} (TC actual como fallback)')
                 bna_tc = _bna_tc_hoy
 
         # ── 2. Hacienda PEGSA en pesos ──
@@ -4124,7 +4199,7 @@ def actualizar_mercado_precios(carpeta, repo):
         "sanidad":    insumos_ant.get("sanidad",    7500),
         "flete_12tn": insumos_ant.get("flete_12tn", 2750),
         "guias":      insumos_ant.get("guias",      1725),
-        "dolar":      insumos_ant.get("dolar",      1400),
+        "dolar":      round(mep_hoy) if mep_hoy else insumos_ant.get("dolar", 1422),
     }
 
     commodities = [
@@ -4140,7 +4215,21 @@ def actualizar_mercado_precios(carpeta, repo):
     negocios     = procesar_negocios(negocios_raw)
     log.info(f"  ✓ Negocios: {negocios['total_ventas']} ventas · {negocios['total_compras']} compras procesadas")
 
-    # ── 6. Histórico diario ─────────────────────────────────────
+    # ── 6a. Dólar MEP del día (Ambito) ─────────────────────────
+    log.info("  → Scraping Dólar MEP (Ambito)...")
+    from datetime import date as _date
+    _hoy_date = _date.today()
+    _mes_actual = _hoy_date.strftime('%Y-%m')
+    mep_hoy = _scrap_mep_tc_ambito(_mes_actual)   # promedio del mes en curso
+    if mep_hoy is None:
+        # Fallback: usar valor anterior o tabla aproximada
+        _prev_mep = next((h.get('tc_mep') for h in reversed(historico) if h.get('tc_mep')), None)
+        mep_hoy = _prev_mep or _TC_APROX_MEP_REF.get(_mes_actual) or insumos_ant.get('dolar', 1422)
+        log.info(f"  ℹ MEP fallback: ${mep_hoy:,.0f}")
+    else:
+        log.info(f"  ✓ MEP hoy: ${mep_hoy:,.0f}/USD")
+
+    # ── 6b. Histórico diario ────────────────────────────────────
     nov_precio = next((h["precio"] for h in hacienda
                        if "novillo" in h["categoria"].lower()
                        and "especial" not in h["categoria"].lower()), 0)
@@ -4154,6 +4243,20 @@ def actualizar_mercado_precios(carpeta, repo):
             if all(s in cat for s in substrings):
                 return h.get("precio", 0) or 0
         return 0
+
+    # Tabla MEP de referencia para retroalimentar historial
+    _TC_APROX_MEP_REF = {
+        '2024-12': 1111.0, '2025-01': 1165.0, '2025-02': 1198.0, '2025-03': 1262.0,
+        '2025-04': 1245.0, '2025-05': 1160.0, '2025-06': 1189.0, '2025-07': 1276.0,
+        '2025-08': 1269.0, '2025-09': 1435.0, '2025-10': 1498.0, '2025-11': 1466.0,
+        '2025-12': 1483.0, '2026-01': 1478.0, '2026-02': 1393.0, '2026-03': 1422.0,
+    }
+
+    # Retroalimentar entradas históricas sin tc_mep
+    for _h in historico:
+        if _h.get('tc_mep') is None:
+            _mes = _h.get('fecha', '')[:7]
+            _h['tc_mep'] = _TC_APROX_MEP_REF.get(_mes)
 
     hoy = {
         "fecha":        today,
@@ -4169,6 +4272,7 @@ def actualizar_mercado_precios(carpeta, repo):
         "maiz":         precio_maiz,
         "soja":         precio_soja,
         "novillo":      nov_precio,
+        "tc_mep":       round(mep_hoy) if mep_hoy else None,
     }
     historico = [h for h in historico if h.get("fecha") != today]
     historico.append(hoy)
