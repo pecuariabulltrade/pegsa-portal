@@ -1991,6 +1991,75 @@ def _scrap_bcr_precio(product_id, nombre, periodo_str):
     return None
 
 
+def _scrap_bna_tc_historico(periodo):
+    """
+    Consulta el TC dólar Billete Venta del BNA para el último día hábil del mes.
+    Fuente: https://www.bna.com.ar/Cotizador/HistoricasMonedas (POST form)
+    periodo: "YYYY-MM"
+    Retorna float o None si no hay datos disponibles.
+    """
+    import urllib.request, urllib.parse, calendar
+    from datetime import date, timedelta
+
+    try:
+        year, month = int(periodo[:4]), int(periodo[5:7])
+    except Exception:
+        return None
+
+    # Último día del mes
+    last_day = calendar.monthrange(year, month)[1]
+    fecha_fin = date(year, month, last_day)
+
+    # Buscar desde 10 días antes (para cubrir fines de semana / feriados)
+    fecha_ini = fecha_fin - timedelta(days=10)
+
+    payload = urllib.parse.urlencode({
+        'moneda':      '2',          # USD
+        'cotizacion':  '1',          # Billete
+        'fechaDesde':  fecha_ini.strftime('%d/%m/%Y'),
+        'fechaHasta':  fecha_fin.strftime('%d/%m/%Y'),
+    }).encode('utf-8')
+
+    url = 'https://www.bna.com.ar/Cotizador/HistoricasMonedas'
+    try:
+        req = urllib.request.Request(url, data=payload, method='POST')
+        req.add_header('User-Agent', 'Mozilla/5.0 (compatible; PEGSA-Bot/1.0)')
+        req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+        req.add_header('Referer', 'https://www.bna.com.ar/Cotizador/HistoricasMonedas')
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read()
+    except Exception as e:
+        log.warning(f'    BNA TC histórico {periodo}: request error: {e}')
+        return None
+
+    try:
+        txt = raw.decode('utf-8', errors='replace')
+    except Exception:
+        txt = raw.decode('latin-1', errors='replace')
+
+    # Parsear tabla de resultados: columnas Fecha | Compra | Venta
+    import re
+    # Buscar filas <tr> con celdas de fecha DD/MM/YYYY y valores numéricos
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', txt, re.S | re.I)
+    last_venta = None
+    for row in rows:
+        cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.S | re.I)
+        if len(cells) >= 3:
+            fecha_txt = re.sub(r'<[^>]+>', '', cells[0]).strip()
+            venta_txt = re.sub(r'<[^>]+>', '', cells[2]).strip()
+            # Verificar que sea una fila de fecha válida
+            if re.match(r'\d{2}/\d{2}/\d{4}', fecha_txt):
+                v = _ar_num(venta_txt)
+                if v and v > 100:   # TC razonable > $100
+                    last_venta = v
+
+    if last_venta:
+        log.info(f'    BNA TC histórico {periodo}: ${last_venta:,.2f}/USD')
+    else:
+        log.warning(f'    BNA TC histórico {periodo}: sin datos en respuesta')
+    return last_venta
+
+
 def _scrap_bna_tc():
     """
     Scraping BNA: devuelve el tipo de cambio dólar Billete Venta del día actual.
@@ -2108,13 +2177,11 @@ def actualizar_valuacion(carpeta, snaps_historico):
         except Exception:
             pass
 
-    # ── Scraping BNA TC una sola vez (TC actual) ──
-    # Scrapeamos el TC al inicio; se usa para el período actual Y como fallback
-    # para períodos históricos donde usd_ars = 0 pero usd_cant > 0.
+    # ── Scraping BNA TC: actual (para período corriente) + histórico (para meses anteriores) ──
     from datetime import date as _dtoday
     _periodo_hoy = _dtoday.today().strftime('%Y-%m')
-    log.info('  Consultando BNA TC...')
-    _bna_tc_hoy = _scrap_bna_tc()   # None si falla el scraping
+    log.info('  Consultando BNA TC actual...')
+    _bna_tc_hoy = _scrap_bna_tc()   # TC del día de hoy (None si falla)
 
     nuevos_snaps = []
 
@@ -2145,10 +2212,17 @@ def actualizar_valuacion(carpeta, snaps_historico):
         if bcr_soja is None:
             bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
 
-        # ── 1b. BNA TC: usar caché si existe; sino usar TC actual como fallback ──
-        # El TC histórico exacto no está disponible vía scraping, pero el TC actual
-        # es una buena aproximación para calcular usd_pesos en períodos recientes.
-        bna_tc = cached.get('bna_tc_venta') or _bna_tc_hoy
+        # ── 1b. BNA TC: caché → histórico BNA → TC actual como fallback ──
+        bna_tc = cached.get('bna_tc_venta')
+        if bna_tc is None:
+            if periodo == _periodo_hoy:
+                bna_tc = _bna_tc_hoy
+            else:
+                # Consultar último día hábil del mes en BNA histórico
+                bna_tc = _scrap_bna_tc_historico(periodo)
+                if bna_tc is None and _bna_tc_hoy:
+                    log.info(f'    BNA TC {periodo}: usando TC actual (${_bna_tc_hoy:,.0f}) como fallback')
+                    bna_tc = _bna_tc_hoy
 
         # ── 2. Hacienda PEGSA en pesos ──
         kg_pegsa       = float(pegsa.get('kg_proyectado') or 0)
