@@ -2109,11 +2109,12 @@ def actualizar_valuacion(carpeta, snaps_historico):
             pass
 
     # ── Scraping BNA TC una sola vez (TC actual) ──
-    # Solo scrapeamos para el período actual; históricos que ya están cacheados
-    # conservan su TC guardado.  Si es None, el total_usd quedará null.
+    # Scrapeamos el TC al inicio; se usa para el período actual Y como fallback
+    # para períodos históricos donde usd_ars = 0 pero usd_cant > 0.
     from datetime import date as _dtoday
     _periodo_hoy = _dtoday.today().strftime('%Y-%m')
-    _bna_tc_hoy  = None   # se lazy-inicializa solo si hay al menos un período que lo necesita
+    log.info('  Consultando BNA TC...')
+    _bna_tc_hoy = _scrap_bna_tc()   # None si falla el scraping
 
     nuevos_snaps = []
 
@@ -2144,15 +2145,10 @@ def actualizar_valuacion(carpeta, snaps_historico):
         if bcr_soja is None:
             bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
 
-        # ── 1b. BNA TC: usar caché si existe; para el período actual re-scrapeamos ──
-        bna_tc = cached.get('bna_tc_venta')
-        if bna_tc is None or periodo == _periodo_hoy:
-            # Solo consultamos BNA una vez por ejecución
-            if _bna_tc_hoy is None and periodo == _periodo_hoy:
-                _bna_tc_hoy = _scrap_bna_tc()
-            if periodo == _periodo_hoy:
-                bna_tc = _bna_tc_hoy
-            # Para períodos históricos sin TC en caché: queda None (histórico no disponible)
+        # ── 1b. BNA TC: usar caché si existe; sino usar TC actual como fallback ──
+        # El TC histórico exacto no está disponible vía scraping, pero el TC actual
+        # es una buena aproximación para calcular usd_pesos en períodos recientes.
+        bna_tc = cached.get('bna_tc_venta') or _bna_tc_hoy
 
         # ── 2. Hacienda PEGSA en pesos ──
         kg_pegsa       = float(pegsa.get('kg_proyectado') or 0)
@@ -2199,8 +2195,17 @@ def actualizar_valuacion(carpeta, snaps_historico):
         tercio  = float(fin.get('tercio_bravo')     or 0)
         fin_pesos = round(disp + cartera - emit + cobrar - pagar + lcg + tercio) if any([disp, cartera, cobrar]) else None
 
-        # ── 5. Dólares ya convertidos a pesos ──
-        usd_pesos = round(float(fin.get('usd_ars') or 0)) or None
+        # ── 5. Dólares en pesos ──
+        # Prioridad: usd_ars (ya convertido en el Excel); fallback: usd_cant × TC actual
+        _usd_ars  = float(fin.get('usd_ars')  or 0)
+        _usd_cant = float(fin.get('usd_cant') or 0)
+        if _usd_ars > 0:
+            usd_pesos = round(_usd_ars)
+        elif _usd_cant > 0 and bna_tc:
+            usd_pesos = round(_usd_cant * bna_tc)
+            log.info(f'    USD fallback: {_usd_cant:,.0f} USD × ${bna_tc:,.0f} = ${usd_pesos:,.0f}')
+        else:
+            usd_pesos = None
 
         # ── 6. Total pesos ──
         componentes = [hacienda_pesos, insumos_pesos, fin_pesos, usd_pesos]
@@ -2227,6 +2232,7 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'soja_pesos':        soja_pesos,
                 'insumos_pesos':     insumos_pesos,
                 'financiero_pesos':  fin_pesos,
+                'usd_cant':          round(_usd_cant) if _usd_cant else None,
                 'usd_pesos':         usd_pesos,
                 'total_pesos':       total_pesos,
                 'total_usd':         total_usd,
