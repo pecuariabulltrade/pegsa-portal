@@ -2614,11 +2614,12 @@ window.addEventListener('load', function(){
       </div>
     </div>
     <!-- KPIs rápidos -->
-    <div id="mercadoKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.08);margin-top:24px">
+    <div id="mercadoKpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,.08);margin-top:24px">
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Novillo ($/kg)</div><div id="mkpi-novillo" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Vaca ($/kg)</div><div id="mkpi-vaca" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Maíz ($/tn)</div><div id="mkpi-maiz" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Soja ($/tn)</div><div id="mkpi-soja" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
+      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5b8aba;margin-bottom:6px">Dólar MEP</div><div id="mkpi-mep" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif;color:#5b8aba">—</div></div>
     </div>
   </div>
 
@@ -3325,7 +3326,7 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:24px">
           <div class="section-header">
             <span class="section-title">Patrimonio Total — Evolución Mensual (USD)</span>
-            <span class="section-sub">Total en pesos convertido al TC BNA Billete Venta del mes</span>
+            <span class="section-sub">Total en pesos convertido al Dólar MEP promedio del mes</span>
           </div>
           <div style="position:relative;height:240px"><canvas id="chartValUSD"></canvas></div>
         </div>
@@ -3334,7 +3335,7 @@ window.addEventListener('load', function(){
         <div class="panel" style="display:block;margin-bottom:24px">
           <div class="section-header">
             <span class="section-title">Precios de Referencia Mensuales</span>
-            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton) · TC BNA ($/USD)</span>
+            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton) · Dólar MEP ($/USD)</span>
           </div>
           <div id="valTablaPrecios" style="overflow-x:auto"></div>
         </div>
@@ -3786,6 +3787,11 @@ function initMercado(){
       document.getElementById('mkpi-vaca').textContent    = vac?'$'+Number(vac.precio).toLocaleString('es-AR'):'—';
       document.getElementById('mkpi-maiz').textContent    = mz ?'$'+Number(mz.precio).toLocaleString('es-AR') :'—';
       document.getElementById('mkpi-soja').textContent    = sj ?'$'+Number(sj.precio).toLocaleString('es-AR') :'—';
+      // KPI Dólar MEP — tomar del último registro del historial
+      var mepVal = data.insumos && data.insumos.dolar ? data.insumos.dolar
+                 : (data.historico && data.historico.length ? (data.historico[data.historico.length-1].tc_mep || null) : null);
+      var mepEl = document.getElementById('mkpi-mep');
+      if(mepEl) mepEl.textContent = mepVal ? '$'+Number(mepVal).toLocaleString('es-AR') : '—';
     } else {
       status.textContent = 'Sin datos — ejecutar actualización';
     }
@@ -4343,7 +4349,7 @@ function renderNegocios(){
 // ── Gráfico Histórico de Precios ───────────────────────────
 var _histChart = null;
 var _histSeries = [
-  // [campo, label, color, visible por defecto]
+  // [campo, label, color, visible por defecto, isGrano(/1000), isMEP(/10)]
   ['nov_390',      'Novillito ≤390 kg',   '#6aab9c', true ],
   ['nov_430',      'Novillito 391/430 kg','#27613d', false],
   ['nov_460',      'Novillo 431/460 kg',  '#b8922a', true ],
@@ -4354,8 +4360,9 @@ var _histSeries = [
   ['vac_conserva', 'Vaca Conserva',       '#c39bd3', false],
   ['ternero',      'Ternero',             '#2980b9', true ],
   ['ternera',      'Ternera',             '#7fb3d3', false],
-  ['maiz',         'Maíz ($/kg=÷1000)',   '#e8a020', false, true], // escala /1000
-  ['soja',         'Soja ($/kg=÷1000)',   '#5d8a3c', false, true],
+  ['maiz',         'Maíz ($/tn÷1000)',   '#e8a020', false, true], // escala /1000
+  ['soja',         'Soja ($/tn÷1000)',   '#5d8a3c', false, true],
+  ['tc_mep',       'Dólar MEP ($/USD)',   '#5b8aba', false, false, false], // eje propio
 ];
 var _histVisible = {};
 
@@ -4388,34 +4395,50 @@ function _histRenderChart(){
   if(!data || !data.historico) return;
   var hist = data.historico.slice(-90);
   var labels = hist.map(function(h){ return h.fecha ? h.fecha.slice(5).replace('-','/') : ''; });
+  var hasMEP = false;
 
   var datasets = [];
   _histSeries.forEach(function(s){
-    var field = s[0], label = s[1], color = s[2], isGrano = !!s[4];
+    var field = s[0], label = s[1], color = s[2], isGrano = !!s[4], isMEP = (field === 'tc_mep');
     if(!_histVisible[field]) return;
+    if(isMEP) hasMEP = true;
     var vals = hist.map(function(h){
       var v = h[field];
-      // Retrocompatibilidad: si es campo nuevo y no existe, intentar campo legado
       if((v==null||v===0) && field==='nov_460') v = h['novillo']||null;
       if((v==null||v===0) && field==='ternero') v = h['ternero']||null;
       if(v==null||v===0) return null;
       return isGrano ? v/1000 : v;
     });
+    var hex2rgba = function(hex, a){ var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return 'rgba('+r+','+g+','+b+','+a+')'; };
     datasets.push({
-      label: label,
-      data: vals,
-      borderColor: color,
-      backgroundColor: color.replace(')',',0.07)').replace('rgb(','rgba(').replace('#',
-        function(){ var r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16); return 'rgba('+r+','+g+','+b+',0.07)'; }),
-      tension: .3,
-      pointRadius: 2,
-      borderWidth: 2,
-      spanGaps: true,
+      label:           label,
+      data:            vals,
+      borderColor:     color,
+      backgroundColor: hex2rgba(color, 0.07),
+      tension:         .3,
+      pointRadius:     2,
+      borderWidth:     isMEP ? 2.5 : 2,
+      borderDash:      isMEP ? [5,3] : [],
+      spanGaps:        true,
+      yAxisID:         isMEP ? 'yMEP' : 'y',
     });
   });
 
   var ctx = document.getElementById('chartMercadoHistorico').getContext('2d');
   if(_histChart){ _histChart.destroy(); }
+  var scalesOpts = {
+    x:{ ticks:{ font:{family:'DM Mono,monospace',size:9}, maxTicksLimit:14, color:'rgba(26,22,18,.45)' }, grid:{color:'rgba(0,0,0,.04)'} },
+    y:{ ticks:{ font:{family:'DM Mono,monospace',size:9}, color:'rgba(26,22,18,.45)',
+          callback:function(v){ return '$'+Number(v).toLocaleString('es-AR',{maximumFractionDigits:0}); }
+        }, grid:{color:'rgba(0,0,0,.04)'} },
+    yMEP:{ display: hasMEP, position:'right',
+      ticks:{ font:{family:'DM Mono,monospace',size:8}, color:'#5b8aba',
+        callback:function(v){ return 'U$S '+Number(v).toLocaleString('es-AR'); }
+      },
+      grid:{ drawOnChartArea:false },
+      title:{ display:false }
+    }
+  };
   _histChart = new Chart(ctx, {
     type: 'line',
     data: { labels: labels, datasets: datasets },
@@ -4426,16 +4449,14 @@ function _histRenderChart(){
         legend:{ display: false },
         tooltip:{ callbacks:{
           label:function(c){
-            return '  '+c.dataset.label+': $'+Number(c.raw||0).toLocaleString('es-AR',{maximumFractionDigits:0});
+            var raw = c.raw || 0;
+            if(c.dataset.yAxisID === 'yMEP')
+              return '  '+c.dataset.label+': U$S '+Number(raw).toLocaleString('es-AR',{maximumFractionDigits:0})+'/USD';
+            return '  '+c.dataset.label+': $'+Number(raw).toLocaleString('es-AR',{maximumFractionDigits:0});
           }
         }}
       },
-      scales:{
-        x:{ ticks:{ font:{family:'DM Mono,monospace',size:9}, maxTicksLimit:14, color:'rgba(26,22,18,.45)' }, grid:{color:'rgba(0,0,0,.04)'} },
-        y:{ ticks:{ font:{family:'DM Mono,monospace',size:9}, color:'rgba(26,22,18,.45)',
-              callback:function(v){ return '$'+Number(v).toLocaleString('es-AR',{maximumFractionDigits:0}); }
-            }, grid:{color:'rgba(0,0,0,.04)'} }
-      }
+      scales: scalesOpts
     }
   });
 }
@@ -9632,16 +9653,26 @@ function _renderValuacion(){
   }
   function fKg(v){ return v ? (v/1000).toFixed(0)+'t' : '—'; }
 
+  // helper: total_usd explícito o derivado de total_pesos / bna_tc_venta
+  function _totalUSDval(s){
+    var c_ = s.componentes || {}, pr_ = s.precios || {};
+    if(c_.total_usd != null) return c_.total_usd;
+    if(c_.total_pesos != null && pr_.bna_tc_venta) return Math.round(c_.total_pesos / pr_.bna_tc_venta);
+    return null;
+  }
+
   // ── KPIs último mes disponible ──
   var ult = snaps[snaps.length-1];
   var c   = ult.componentes || {};
   var pr  = ult.precios || {};
   function fUSD(v){ if(v==null) return '—'; var abs=Math.abs(v),sign=v<0?'−':''; if(abs>=1e6) return sign+'U$S\u00a0'+(abs/1e6).toFixed(2)+'M'; return sign+'U$S\u00a0'+Math.round(abs).toLocaleString('es-AR'); }
+  var _tcDisp = pr.bna_tc_venta ? 'MEP $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD' : 'MEP no disponible';
   var kpiDefs = [
     { label:'Hacienda PEGSA',   value: fM(c.hacienda_pesos),   sub: (pr.mag_indice ? '@ $'+pr.mag_indice.toFixed(0)+'/kg MAG' : 'índice MAG') },
     { label:'Insumos (M+S)',    value: fM(c.insumos_pesos),    sub: fKg(c.maiz_kg)+' maíz · '+fKg(c.soja_kg)+' soja' },
+    { label:'USD (en $)',       value: fM(c.usd_pesos),        sub: c.usd_cant ? Math.round(c.usd_cant).toLocaleString('es-AR')+' USD · '+_tcDisp : _tcDisp },
     { label:'Patrimonio en $',  value: fM(c.total_pesos),      sub: ult.periodo+' · todos los componentes' },
-    { label:'Patrimonio en USD',value: fUSD(c.total_usd),      sub: pr.bna_tc_venta ? 'TC BNA $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD' : 'TC BNA no disponible' },
+    { label:'Patrimonio en USD',value: fUSD(_totalUSDval(ult)), sub: _tcDisp },
   ];
   var kpiHtml = kpiDefs.map(function(k){
     var isTotal = k.label==='Patrimonio Total';
@@ -9719,7 +9750,7 @@ function _renderValuacion(){
   // ── Gráfico USD ──
   var dsUSD = [{
     label: 'Patrimonio total (U$S)',
-    data: snaps.map(function(s){ var v=s.componentes&&s.componentes.total_usd; return v!=null?Math.round(v/1000):null; }),
+    data: snaps.map(function(s){ var v=_totalUSDval(s); return v!=null?Math.round(v/1000):null; }),
     borderColor: '#2d6a8a', backgroundColor: 'rgba(45,106,138,.1)',
     tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
   }];
@@ -9748,13 +9779,14 @@ function _renderValuacion(){
   var thS = 'style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);text-align:right;white-space:nowrap"';
   var thL = 'style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border)"';
   var html = '<table class="data-table" style="width:100%;border-collapse:collapse">'
-    +'<thead><tr><th '+thL+'>Período</th><th '+thS+'>Índice MAG ($/kg)</th><th '+thS+'>Maíz BCR ($/ton)</th><th '+thS+'>Soja BCR ($/ton)</th><th '+thS+'>TC BNA ($/USD)</th>'
-    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>Total $</th><th '+thS+'>Total USD</th></tr></thead><tbody>';
+    +'<thead><tr><th '+thL+'>Período</th><th '+thS+'>Índice MAG ($/kg)</th><th '+thS+'>Maíz BCR ($/ton)</th><th '+thS+'>Soja BCR ($/ton)</th><th '+thS+'>Dólar MEP ($/USD)</th>'
+    +'<th '+thS+'>Hacienda PEGSA</th><th '+thS+'>Insumos (M+S)</th><th '+thS+'>Financiero</th><th '+thS+'>USD (en $)</th><th '+thS+'>Total $</th><th '+thS+'>Total USD</th></tr></thead><tbody>';
 
   snaps.slice().reverse().forEach(function(s){
     var p = s.precios||{}, c2 = s.componentes||{};
     var tdR = 'style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;padding:8px 10px;border-bottom:1px solid var(--border)"';
     var tdL = 'style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap"';
+    var tdUSD = 'style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;padding:8px 10px;border-bottom:1px solid var(--border);color:rgba(138,45,138,.9)"';
     html += '<tr>'
       +'<td '+tdL+'>'+s.periodo+'</td>'
       +'<td '+tdR+'>'+(p.mag_indice!=null ? p.mag_indice.toLocaleString('es-AR',{minimumFractionDigits:3}) : '—')+'</td>'
@@ -9764,8 +9796,9 @@ function _renderValuacion(){
       +'<td '+tdR+'>'+fM(c2.hacienda_pesos)+'</td>'
       +'<td '+tdR+'>'+fM(c2.insumos_pesos)+'</td>'
       +'<td '+tdR+'>'+fM(c2.financiero_pesos)+'</td>'
+      +'<td '+tdUSD+'>'+(c2.usd_pesos!=null ? fM(c2.usd_pesos) : (c2.usd_cant ? Math.round(c2.usd_cant).toLocaleString('es-AR')+'\u00a0USD' : '—'))+'</td>'
       +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--gold)">'+fM(c2.total_pesos)+'</td>'
-      +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:#2d6a8a">'+fUSD(c2.total_usd)+'</td>'
+      +'<td style="text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--border);color:#2d6a8a">'+fUSD(_totalUSDval(s))+'</td>'
       +'</tr>';
   });
   document.getElementById('valTablaPrecios').innerHTML = html+'</tbody></table>';
