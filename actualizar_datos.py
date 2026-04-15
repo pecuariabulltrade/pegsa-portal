@@ -2161,9 +2161,32 @@ def actualizar_valuacion(carpeta, snaps_historico):
     """
     val_path = Path(carpeta) / 'valuacion_historica.json'
 
+    # ── TC aproximados por mes (BNA billete venta cierre de mes) ──
+    # Usados como fallback cuando scraping falla. Fuente: BNA histórico.
+    # Solo se usan si no hay TC real disponible (scraping o implícito).
+    _TC_APROX = {
+        '2024-12': 1059.0,
+        '2025-01': 1059.0,
+        '2025-02': 1059.0,
+        '2025-03': 1059.0,
+        '2025-04': 1173.0,   # devaluación banda cambiaria abr-2025
+        '2025-05': 1230.0,
+        '2025-06': 1255.0,
+        '2025-07': 1290.0,
+        '2025-08': 1310.0,
+        '2025-09': 1340.0,
+        '2025-10': 1370.0,
+        '2025-11': 1395.0,
+        '2025-12': 1415.0,
+        '2026-01': 1420.0,
+        '2026-02': 1425.0,
+        '2026-03': 1430.0,
+    }
+
     # ── Cargar caché existente ──
+    # Solo cachear TC que son "reales" (scraping o implícito), NO aproximados.
     cache = {}   # {periodo_str: {mag, bcr_maiz, bcr_soja, bna_tc_venta}}
-    val_snaps_prev = {}   # {periodo_str: snap guardado}
+    val_snaps_prev = {}
     if val_path.exists():
         try:
             with open(val_path, encoding='utf-8') as _f:
@@ -2172,14 +2195,21 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 p = _s.get('periodo', '')
                 val_snaps_prev[p] = _s
                 pr = _s.get('precios', {})
-                if pr.get('mag_indice') or pr.get('bcr_maiz_ton') or pr.get('bcr_soja_ton') or pr.get('bna_tc_venta'):
-                    cache[p] = dict(pr)   # copia mutable
+                # Cachear precios de commodities siempre
+                if pr.get('mag_indice') or pr.get('bcr_maiz_ton') or pr.get('bcr_soja_ton'):
+                    cache.setdefault(p, {}).update({
+                        k: pr[k] for k in ('mag_indice','bcr_maiz_ton','bcr_soja_ton') if pr.get(k)
+                    })
+                # Cachear TC solo si fue obtenido por scraping real (no aproximado)
+                tc_guardado  = pr.get('bna_tc_venta')
+                tc_es_aprox  = (tc_guardado is not None and tc_guardado == _TC_APROX.get(p))
+                tc_es_real   = (tc_guardado is not None and not tc_es_aprox)
+                if tc_es_real:
+                    cache.setdefault(p, {})['bna_tc_venta'] = tc_guardado
         except Exception:
             pass
 
     # ── TC implícito desde snapshots con usd_ars + usd_cant conocidos ──
-    # Si usd_ars y usd_cant están ambos > 0, el TC usado = usd_ars / usd_cant.
-    # Guardar en caché para ese período y usar como referencia para otros.
     _tc_implicito_ref = None
     for snap in snaps_historico:
         fin_ = snap.get('financiero', {})
@@ -2188,10 +2218,10 @@ def actualizar_valuacion(carpeta, snaps_historico):
         if ars_ > 0 and cnt_ > 0:
             tc_imp = round(ars_ / cnt_, 2)
             per_   = snap.get('periodo', '')
-            if per_ and cache.get(per_, {}).get('bna_tc_venta') is None:
-                cache.setdefault(per_, {})['bna_tc_venta'] = tc_imp
-                log.info(f'    TC implícito {per_}: ${tc_imp:,.2f}/USD (usd_ars/usd_cant)')
-            _tc_implicito_ref = tc_imp   # guardar el más reciente como referencia
+            # Este TC es real — guardarlo en caché con prioridad
+            cache.setdefault(per_, {})['bna_tc_venta'] = tc_imp
+            log.info(f'    TC implícito {per_}: ${tc_imp:,.2f}/USD (usd_ars/usd_cant)')
+            _tc_implicito_ref = tc_imp
 
     # ── Scraping BNA TC: actual (para período corriente) + histórico (para meses anteriores) ──
     from datetime import date as _dtoday
@@ -2228,21 +2258,24 @@ def actualizar_valuacion(carpeta, snaps_historico):
         if bcr_soja is None:
             bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
 
-        # ── 1b. BNA TC: caché → histórico BNA → TC implícito → TC actual ──
-        bna_tc = cached.get('bna_tc_venta')
+        # ── 1b. BNA TC: caché real → scraping histórico → TC aproximado por mes ──
+        bna_tc = cached.get('bna_tc_venta')   # solo TC reales en caché
         if bna_tc is None:
             if periodo == _periodo_hoy:
                 bna_tc = _bna_tc_hoy
             else:
-                # 1. Intentar scraping histórico BNA (último día hábil del mes)
+                # Scraping BNA histórico (último día hábil del mes)
                 bna_tc = _scrap_bna_tc_historico(periodo)
-            # 2. Fallback: TC implícito de snapshot con usd_ars/usd_cant conocidos
-            if bna_tc is None and _tc_implicito_ref:
-                log.info(f'    BNA TC {periodo}: usando TC implícito (${_tc_implicito_ref:,.0f}) como fallback')
-                bna_tc = _tc_implicito_ref
-            # 3. Último fallback: TC del día actual
+                if bna_tc:
+                    log.info(f'    BNA TC {periodo}: ${bna_tc:,.2f} (scraping BNA histórico)')
+            # Fallback: TC aproximado por mes (tabla conocida)
+            if bna_tc is None:
+                bna_tc = _TC_APROX.get(periodo)
+                if bna_tc:
+                    log.info(f'    BNA TC {periodo}: ${bna_tc:,.0f} (aproximado — tabla mensual)')
+            # Último fallback: TC actual del día
             if bna_tc is None and _bna_tc_hoy:
-                log.info(f'    BNA TC {periodo}: usando TC actual (${_bna_tc_hoy:,.0f}) como fallback')
+                log.info(f'    BNA TC {periodo}: ${_bna_tc_hoy:,.0f} (TC actual como fallback)')
                 bna_tc = _bna_tc_hoy
 
         # ── 2. Hacienda PEGSA en pesos ──
