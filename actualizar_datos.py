@@ -255,9 +255,6 @@ def conectar(cfg):
         cs_base + "Encrypt=no;",
     ]
 
-    # Intentar con cifrado primero, luego sin cifrado si falla SSL
-    connection_strings = [cs, cs + "Encrypt=no;"]
-
     log.info(f"Conectando a  {srv}  /  {db}  ...")
     last_error = None
     for cs in connection_strings:
@@ -4212,6 +4209,7 @@ def actualizar_mercado_precios(carpeta, repo):
         log.info("  ℹ Usando precios anteriores de granos")
 
     # ── 4. Insumos (maíz como ancla, resto relaciones del Excel) ─
+    mep_hoy = None  # se asigna más adelante; inicializado aquí para evitar UnboundLocalError en Python 3.12+
     REL = {"gluten": 0.5385, "germen": 1.2227, "nucleo": 1.9342, "hominy": 0.8413}
     insumos = {
         "maiz":       precio_maiz,
