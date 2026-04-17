@@ -1,5 +1,5 @@
 {
-  "generado": "2026-04-16T19:00:05.828359",
+  "generado": "2026-04-17T00:00:02.660783",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
@@ -19,7 +19,7 @@
       "ok": true,
       "total_anio": 296,
       "total_mes_ant": 22,
-      "tasa_mensual_pct": 1.102
+      "tasa_mensual_pct": 1.104
     },
     "muertes_30d": {
       "ok": true,
@@ -34,7 +34,7 @@
     },
     "consumo": {
       "ok": true,
-      "total_anual_kg": 41154251.0,
+      "total_anual_kg": 41011461.6,
       "promedio_diario_kg": 103428.5
     },
     "indicadores": {
@@ -46,8 +46,10 @@
       "conversion": 5.67
     },
     "tesoreria": {
-      "ok": false,
-      "error": "`Import openpyxl` failed.  Use pip or conda to install the openpyxl package."
+      "ok": true,
+      "cortes": 4,
+      "ultimo_corte": "2026-04-13",
+      "saldo_disp": -348651681.18999994
     },
     "historico": {
       "ok": true,
@@ -65,7 +67,7 @@
     "stock_diario": {
       "ok": true,
       "dias": 91,
-      "ultima_fecha": "2026-04-16",
+      "ultima_fecha": "2026-04-17",
       "metodo": "running_balance"
     }
   }
