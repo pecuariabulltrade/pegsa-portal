@@ -15,9 +15,32 @@ KPIs agrupados por:
   - Categoria final
 """
 import sys, json, logging, configparser, warnings, re
-import pandas as pd
 from datetime import datetime
 from pathlib import Path
+
+# ── Verificar dependencias antes de importar ──────────────
+_missing = []
+try:
+    import pandas as pd
+except ImportError:
+    _missing.append("pandas")
+try:
+    import pyodbc as _pyodbc_check
+except ImportError:
+    _missing.append("pyodbc")
+
+if _missing:
+    # Escribir error en log aunque el logger no este listo aun
+    _log_dir = Path(__file__).parent / "logs"
+    _log_dir.mkdir(exist_ok=True)
+    _err_file = _log_dir / f"log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    _msg = (f"ERROR CRITICO: faltan dependencias: {', '.join(_missing)}\n"
+            f"Python: {sys.executable} (v{sys.version})\n"
+            f"Solución: correr  1_INSTALAR.bat  o ejecutar:\n"
+            f"  {sys.executable} -m pip install pandas pyodbc\n")
+    _err_file.write_text(_msg, encoding="utf-8")
+    print(_msg)
+    sys.exit(1)
 
 # ── Logging ───────────────────────────────────────────────
 log_dir = Path(__file__).parent / "logs"
@@ -231,6 +254,9 @@ def conectar(cfg):
         cs_base,
         cs_base + "Encrypt=no;",
     ]
+
+    # Intentar con cifrado primero, luego sin cifrado si falla SSL
+    connection_strings = [cs, cs + "Encrypt=no;"]
 
     log.info(f"Conectando a  {srv}  /  {db}  ...")
     last_error = None
