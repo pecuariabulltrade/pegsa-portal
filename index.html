@@ -6361,9 +6361,9 @@ function renderIndicadores(data) {
   grid.appendChild(makeIndicCard(
     'Conversión Alimenticia',
     fmtD(conv.valor, 1) + '<span style="font-size:18px;margin-left:4px">: 1</span>',
-    msCabDia.replace('.',',') + ' kg MS/cab/día  ÷  ADP ' + fmtD(fuen.adp_promedio, 2) + ' kg/día  ·  '+fmtN(cabDenom)+' cab',
+    msCabDia.replace('.',',') + ' kg MS/cab/día  ÷  ADP ' + fmtD(fuen.adp_promedio, 2) + ' kg/día' + (fuen.adp_mes ? '  ·  engorde ' + fuen.adp_mes : '') + '  ·  '+fmtN(cabDenom)+' cab',
     '5 : 1 – 8 : 1  ·  menor = más eficiente',
-    '(kg MS/día ÷ cabezas '+denominador+') ÷ ADP',
+    '(kg MS/día ÷ cabezas '+denominador+') ÷ ADP último mes cerrado',
     sConv,
     barraRef(conv.valor, conv.ref_min, conv.ref_max, true)
   ));
@@ -6374,9 +6374,11 @@ function renderIndicadores(data) {
   var nota = document.createElement('div');
   nota.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);padding:10px 16px;'
     +'background:rgba(26,22,18,.03);border-radius:2px;line-height:1.7';
-  nota.innerHTML = '⚠ <strong>Nota:</strong> El ADP utilizado corresponde a los egresos del período '
-    +'(animales vendidos). El consumo MS y TC corresponde al promedio de los últimos días con registros. '
-    +'La conversión es una estimación puntual — para mayor precisión se recomienda comparar períodos cerrados.';
+  var _adpMesLabel = fuen.adp_mes || 'último mes cerrado';
+  nota.innerHTML = 'ℹ <strong>Nota:</strong> El ADP utilizado es el engorde real del último mes cerrado ('
+    + _adpMesLabel + ' · ' + fmtD(fuen.adp_promedio, 3) + ' kg/día). '
+    +'El consumo MS corresponde al promedio de los últimos días con registros. '
+    +'Para mayor precisión se recomienda comparar períodos cerrados.';
   panel.appendChild(nota);
 
   // Separador
