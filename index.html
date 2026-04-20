@@ -5626,7 +5626,7 @@ function stockRenderSeccion(containerId, titulo, clickable, porObj, totalCab, ca
       card.style.cursor = 'pointer';
       card.addEventListener('mouseover', function(){ this.style.boxShadow='0 4px 16px rgba(0,0,0,.12)'; });
       card.addEventListener('mouseout',  function(){ this.style.boxShadow=''; });
-      card.addEventListener('click', (function(n){ return function(){ abrirEstablecimiento(n, catDesglose[n]||{}); }; })(nombre));
+      card.addEventListener('click', (function(n){ return function(){ abrirEstablecimiento(n, '', catDesglose[n]||{}); }; })(nombre));
       card.innerHTML += '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(184,146,42,.7);margin-top:6px">Ver categor\u00edas \u2192</div>';
     }
     card.innerHTML = '<div style="font-size:11px;font-family:DM Mono,monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:5px">'+(clickable?'Propietario':'Establecimiento')+'</div>'
@@ -5991,70 +5991,6 @@ function renderGraficos() {
   makeDonut('chartPropKg',  props.map(function(e){return e[0];}), props.map(function(e){return e[1].kg_estimado||e[1].ton_estimado*1000||0;}), STOCK_COLS);
   makeLeyenda('leyendaPropCab', props, STOCK_COLS, 'cabezas',     '');
   makeLeyenda('leyendaPropKg',  props, STOCK_COLS, 'kg_estimado', 't');
-}
-
-
-function abrirEstablecimiento(nombre, catDesglose) {
-  document.getElementById('modalPropTitulo').textContent = nombre;
-  var body = document.getElementById('modalPropBody');
-  body.innerHTML = '';
-  document.getElementById('modalProp').style.display = 'block';
-
-  // Calcular totales del establecimiento
-  var cats = Object.entries(catDesglose).sort(function(a,b){ return b[1].cabezas-a[1].cabezas; });
-  if (!cats.length) {
-    body.innerHTML = '<div style="text-align:center;padding:40px;opacity:.4;font-family:DM Mono,monospace">Sin datos de categor\u00edas</div>';
-    return;
-  }
-
-  var totCab  = cats.reduce(function(s,e){ return s+e[1].cabezas; }, 0);
-  var totTons = cats.reduce(function(s,e){ return s+(e[1].ton_estimado||0); }, 0);
-  var totKg   = cats.reduce(function(s,e){ return s+(e[1].kg_estimado||0); }, 0);
-  var kgProm  = totCab > 0 ? Math.round(totKg/totCab) : 0;
-
-  // KPI cards
-  var kpiGrid = document.createElement('div');
-  kpiGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px';
-  [
-    ['Total Cabezas',   stockFmt(totCab),           ''],
-    ['Total Toneladas', totTons.toFixed(1)+' kg',     '#27613d'],
-    ['Kg Promedio',     stockFmt(kgProm)+' kg',      '']
-  ].forEach(function(item) {
-    var card = document.createElement('div');
-    card.style.cssText = 'background:white;border:1px solid #e8e2d8;padding:16px 18px;border-radius:2px';
-    card.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:6px">'+item[0]+'</div>'
-      +'<div style="font-family:Playfair Display,serif;font-size:24px;font-weight:700'+(item[2]?';color:'+item[2]:'')+'">' + item[1] + '</div>';
-    kpiGrid.appendChild(card);
-  });
-  body.appendChild(kpiGrid);
-
-  // Tabla por categoría
-  var sec = document.createElement('div');
-  sec.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.5);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid rgba(26,22,18,.1)">Por Categor\u00eda</div>';
-  var tbl = document.createElement('table');
-  tbl.className = 'data-table';
-  tbl.innerHTML = '<thead><tr><th>Categor\u00eda</th><th class="right">Cabezas</th><th class="right">%</th><th class="right">Kilogramos</th><th class="right">Kg Prom.</th></tr></thead>';
-  var tb = document.createElement('tbody');
-  cats.forEach(function(entry, i) {
-    var c=entry[0], d=entry[1];
-    var pct = totCab > 0 ? (d.cabezas/totCab*100).toFixed(1) : '0.0';
-    var tr = document.createElement('tr');
-    tr.innerHTML = '<td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+STOCK_COLS[i%STOCK_COLS.length]+';margin-right:7px"></span><strong>'+c+'</strong></td>'
-      +'<td class="right mono">'+stockFmt(d.cabezas)+'</td>'
-      +'<td class="right mono">'+pct+'%</td>'
-      +'<td class="right mono" style="color:#27613d">'+(d.ton_estimado>0?Number(Math.round(d.ton_estimado*1000)).toLocaleString('es-AR')+' kg':'-')+'</td>'
-      +'<td class="right mono">'+stockFmt(d.kg_promedio)+' kg</td>';
-    tb.appendChild(tr);
-  });
-  var tf = document.createElement('tr'); tf.className = 'total';
-  tf.innerHTML = '<td><strong>TOTAL</strong></td><td class="right"><strong>'+stockFmt(totCab)+'</strong></td>'
-    +'<td class="right"><strong>100%</strong></td>'
-    +'<td class="right"><strong>'+totTons.toFixed(1)+' t</strong></td>'
-    +'<td class="right"><strong>'+stockFmt(kgProm)+' kg</strong></td>';
-  tb.appendChild(tf);
-  tbl.appendChild(tb);
-  sec.appendChild(tbl);
-  body.appendChild(sec);
 }
 
 
