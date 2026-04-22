@@ -152,9 +152,10 @@ CORRALES = [
     (1000, 1099, "Recepción"),
 ]
 
-TECHO_KG   = 350   # kg maximo estimado (todos excepto El Haras)
-TECHO_KG_DESCANSO = 650  # techo solo para El Haras
-TECHO_DIAS = 365   # dias maximos en feedlot
+TECHO_KG_FEEDLOT = 650   # techo para El Haras (feedlot)
+TECHO_KG_RECRIA  = 380   # techo para establecimientos de recría
+ENGORDE_RECRIA   = 0.5   # kg/día fijo para todos los establecimientos de recría
+TECHO_DIAS = 365         # dias maximos en feedlot
 
 # ── Funciones de lookup ───────────────────────────────────
 def get_clasificacion(cat):
@@ -327,23 +328,29 @@ def extraer(conn, tabla, fecha_col=None, dias=730):
             df["NOMBRE_CORRAL"] = df["NRO_CORRAL"].apply(get_nombre_corral)
 
         # 3. Engorde diario y Kg estimado con techo por establecimiento
+        # Feedlot (El Haras, corrales 1-199): usa tabla ENGORDE_DIARIO por categoría y peso
+        # Recría (resto de establecimientos): 0.5 kg/día fijo, techo 380 kg
         if all(c in df.columns for c in ["CLASIFICACION", "KG_INGRESO", "DIAS_EN_FEEDLOT"]):
             def calc_engorde(row):
-                return get_engorde(
-                    str(row["CLASIFICACION"] or ""),
-                    float(row["KG_INGRESO"] or 0)
-                )
+                nombre = str(row.get("NOMBRE_CORRAL") or "").strip().lower()
+                if "haras" in nombre:
+                    return get_engorde(
+                        str(row["CLASIFICACION"] or ""),
+                        float(row["KG_INGRESO"] or 0)
+                    )
+                return ENGORDE_RECRIA  # recría: fijo 0.5 kg/día sin importar categoría
+
             def calc_kg_est(row):
                 kg_ing  = float(row["KG_INGRESO"] or 0)
                 dias    = int(row["DIAS_EN_FEEDLOT"] or 0)
                 engorde = float(row["ENGORDE_DIARIO_KG"] or 0)
                 nombre  = str(row.get("NOMBRE_CORRAL") or "").strip().lower()
-                techo   = TECHO_KG_DESCANSO if "haras" in nombre else TECHO_KG
+                techo   = TECHO_KG_FEEDLOT if "haras" in nombre else TECHO_KG_RECRIA
                 return round(min(kg_ing + dias * engorde, techo), 1)
 
             df["ENGORDE_DIARIO_KG"] = df.apply(calc_engorde, axis=1)
             df["KG_ESTIMADO_HOY"]   = df.apply(calc_kg_est,  axis=1)
-            log.info(f"  + KG_ESTIMADO_HOY  (techo {TECHO_KG} kg, prom: {df['KG_ESTIMADO_HOY'].mean():.1f})")
+            log.info(f"  + KG_ESTIMADO_HOY  feedlot techo {TECHO_KG_FEEDLOT} kg | recría techo {TECHO_KG_RECRIA} kg @ {ENGORDE_RECRIA} kg/día | prom: {df['KG_ESTIMADO_HOY'].mean():.1f}")
 
         # 4. Categoria final segun KG_ESTIMADO_HOY
         if all(c in df.columns for c in ["CLASIFICACION", "KG_ESTIMADO_HOY"]):
