@@ -9,17 +9,17 @@
     "total_establecimientos": 1,
     "total_propietarios": 1,
     "por_categoria": {
+      "TM": {
+        "cabezas": 273.0,
+        "kg_estimado": 77824,
+        "ton_estimado": 77.82,
+        "kg_promedio": 285.1
+      },
       "TH": {
         "cabezas": 259.0,
         "kg_estimado": 86336,
         "ton_estimado": 86.34,
         "kg_promedio": 333.3
-      },
-      "TM": {
-        "cabezas": 273.0,
-        "kg_estimado": 77823,
-        "ton_estimado": 77.82,
-        "kg_promedio": 285.1
       }
     },
     "por_propietario": {
@@ -39,20 +39,26 @@
       }
     },
     "por_clasificacion": {
+      "Macho": {
+        "cabezas": 273.0,
+        "kg_estimado": 77824,
+        "ton_estimado": 77.82,
+        "kg_promedio": 285.1
+      },
       "Hembra": {
         "cabezas": 259.0,
         "kg_estimado": 86336,
         "ton_estimado": 86.34,
         "kg_promedio": 333.3
-      },
-      "Macho": {
-        "cabezas": 273.0,
-        "kg_estimado": 77823,
-        "ton_estimado": 77.82,
-        "kg_promedio": 285.1
       }
     },
     "por_categoria_final": {
+      "novillito": {
+        "cabezas": 231.0,
+        "kg_estimado": 63124,
+        "ton_estimado": 63.12,
+        "kg_promedio": 273.3
+      },
       "vaquillona": {
         "cabezas": 259.0,
         "kg_estimado": 86336,
@@ -64,19 +70,19 @@
         "kg_estimado": 14700,
         "ton_estimado": 14.7,
         "kg_promedio": 350.0
-      },
-      "novillito": {
-        "cabezas": 231.0,
-        "kg_estimado": 63124,
-        "ton_estimado": 63.12,
-        "kg_promedio": 273.3
       }
     },
     "por_establecimiento_categoria": {
       "La Panchita": {
+        "novillito": {
+          "cabezas": 231.0,
+          "kg_estimado": 63123.500000000124,
+          "ton_estimado": 63.12,
+          "kg_promedio": 273.3
+        },
         "vaquillona": {
           "cabezas": 259.0,
-          "kg_estimado": 86336.30000000028,
+          "kg_estimado": 86336.29999999999,
           "ton_estimado": 86.34,
           "kg_promedio": 333.3
         },
@@ -85,21 +91,33 @@
           "kg_estimado": 14700.0,
           "ton_estimado": 14.7,
           "kg_promedio": 350.0
-        },
-        "novillito": {
-          "cabezas": 231.0,
-          "kg_estimado": 63123.500000000124,
-          "ton_estimado": 63.12,
-          "kg_promedio": 273.3
         }
       }
     },
     "por_categoria_desglose": {
+      "novillito": {
+        "por_establecimiento": {
+          "La Panchita": {
+            "cabezas": 231.0,
+            "kg_estimado": 63123.500000000124,
+            "ton_estimado": 63.12,
+            "kg_promedio": 273.3
+          }
+        },
+        "por_propietario": {
+          "TERCIO BRAVO SAS": {
+            "cabezas": 231.0,
+            "kg_estimado": 63123.500000000124,
+            "ton_estimado": 63.12,
+            "kg_promedio": 273.3
+          }
+        }
+      },
       "vaquillona": {
         "por_establecimiento": {
           "La Panchita": {
             "cabezas": 259.0,
-            "kg_estimado": 86336.30000000028,
+            "kg_estimado": 86336.29999999999,
             "ton_estimado": 86.34,
             "kg_promedio": 333.3
           }
@@ -107,7 +125,7 @@
         "por_propietario": {
           "TERCIO BRAVO SAS": {
             "cabezas": 259.0,
-            "kg_estimado": 86336.30000000028,
+            "kg_estimado": 86336.29999999999,
             "ton_estimado": 86.34,
             "kg_promedio": 333.3
           }
@@ -128,24 +146,6 @@
             "kg_estimado": 14700.0,
             "ton_estimado": 14.7,
             "kg_promedio": 350.0
-          }
-        }
-      },
-      "novillito": {
-        "por_establecimiento": {
-          "La Panchita": {
-            "cabezas": 231.0,
-            "kg_estimado": 63123.500000000124,
-            "ton_estimado": 63.12,
-            "kg_promedio": 273.3
-          }
-        },
-        "por_propietario": {
-          "TERCIO BRAVO SAS": {
-            "cabezas": 231.0,
-            "kg_estimado": 63123.500000000124,
-            "ton_estimado": 63.12,
-            "kg_promedio": 273.3
           }
         }
       }
