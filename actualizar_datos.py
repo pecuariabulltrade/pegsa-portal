@@ -144,9 +144,12 @@ CORRALES = [
     (200, 299, "El Coloradito"),
     (300, 399, "Don Pedro"),
     (400, 499, "El Descanso"),
-    (500, 599, "Medel"),
-    (600, 699, "Santa Clara"),
+    (500, 599, "Campo Medel"),
+    (600, 699, "El Morrón"),
     (700, 799, "La Panchita"),
+    (800, 899, "La Cucuca"),
+    (900, 999, "Sin asignar"),
+    (1000, 1099, "Recepción"),
 ]
 
 TECHO_KG   = 350   # kg maximo estimado (todos excepto El Haras)
@@ -2954,7 +2957,12 @@ def main():
 
         prom_diario_ms = cs.get("promedio_diario_kg_ms", 0)
         prom_diario_tc = cs.get("promedio_diario_kg", 0)
-        adp_prom       = g.get("adp_promedio", 0) or 0
+
+        # ADP: usar el último mes cerrado de productivo (más representativo que el promedio histórico)
+        _por_mes = prod_data.get("por_mes", {})
+        _ultimo_mes = max(_por_mes.keys()) if _por_mes else None
+        adp_prom = (_por_mes[_ultimo_mes].get("adp_promedio") or 0) if _ultimo_mes else (g.get("adp_promedio", 0) or 0)
+        log.info(f"  ADP conversión: {adp_prom} kg/día (último mes: {_ultimo_mes or 'n/a'})")
 
         log.info(f"  Denominador: {'El Haras' if usando_haras else 'PEGSA total (Haras no encontrado)'}")
         log.info(f"  Cabezas     : {cab_haras:,}")
@@ -2982,6 +2990,7 @@ def main():
                 "prom_diario_ms":  prom_diario_ms,
                 "prom_diario_tc":  prom_diario_tc,
                 "adp_promedio":    adp_prom,
+                "adp_mes":         _ultimo_mes,
                 "prod_diaria_kg":  round(prod_diaria_kg, 1),
                 "dias_consumo":    cs.get("dias_registrados", 0),
             },
