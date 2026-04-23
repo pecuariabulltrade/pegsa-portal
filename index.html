@@ -6108,12 +6108,15 @@ var _productivoData  = null;
 var _consumoData     = null;
 var _indicadoresData = null;
 
+var _eficienciaHistoricoData = null;
+
 async function cargarProductivo() {
   var contentEl = document.getElementById('productivoContent');
   var loading   = document.getElementById('productivLoading');
   if (_productivoData && _indicadoresData) {
     contentEl.innerHTML = '';
     if (_indicadoresData) renderIndicadores(_indicadoresData);
+    if (_eficienciaHistoricoData) renderEficienciaHistorico(_eficienciaHistoricoData);
     renderProductivo(_productivoData);
     contentEl.style.display = 'block';
     if (loading) loading.style.display = 'none';
@@ -6122,19 +6125,22 @@ async function cargarProductivo() {
   if (loading)   loading.style.display  = 'block';
   if (contentEl) contentEl.style.display = 'none';
   try {
-    var [resp1, resp2, resp3] = await Promise.all([
+    var [resp1, resp2, resp3, resp4] = await Promise.all([
       fetch(STOCK_SB + '/productivo_'  + STOCK_PER + '.json', {}),
-      fetch(STOCK_SB + '/consumo_'     + STOCK_PER + '.json', {}),   // pre-carga para pestaña % MS
+      fetch(STOCK_SB + '/consumo_'     + STOCK_PER + '.json', {}),
       fetch(STOCK_SB + '/indicadores_' + STOCK_PER + '.json', {}),
+      fetch(STOCK_SB + '/eficiencia_historico.json', {}).catch(function(){ return null; }),
     ]);
     if (!resp1.ok) throw new Error('HTTP ' + resp1.status);
     _productivoData  = await resp1.json();
-    if (resp2.ok) _consumoData     = await resp2.json();
-    if (resp3.ok) _indicadoresData = await resp3.json();
+    if (resp2.ok) _consumoData          = await resp2.json();
+    if (resp3.ok) _indicadoresData      = await resp3.json();
+    if (resp4 && resp4.ok) _eficienciaHistoricoData = await resp4.json();
     if (loading) loading.style.display = 'none';
     if (contentEl) contentEl.style.display = 'block';
     contentEl.innerHTML = '';
     if (_indicadoresData) renderIndicadores(_indicadoresData);
+    if (_eficienciaHistoricoData) renderEficienciaHistorico(_eficienciaHistoricoData);
     renderProductivo(_productivoData);
     // renderConsumo ahora vive en la pestaña % MS
   } catch(e) {
@@ -6145,6 +6151,124 @@ async function cargarProductivo() {
       + '<div style="font-family:\'DM Mono\',monospace;font-size:13px;color:rgba(26,22,18,.4);margin-top:8px">Ejecutá 2_EJECUTAR_AHORA.bat para generar el archivo</div>'
       + '</div>';
   }
+}
+
+function renderEficienciaHistorico(data) {
+  var el = document.getElementById('productivoContent');
+  if (!el || !data) return;
+  var registros = (data.registros || []).filter(function(r){ return r.fecha && r.conversion != null; });
+  if (registros.length < 2) return;
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-bottom:48px';
+
+  // Header
+  wrap.innerHTML =
+    '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l);margin-bottom:6px">HISTÓRICO DE EFICIENCIA</div>'
+   +'<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;margin-bottom:4px">Evolución de Indicadores</div>'
+   +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.4);margin-bottom:20px">'+registros.length+' días registrados · El Haras</div>';
+
+  // Botones de período
+  var btnBar = document.createElement('div');
+  btnBar.style.cssText = 'display:flex;gap:8px;margin-bottom:18px';
+  var periodos = [
+    {label:'30 días',  dias:30},
+    {label:'90 días',  dias:90},
+    {label:'Todo',     dias:0},
+  ];
+  var canvasId = 'efic-hist-canvas';
+  var chartInst = null;
+
+  function buildDatasets(dias) {
+    var regs = dias > 0 ? registros.slice(-dias) : registros;
+    var labels  = regs.map(function(r){ var p=r.fecha.split('-'); return p[2]+'/'+p[1]; });
+    return {
+      labels: labels,
+      datasets: [
+        {
+          label: '% Peso Vivo',
+          data: regs.map(function(r){ return r.pct_pv; }),
+          borderColor: '#c0392b', backgroundColor: 'rgba(192,57,43,.08)',
+          yAxisID: 'yPv', tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+          borderWidth: 2, fill: false,
+        },
+        {
+          label: 'Conversión (:1)',
+          data: regs.map(function(r){ return r.conversion; }),
+          borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.08)',
+          yAxisID: 'yConv', tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+          borderWidth: 2, fill: false,
+        },
+        {
+          label: 'MS/cab/día (kg)',
+          data: regs.map(function(r){ return r.consumo_ms_cab; }),
+          borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.08)',
+          yAxisID: 'yMs', tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+          borderWidth: 2, fill: false,
+        },
+      ]
+    };
+  }
+
+  function renderChart(dias) {
+    var ds = buildDatasets(dias);
+    if (chartInst) { chartInst.destroy(); }
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    chartInst = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: ds,
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'DM Mono, monospace', size: 11 }, boxWidth: 12, padding: 16 } },
+          tooltip: {
+            backgroundColor: 'rgba(26,22,18,.92)', titleFont: { family: 'DM Mono, monospace', size: 11 },
+            bodyFont: { family: 'DM Mono, monospace', size: 11 }, padding: 10, cornerRadius: 2,
+          }
+        },
+        scales: {
+          x: { ticks: { font: { family: 'DM Mono, monospace', size: 10 }, maxTicksLimit: 12, color: 'rgba(26,22,18,.4)' }, grid: { color: 'rgba(26,22,18,.05)' } },
+          yPv:   { position: 'left',  title: { display: true, text: '% PV', font: { family: 'DM Mono, monospace', size: 10 }, color: '#c0392b' }, ticks: { color: '#c0392b', font: { size: 10, family: 'DM Mono, monospace' } }, grid: { color: 'rgba(26,22,18,.06)' } },
+          yConv: { position: 'right', title: { display: true, text: 'Conversión', font: { family: 'DM Mono, monospace', size: 10 }, color: '#27613d' }, ticks: { color: '#27613d', font: { size: 10, family: 'DM Mono, monospace' } }, grid: { drawOnChartArea: false } },
+          yMs:   { position: 'right', title: { display: true, text: 'kg MS/cab', font: { family: 'DM Mono, monospace', size: 10 }, color: '#b8922a' }, ticks: { color: '#b8922a', font: { size: 10, family: 'DM Mono, monospace' } }, grid: { drawOnChartArea: false }, offset: true },
+        }
+      }
+    });
+  }
+
+  periodos.forEach(function(p, idx) {
+    var btn = document.createElement('button');
+    btn.textContent = p.label;
+    btn.dataset.dias = p.dias;
+    btn.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;padding:4px 12px;border-radius:2px;cursor:pointer;border:1px solid rgba(26,22,18,.2);background:'+(idx===1?'rgba(26,22,18,.08)':'transparent')+';color:rgba(26,22,18,.7)';
+    btn.addEventListener('click', function() {
+      btnBar.querySelectorAll('button').forEach(function(b){ b.style.background='transparent'; });
+      btn.style.background = 'rgba(26,22,18,.08)';
+      renderChart(parseInt(btn.dataset.dias));
+    });
+    btnBar.appendChild(btn);
+  });
+  wrap.appendChild(btnBar);
+
+  // Canvas
+  var canvasWrap = document.createElement('div');
+  canvasWrap.style.cssText = 'position:relative;height:280px;background:#fff;border:1px solid rgba(26,22,18,.1);border-radius:2px;padding:16px';
+  var canvas = document.createElement('canvas');
+  canvas.id = canvasId;
+  canvasWrap.appendChild(canvas);
+  wrap.appendChild(canvasWrap);
+
+  // Separador
+  var sep = document.createElement('hr');
+  sep.style.cssText = 'border:none;border-top:2px solid rgba(26,22,18,.08);margin:36px 0 32px';
+  wrap.appendChild(sep);
+
+  el.appendChild(wrap);
+
+  // Render con 90 días por defecto
+  setTimeout(function(){ renderChart(90); }, 50);
 }
 
 function renderIndicadores(data) {

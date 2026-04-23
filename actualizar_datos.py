@@ -3039,6 +3039,40 @@ def main():
         log.info(f"  Consumo/cab (MS)   : {consumo_cab_ms} kg MS/cab/día")
         log.info(f"  Conversión alim.   : {conversion}:1   (ref: 5–8)")
         log.info(f"  Producción diaria  : {prod_diaria_kg:,.0f} kg (ADP {adp_prom} × {cab_haras:,} cab Haras)")
+
+        # ── Histórico de eficiencia — snapshot diario ──────────────────────
+        try:
+            hoy_str   = datetime.now().strftime("%Y-%m-%d")
+            hist_path = carpeta / "eficiencia_historico.json"
+            if hist_path.exists():
+                with open(hist_path, encoding="utf-8") as _f:
+                    hist_ef = json.load(_f)
+            else:
+                hist_ef = {"registros": []}
+
+            # Reemplazar si ya existe entrada de hoy, sino agregar
+            registro_hoy = {
+                "fecha":          hoy_str,
+                "cabezas":        cab_haras,
+                "kg_pv":          round(kg_stock_haras, 0),
+                "consumo_ms_cab": consumo_cab_ms,
+                "consumo_tc_cab": consumo_cab_tc,
+                "pct_pv":         pct_pv,
+                "conversion":     conversion,
+                "adp":            adp_prom,
+                "adp_mes":        _ultimo_mes,
+            }
+            hist_ef["registros"] = [r for r in hist_ef["registros"] if r.get("fecha") != hoy_str]
+            hist_ef["registros"].append(registro_hoy)
+            # Ordenar cronológicamente y mantener últimos 365 días
+            hist_ef["registros"].sort(key=lambda r: r.get("fecha",""))
+            hist_ef["registros"] = hist_ef["registros"][-365:]
+            hist_ef["generado"]  = datetime.now().isoformat()
+
+            guardar(hist_ef, carpeta, "eficiencia_historico.json")
+            log.info(f"  ✓ eficiencia_historico.json  ({len(hist_ef['registros'])} registros)")
+        except Exception as _e:
+            log.warning(f"  ⚠ No se pudo actualizar eficiencia_historico.json: {_e}")
         resumen["modulos"]["indicadores"] = {
             "ok":             True,
             "denominador":    "El Haras" if usando_haras else "PEGSA total",
