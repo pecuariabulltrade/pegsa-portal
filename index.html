@@ -2649,6 +2649,17 @@ window.addEventListener('load', function(){
       </div>
     </div>
 
+      <!-- Panel Terneros / Terneras — Entre Surcos y Corrales -->
+      <div class="panel" style="display:block;margin-top:24px">
+        <div class="section-header">
+          <span class="section-title">Precios de Terneros y Terneras</span>
+          <span class="section-sub">Entre Surcos y Corrales · Partida · Última actualización disponible</span>
+        </div>
+        <div class="nota-box">Precios en $/kg vivo. Fuente: <strong>Entre Surcos y Corrales</strong>. Incluye todas las categorías del último remate publicado.</div>
+        <div id="mercadoTernerosTabla"></div>
+      </div>
+    </div>
+
     <!-- Panel Granos (vacío, mantenido para compatibilidad JS) -->
     <div id="panelMercadoCommodities" style="display:none"></div>
 
@@ -3800,11 +3811,68 @@ function initMercado(){
   .finally(function(){
     renderTablaHaciendaNueva();
     renderTablaCommoditiesNueva();
+    renderTablaTermerosESYC();
     document.getElementById('mercadoLoading').style.display='none';
     document.getElementById('mercadoData').style.display='block';
     // Pre-calcular seguimiento con datos del día (se muestra al abrir el tab)
     if(MERCADO_DATA_CACHE) _segRun(MERCADO_DATA_CACHE);
   });
+}
+
+function renderTablaTermerosESYC() {
+  var el = document.getElementById('mercadoTernerosTabla');
+  if (!el) return;
+  var data = MERCADO_DATA_CACHE;
+  var items = data && data.terneros_esyc;
+  if (!items || !items.length) {
+    el.innerHTML = '<div style="padding:20px;font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.4)">Sin datos disponibles — se cargarán en la próxima actualización automática.</div>';
+    return;
+  }
+
+  // Categorías de interés (resaltadas)
+  var DESTACADAS = [
+    // Terneros
+    'Terneros 130-160 Kg.', 'Terneros 230-260 Kg.', 'Novillitos 330-370 Kg.',
+    // Terneras (bandas equivalentes)
+    'Terneras 130-150 Kg.', 'Terneras 150-170 Kg.',
+    'Vaquillonas 250-290 Kg.', 'Vaquillonas 320-360 Kg.',
+  ];
+
+  // Separar terneros y terneras
+  var terneros = items.filter(function(r){ return r.tipo === 'terneros'; });
+  var terneras = items.filter(function(r){ return r.tipo === 'terneras'; });
+
+  function buildTable(rows, titulo) {
+    if (!rows.length) return '';
+    var html = '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.5);margin:20px 0 10px;padding-bottom:8px;border-bottom:2px solid rgba(26,22,18,.1)">'
+      + titulo + '</div>';
+    html += '<table class="data-table"><thead><tr>'
+      + '<th>Categoría</th><th class="right">Cant.</th>'
+      + '<th class="right">Prom. $/kg</th><th class="right">Máx. $/kg</th><th class="right">Mín. $/kg</th>'
+      + '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+      var destacado = DESTACADAS.indexOf(r.categoria) >= 0;
+      var style = destacado
+        ? 'background:rgba(184,146,42,.06);border-left:3px solid #b8922a;'
+        : '';
+      html += '<tr style="' + style + '">'
+        + '<td><strong>' + r.categoria + '</strong>'
+        + (destacado ? ' <span style="font-family:DM Mono,monospace;font-size:9px;background:#b8922a;color:#fff;padding:1px 5px;border-radius:2px;margin-left:4px">REF</span>' : '')
+        + '</td>'
+        + '<td class="right mono">' + Number(r.cantidad||0).toLocaleString('es-AR') + '</td>'
+        + '<td class="right mono" style="font-weight:700;color:' + (destacado?'#27613d':'inherit') + '">'
+        + '$' + Number(r.precio).toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits:0}) + '</td>'
+        + '<td class="right mono" style="color:rgba(26,22,18,.5)">'
+        + (r.precio_max ? '$' + Number(r.precio_max).toLocaleString('es-AR', {maximumFractionDigits:0}) : '—') + '</td>'
+        + '<td class="right mono" style="color:rgba(26,22,18,.5)">'
+        + (r.precio_min ? '$' + Number(r.precio_min).toLocaleString('es-AR', {maximumFractionDigits:0}) : '—') + '</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  el.innerHTML = buildTable(terneros, 'Terneros') + buildTable(terneras, 'Terneras');
 }
 
 // ══ SEGUIMIENTO ECONÓMICO DIARIO ════════════════════════════════════════════
@@ -4828,9 +4896,9 @@ function _histRenderTabla(){
   for(var i=0;i<hist.length;i++){
     var row = hist[i];
     var prev = hist[i+1] || null;
-    var dateStr = row.fecha ? row.fecha.slice(0,7) : '—'; // yyyy-mm → show as mm/yyyy
+    var dateStr = row.fecha ? row.fecha.slice(0,10) : '—'; // yyyy-mm-dd → dd/mm/yyyy
     var parts = dateStr.split('-');
-    var label = parts.length===2 ? parts[1]+'/'+parts[0] : dateStr;
+    var label = parts.length===3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : dateStr;
 
     var bgRow = i%2===0 ? 'background:#faf8f4' : 'background:#fff';
     var tr = '<tr style="'+bgRow+'">';

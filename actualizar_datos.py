@@ -3916,7 +3916,73 @@ def scrape_canuelas():
 
 
 # ──────────────────────────────────────────────────────────────
-# 7b. Granos — BCR Cámara Arbitral Precios de Pizarra
+# 7b. Terneros / Terneras — Entre Surcos y Corrales
+# ──────────────────────────────────────────────────────────────
+def scrape_entresurcosycorrales():
+    """Scrapea precios de terneros y terneras de entresurcosycorralesya.com.
+    Fuente: ajax-modulo-ternero.php y ajax-modulo-ternera.php
+    Columnas HTML: Categoría | Cantidad | Prom. Kilo | Kilo+ | Kilo- | Prom. Bulto | Bulto+ | Bulto-
+    Devuelve lista de {categoria, tipo, precio, precio_max, precio_min, cantidad, unidad} o []
+    """
+    import re
+
+    ENDPOINTS = [
+        ("terneros",  "https://www.entresurcosycorralesya.com/ajax-modulo-ternero.php?desde=&hasta="),
+        ("terneras",  "https://www.entresurcosycorralesya.com/ajax-modulo-ternera.php?desde=&hasta="),
+    ]
+
+    resultados = []
+
+    for tipo, url in ENDPOINTS:
+        text = _http_get(url)
+        if not text:
+            log.info(f"  ℹ EntreS&C {tipo}: sin respuesta de red")
+            continue
+
+        # Extraer filas <tr> con sus <td>
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
+        encontradas = 0
+        for row in rows:
+            cells = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL | re.IGNORECASE)
+            if len(cells) < 5:
+                continue
+            # Limpiar HTML de cada celda
+            clean = [re.sub(r'<[^>]+>', '', c).strip() for c in cells]
+            cat      = clean[0]
+            cantidad = _parse_ar_num(clean[1]) or 0
+            prom_kg  = _parse_ar_num(clean[2])
+            kg_max   = _parse_ar_num(clean[3])
+            kg_min   = _parse_ar_num(clean[4])
+
+            if not cat or not prom_kg or prom_kg < 100:
+                continue
+
+            resultados.append({
+                "categoria":  cat,
+                "tipo":       tipo,
+                "precio":     round(prom_kg, 2),
+                "precio_max": round(kg_max, 2) if kg_max else None,
+                "precio_min": round(kg_min, 2) if kg_min else None,
+                "cantidad":   int(cantidad),
+                "unidad":     "$/kg vivo",
+            })
+            encontradas += 1
+
+        log.info(f"  ✓ EntreS&C {tipo}: {encontradas} categorías")
+
+    if resultados:
+        # Log de las categorías clave de interés
+        CLAVE = {"Terneros 130-160 Kg.", "Terneros 230-260 Kg.", "Novillitos 330-370 Kg.",
+                 "Terneras 130-150 Kg.", "Terneras 150-170 Kg."}
+        for r in resultados:
+            if r["categoria"] in CLAVE:
+                log.info(f"    ★ {r['categoria']}: ${r['precio']:,.2f}/kg ({r['cantidad']:,} cab)")
+
+    return resultados
+
+
+# ──────────────────────────────────────────────────────────────
+# 7c. Granos — BCR Cámara Arbitral Precios de Pizarra
 # ──────────────────────────────────────────────────────────────
 def scrape_bcr_pizarra():
     """Devuelve {maiz, soja, trigo, sorgo} en $/tn o {} si falla."""
@@ -4247,6 +4313,14 @@ def actualizar_mercado_precios(carpeta, repo):
         ])
         log.info("  ℹ Usando precios anteriores de hacienda")
 
+    # ── 2b. Terneros / Terneras — Entre Surcos y Corrales ───────
+    log.info("  → Scraping Entre Surcos y Corrales (terneros/terneras)...")
+    terneros_esyc = scrape_entresurcosycorrales()
+    if not terneros_esyc:
+        terneros_esyc = existing.get("terneros_esyc", [])
+        if terneros_esyc:
+            log.info("  ℹ Usando precios anteriores de terneros/terneras")
+
     # ── 3. Granos — BCR Pizarra ─────────────────────────────────
     log.info("  → Scraping BCR Precios de Pizarra...")
     granos = scrape_bcr_pizarra()
@@ -4332,6 +4406,13 @@ def actualizar_mercado_precios(carpeta, repo):
             _mes = _h.get('fecha', '')[:7]
             _h['tc_mep'] = _TC_APROX_MEP_REF.get(_mes)
 
+    # Precios clave de Entre Surcos y Corrales para el histórico
+    def _esyc(cat):
+        for r in terneros_esyc:
+            if r.get("categoria","").strip().lower() == cat.strip().lower():
+                return r.get("precio") or 0
+        return 0
+
     hoy = {
         "fecha":        today,
         "nov_390":      _hprice("novillito", "390"),
@@ -4347,6 +4428,16 @@ def actualizar_mercado_precios(carpeta, repo):
         "soja":         precio_soja,
         "novillo":      nov_precio,
         "tc_mep":       round(mep_hoy) if mep_hoy else None,
+        # Entre Surcos y Corrales — categorías de referencia para compra
+        # Terneros
+        "ter_130_160":  _esyc("Terneros 130-160 Kg."),
+        "ter_230_260":  _esyc("Terneros 230-260 Kg."),
+        "nov_330_370":  _esyc("Novillitos 330-370 Kg."),
+        # Terneras (bandas equivalentes)
+        "tera_130_150": _esyc("Terneras 130-150 Kg."),
+        "tera_150_170": _esyc("Terneras 150-170 Kg."),
+        "vaq_250_290":  _esyc("Vaquillonas 250-290 Kg."),
+        "vaq_320_360":  _esyc("Vaquillonas 320-360 Kg."),
     }
     historico = [h for h in historico if h.get("fecha") != today]
     historico.append(hoy)
@@ -4358,12 +4449,13 @@ def actualizar_mercado_precios(carpeta, repo):
 
     # ── 8. Armar y guardar JSONs ────────────────────────────────
     mercado_json = {
-        "fecha":       today,
-        "fuente":      "Cañuelas · BCR Cámara Arbitral",
-        "hacienda":    hacienda,
-        "commodities": commodities,
-        "insumos":     insumos,
-        "historico":   historico,
+        "fecha":        today,
+        "fuente":       "Cañuelas · BCR Cámara Arbitral · Entre Surcos y Corrales",
+        "hacienda":     hacienda,
+        "terneros_esyc": terneros_esyc,
+        "commodities":  commodities,
+        "insumos":      insumos,
+        "historico":    historico,
     }
 
     negocios_json = {
