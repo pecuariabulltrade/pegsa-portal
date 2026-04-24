@@ -4033,8 +4033,87 @@ function _segRun(data){
 // ── Render completo ───────────────────────────────────────────────────────
 function _segRender(hoyRes, fecha){
   _segRenderTablaHoy(hoyRes, fecha);
+  _segRenderESYC(MERCADO_DATA_CACHE);
   _segRenderMetricBtns();
   _segRenderChart();
+}
+
+function _segRenderESYC(data){
+  var el = document.getElementById('segHoyTabla');
+  if(!el || !data) return;
+  var items = data.terneros_esyc;
+  if(!items || !items.length) return;
+
+  var REF = [
+    { cat:'Terneros 130-160 Kg.',  label:'Ternero 130-160',   grupo:'Terneros' },
+    { cat:'Terneros 230-260 Kg.',  label:'Ternero 230-260',   grupo:'Terneros' },
+    { cat:'Novillitos 330-370 Kg.',label:'Novillito 330-370', grupo:'Terneros' },
+    { cat:'Terneras 130-150 Kg.',  label:'Ternera 130-150',   grupo:'Terneras' },
+    { cat:'Terneras 150-170 Kg.',  label:'Ternera 150-170',   grupo:'Terneras' },
+    { cat:'Vaquillonas 250-290 Kg.',label:'Vaquillona 250-290',grupo:'Terneras'},
+    { cat:'Vaquillonas 320-360 Kg.',label:'Vaquillona 320-360',grupo:'Terneras'},
+  ];
+
+  // Obtener histórico para calcular variación
+  var hist = data.historico || [];
+  var prev = hist.length >= 2 ? hist[hist.length - 2] : null;
+  var KEY_MAP = {
+    'Terneros 130-160 Kg.':   'ter_130_160',
+    'Terneros 230-260 Kg.':   'ter_230_260',
+    'Novillitos 330-370 Kg.': 'nov_330_370',
+    'Terneras 130-150 Kg.':   'tera_130_150',
+    'Terneras 150-170 Kg.':   'tera_150_170',
+    'Vaquillonas 250-290 Kg.':'vaq_250_290',
+    'Vaquillonas 320-360 Kg.':'vaq_320_360',
+  };
+
+  function getItem(cat){ return items.find(function(r){ return r.categoria===cat; }); }
+  function fN(n){ return n!=null ? '$'+Number(n).toLocaleString('es-AR',{maximumFractionDigits:0}) : '—'; }
+  function varStr(cur, cat){
+    var key = KEY_MAP[cat];
+    if(!prev || !key || !prev[key] || !cur) return '';
+    var pct = (cur - prev[key]) / prev[key] * 100;
+    var col = pct >= 0 ? 'var(--green)' : 'var(--red)';
+    var sign = pct >= 0 ? '+' : '';
+    return ' <span style="font-size:10px;color:'+col+'">'+sign+pct.toFixed(1)+'%</span>';
+  }
+
+  // Agrupar por grupo
+  var grupos = ['Terneros','Terneras'];
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-top:24px';
+  wrap.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(184,146,42,.8);margin-bottom:10px">Precios de Referencia Compra · Entre Surcos y Corrales</div>';
+
+  grupos.forEach(function(g){
+    var gItems = REF.filter(function(r){ return r.grupo===g; });
+    var html = '<div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(26,22,18,.4);margin:12px 0 6px">' + g + '</div>';
+    html += '<div style="overflow-x:auto"><table class="data-table"><thead><tr>'
+      +'<th>Categoría</th>'
+      +'<th class="right">Prom. $/kg</th>'
+      +'<th class="right">Máx.</th>'
+      +'<th class="right">Mín.</th>'
+      +'<th class="right">Cabezas</th>'
+      +'</tr></thead><tbody>';
+    gItems.forEach(function(ref){
+      var it = getItem(ref.cat);
+      if(!it){ html += '<tr><td>'+ref.label+'</td><td colspan="4" class="muted" style="text-align:center">Sin dato</td></tr>'; return; }
+      html += '<tr style="background:rgba(184,146,42,.04)">'
+        +'<td><strong>'+ref.label+'</strong></td>'
+        +'<td class="right mono" style="font-weight:700;color:var(--green)">'+fN(it.precio)+varStr(it.precio, ref.cat)+'</td>'
+        +'<td class="right mono" style="color:rgba(26,22,18,.5)">'+fN(it.precio_max)+'</td>'
+        +'<td class="right mono" style="color:rgba(26,22,18,.5)">'+fN(it.precio_min)+'</td>'
+        +'<td class="right mono">'+Number(it.cantidad||0).toLocaleString('es-AR')+'</td>'
+        +'</tr>';
+    });
+    html += '</tbody></table></div>';
+    wrap.innerHTML += html;
+  });
+
+  // Agregar después de la tabla de simulación
+  var existing = el.querySelector('.esyc-ref-wrap');
+  if(existing) existing.remove();
+  wrap.className = 'esyc-ref-wrap';
+  el.appendChild(wrap);
 }
 
 function _segRenderTablaHoy(res, fecha){
@@ -4415,20 +4494,30 @@ function renderNegocios(){
 // ── Gráfico Histórico de Precios ───────────────────────────
 var _histChart = null;
 var _histSeries = [
-  // [campo, label, color, visible por defecto, isGrano(/1000), isMEP(/10)]
-  ['nov_390',      'Novillito ≤390 kg',   '#6aab9c', true ],
-  ['nov_430',      'Novillito 391/430 kg','#27613d', false],
-  ['nov_460',      'Novillo 431/460 kg',  '#b8922a', true ],
-  ['nov_490',      'Novillo 461/490 kg',  '#d4a23a', false],
-  ['vaq_390',      'Vaquillona ≤390 kg',  '#c0392b', true ],
-  ['vac_buena',    'Vaca Buena',          '#8e44ad', false],
-  ['vac_regular',  'Vaca Regular',        '#a569bd', false],
-  ['vac_conserva', 'Vaca Conserva',       '#c39bd3', false],
-  ['ternero',      'Ternero',             '#2980b9', true ],
-  ['ternera',      'Ternera',             '#7fb3d3', false],
-  ['maiz',         'Maíz ($/tn÷1000)',    '#e8a020', false, true],  // escala /1000
-  ['soja',         'Soja ($/tn÷1000)',    '#5d8a3c', false, true],
-  ['tc_mep',       'Dólar MEP ($/USD)',   '#5b8aba', false, false, false], // eje propio
+  // [campo, label, color, visible por defecto, isGrano(/1000), isMEP, grupo]
+  // ── Cañuelas MAG ──
+  ['nov_390',      'Novillito ≤390',     '#6aab9c', true,  false, false, 'MAG'],
+  ['nov_430',      'Novillito 391/430',  '#27613d', false, false, false, 'MAG'],
+  ['nov_460',      'Novillo 431/460',    '#b8922a', true,  false, false, 'MAG'],
+  ['nov_490',      'Novillo 461/490',    '#d4a23a', false, false, false, 'MAG'],
+  ['vaq_390',      'Vaquillona ≤390',   '#c0392b', true,  false, false, 'MAG'],
+  ['vac_buena',    'Vaca Buena',         '#8e44ad', false, false, false, 'MAG'],
+  ['vac_regular',  'Vaca Regular',       '#a569bd', false, false, false, 'MAG'],
+  ['vac_conserva', 'Vaca Conserva',      '#c39bd3', false, false, false, 'MAG'],
+  ['ternero',      'Ternero MAG',        '#2980b9', true,  false, false, 'MAG'],
+  ['ternera',      'Ternera MAG',        '#7fb3d3', false, false, false, 'MAG'],
+  ['maiz',         'Maíz $/tn÷1000',    '#e8a020', false, true,  false, 'MAG'],
+  ['soja',         'Soja $/tn÷1000',    '#5d8a3c', false, true,  false, 'MAG'],
+  ['tc_mep',       'Dólar MEP',         '#5b8aba', false, false, true,  'MAG'],
+  // ── Entre Surcos y Corrales — Terneros ──
+  ['ter_130_160',  'Ternero 130-160',   '#1a6699', true,  false, false, 'ESYC-T'],
+  ['ter_230_260',  'Ternero 230-260',   '#2e86c1', true,  false, false, 'ESYC-T'],
+  ['nov_330_370',  'Novillito 330-370', '#5dade2', true,  false, false, 'ESYC-T'],
+  // ── Entre Surcos y Corrales — Terneras ──
+  ['tera_130_150', 'Ternera 130-150',  '#922b21', true,  false, false, 'ESYC-H'],
+  ['tera_150_170', 'Ternera 150-170',  '#cb4335', false, false, false, 'ESYC-H'],
+  ['vaq_250_290',  'Vaquillona 250-290','#e74c3c', true,  false, false, 'ESYC-H'],
+  ['vaq_320_360',  'Vaquillona 320-360','#f1948a', true,  false, false, 'ESYC-H'],
 ];
 var _histVisible = {};
 
@@ -4436,23 +4525,47 @@ function _histBuildFiltros(){
   var box = document.getElementById('mercadoHistFiltros');
   if(!box) return;
   box.innerHTML = '';
-  _histSeries.forEach(function(s){
-    var field = s[0], label = s[1], color = s[2];
-    var on = !!_histVisible[field];
-    var btn = document.createElement('button');
-    btn.setAttribute('data-hfield', field);
-    btn.style.cssText = 'font-family:DM Mono,monospace;font-size:9.5px;letter-spacing:.05em;padding:4px 10px;border-radius:2px;cursor:pointer;border:1px solid '
-      + (on ? color : 'rgba(26,22,18,.18)') + ';background:'
-      + (on ? color : 'transparent') + ';color:'
-      + (on ? '#fff' : 'rgba(26,22,18,.5)') + ';transition:all .15s';
-    btn.textContent = label;
-    btn.onclick = function(){
-      _histVisible[field] = !_histVisible[field];
-      _histBuildFiltros();
-      _histRenderChart();
-      _histRenderTabla();
-    };
-    box.appendChild(btn);
+
+  var GRUPOS = [
+    { key:'MAG',    label:'Mercado Agroganadero (Cañuelas)' },
+    { key:'ESYC-T', label:'Entre Surcos y Corrales · Terneros' },
+    { key:'ESYC-H', label:'Entre Surcos y Corrales · Terneras' },
+  ];
+
+  GRUPOS.forEach(function(g){
+    var series = _histSeries.filter(function(s){ return s[6] === g.key; });
+    if(!series.length) return;
+
+    // Cabecera del grupo
+    var grpDiv = document.createElement('div');
+    grpDiv.style.cssText = 'width:100%;margin-top:10px;margin-bottom:4px;font-family:DM Mono,monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.35)';
+    grpDiv.textContent = g.label;
+    box.appendChild(grpDiv);
+
+    // Botones del grupo
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-bottom:2px';
+    series.forEach(function(s){
+      var field = s[0], label = s[1], color = s[2];
+      var on = !!_histVisible[field];
+      var isESYC = g.key !== 'MAG';
+      var btn = document.createElement('button');
+      btn.setAttribute('data-hfield', field);
+      btn.style.cssText = 'font-family:DM Mono,monospace;font-size:9.5px;letter-spacing:.05em;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .15s;'
+        + 'border:1px solid ' + (on ? color : 'rgba(26,22,18,.18)') + ';'
+        + 'background:' + (on ? color : 'transparent') + ';'
+        + 'color:' + (on ? '#fff' : 'rgba(26,22,18,.5)') + ';'
+        + (isESYC && on ? 'border-style:dashed;' : '');
+      btn.textContent = label;
+      btn.onclick = function(){
+        _histVisible[field] = !_histVisible[field];
+        _histBuildFiltros();
+        _histRenderChart();
+        _histRenderTabla();
+      };
+      btnRow.appendChild(btn);
+    });
+    box.appendChild(btnRow);
   });
 }
 
@@ -4465,7 +4578,7 @@ function _histRenderChart(){
 
   var datasets = [];
   _histSeries.forEach(function(s){
-    var field = s[0], label = s[1], color = s[2], isGrano = !!s[4], isMEP = (field === 'tc_mep');
+    var field = s[0], label = s[1], color = s[2], isGrano = !!s[4], isMEP = (s[5] === true), isESYC = (s[6] && s[6] !== 'MAG');
     if(!_histVisible[field]) return;
     if(isMEP) hasMEP = true;
     var vals = hist.map(function(h){
@@ -4480,11 +4593,11 @@ function _histRenderChart(){
       label:           label,
       data:            vals,
       borderColor:     color,
-      backgroundColor: hex2rgba(color, 0.07),
+      backgroundColor: hex2rgba(color, isESYC ? 0.03 : 0.07),
       tension:         .3,
-      pointRadius:     2,
-      borderWidth:     isMEP ? 2.5 : 2,
-      borderDash:      isMEP ? [5,3] : [],
+      pointRadius:     isESYC ? 1.5 : 2,
+      borderWidth:     isMEP ? 2.5 : (isESYC ? 1.5 : 2),
+      borderDash:      isMEP ? [5,3] : (isESYC ? [4,2] : []),
       spanGaps:        true,
       yAxisID:         isMEP ? 'yMEP' : 'y',
     });
