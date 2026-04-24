@@ -498,14 +498,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
     <div class="hero-eyebrow">Período Enero – Diciembre <span id="heroPeriod">2025</span></div>
     <div class="hero-title">PECUARIA EL GARABÍ SA<br>& <em>BULLTRADE SRL</em></div>
     <div class="hero-sub">Sistema Integrado de Gestión · Seleccioná un módulo para comenzar</div>
-    <div class="kpi-strip" style="margin-top:32px">
-      <div class="kpi-cell"><div class="kpi-tag">Ingresos Brutos</div><div class="kpi-num gold">$42.584 M</div><div class="kpi-hint">Incl. inter-empresa</div></div>
-      <div class="kpi-cell"><div class="kpi-tag">Resultado Operativo</div><div class="kpi-num green">$2.919 M</div><div class="kpi-hint">Sin tenencia · 6,05%</div></div>
-      <div class="kpi-cell"><div class="kpi-tag">Resultado Total</div><div class="kpi-num green">$9.191 M</div><div class="kpi-hint">Con tenencia · 18,97%</div></div>
-      <div class="kpi-cell"><div class="kpi-tag">Superávit de Caja</div><div class="kpi-num gold">$3.803 M</div><div class="kpi-hint">Antes de aplicaciones</div></div>
-    </div>
-    <!-- ── Live KPIs: stock · mercado · tesorería ── -->
-    <div class="kpi-strip" style="margin-top:0;grid-template-columns:repeat(5,1fr);border-top:1px solid rgba(184,146,42,.18)">
+    <!-- ── Live KPIs fila 1: stock · hacienda ── -->
+    <div class="kpi-strip" style="margin-top:32px;grid-template-columns:repeat(4,1fr)">
       <div class="kpi-cell">
         <div class="kpi-tag">Stock PEGSA</div>
         <div class="kpi-num gold" id="hkpi-pegsa-cab">—</div>
@@ -526,10 +520,51 @@ body { background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans
         <div class="kpi-num gold" id="hkpi-vaca">—</div>
         <div class="kpi-hint" id="hkpi-vaca-var">MAG · hoy</div>
       </div>
+    </div>
+    <!-- ── Live KPIs fila 2: precios commodities · insumos · tesorería ── -->
+    <div class="kpi-strip" style="margin-top:0;grid-template-columns:repeat(5,1fr);border-top:1px solid rgba(184,146,42,.18)">
       <div class="kpi-cell">
-        <div class="kpi-tag">Tesorería · Cobertura</div>
+        <div class="kpi-tag">Maíz BCR</div>
+        <div class="kpi-num gold" id="hkpi-maiz">—</div>
+        <div class="kpi-hint">$/tn · BCR Cámara Arbitral</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Soja BCR</div>
+        <div class="kpi-num gold" id="hkpi-soja">—</div>
+        <div class="kpi-hint">$/tn · BCR Cámara Arbitral</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Tipo de Cambio MEP</div>
+        <div class="kpi-num" id="hkpi-mep">—</div>
+        <div class="kpi-hint">$/USD · hoy</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Ternero E&amp;C 330–370 kg</div>
+        <div class="kpi-num gold" id="hkpi-ter330">—</div>
+        <div class="kpi-hint">$/kg vivo · E&amp;C</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Tesorería · Último positivo</div>
         <div class="kpi-num green" id="hkpi-tes-hasta">—</div>
         <div class="kpi-hint" id="hkpi-tes-disp">Cargando…</div>
+      </div>
+    </div>
+    <!-- ── Live KPIs fila 3: valuación activo · rentabilidad ── -->
+    <div class="kpi-strip" style="margin-top:0;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(184,146,42,.18)">
+      <div class="kpi-cell">
+        <div class="kpi-tag">Activo corriente en $</div>
+        <div class="kpi-num gold" id="hkpi-val-pesos">—</div>
+        <div class="kpi-hint" id="hkpi-val-periodo">Real mensual</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Activo corriente en USD</div>
+        <div class="kpi-num" id="hkpi-val-usd">—</div>
+        <div class="kpi-hint" id="hkpi-val-tc">MEP</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-tag">Rentabilidad acumulada s/Vta.</div>
+        <div class="kpi-num" id="hkpi-rent-acum">—</div>
+        <div class="kpi-hint">Análisis compras · desde Mar 2026</div>
       </div>
     </div>
   </div>
@@ -3598,6 +3633,13 @@ function loadHomeKpis(){
     var m = Math.abs(v)/1e6;
     return (v<0?'−':'')+'$\u00a0'+(m>=10?Math.round(m).toLocaleString('es-AR'):m.toFixed(1))+'\u00a0M';
   }
+  function fB(v){ // formatea billones/millones para valuación
+    if(v==null||isNaN(v)) return '—';
+    var abs = Math.abs(v), sign = v<0?'−':'';
+    if(abs>=1e9) return sign+'$\u00a0'+(abs/1e9).toFixed(2)+'\u00a0B';
+    if(abs>=1e6) return sign+'$\u00a0'+(abs/1e6).toFixed(1)+'\u00a0M';
+    return sign+'$\u00a0'+Math.round(abs).toLocaleString('es-AR');
+  }
   function fN(v,dec){
     if(v==null||isNaN(v)) return '—';
     return '$\u00a0'+Number(v).toLocaleString('es-AR', dec!=null?{maximumFractionDigits:dec}:{maximumFractionDigits:0});
@@ -3621,31 +3663,82 @@ function loadHomeKpis(){
       if(!d||!d.kpis) return;
       var k = d.kpis;
       var pegsa = (k.por_propietario||{})['PEGSA'] || {};
-      // PEGSA
       setC('hkpi-pegsa-cab', pegsa.cabezas ? Math.round(pegsa.cabezas).toLocaleString('es-AR')+' cab' : '—', 'gold');
       set('hkpi-pegsa-kg', pegsa.ton_estimado ? Math.round(pegsa.ton_estimado).toLocaleString('es-AR')+' tn proyectadas' : '—');
-      // Total
       setC('hkpi-total-cab', k.total_cabezas ? Number(k.total_cabezas).toLocaleString('es-AR')+' cab' : '—', '');
       set('hkpi-total-kg', k.total_ton_estimado_hoy ? Math.round(k.total_ton_estimado_hoy).toLocaleString('es-AR')+' tn · '+k.total_establecimientos+' establec.' : '—');
     })
     .catch(function(){});
 
-  // ── Mercado: usa caché si ya cargó, sino fetch ─────────────
+  // ── Mercado + Negocios (para rentabilidad) ─────────────────
   var mPromise = MERCADO_DATA_CACHE
     ? Promise.resolve(MERCADO_DATA_CACHE)
     : fetch(STOCK_SB+'/mercado_precios.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;});
 
-  mPromise.then(function(d){
-    if(!d||!d.hacienda) return;
-    var nov = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('461')>=0; });
-    var vac = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('vacas buenas')>=0; });
-    if(nov){
-      setC('hkpi-novillo', fN(nov.precio), 'gold');
-      set('hkpi-novillo-var', 'MAG · '+d.fecha+(nov.variacion?fVar(nov.variacion):''));
+  var nPromise = NEGOCIOS_DATA_CACHE
+    ? Promise.resolve(NEGOCIOS_DATA_CACHE)
+    : fetch(STOCK_SB+'/negocios_resumen.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;});
+
+  Promise.all([mPromise, nPromise]).then(function(res){
+    var d   = res[0];
+    var neg = res[1];
+
+    // Cachear si no estaban cargados
+    if(d   && !MERCADO_DATA_CACHE)  MERCADO_DATA_CACHE  = d;
+    if(neg && !NEGOCIOS_DATA_CACHE) NEGOCIOS_DATA_CACHE = neg;
+
+    if(d && d.hacienda){
+      // Hacienda
+      var nov = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('461')>=0; });
+      var vac = d.hacienda.find(function(h){ return h.categoria && h.categoria.toLowerCase().indexOf('vacas buenas')>=0; });
+      if(nov){ setC('hkpi-novillo', fN(nov.precio), 'gold'); set('hkpi-novillo-var', 'MAG · '+d.fecha+(nov.variacion?fVar(nov.variacion):'')); }
+      if(vac){ setC('hkpi-vaca',    fN(vac.precio), 'gold'); set('hkpi-vaca-var',    'MAG · '+d.fecha+(vac.variacion?fVar(vac.variacion):'')); }
+      // Commodities: Maíz y Soja
+      if(d.commodities){
+        var mz = d.commodities.find(function(c){ return c.nombre&&(c.nombre.toLowerCase().indexOf('ma\xedz')>=0||c.nombre.toLowerCase().indexOf('maiz')>=0); });
+        var sj = d.commodities.find(function(c){ return c.nombre&&c.nombre.toLowerCase().indexOf('soja')>=0; });
+        if(mz) setC('hkpi-maiz', fN(mz.precio), 'gold');
+        if(sj) setC('hkpi-soja', fN(sj.precio), 'gold');
+      }
+      // MEP desde último registro del historial
+      var mepVal = null;
+      if(d.historico && d.historico.length) mepVal = d.historico[d.historico.length-1].tc_mep || null;
+      if(mepVal) setC('hkpi-mep', '$\u00a0'+Number(mepVal).toLocaleString('es-AR'), '');
+      // Ternero E&C 330-370
+      if(d.terneros_esyc){
+        var ter330 = d.terneros_esyc.find(function(t){ return t.categoria && t.categoria.indexOf('330')>=0; });
+        if(ter330) setC('hkpi-ter330', fN(ter330.precio), 'gold');
+      }
     }
-    if(vac){
-      setC('hkpi-vaca', fN(vac.precio), 'gold');
-      set('hkpi-vaca-var', 'MAG · '+d.fecha+(vac.variacion?fVar(vac.variacion):''));
+
+    // ── Rentabilidad acumulada (análisis compras) ────────────
+    if(neg && neg.compras && neg.compras.length && d && d.insumos){
+      var ins = d.insumos;
+      var bp  = (typeof bpGet === 'function') ? bpGet() : {};
+      var CORTE = '2026-03';
+      var totRes = 0, totIngV = 0, totCab = 0;
+      neg.compras.forEach(function(c){
+        var catNorm = (typeof _analNormCat==='function') ? _analNormCat(c.categoria) : c.categoria;
+        var tipo    = (typeof _analCatToTipo==='function') ? _analCatToTipo(catNorm) : null;
+        var pesoE   = c.kg_cab > 0 ? c.kg_cab : ((typeof _analCatPesoE==='function') ? _analCatPesoE(catNorm) : 0);
+        var pesoS   = (typeof _analCatPesoS==='function') ? _analCatPesoS(catNorm) : 0;
+        var mes     = (typeof _analFechaMes==='function') ? _analFechaMes(c.fecha) : (c.fecha||'').slice(0,7);
+        if(!mes || mes < CORTE) return;
+        if(!c.precio_kg || !ins.maiz || !tipo) return;
+        var bpTipo = bp[tipo] || null;
+        if(typeof _segSimCat !== 'function') return;
+        var sim = _segSimCat(tipo, pesoE, pesoS, c.precio_kg, ins, bpTipo);
+        if(!sim || sim.resEco==null || !sim.ingresoVenta) return;
+        var cab = c.cabezas || 1;
+        totRes  += sim.resEco      * cab;
+        totIngV += sim.ingresoVenta* cab;
+        totCab  += cab;
+      });
+      if(totIngV > 0){
+        var rentPct = totRes / totIngV * 100;
+        var rentCol = rentPct >= 0 ? 'green' : 'red';
+        setC('hkpi-rent-acum', (rentPct>=0?'+':'')+rentPct.toFixed(1)+'%', rentCol);
+      }
     }
   });
 
@@ -3656,20 +3749,42 @@ function loadHomeKpis(){
 
   tPromise.then(function(d){
     if(!d) return;
-    // Total disponible = cartera de cheques a cobrar
     var cheqTotal = (d.cheques||{}).total_cartera || 0;
-    // Cobertura: última semana con saldo_acumulado >= 0
     var flujo = d.flujo || {};
-    var sems   = flujo.semanas || [];
-    var acum   = (flujo.series||{}).saldo_acumulado || [];
-    var hastaLabel = '—';
+    var sems  = flujo.semanas || [];
+    var acum  = (flujo.series||{}).saldo_acumulado || [];
+    // Buscar última semana con saldo acumulado >= 0
+    var ultimoPosFecha = '—';
     for(var i=acum.length-1; i>=0; i--){
-      if(acum[i]>=0){ hastaLabel=sems[i]||'—'; break; }
+      if(acum[i]>=0){ ultimoPosFecha = sems[i]||'—'; break; }
     }
-    if(hastaLabel!=='—') hastaLabel='Hasta el '+hastaLabel;
-    var isPositive = hastaLabel !== '—';
-    setC('hkpi-tes-hasta', hastaLabel, isPositive?'green':'');
-    set('hkpi-tes-disp', 'Cartera cheqs: '+fM(cheqTotal)+' · Corte '+( d.fecha_corte||'').split('-').reverse().join('/'));
+    var isPositive = ultimoPosFecha !== '—';
+    setC('hkpi-tes-hasta', isPositive ? 'sem. del '+ultimoPosFecha : 'Sin cobertura', isPositive?'green':'');
+    set('hkpi-tes-disp', 'Cartera cheqs: '+fM(cheqTotal)+' · Corte '+(d.fecha_corte||'').split('-').reverse().join('/'));
+  });
+
+  // ── Valuación activo corriente ─────────────────────────────
+  var vPromise = _valData
+    ? Promise.resolve(_valData)
+    : fetch(STOCK_SB+'/valuacion_historica.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;});
+
+  vPromise.then(function(d){
+    if(!d||!d.snapshots||!d.snapshots.length) return;
+    var snaps = d.snapshots.slice().sort(function(a,b){ return a.periodo<b.periodo?-1:1; });
+    var ult = snaps[snaps.length-1];
+    var c   = ult.componentes || {};
+    var pr  = ult.precios || {};
+    // total USD: explícito o derivado
+    var totalUSD = c.total_usd != null ? c.total_usd
+                 : (c.total_pesos && pr.bna_tc_venta ? Math.round(c.total_pesos/pr.bna_tc_venta) : null);
+    setC('hkpi-val-pesos', fB(c.total_pesos), 'gold');
+    if(totalUSD!=null){
+      var absM = Math.abs(totalUSD), sign = totalUSD<0?'−':'';
+      var usdStr = absM>=1e6 ? sign+'U$S\u00a0'+(absM/1e6).toFixed(2)+'\u00a0M' : sign+'U$S\u00a0'+Math.round(absM).toLocaleString('es-AR');
+      setC('hkpi-val-usd', usdStr, '');
+    }
+    set('hkpi-val-periodo', 'Período '+ult.periodo);
+    if(pr.bna_tc_venta) set('hkpi-val-tc', 'MEP $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD');
   });
 }
 
