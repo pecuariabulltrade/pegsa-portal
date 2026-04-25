@@ -1,0 +1,36 @@
+/* css/simulador.css — extraído de index.html · 2026-04-25 */
+
+.sim-label{font-family:'DM Mono',monospace;font-size:12px;color:rgba(26,22,18,.55);margin-bottom:4px;letter-spacing:.04em}
+.sim-input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:2px;font-family:'DM Mono',monospace;font-size:13px;background:#fff;box-sizing:border-box;color:var(--ink)}
+.sim-input:focus{outline:none;border-color:rgba(184,146,42,.6)}
+.sim-res-table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:13px}
+.sim-res-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sim-res-table .sim-section{background:rgba(184,146,42,.08);font-weight:700;color:var(--gold);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.sim-res-table .sim-total{background:rgba(26,22,18,.04);font-weight:700}
+.sim-res-pos{color:#2d7a2d;font-weight:700}
+.sim-res-neg{color:#c0392b;font-weight:700}
+/* ── Cuadro de Dieta por Etapas ─────────────────────────────────── */
+.sim-diet-wrap{margin-top:20px;border-top:1px solid rgba(184,146,42,.18);padding-top:18px}
+.sim-diet-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sim-diet-hdr span{font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.sim-diet-reset{font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.4);cursor:pointer;border:1px solid rgba(26,22,18,.15);padding:3px 9px;border-radius:2px;transition:all .15s;background:none}
+.sim-diet-reset:hover{color:var(--gold);border-color:rgba(184,146,42,.4)}
+.sim-diet-table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:13px}
+.sim-diet-table th{padding:6px 10px;background:rgba(184,146,42,.1);color:var(--gold);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;border:1px solid rgba(184,146,42,.2);text-align:center}
+.sim-diet-table th:first-child{text-align:left}
+.sim-diet-table td{padding:5px 10px;border:1px solid rgba(26,22,18,.09);color:var(--ink);vertical-align:middle}
+.sim-diet-table td:first-child{font-size:12px;color:rgba(26,22,18,.6);white-space:nowrap;font-weight:500}
+.sim-diet-table .sdt-calc td{background:rgba(245,240,232,.6);color:rgba(26,22,18,.5);font-size:12px;text-align:center}
+.sim-diet-table .sdt-calc td:first-child{color:rgba(26,22,18,.5);text-align:left}
+.sim-diet-table .sdt-total td{background:rgba(184,146,42,.07);font-weight:700;color:var(--ink);text-align:center}
+.sim-diet-table .sdt-total td:first-child{color:var(--gold);text-align:left}
+.sim-diet-table .sdt-alim td{background:rgba(39,97,61,.08);font-weight:700;color:#27613d;text-align:center}
+.sim-diet-table .sdt-alim td:first-child{color:#27613d;text-align:left}
+.sim-diet-table .sdt-sum td{background:rgba(26,22,18,.03);font-size:12px;text-align:center;color:rgba(26,22,18,.55)}
+.sim-diet-table .sdt-sum td:first-child{text-align:left}
+.sim-diet-input{width:62px;padding:4px 6px;border:1px solid rgba(26,22,18,.15);border-radius:2px;font-family:'DM Mono',monospace;font-size:13px;background:#fff;color:var(--ink);text-align:center;display:block;margin:0 auto}
+.sim-diet-input:focus{outline:none;border-color:rgba(184,146,42,.6)}
+.sdt-inp td{background:#fff;text-align:center}
+.sdt-inp td:first-child{background:rgba(245,240,232,.9);text-align:left}
+.sdt-warn{color:#c0392b!important;font-weight:700!important}
+.sim-res-neutral{color:rgba(26,22,18,.9);font-weight:600}

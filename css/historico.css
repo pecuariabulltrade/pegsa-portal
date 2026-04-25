@@ -1,0 +1,8 @@
+/* css/historico.css — extraído de index.html · 2026-04-25 */
+
+.hist-filter{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.08em;padding:5px 14px;border:1px solid var(--border-strong);border-radius:2px;background:#fff;cursor:pointer;color:var(--ink);transition:all .15s}
+.hist-filter:hover{border-color:var(--gold);color:var(--gold)}
+.hist-filter.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+/* Forzar visibilidad de paneles de contenido dentro del módulo histórico */
+#screenHistorico .panel{display:block}
+#screenBaseParams .panel{display:block}
