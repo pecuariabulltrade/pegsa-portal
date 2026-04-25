@@ -9781,4 +9781,154 @@ function _renderRealInsumos(snaps, labels){
           borderRadius: 2
         }]
       },
- 
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { display: false } },
+          y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toFixed(0)+'t'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
+        }
+      }
+    });
+  }
+
+  // ── Desglose por tipo de insumo ──
+  // items es un objeto {nombre: kg} — no un array
+  var insuSet = {};
+  snaps.forEach(function(s){
+    if(s.insumos && s.insumos.items){
+      var it = s.insumos.items;
+      if(Array.isArray(it)){
+        // Compatibilidad futura: si algún día fuera array
+        it.forEach(function(x){ insuSet[x.nombre]=1; });
+      } else {
+        Object.keys(it).forEach(function(nom){ insuSet[nom]=1; });
+      }
+    }
+  });
+  var insumos = Object.keys(insuSet).sort();
+
+  var dsDetalle = insumos.map(function(nom, i){
+    return {
+      label: nom.replace(/\s*\(KG\)/i,'').trim(),
+      data: snaps.map(function(s){
+        if(!s.insumos || !s.insumos.items) return null;
+        var it = s.insumos.items;
+        var kg = Array.isArray(it)
+          ? (function(){ var x=it.find(function(x){ return x.nombre===nom; }); return x?x.stock_kg:null; })()
+          : (it[nom] != null ? it[nom] : null);
+        return kg != null ? +(kg/1000).toFixed(1) : null;
+      }),
+      borderColor: HIST_COLORS[i % HIST_COLORS.length],
+      backgroundColor: 'transparent',
+      tension: .3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: true
+    };
+  });
+
+  _destroyChart('chartRealInsuDetalle');
+  var ctxD = document.getElementById('chartRealInsuDetalle');
+  if(ctxD){
+    _histCharts['chartRealInsuDetalle'] = new Chart(ctxD, {
+      type: 'line',
+      data: { labels: labels, datasets: dsDetalle },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 14 } } },
+        scales: {
+          x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
+          y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toFixed(0)+'t'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
+        }
+      }
+    });
+  }
+}
+
+// ── KG POR CABEZA (Real Mensual) ─────────────────────────────
+function _renderRealKgCab(tipo){
+  if(!_histRealData || !_histRealData.snapshots || !_histRealData.snapshots.length) return;
+  var snaps  = _histRealData.snapshots.slice().sort(function(a,b){ return a.fecha<b.fecha?-1:1; });
+  var labels = snaps.map(function(s){ return s.periodo; });
+  var ds, subLabel;
+
+  if(tipo === 'pegsa_campo'){
+    // PEGSA desglosado por campo
+    var camposSet = {};
+    snaps.forEach(function(s){
+      var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+      Object.keys(pc).forEach(function(c){ camposSet[c]=1; });
+    });
+    var campos = Object.keys(camposSet);
+    ds = campos.map(function(campo, i){
+      return {
+        label: campo,
+        data: snaps.map(function(s){
+          var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+          var d = pc[campo];
+          if(!d || !d.cabezas || d.cabezas===0) return null;
+          return Math.round(d.kg_proyectado / d.cabezas);
+        }),
+        borderColor: HIST_COLORS[i%HIST_COLORS.length],
+        backgroundColor: 'transparent',
+        tension: .3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: true
+      };
+    });
+    subLabel = 'PEGSA · desglose por campo';
+
+  } else if(tipo === 'pegsa'){
+    // PEGSA total
+    ds = [{
+      label: 'PEGSA — kg / cabeza',
+      data: snaps.map(function(s){
+        var p = s.hacienda_masa && s.hacienda_masa.pegsa;
+        if(!p || !p.cabezas || p.cabezas===0) return null;
+        return Math.round(p.kg_proyectado / p.cabezas);
+      }),
+      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.12)',
+      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
+    }];
+    subLabel = 'PEGSA · promedio mensual por animal';
+
+  } else {
+    // Total general
+    ds = [{
+      label: 'Total — kg / cabeza',
+      data: snaps.map(function(s){
+        var hm = s.hacienda_masa || {};
+        if(!hm.total_cabezas || hm.total_cabezas===0) return null;
+        return Math.round((hm.total_kg||0) / hm.total_cabezas);
+      }),
+      borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.1)',
+      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2, spanGaps: true
+    }];
+    subLabel = 'Total feedlot · promedio mensual por animal';
+  }
+
+  var sub = document.getElementById('realKgCabSub');
+  if(sub) sub.textContent = subLabel;
+
+  _destroyChart('chartRealKgCab');
+  var ctx = document.getElementById('chartRealKgCab');
+  if(!ctx) return;
+  _histCharts['chartRealKgCab'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: ds },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 14 } } },
+      scales: {
+        x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
+        y: {
+          ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toLocaleString('es-AR')+' kg'; } },
+          grid: { color: 'rgba(0,0,0,.06)' }
+        }
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
