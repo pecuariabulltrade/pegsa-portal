@@ -4,8 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PEGSA & BULLTRADE — Portal de Gestión</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230f1e38'/%3E%3Ctext x='50%25' y='50%25' font-family='-apple-system,Segoe UI,sans-serif' font-size='30' font-weight='700' fill='%232b6fd6' text-anchor='middle' dominant-baseline='central'%3EPB%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+/* Chart.js auto-destroy: soluciona "Canvas is already in use" */
+(function(){
+  if (typeof Chart === 'undefined' || Chart.__autoDestroy) return;
+  var Real = Chart;
+  function ChartAuto(item, config){
+    try {
+      var c = item;
+      if (c && c.canvas) c = c.canvas;
+      if (typeof c === 'string') c = document.getElementById(c);
+      if (c instanceof HTMLCanvasElement && Real.getChart) {
+        var prev = Real.getChart(c);
+        if (prev) prev.destroy();
+      }
+    } catch(e){}
+    return new Real(item, config);
+  }
+  Object.getOwnPropertyNames(Real).forEach(function(k){
+    if (k === 'length' || k === 'name' || k === 'prototype') return;
+    try { ChartAuto[k] = Real[k]; } catch(e){}
+  });
+  ChartAuto.prototype = Real.prototype;
+  ChartAuto.__autoDestroy = true;
+  window.Chart = ChartAuto;
+})();
+</script>
+
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/v2-overrides.css">
 <link rel="stylesheet" href="css/historico.css">
