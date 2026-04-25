@@ -1,29 +1,29 @@
 {
   "meta": {
-    "generado": "2026-04-24T23:02:46.531155",
+    "generado": "2026-04-25T00:02:38.561302",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 41497,
-    "registros_filtrados": 15986,
+    "registros_totales": 41476,
+    "registros_filtrados": 15838,
     "excluidos": {
       "motivo": 437,
-      "rfid": 4011,
+      "rfid": 3993,
       "estadia": 279,
-      "adp": 383,
-      "fecha": 20401
+      "adp": 382,
+      "fecha": 20547
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 15986,
-    "adp_promedio": 1.531,
+    "cabezas": 15838,
+    "adp_promedio": 1.53,
     "adp_min": 0.01,
     "adp_max": 5.0,
-    "estadia_promedio": 131.5,
+    "estadia_promedio": 132.0,
     "estadia_min": 3,
     "estadia_max": 450
   },
@@ -74,11 +74,11 @@
       "estadia_max": 368
     },
     "VACA": {
-      "cabezas": 8066,
+      "cabezas": 7921,
       "adp_promedio": 1.626,
       "adp_min": 0.01,
       "adp_max": 4.96,
-      "estadia_promedio": 109.4,
+      "estadia_promedio": 110.0,
       "estadia_min": 31,
       "estadia_max": 350
     },
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-04": {
-      "cabezas": 758,
-      "adp_promedio": 1.441,
+      "cabezas": 610,
+      "adp_promedio": 1.391,
       "adp_min": 0.09,
       "adp_max": 4.59,
-      "estadia_promedio": 121.9,
-      "estadia_min": 14,
+      "estadia_promedio": 132.2,
+      "estadia_min": 25,
       "estadia_max": 375
     },
     "2025-05": {
