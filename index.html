@@ -17,6 +17,63 @@
 </head>
 <body>
 
+<!-- APP SIDEBAR — visible cuando hay usuario logueado -->
+<aside id="appSidebar" class="app-sidebar" style="display:none">
+  <div class="sb-brand">
+    <div class="sb-logo">PB</div>
+    <div class="sb-brand-text">
+      <div class="sb-brand-name">PEGSA &amp; BULL</div>
+      <div class="sb-brand-sub">CORPORATE DATA</div>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Vista</div>
+    <a class="sb-item active" data-target="home" onclick="sbNavigate('home')">
+      <span class="sb-icon">⌂</span>
+      <span class="sb-text">Panel Principal</span>
+    </a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Módulos</div>
+    <a class="sb-item" data-target="resultados" onclick="sbNavigate('resultados')">
+      <span class="sb-num">01</span><span class="sb-text">Estado Resultados</span>
+    </a>
+    <a class="sb-item" data-target="flujo" onclick="sbNavigate('flujo')">
+      <span class="sb-num">02</span><span class="sb-text">Flujo de Fondos</span>
+    </a>
+    <a class="sb-item" data-target="stock" onclick="sbNavigate('stock')">
+      <span class="sb-num">03</span><span class="sb-text">Stock de Masa — Kilos</span>
+    </a>
+    <a class="sb-item" data-target="insumos" onclick="sbNavigate('insumos')">
+      <span class="sb-num">04</span><span class="sb-text">Stock de Insumos</span>
+    </a>
+    <a class="sb-item" data-target="mercado" onclick="sbNavigate('mercado')">
+      <span class="sb-num">05</span><span class="sb-text">Mercado y Precios</span>
+    </a>
+    <a class="sb-item" data-target="tesoreria" onclick="sbNavigate('tesoreria')">
+      <span class="sb-num">06</span><span class="sb-text">Tesorería</span>
+    </a>
+    <a class="sb-item" data-target="simulador" onclick="sbNavigate('simulador')">
+      <span class="sb-num">07</span><span class="sb-text">Simulador Feedlot</span>
+    </a>
+    <a class="sb-item" data-target="historico" onclick="sbNavigate('historico')">
+      <span class="sb-num">08</span><span class="sb-text">Histórico &amp; Evolución</span>
+    </a>
+  </div>
+
+  <div class="sb-user">
+    <div class="sb-avatar" id="sbAvatar">--</div>
+    <div class="sb-user-info">
+      <div class="sb-user-name" id="sbUserName">Usuario</div>
+      <div class="sb-user-period" id="sbUserPeriod" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:1px"></div>
+    </div>
+  </div>
+</aside>
+<!-- /APP SIDEBAR -->
+
+
 <!-- LOGIN -->
 <div id="screenLogin" class="screen active">
   <div class="login-box">

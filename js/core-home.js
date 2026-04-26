@@ -31,7 +31,7 @@ function tryLogin(){
   });
   const ls=document.getElementById('screenLogin');
   ls.style.opacity='0';ls.style.transition='opacity .35s ease';
-  setTimeout(()=>{showScreen('screenHome');document.body.style.background='';loadHomeKpis();},350);
+  setTimeout(()=>{showScreen('screenHome');document.body.style.background='';sbInit(currentUser);loadHomeKpis();},350);
 }
 function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.classList.add('show');}
 function shake(){const b=document.querySelector('.login-box');b.style.animation='shake .4s ease';setTimeout(()=>b.style.animation='',400);}
@@ -45,6 +45,7 @@ function showScreen(id){
 
 function openModule(mod){
   if(currentUser && !currentUser.modules.includes(mod)){return;}
+  if(typeof sbSetActive==="function") sbSetActive(mod);
   if(mod==='mercado'){
     showScreen('screenMercado');
     document.body.style.background='';
@@ -283,11 +284,11 @@ function loadHomeKpis(){
   });
 }
 
-function goHome(){showScreen('screenHome');document.body.style.background='';window.scrollTo(0,0);loadHomeKpis();}
+function goHome(){if(typeof sbSetActive==="function") sbSetActive("home");showScreen('screenHome');document.body.style.background='';window.scrollTo(0,0);loadHomeKpis();}
 function logout(){
   currentUser=null;chartsInited=false;
   document.querySelectorAll('.module-card[data-mod]').forEach(card=>{card.style.display='';});
-  showScreen('screenLogin');document.body.style.background='';
+  sbHide();showScreen('screenLogin');document.body.style.background='';
   const ls=document.getElementById('screenLogin');
   ls.style.display='flex';ls.style.opacity='0';
   document.getElementById('inputPass').value='';
@@ -295,3 +296,56 @@ function logout(){
   setTimeout(()=>{ls.style.opacity='1';ls.style.transition='opacity .35s ease';},10);
 }
 window.addEventListener('load',()=>document.getElementById('inputUser').focus());
+
+
+/* ════════════════════════════════════════════════════════════
+   APP SIDEBAR · navegación, marcado activo, mostrar/ocultar
+   ════════════════════════════════════════════════════════════ */
+function sbNavigate(target){
+  sbSetActive(target);
+  if (target === 'home') {
+    if (typeof goHome === 'function') goHome();
+  } else {
+    if (typeof openModule === 'function') openModule(target);
+  }
+}
+
+function sbSetActive(target){
+  document.querySelectorAll('.sb-item').forEach(function(el){
+    el.classList.toggle('active', el.dataset.target === target);
+  });
+}
+
+function sbShow(){
+  document.body.classList.add('has-sidebar');
+  var el = document.getElementById('appSidebar');
+  if (el) el.style.display = 'flex';
+}
+function sbHide(){
+  document.body.classList.remove('has-sidebar');
+  var el = document.getElementById('appSidebar');
+  if (el) el.style.display = 'none';
+}
+
+function sbInit(user){
+  if (user) {
+    var avatarEl = document.getElementById('sbAvatar');
+    var nameEl   = document.getElementById('sbUserName');
+    var periodEl = document.getElementById('sbUserPeriod');
+    if (avatarEl) avatarEl.textContent = user.initials || '--';
+    if (nameEl)   nameEl.textContent   = user.name || 'Usuario';
+    if (periodEl) periodEl.textContent = (typeof selectedPeriod !== 'undefined' ? selectedPeriod : '');
+
+    // Filtrar módulos según permisos
+    var modules = user.modules || [];
+    document.querySelectorAll('.sb-item').forEach(function(el){
+      var t = el.dataset.target;
+      if (t === 'home' || modules.indexOf(t) >= 0) {
+        el.style.display = '';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+  }
+  sbShow();
+}
