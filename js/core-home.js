@@ -110,6 +110,55 @@ function loadHomeKpis(){
   if(_homeKpisLoaded) return; // solo carga una vez por sesión
   _homeKpisLoaded = true;
 
+  // ── Hero update timestamp ──
+  try {
+    var hu = document.getElementById('heroUpdate');
+    if (hu) {
+      var d = new Date();
+      var dd = String(d.getDate()).padStart(2,'0');
+      var mm = String(d.getMonth()+1).padStart(2,'0');
+      var yyyy = d.getFullYear();
+      var hh = String(d.getHours()).padStart(2,'0');
+      var mn = String(d.getMinutes()).padStart(2,'0');
+      hu.textContent = dd+'/'+mm+'/'+yyyy+' '+hh+':'+mn;
+    }
+  } catch(e){}
+
+  // ── Activar banner de cierre mensual cuando hay datos del último mes ──
+  try {
+    fetch(STOCK_SB+'/comportamiento_historico.json',{}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(function(d){
+      if (!d || !d.snapshots || !d.snapshots.length) return;
+      var last = d.snapshots[d.snapshots.length-1];
+      if (last && last.periodo) {
+        var meses = {'01':'enero','02':'febrero','03':'marzo','04':'abril','05':'mayo','06':'junio','07':'julio','08':'agosto','09':'septiembre','10':'octubre','11':'noviembre','12':'diciembre'};
+        var p = last.periodo.split('-');
+        var lbl = (meses[p[1]] || p[1]) + ' ' + p[0];
+        var cierreEl = document.getElementById('alertCierre');
+        var mesEl = document.getElementById('alertCierreMes');
+        if (mesEl) mesEl.textContent = lbl;
+        if (cierreEl) cierreEl.style.display = '';
+      }
+    });
+  } catch(e){}
+
+  // ── Activar banner de Diesel cuando hay días bajos en stock_insumos ──
+  try {
+    fetch(STOCK_SB+'/stock_insumos.json',{}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(function(d){
+      if (!d || !d.insumos) return;
+      var diesel = null;
+      Object.keys(d.insumos).forEach(function(k){
+        if (k && k.toLowerCase().indexOf('diesel') >= 0) diesel = d.insumos[k];
+      });
+      if (diesel && typeof diesel.dias_restantes === 'number' && diesel.dias_restantes <= 30) {
+        var dEl = document.getElementById('alertDiesel');
+        var ddEl = document.getElementById('alertDieselDias');
+        if (ddEl) ddEl.textContent = Math.round(diesel.dias_restantes);
+        if (dEl) dEl.style.display = '';
+      }
+    });
+  } catch(e){}
+
+
   function fM(v){ // formatea millones: $1.234 M o $123 M
     if(v==null||isNaN(v)) return '—';
     var m = Math.abs(v)/1e6;
