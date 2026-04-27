@@ -22,10 +22,11 @@ function tryLogin(){
   if(!acc||acc.pass!==p){showErr('Usuario o contraseña incorrectos.');shake();return;}
   if(!PERIODS[selectedPeriod].available){showErr('El período '+selectedPeriod+' no está disponible aún.');return;}
   currentUser=acc;
+  // Defensive: estos elementos pueden no existir si el screenHome fue reemplazado
   ['tbAvatar','tbAvatar2','tbAvatar3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=acc.initials;});
-  document.getElementById('tbUser').textContent=acc.name;
+  var _tbUser = document.getElementById('tbUser'); if(_tbUser) _tbUser.textContent = acc.name;
   ['tbPeriod','tbPeriod2','tbPeriod3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=selectedPeriod;});
-  document.getElementById('heroPeriod').textContent=selectedPeriod;
+  var _hp = document.getElementById('heroPeriod'); if(_hp) _hp.textContent = selectedPeriod;
   document.querySelectorAll('.module-card[data-mod]').forEach(card=>{
     card.style.display=acc.modules.includes(card.dataset.mod)?'':'none';
   });
