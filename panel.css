@@ -482,6 +482,7 @@ html, body {
 .panel-row.split-3 { grid-template-columns: 1fr 1fr 1fr; }
 
 .panel {
+  display: block !important;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
@@ -996,3 +997,13 @@ html, body {
   color: var(--ink-mute);
 }
 .seg button.on { background: var(--surface); color: var(--primary-deep); box-shadow: var(--shadow-sm); }
+
+
+/* Colisión de nombres: el portal viejo usa .panel y .nav-tab — forzar visibilidad
+   solo cuando estamos dentro del Panel Principal React */
+#panelRoot .panel {
+  display: block !important;
+}
+#panelRoot .panel-row {
+  display: grid !important;
+}
