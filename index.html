@@ -14,6 +14,14 @@
 <link rel="stylesheet" href="css/historico.css">
 <link rel="stylesheet" href="css/simulador.css">
 <link rel="stylesheet" href="css/animations.css">
+
+<!-- Panel Principal — fuentes -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Panel Principal — estilos -->
+<link rel="stylesheet" href="panel.css">
 </head>
 <body>
 
@@ -101,222 +109,7 @@
 
 <!-- HOME -->
 <div id="screenHome" class="screen">
-  <div class="topbar">
-    <div class="tb-left"><div class="tb-logo">PEGSA & BULL</div><div class="tb-sep"></div><div class="tb-breadcrumb">Panel Principal</div></div>
-    <div class="tb-right">
-      <div class="tb-period" id="tbPeriod">2025</div>
-      <div style="display:flex;align-items:center;gap:8px"><div class="tb-avatar" id="tbAvatar">—</div><span style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(245,240,232,.38)" id="tbUser"></span></div>
-      <button class="btn-logout" onclick="logout()">Salir</button>
-    </div>
-  </div>
-  <div class="home-hero">
-    <!-- BANNERS DE ALERTA -->
-    <div class="alerts-bar">
-      <div class="alert alert-warn" id="alertDiesel" style="display:none">
-        <span class="alert-dot"></span>
-        <span class="alert-text">Diesel: <strong id="alertDieselDias">—</strong> días de stock restantes</span>
-      </div>
-      <div class="alert alert-info" id="alertCierre" style="display:none">
-        <span class="alert-dot"></span>
-        <span class="alert-text">Nuevo cierre mensual disponible · <strong id="alertCierreMes">—</strong></span>
-      </div>
-    </div>
-
-    <!-- HERO -->
-    <div class="hero-eyebrow">Período Enero – Diciembre <span id="heroPeriod">2025</span></div>
-    <div class="hero-row">
-      <div class="hero-col-main">
-        <div class="hero-title">PECUARIA EL GARABÍ SA &amp; <em>BULLTRADE SRL</em></div>
-        <div class="hero-sub">Sistema integrado de gestión · Resumen ejecutivo y acceso a los 8 módulos del portal</div>
-      </div>
-      <div class="hero-col-meta">
-        <div class="hero-update">Actualizado · <span id="heroUpdate">—</span></div>
-        <button class="btn-export" onclick="window.print()">Exportar</button>
-      </div>
-    </div>
-
-    <!-- RESUMEN OPERATIVO label -->
-    <div class="resumen-label">
-      <span class="resumen-text">RESUMEN OPERATIVO</span>
-      <div class="resumen-tags">
-        <span class="resumen-tag tag-stock">— STOCK</span>
-        <span class="resumen-tag tag-activo">— ACTIVO</span>
-        <span class="resumen-tag tag-tesoreria">— TESORERÍA</span>
-        <span class="resumen-tag tag-mercado">— MERCADO</span>
-      </div>
-    </div>
-
-    <!-- ── KPIs JERÁRQUICOS ── -->
-
-    <!-- TIER 1: 2 KPIs GRANDES con sparkline -->
-    <div class="kpi-tier kpi-tier-1">
-      <div class="kpi-card kpi-big tag-stock-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">STOCK PEGSA</div>
-          <div class="kpi-trend pos" id="hkpi-pegsa-trend">+5,1%</div>
-        </div>
-        <div class="kpi-big-num"><span id="hkpi-pegsa-cab">—</span><span class="kpi-unit">cab</span></div>
-        <div class="kpi-bottom">
-          <div class="kpi-hint" id="hkpi-pegsa-kg">Cargando…</div>
-          <svg class="kpi-spark" id="sparkPegsa" viewBox="0 0 100 30" preserveAspectRatio="none"></svg>
-        </div>
-      </div>
-      <div class="kpi-card kpi-big tag-stock-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">STOCK TOTAL · GRUPO</div>
-          <div class="kpi-trend pos" id="hkpi-total-trend">+5,1%</div>
-        </div>
-        <div class="kpi-big-num"><span id="hkpi-total-cab">—</span><span class="kpi-unit">cab</span></div>
-        <div class="kpi-bottom">
-          <div class="kpi-hint" id="hkpi-total-kg">Cargando…</div>
-          <svg class="kpi-spark" id="sparkTotal" viewBox="0 0 100 30" preserveAspectRatio="none"></svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- TIER 2: 4 KPIs MEDIANOS -->
-    <div class="kpi-tier kpi-tier-2">
-      <div class="kpi-card kpi-med tag-activo-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">ACTIVO CORRIENTE · ARS</div>
-          <div class="kpi-trend pos" id="hkpi-val-trend">—</div>
-        </div>
-        <div class="kpi-med-num" id="hkpi-val-pesos">—</div>
-        <div class="kpi-hint" id="hkpi-val-periodo">Real mensual</div>
-      </div>
-      <div class="kpi-card kpi-med tag-activo-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">ACTIVO CORRIENTE · USD</div>
-          <div class="kpi-trend" id="hkpi-val-usd-tag">MEP</div>
-        </div>
-        <div class="kpi-med-num" id="hkpi-val-usd">—</div>
-        <div class="kpi-hint" id="hkpi-val-tc">MEP</div>
-      </div>
-      <div class="kpi-card kpi-med tag-tesoreria-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">TESORERÍA · COBERTURA FINANCIERA</div>
-        </div>
-        <div class="kpi-med-num green" id="hkpi-tes-hasta">—</div>
-        <div class="kpi-hint" id="hkpi-tes-disp">Cargando…</div>
-      </div>
-      <div class="kpi-card kpi-med tag-activo-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">RENTABILIDAD ACUM. S/VTA.</div>
-        </div>
-        <div class="kpi-med-num" id="hkpi-rent-acum">—</div>
-        <div class="kpi-hint">Análisis compras · desde Mar 2026</div>
-      </div>
-    </div>
-
-    <!-- TIER 3: 6 KPIs CHICOS -->
-    <div class="kpi-tier kpi-tier-3">
-      <div class="kpi-card kpi-min tag-mercado-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">NOVILLO 461/490 KG</div>
-          <div class="kpi-trend" id="hkpi-novillo-delta">—</div>
-        </div>
-        <div class="kpi-min-num" id="hkpi-novillo">—</div>
-        <div class="kpi-hint" id="hkpi-novillo-var">MAG · hoy</div>
-      </div>
-      <div class="kpi-card kpi-min tag-mercado-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">VACA BUENA</div>
-          <div class="kpi-trend" id="hkpi-vaca-delta">—</div>
-        </div>
-        <div class="kpi-min-num" id="hkpi-vaca">—</div>
-        <div class="kpi-hint" id="hkpi-vaca-var">MAG · hoy</div>
-      </div>
-      <div class="kpi-card kpi-min tag-mercado-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">MAÍZ BCR</div>
-          <div class="kpi-trend" id="hkpi-maiz-delta">—</div>
-        </div>
-        <div class="kpi-min-num" id="hkpi-maiz">—</div>
-        <div class="kpi-hint">$/tn · BCR Cám. Arbitral</div>
-      </div>
-      <div class="kpi-card kpi-min tag-mercado-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">SOJA BCR</div>
-          <div class="kpi-trend" id="hkpi-soja-delta">—</div>
-        </div>
-        <div class="kpi-min-num" id="hkpi-soja">—</div>
-        <div class="kpi-hint">$/tn · BCR Cám. Arbitral</div>
-      </div>
-      <div class="kpi-card kpi-min tag-mercado-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">TERNERO E&amp;C 330–370 KG</div>
-        </div>
-        <div class="kpi-min-num" id="hkpi-ter330">—</div>
-        <div class="kpi-hint">$/kg vivo · E&amp;C</div>
-      </div>
-      <div class="kpi-card kpi-min tag-activo-bd">
-        <div class="kpi-head">
-          <div class="kpi-tag-up">TIPO CAMBIO MEP</div>
-        </div>
-        <div class="kpi-min-num" id="hkpi-mep">—</div>
-        <div class="kpi-hint">$/USD · hoy</div>
-      </div>
-    </div>
-  </div>
-  <div class="modules-section">
-    <div class="modules-label">Módulos disponibles</div>
-    <div class="modules-grid">
-      <div class="module-card" data-mod="resultados" onclick="openModule('resultados')">
-        <span class="mod-badge ready">● Disponible</span><span class="mod-icon">📊</span>
-        <div class="mod-tag">Módulo 01</div><div class="mod-title">Estado de Resultados de Gestión</div>
-        <div class="mod-desc">Análisis por centro de negocio. Resultado operativo, tenencia y consolidado del período.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="flujo" onclick="openModule('flujo')">
-        <span class="mod-badge ready">● Disponible</span><span class="mod-icon">💧</span>
-        <div class="mod-tag">Módulo 02</div><div class="mod-title">Flujo de Fondos</div>
-        <div class="mod-desc">Estado de Origen y Aplicación de Fondos. Ingresos cobrados, egresos por centro y variaciones patrimoniales.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="stock" onclick="openModule('stock')">
-        <span class="mod-badge live">● En vivo · WinCampo</span><span class="mod-icon">🐄</span>
-        <div class="mod-tag">Módulo 03</div><div class="mod-title">Stock de Masa — Kilos</div>
-        <div class="mod-desc">Datos en vivo desde WinCampo vía OneDrive. Actualización automática diaria 07:00 AM.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="insumos" onclick="openModule('insumos')">
-        <span class="mod-badge live">● En vivo · WinCampo</span><span class="mod-icon">🌽</span>
-        <div class="mod-tag">Módulo 04</div><div class="mod-title">Stock de Insumos</div>
-        <div class="mod-desc">Stock en kg de insumos principales. Diesel, maíz, soja, gluten y más. Actualización diaria 07:00 AM.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="mercado" onclick="openModule('mercado')">
-        <span class="mod-badge ready">● Disponible</span><span class="mod-icon">📈</span>
-        <div class="mod-tag">Módulo 05</div><div class="mod-title">Mercado y Precios</div>
-        <div class="mod-desc">Precios de hacienda por categoría y cotizaciones de insumos y commodities agrícolas.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="tesoreria" onclick="openModule('tesoreria')">
-        <span class="mod-badge live">● En vivo · OneDrive</span><span class="mod-icon">🏦</span>
-        <div class="mod-tag">Módulo 06</div><div class="mod-title">Tesorería & Posición Financiera</div>
-        <div class="mod-desc">Saldos bancarios, posición en dólares, cheques y deuda financiera consolidada.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="simulador" onclick="openModule('simulador')">
-        <span class="mod-badge ready">● Disponible</span><span class="mod-icon">🧮</span>
-        <div class="mod-tag">Módulo 07</div><div class="mod-title">Simulador Feedlot</div>
-        <div class="mod-desc">Simulación económica de terneros, terneras e invernada con precios de insumos actualizados.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="historico" onclick="openModule('historico')">
-        <span class="mod-badge acc">● Acumulando datos</span><span class="mod-icon">📅</span>
-        <div class="mod-tag">Módulo 08</div><div class="mod-title">Histórico & Evolución</div>
-        <div class="mod-desc">Evolución mensual de cabezas, kilogramos, insumos y posición financiera. Hasta 30 meses de historia.</div>
-        <span class="mod-arrow">Abrir módulo →</span>
-      </div>
-      <div class="module-card" data-mod="baseparams" onclick="openModule('baseparams')">
-        <span class="mod-badge cfg">● Configuración</span><span class="mod-icon">⚙️</span>
-        <div class="mod-tag">Config</div><div class="mod-title">Parámetros Base</div>
-        <div class="mod-desc">Parámetros operativos fijos para el cálculo automático del Seguimiento Diario y Compras del Módulo 5.</div>
-        <span class="mod-arrow">Abrir →</span>
-      </div>
-    </div>
-  </div>
+  <div id="panelRoot"></div>
 </div>
 
 <!-- REPORT -->
@@ -2733,6 +2526,44 @@
 
 <!-- ══ MÓDULO 08 · HISTÓRICO JS ══ -->
 <script src="js/modulo-08-historico.js"></script>
+
+
+<!-- Panel Principal — React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<!-- Panel Principal — datos y componentes (ORDEN: data → charts → shell → app) -->
+<script src="data.js"></script>
+<script type="text/babel" src="charts.jsx"></script>
+<script type="text/babel" src="shell.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+
+<!-- Panel Principal — boot -->
+<script type="text/babel">
+  function mountPanel() {
+    const root = document.getElementById('panelRoot');
+    if (!root || root.dataset.mounted === '1') return;
+    if (typeof window.Panel === 'undefined') { setTimeout(mountPanel, 50); return; }
+    try {
+      ReactDOM.createRoot(root).render(<window.Panel />);
+      root.dataset.mounted = '1';
+    } catch(e) {
+      console.error('Error montando Panel:', e);
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const sh = document.getElementById('screenHome');
+    if (sh && getComputedStyle(sh).display !== 'none') mountPanel();
+  });
+  if (typeof window.showScreen === 'function') {
+    const orig = window.showScreen;
+    window.showScreen = function(id) {
+      orig.apply(this, arguments);
+      if (id === 'screenHome') setTimeout(mountPanel, 0);
+    };
+  }
+</script>
 
 </body>
 </html>

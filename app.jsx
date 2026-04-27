@@ -324,4 +324,8 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// El auto-mount original sobre #root se eliminó — el boot del index.html
+// se encarga de montar <Panel /> sobre #panelRoot.
+// Exponemos Panel y App globalmente para que el boot las encuentre:
+window.Panel = Panel;
+window.App = App;

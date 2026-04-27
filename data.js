@@ -18,6 +18,20 @@
   const fetchJson = (name) =>
     fetch(name).then(r => r.ok ? r.json() : null).catch(() => null);
 
+  // Helper: convierte cualquier cosa a array. Si recibe objeto, lo transforma
+  // en array de {clave + props del valor}. Si recibe array, lo devuelve tal cual.
+  // Si recibe null/undefined/otra cosa, devuelve [].
+  const asArray = (x, keyName = 'cat') => {
+    if (Array.isArray(x)) return x;
+    if (x && typeof x === 'object') {
+      return Object.entries(x).map(([k, v]) => {
+        if (v && typeof v === 'object') return { [keyName]: k, ...v };
+        return { [keyName]: k, valor: v };
+      });
+    }
+    return [];
+  };
+
   const fmtAR = (n) => n == null || isNaN(n) ? '—' : Math.round(n).toLocaleString('es-AR');
   const money = (n) => n == null || isNaN(n) ? '—' : '$ ' + Math.round(n).toLocaleString('es-AR');
   const usd   = (n) => n == null || isNaN(n) ? '—' : 'U$S ' + Math.round(n).toLocaleString('es-AR');
@@ -64,7 +78,7 @@
     })();
 
     /* ─────────────── ALERTAS ─────────────────────────────────────── */
-    const insumoCritico = (stockInsumos?.insumos || [])
+    const insumoCritico = asArray(stockInsumos?.insumos, "nombre")
       .filter(i => i.dias_restantes != null && i.dias_restantes >= 0)
       .sort((a, b) => a.dias_restantes - b.dias_restantes)[0];
 
@@ -85,11 +99,11 @@
     const kp = stockKpis?.kpis || {};
     const peg = kp.por_propietario?.PEGSA || {};
 
-    const sparklinePegsa = (stockDiario?.snapshots || []).slice(-30)
+    const sparklinePegsa = asArray(stockDiario?.snapshots).slice(-30)
       .map(s => s.hacienda?.por_propietario?.PEGSA?.cabezas)
       .filter(v => v != null);
 
-    const sparklineTotal = (stockDiario?.snapshots || []).slice(-30)
+    const sparklineTotal = asArray(stockDiario?.snapshots).slice(-30)
       .map(s => s.hacienda?.total_cabezas)
       .filter(v => v != null);
 
@@ -112,8 +126,8 @@
     /* ─────────────── TIER 2 · ACTIVO + TESORERÍA + RENT ──────────── */
     const pos = tesoreria?.posicion || {};
     const totalARS =
-      (pos.bancos_peg || []).reduce((s, b) => s + (b.saldo || 0), 0) +
-      (pos.bancos_bull || []).reduce((s, b) => s + (b.saldo || 0), 0) +
+      asArray(pos.bancos_peg).reduce((s, b) => s + (b.saldo || 0), 0) +
+      asArray(pos.bancos_bull).reduce((s, b) => s + (b.saldo || 0), 0) +
       (pos.efectivo || 0) + (pos.becerra || 0) +
       (pos.fima_peg || 0) + (pos.fima_bull || 0) +
       (pos.fci || 0) + (pos.echeq || 0);
@@ -188,14 +202,14 @@
     ];
 
     /* ─────────────── EVOLUCIÓN PATRIMONIAL ───────────────────────── */
-    const evolucion = (financierohist?.cortes || []).map(c => ({
+    const evolucion = asArray(financierohist?.cortes, "fecha").map(c => ({
       fecha: c.fecha || c.periodo,
       ars: c.activo_corriente_ars || c.activo_ars || c.ars,
       usd: c.activo_corriente_usd || c.activo_usd || c.usd,
     })).filter(p => p.ars != null);
 
     /* ─────────────── COMPOSICIÓN DEL RESULTADO (donut) ───────────── */
-    const composicion = (negocios?.resumen_cat || []).map(c => ({
+    const composicion = asArray(negocios?.resumen_cat, "cat").map(c => ({
       label: c.cat || c.categoria,
       value: c.total ?? ((c.ventas || 0) - (c.compras || 0)),
     })).filter(c => c.value > 0);
