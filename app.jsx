@@ -87,34 +87,34 @@ function Panel() {
         </div>
         <div className="subkpi-row" style={{ marginBottom: 24 }}>
           {/* === TIER 1 · STOCK (XL) === */}
-          <div className="subkpi size-xl" data-group="stock" onClick={() => goToPortalModule("stock-masa")}>
+          <div className="subkpi size-xl" data-group="stock" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"))}>
             <div className="subkpi-label"><span>Stock PEGSA</span><span className="delta">+5,1%</span></div>
             <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>8.651<span className="u">cab</span></div>
             <div className="subkpi-meta"><span>3.626 t proyectadas</span><span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span></div>
           </div>
-          <div className="subkpi size-xl" data-group="stock" onClick={() => goToPortalModule("stock-masa")}>
+          <div className="subkpi size-xl" data-group="stock" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"))}>
             <div className="subkpi-label"><span>Stock Total · Grupo</span><span className="delta">+5,1%</span></div>
             <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>9.861<span className="u">cab</span></div>
             <div className="subkpi-meta"><span>4.324 t · 3 establecimientos</span><span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span></div>
           </div>
 
           {/* === TIER 2 · ACTIVO + TESORERÍA + RENTABILIDAD (LG) === */}
-          <div className="subkpi size-lg" data-group="activo" onClick={() => goToPortalModule("historico")}>
+          <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
             <div className="subkpi-label"><span>Activo Corriente · ARS</span><span className="delta">+22,8%</span></div>
             <div className="subkpi-value">$ 16,43<span className="u">B</span></div>
             <div className="subkpi-meta"><span>Período 2025-12</span><span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioArs} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span></div>
           </div>
-          <div className="subkpi size-lg" data-group="activo" onClick={() => goToPortalModule("historico")}>
+          <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
             <div className="subkpi-label"><span>Activo Corriente · USD</span><span className="delta">MEP</span></div>
             <div className="subkpi-value">U$S 11,49<span className="u">M</span></div>
             <div className="subkpi-meta"><span>MEP $1.430/USD</span><span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioUsd} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span></div>
           </div>
-          <div className="subkpi size-lg" data-group="tesoreria" onClick={() => goToPortalModule("tesoreria")}>
+          <div className="subkpi size-lg" data-group="tesoreria" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "tesoreria"))}>
             <div className="subkpi-label"><span>Tesorería · Último positivo</span></div>
             <div className="subkpi-value" style={{ color: "var(--pos)" }}>25 abr<span className="u">'25</span></div>
             <div className="subkpi-meta"><span>Cartera cheques $1.130 M</span></div>
           </div>
-          <div className="subkpi size-lg" data-group="rentabilidad" onClick={() => goToPortalModule("estado-resultados")}>
+          <div className="subkpi size-lg" data-group="rentabilidad" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "estado-resultados"))}>
             <div className="subkpi-label"><span>Rentabilidad acum. s/Vta</span></div>
             <div className="subkpi-value" style={{ color: "var(--pos)" }}>+7,3<span className="u">%</span></div>
             <div className="subkpi-meta"><span>Análisis compras · desde Mar 2025</span></div>
@@ -158,7 +158,7 @@ function Panel() {
         {/* === HERO KPIs === */}
         <div className="hero-row" style={{ display: "none" }}>
           {/* Patrimonio */}
-          <div className="hero-card featured" onClick={() => goToPortalModule("historico")}>
+          <div className="hero-card featured" onClick={() => setDrillModulo(D.modulos.find(m => m.id === "historico"))}>
             <div className="hero-label">
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "oklch(0.85 0.15 155)" }} />
               ACTIVO CORRIENTE · CONSOLIDADO
@@ -184,7 +184,7 @@ function Panel() {
           </div>
 
           {/* Resultado neto */}
-          <div className="hero-card" onClick={() => goToPortalModule("estado-resultados")}>
+          <div className="hero-card" onClick={() => setDrillModulo(D.modulos.find(m => m.id === "estado-resultados"))}>
             <div className="hero-label">RESULTADO NETO DEL PERÍODO</div>
             <div className="hero-value" style={{ color: "var(--pos)", fontSize: 44 }}>
               <span className="currency" style={{ color: "var(--pos)", opacity: 0.7, fontSize: 24 }}>+$</span>
@@ -204,7 +204,7 @@ function Panel() {
           </div>
 
           {/* Stock hacienda */}
-          <div className="hero-card" onClick={() => goToPortalModule("stock-masa")}>
+          <div className="hero-card" onClick={() => setDrillModulo(D.modulos.find(m => m.id === "stock-masa"))}>
             <div className="hero-label">
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", animation: "pulse 1.6s ease infinite" }} />
               STOCK GANADERO · EN VIVO
@@ -283,17 +283,17 @@ function Panel() {
         <div className="modules-section">
           <div className="modules-head">
             <h2>Módulos del Portal</h2>
-            <span className="hint">Click en cualquier módulo para abrirlo</span>
+            <span className="hint">Click para vista rápida · doble click para abrir módulo</span>
           </div>
           <div className="modules-grid">
             {D.modulos.map(m => (
               <div
                 key={m.id}
                 className="module-card"
-                onClick={() => goToPortalModule(m.id)}
+                onClick={() => setDrillModulo(m)}
                 onDoubleClick={() => goToPortalModule(m.id)}
                 style={{cursor: "pointer"}}
-                title={"Abrir módulo " + m.titulo}
+                title={"Vista rápida " + m.titulo + " (doble click para abrir módulo)"}
               >
                 <div className="module-head">
                   <span className="module-num">MÓDULO {m.n}</span>
@@ -326,7 +326,7 @@ function Panel() {
           modulo={drillModulo}
           data={D}
           onClose={() => setDrillModulo(null)}
-          onOpen={() => setDrillModulo(null)}
+          onOpen={(modulo) => { setDrillModulo(null); if (modulo && modulo.id) goToPortalModule(modulo.id); }}
         />
       )}
     </>
