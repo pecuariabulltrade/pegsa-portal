@@ -119,7 +119,8 @@ window.PEGSA_DATA = {
     { n: "06", id: "tesoreria", titulo: "Tesorería", desc: "Saldos · cheques · USD · deuda", estado: "vivo", kpi: "$1.138.000.000", kpiLabel: "Cartera positiva · sem. 25/04" },
     { n: "07", id: "simulador", titulo: "Simulador Feedlot", desc: "Terneros · vacas · invernada", estado: "disponible", kpi: "TIR ~38%", kpiLabel: "Equiv. anual sandbox" },
     { n: "08", id: "historico", titulo: "Histórico & Evolución", desc: "Hasta 30 meses de historia", estado: "acumulando", kpi: "+22,8%", kpiLabel: "Patrimonio USD vs ene-25" },
-  ],
+
+    { n: "09", id: "parametros-base", titulo: "Parámetros Base", desc: "Configuración del simulador · Precios y rendimientos por categoría", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" },  ],
 
   // Alertas (pocas, relevantes)
   alertas: [

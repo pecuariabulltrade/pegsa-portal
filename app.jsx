@@ -25,7 +25,8 @@ const _PANEL_TO_PORTAL_ID = {
   "mercado": "mercado",
   "tesoreria": "tesoreria",
   "simulador": "simulador",
-  "historico": "historico"
+  "historico": "historico",
+  "parametros-base": "baseparams"
 };
 function goToPortalModule(panelId) {
   var portalId = _PANEL_TO_PORTAL_ID[panelId] || panelId;
