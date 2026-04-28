@@ -2541,12 +2541,21 @@
 
 <!-- Panel Principal — boot -->
 <script type="text/babel">
-  function mountPanel() {
+  // Mantener referencia al root para re-mount cuando lleguen datos reales
+  let _panelReactRoot = null;
+  function mountPanel(force) {
     const root = document.getElementById('panelRoot');
-    if (!root || root.dataset.mounted === '1') return;
-    if (typeof window.Panel === 'undefined') { setTimeout(mountPanel, 50); return; }
+    if (!root) return;
+    if (typeof window.Panel === 'undefined') { setTimeout(() => mountPanel(force), 50); return; }
     try {
-      ReactDOM.createRoot(root).render(<window.Panel />);
+      // Si ya hay un root creado, solo re-renderizá (no destruyas)
+      if (_panelReactRoot && force) {
+        _panelReactRoot.render(<window.Panel key={Date.now()} />);
+        return;
+      }
+      if (root.dataset.mounted === '1') return;
+      _panelReactRoot = ReactDOM.createRoot(root);
+      _panelReactRoot.render(<window.Panel />);
       root.dataset.mounted = '1';
     } catch(e) {
       console.error('Error montando Panel:', e);
@@ -2563,6 +2572,11 @@
       if (id === 'screenHome') setTimeout(mountPanel, 0);
     };
   }
+  // Re-mount cuando los datos reales terminen de cargar
+  window.addEventListener('panel:data-ready', () => {
+    console.log('[boot] panel:data-ready → re-mount');
+    mountPanel(true);
+  });
 </script>
 
 </body>
