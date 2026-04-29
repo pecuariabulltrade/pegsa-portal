@@ -1,95 +1,95 @@
 {
   "meta": {
-    "generado": "2026-04-27T11:02:46.837566",
+    "generado": "2026-04-29T12:25:46.008550",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 41474,
-    "registros_filtrados": 15838,
+    "registros_totales": 41231,
+    "registros_filtrados": 15585,
     "excluidos": {
       "motivo": 438,
-      "rfid": 3993,
-      "estadia": 279,
-      "adp": 382,
-      "fecha": 20544
+      "rfid": 3969,
+      "estadia": 263,
+      "adp": 377,
+      "fecha": 20599
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 15838,
-    "adp_promedio": 1.53,
+    "cabezas": 15585,
+    "adp_promedio": 1.529,
     "adp_min": 0.01,
     "adp_max": 5.0,
-    "estadia_promedio": 132.0,
+    "estadia_promedio": 132.7,
     "estadia_min": 3,
     "estadia_max": 450
   },
   "por_categoria": {
     "NOVILLITO": {
-      "cabezas": 940,
-      "adp_promedio": 1.275,
+      "cabezas": 920,
+      "adp_promedio": 1.276,
       "adp_min": 0.47,
       "adp_max": 3.31,
-      "estadia_promedio": 173.0,
+      "estadia_promedio": 173.9,
       "estadia_min": 32,
       "estadia_max": 348
     },
     "NOVILLO": {
-      "cabezas": 716,
-      "adp_promedio": 1.69,
+      "cabezas": 694,
+      "adp_promedio": 1.715,
       "adp_min": 0.27,
       "adp_max": 4.54,
-      "estadia_promedio": 99.3,
+      "estadia_promedio": 97.0,
       "estadia_min": 30,
-      "estadia_max": 346
+      "estadia_max": 329
     },
     "TERNERA": {
-      "cabezas": 262,
-      "adp_promedio": 1.182,
+      "cabezas": 267,
+      "adp_promedio": 1.18,
       "adp_min": 0.37,
       "adp_max": 3.11,
-      "estadia_promedio": 227.6,
+      "estadia_promedio": 229.5,
       "estadia_min": 105,
       "estadia_max": 448
     },
     "TERNERO": {
-      "cabezas": 509,
-      "adp_promedio": 1.232,
+      "cabezas": 489,
+      "adp_promedio": 1.233,
       "adp_min": 0.49,
       "adp_max": 2.78,
-      "estadia_promedio": 245.4,
+      "estadia_promedio": 246.7,
       "estadia_min": 104,
       "estadia_max": 449
     },
     "TORO": {
-      "cabezas": 48,
-      "adp_promedio": 1.084,
+      "cabezas": 32,
+      "adp_promedio": 1.112,
       "adp_min": 0.06,
       "adp_max": 1.92,
-      "estadia_promedio": 164.5,
+      "estadia_promedio": 174.0,
       "estadia_min": 77,
       "estadia_max": 368
     },
     "VACA": {
-      "cabezas": 7921,
-      "adp_promedio": 1.626,
+      "cabezas": 7891,
+      "adp_promedio": 1.624,
       "adp_min": 0.01,
       "adp_max": 4.96,
-      "estadia_promedio": 110.0,
+      "estadia_promedio": 110.2,
       "estadia_min": 31,
       "estadia_max": 350
     },
     "VAQUILLONA": {
-      "cabezas": 524,
-      "adp_promedio": 1.337,
+      "cabezas": 580,
+      "adp_promedio": 1.296,
       "adp_min": 0.18,
       "adp_max": 3.14,
-      "estadia_promedio": 116.9,
+      "estadia_promedio": 124.7,
       "estadia_min": 32,
-      "estadia_max": 328
+      "estadia_max": 341
     }
   },
   "por_categoria_90d": {
@@ -124,16 +124,16 @@
       "adp_max_range": 1.4157
     },
     "TERNERA": {
-      "cabezas": 28,
-      "adp_promedio": 1.271,
+      "cabezas": 33,
+      "adp_promedio": 1.24,
       "adp_min": 0.54,
       "adp_max": 2.73,
-      "estadia_promedio": 243.9,
+      "estadia_promedio": 257.4,
       "estadia_min": 115,
-      "estadia_max": 426,
+      "estadia_max": 439,
       "adp_teorico": 1.324,
-      "adp_calibrado": 1.271,
-      "variacion_pct": -4.0,
+      "adp_calibrado": 1.24,
+      "variacion_pct": -6.34,
       "ajustado": false,
       "adp_min_range": 1.1254,
       "adp_max_range": 1.5226
@@ -169,31 +169,31 @@
       "adp_max_range": 1.84
     },
     "VACA": {
-      "cabezas": 1512,
-      "adp_promedio": 1.383,
+      "cabezas": 1365,
+      "adp_promedio": 1.357,
       "adp_min": 0.03,
       "adp_max": 4.55,
-      "estadia_promedio": 124.8,
+      "estadia_promedio": 129.2,
       "estadia_min": 32,
       "estadia_max": 350,
       "adp_teorico": 1.399,
-      "adp_calibrado": 1.383,
-      "variacion_pct": -1.14,
+      "adp_calibrado": 1.357,
+      "variacion_pct": -3.0,
       "ajustado": false,
       "adp_min_range": 1.1891,
       "adp_max_range": 1.6088
     },
     "VAQUILLONA": {
-      "cabezas": 168,
-      "adp_promedio": 1.298,
+      "cabezas": 223,
+      "adp_promedio": 1.201,
       "adp_min": 0.18,
       "adp_max": 2.87,
-      "estadia_promedio": 115.5,
+      "estadia_promedio": 136.1,
       "estadia_min": 34,
-      "estadia_max": 286,
+      "estadia_max": 341,
       "adp_teorico": 1.346,
-      "adp_calibrado": 1.298,
-      "variacion_pct": -3.57,
+      "adp_calibrado": 1.201,
+      "variacion_pct": -10.77,
       "ajustado": false,
       "adp_min_range": 1.1441,
       "adp_max_range": 1.5479
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-04": {
-      "cabezas": 610,
-      "adp_promedio": 1.391,
+      "cabezas": 238,
+      "adp_promedio": 1.399,
       "adp_min": 0.09,
-      "adp_max": 4.59,
-      "estadia_promedio": 132.2,
-      "estadia_min": 25,
+      "adp_max": 2.53,
+      "estadia_promedio": 130.1,
+      "estadia_min": 63,
       "estadia_max": 375
     },
     "2025-05": {
@@ -309,13 +309,13 @@
       "estadia_max": 449
     },
     "2026-04": {
-      "cabezas": 90,
-      "adp_promedio": 1.077,
+      "cabezas": 209,
+      "adp_promedio": 0.999,
       "adp_min": 0.03,
       "adp_max": 1.81,
-      "estadia_promedio": 171.1,
+      "estadia_promedio": 200.5,
       "estadia_min": 35,
-      "estadia_max": 419
+      "estadia_max": 448
     }
   }
 }
