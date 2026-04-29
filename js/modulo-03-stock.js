@@ -579,6 +579,7 @@ var _consumoData     = null;
 var _indicadoresData = null;
 
 var _eficienciaHistoricoData = null;
+var _comportamientoHistoricoData = null;
 
 async function cargarProductivo() {
   var contentEl = document.getElementById('productivoContent');
@@ -595,17 +596,19 @@ async function cargarProductivo() {
   if (loading)   loading.style.display  = 'block';
   if (contentEl) contentEl.style.display = 'none';
   try {
-    var [resp1, resp2, resp3, resp4] = await Promise.all([
+    var [resp1, resp2, resp3, resp4, resp5] = await Promise.all([
       fetch(STOCK_SB + '/productivo_'  + STOCK_PER + '.json', {}),
       fetch(STOCK_SB + '/consumo_'     + STOCK_PER + '.json', {}),
       fetch(STOCK_SB + '/indicadores_' + STOCK_PER + '.json', {}),
       fetch(STOCK_SB + '/eficiencia_historico.json', {}).catch(function(){ return null; }),
+      fetch(STOCK_SB + '/comportamiento_historico.json', {}).catch(function(){ return null; }),
     ]);
     if (!resp1.ok) throw new Error('HTTP ' + resp1.status);
     _productivoData  = await resp1.json();
     if (resp2.ok) _consumoData          = await resp2.json();
     if (resp3.ok) _indicadoresData      = await resp3.json();
     if (resp4 && resp4.ok) _eficienciaHistoricoData = await resp4.json();
+    if (resp5 && resp5.ok) _comportamientoHistoricoData = await resp5.json();
     if (loading) loading.style.display = 'none';
     if (contentEl) contentEl.style.display = 'block';
     contentEl.innerHTML = '';
@@ -747,7 +750,15 @@ function renderIndicadores(data) {
 
   var ind   = data.indicadores || {};
   var fuen  = data.fuentes     || {};
-  var pv    = ind.pct_peso_vivo         || {};
+  var pvRaw = ind.pct_peso_vivo         || {};
+  var pv = {
+    valor:   pvRaw.valor != null ? pvRaw.valor / 0.92 : null,
+    ref_min: 2.2,
+    ref_opt: 2.4,
+    ref_max: 2.7,
+    esc_min: 1.5,
+    esc_max: 3.0,
+  };
   var cab   = ind.consumo_por_cabeza    || {};
   var conv  = ind.conversion_alimenticia || {};
 
@@ -771,18 +782,18 @@ function renderIndicadores(data) {
     }
   }
 
-  // Semáforo consumo/cab: rango total 8-19, óptimo 12.5-15.5
+  // Semáforo consumo/cab: rango total 8-19, normal 10-16, óptimo 13-15
   function semaforoCab(val) {
     if (val == null) return { color:'#aaa', bg:'rgba(150,150,150,.1)', label:'Sin datos' };
-    if (val < 8)               return { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Bajo' };
-    if (val >= 8  && val < 12.5) return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
-    if (val >= 12.5 && val <= 15.5) return { color:'#27613d', bg:'rgba(39,97,61,.08)',  label:'Óptimo' };
-    if (val > 15.5 && val <= 19)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
+    if (val < 10)              return { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Bajo' };
+    if (val >= 10 && val < 13)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
+    if (val >= 13 && val <= 15) return { color:'#27613d', bg:'rgba(39,97,61,.08)',  label:'Óptimo' };
+    if (val > 15 && val <= 16)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
     return                          { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Alto' };
   }
   function barraRefCab(val) {
-    // Escala: 8 a 19 kg/cab/día
-    var rMin = 8, rMax = 19, optMin = 12.5, optMax = 15.5;
+    // Escala: 8 a 19 kg/cab/día · óptimo 13–15
+    var rMin = 8, rMax = 19, optMin = 13, optMax = 15;
     if (val == null) return '';
     var pct    = Math.min(Math.max((val - rMin) / (rMax - rMin) * 100, 2), 98);
     var oMinPct = (optMin - rMin) / (rMax - rMin) * 100;
@@ -793,20 +804,23 @@ function renderIndicadores(data) {
       +'<div style="position:absolute;left:'+pct.toFixed(1)+'%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:'+col+';top:-3px;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);margin-top:6px">'
-      +'<span>8</span><span style="color:rgba(39,97,61,.6)">óptimo 12,5–15,5</span><span>19</span></div>';
+      +'<span>8</span><span style="color:rgba(39,97,61,.6)">óptimo 13–15</span><span>19</span></div>';
   }
 
   var sPv   = semaforo(pv.valor,   pv.ref_min,  pv.ref_opt,  pv.ref_max,  false);
   var sCab  = semaforoCab(cab.valor_tc);
   var sConv = semaforo(conv.valor, conv.ref_min, conv.ref_min, conv.ref_max, true);
 
-  // Barra de posición dentro del rango de referencia
-  function barraRef(val, min, max, invertido) {
+  // Barra de posición dentro del rango de referencia (escala fija opcional)
+  function barraRef(val, min, max, invertido, escMin, escMax) {
     if (val == null) return '';
-    var rMin = min * 0.7, rMax = max * 1.3;
+    var rMin = (escMin != null) ? escMin : min * 0.7;
+    var rMax = (escMax != null) ? escMax : max * 1.3;
     var pct  = Math.min(Math.max((val - rMin) / (rMax - rMin) * 100, 2), 98);
     var minPct = (min - rMin) / (rMax - rMin) * 100;
     var maxPct = (max - rMin) / (rMax - rMin) * 100;
+    var lblMin = (escMin != null) ? escMin : min;
+    var lblMax = (escMax != null) ? escMax : max;
     return '<div style="position:relative;height:6px;background:rgba(26,22,18,.07);border-radius:4px;margin-top:14px">'
       // zona óptima sombreada
       +'<div style="position:absolute;left:'+minPct.toFixed(1)+'%;width:'+(maxPct-minPct).toFixed(1)+'%;height:100%;background:rgba(39,97,61,.15);border-radius:4px"></div>'
@@ -814,7 +828,7 @@ function renderIndicadores(data) {
       +'<div style="position:absolute;left:'+pct.toFixed(1)+'%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:'+(invertido ? (val<=max?'#27613d':'#c0392b') : (val>=min&&val<=max?'#27613d':'#c0392b'))+';top:-3px;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);margin-top:6px">'
-      +'<span>'+fmtD(min,1)+'</span><span style="color:rgba(39,97,61,.6)">rango óptimo</span><span>'+fmtD(max,1)+'</span></div>';
+      +'<span>'+fmtD(lblMin,1)+'</span><span style="color:rgba(39,97,61,.6)">óptimo '+fmtD(min,1)+'–'+fmtD(max,1)+'</span><span>'+fmtD(lblMax,1)+'</span></div>';
   }
 
   var denominador = data.denominador || 'El Haras';
@@ -869,10 +883,10 @@ function renderIndicadores(data) {
     '% Consumo de Peso Vivo',
     fmtD(pv.valor, 2) + '<span style="font-size:18px;margin-left:4px">% PV</span>',
     'kg MS/día sobre el peso vivo — '+denominador,
-    '2,0% – 3,0%  ·  óptimo ~2,5%',
-    'kg MS/día ÷ kg PV '+denominador+' × 100',
+    '1,5% – 3,0%  ·  normal 2,2 – 2,7  ·  óptimo 2,4 – 2,6',
+    '(kg MS/día ÷ kg PV '+denominador+' × 100) ÷ 0,92',
     sPv,
-    barraRef(pv.valor, pv.ref_min, pv.ref_max, false)
+    barraRef(pv.valor, pv.ref_min, pv.ref_max, false, pv.esc_min, pv.esc_max)
   ));
 
   // Card 2 — Consumo por cabeza
@@ -880,7 +894,7 @@ function renderIndicadores(data) {
     'Consumo por Cabeza',
     fmtD(cab.valor_tc, 1) + '<span style="font-size:18px;margin-left:4px">kg TC/cab</span>',
     fmtD(cab.valor_ms, 1) + ' kg MS/cab/día  ·  '+fmtN(cabDenom)+' cabezas ('+denominador+')',
-    '8 – 19 kg TC/cab/día  ·  óptimo 12,5 – 15,5',
+    '8 – 19 kg TC/cab/día  ·  normal 10 – 16  ·  óptimo 13 – 15',
     'kg TC/día ÷ cabezas '+denominador,
     sCab,
     barraRefCab(cab.valor_tc)
@@ -910,6 +924,84 @@ function renderIndicadores(data) {
     +'El consumo MS corresponde al promedio de los últimos días con registros. '
     +'Para mayor precisión se recomienda comparar períodos cerrados.';
   panel.appendChild(nota);
+
+  // ── Referencia anual: 3 tarjetas más chicas con promedios ponderados ──
+  var consAn   = (typeof _consumoData !== 'undefined' && _consumoData) ? (_consumoData.anual || {}) : {};
+  var compHist = (typeof _comportamientoHistoricoData !== 'undefined' && _comportamientoHistoricoData) ? (_comportamientoHistoricoData.snapshots || []) : [];
+  var prodMes  = (typeof _productivoData !== 'undefined' && _productivoData) ? (_productivoData.por_mes || {}) : {};
+
+  // Últimos 12 snapshots mensuales del feedlot
+  var ult12   = compHist.slice(-12);
+  var nKg     = 0, sumKg = 0;
+  var nCab    = 0, sumCab = 0;
+  ult12.forEach(function(r){
+    var hm = r && r.hacienda_masa;
+    if (hm && hm.total_kg)        { sumKg  += hm.total_kg;        nKg++; }
+    if (hm && hm.total_cabezas)   { sumCab += hm.total_cabezas;   nCab++; }
+  });
+  var kgPVAnual = nKg  > 0 ? sumKg  / nKg  : 0;
+  var cabAnual  = nCab > 0 ? sumCab / nCab : 0;
+
+  // ADP anual ponderado por cabezas (últimos 12 meses de productivo)
+  var mesesProd = Object.keys(prodMes).sort().slice(-12);
+  var adpNum = 0, adpDen = 0;
+  mesesProd.forEach(function(m){
+    var d = prodMes[m] || {};
+    var c = d.cabezas || 0;
+    var a = d.adp_promedio || 0;
+    if (c > 0 && a > 0) { adpNum += a * c; adpDen += c; }
+  });
+  var adpAnual = adpDen > 0 ? adpNum / adpDen : 0;
+
+  // Cálculos anuales
+  var msAnualDia    = (consAn.total_kg_ms || 0) / 365;
+  var tcAnualDia    = (consAn.total_kg    || 0) / 365;
+  var pvAnual       = (kgPVAnual > 0) ? (msAnualDia / kgPVAnual * 100 / 0.92) : null;
+  var cabAnualDia   = (cabAnual  > 0) ? (tcAnualDia / cabAnual) : null;
+  var msPorCabDia   = (cabAnual  > 0) ? (msAnualDia / cabAnual) : null;
+  var convAnual     = (msPorCabDia != null && adpAnual > 0) ? (msPorCabDia / adpAnual) : null;
+
+  if (kgPVAnual > 0 || cabAnual > 0) {
+    var hdrAnual = document.createElement('div');
+    hdrAnual.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-top:28px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(26,22,18,.08)';
+    hdrAnual.innerHTML = 'Referencia anual <span style="text-transform:none;letter-spacing:0;color:rgba(26,22,18,.35);margin-left:8px">(últimos 12 meses · valores ponderados)</span>';
+    panel.appendChild(hdrAnual);
+
+    var gridAnual = document.createElement('div');
+    gridAnual.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px';
+
+    function makeRefCard(titulo, valor, sub, formula) {
+      var c = document.createElement('div');
+      c.style.cssText = 'padding:16px 20px;border:1px solid rgba(26,22,18,.1);border-radius:2px;background:rgba(26,22,18,.025)';
+      c.innerHTML =
+        '<div style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:6px">'+titulo+'</div>'
+        +'<div style="font-family:\'Playfair Display\',serif;font-size:24px;font-weight:700;color:rgba(26,22,18,.8);line-height:1">'+valor+'</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:6px">'+sub+'</div>'
+        +'<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.3);margin-top:4px">'+formula+'</div>';
+      return c;
+    }
+
+    gridAnual.appendChild(makeRefCard(
+      '% Consumo PV anual',
+      pvAnual != null ? fmtD(pvAnual,2) + ' % PV' : '—',
+      'MS anual ÷ 365 ÷ kg PV prom. anual ÷ 0,92',
+      fmtN(consAn.total_kg_ms) + ' kg MS  ÷  ' + fmtN(kgPVAnual) + ' kg PV'
+    ));
+    gridAnual.appendChild(makeRefCard(
+      'Consumo por cab anual',
+      cabAnualDia != null ? fmtD(cabAnualDia,1) + ' kg TC/cab' : '—',
+      'TC anual ÷ 365 ÷ cab. promedio anuales',
+      fmtN(consAn.total_kg) + ' kg TC  ÷  ' + fmtN(cabAnual) + ' cab'
+    ));
+    gridAnual.appendChild(makeRefCard(
+      'Conversión anual',
+      convAnual != null ? fmtD(convAnual,1) + ' : 1' : '—',
+      'kg MS/cab/día anual ÷ ADP anual ponderado',
+      (msPorCabDia != null ? fmtD(msPorCabDia,1) : '—') + ' MS/cab/día  ÷  ' + fmtD(adpAnual,3) + ' kg/día'
+    ));
+
+    panel.appendChild(gridAnual);
+  }
 
   // Separador
   var sep = document.createElement('hr');
