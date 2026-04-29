@@ -398,6 +398,7 @@ window.stockTab = function(name, el) {
 
 
 var _grafCharts = {};
+var _consumoDiarioChart = null;
 function renderGraficos() {
   if (!window._stockKpis) return;
   var kpis  = window._stockKpis;
@@ -1180,12 +1181,17 @@ function renderConsumo(data) {
   // ── Header sección ──
   var hdr = document.createElement('div');
   hdr.style.cssText = 'margin-bottom:28px';
+  var fuenteTxt = meta.fuente === 'mixer_dropbox'
+    ? 'Mixer (Dropbox) · ' + (meta.tabla || 'Lectura_Viajes + Lectura_Carga')
+    : (meta.tabla || 'v_PB_ConsumoDetallado') + ' · últimos 365 días';
+  var ultCompletoTxt = meta.ultimo_completo
+    ? ' · último día completo: '+meta.ultimo_completo
+    : (meta.desde_anual ? ' · Desde: '+meta.desde_anual : '');
   hdr.innerHTML =
     '<div style="font-family:\'\1\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l);margin-bottom:6px">CONSUMO DE ALIMENTO</div>'
    +'<div style="font-family:\'\1\',serif;font-size:24px;font-weight:700;margin-bottom:6px">Suministro de Insumos</div>'
    +'<div style="font-family:\'\1\',monospace;font-size:12px;color:rgba(26,22,18,.4)">'
-   +'v_PB_ConsumoDetallado · últimos 365 días'
-   +(meta.desde_anual ? ' · Desde: '+meta.desde_anual : '')
+   +fuenteTxt+ultCompletoTxt
    +'</div>';
   el.appendChild(hdr);
 
@@ -1378,6 +1384,236 @@ function renderConsumo(data) {
       secUlt.appendChild(tblUlt);
     }
     el.appendChild(secUlt);
+  }
+
+  // ── Tabla DIARIA últimos 30 días (fuente: Mixer Dropbox) ──
+  var diario = data.diario || {};
+  var diasArr = diario.dias || [];
+  if (diasArr.length) {
+    var secD = document.createElement('div');
+    secD.style.cssText = 'margin-top:36px;margin-bottom:36px';
+
+    // Subtítulo con fechas en formato DD/MM/YYYY
+    function fmtFecha(iso) {
+      if (!iso) return '';
+      var p = iso.split('-');
+      return p[2]+'/'+p[1]+'/'+p[0];
+    }
+    var subFechas = fmtFecha(diario.desde)+' → '+fmtFecha(diario.hasta);
+
+    secD.innerHTML =
+      '<div class="section-header">'
+      +'<span class="section-title">Consumo Diario — Últimos '+diasArr.length+' días</span>'
+      +'<span class="section-sub">'+subFechas+' · fuente: Mixer (Dropbox) · sólo días completos</span>'
+      +'</div>';
+
+    // Identificar todos los insumos presentes (orden por kg total)
+    var insumosTotal = {};
+    diasArr.forEach(function(d) {
+      var pi = d.por_insumo || {};
+      Object.keys(pi).forEach(function(k){
+        insumosTotal[k] = (insumosTotal[k]||0) + (pi[k]||0);
+      });
+    });
+    var insumosOrden = Object.keys(insumosTotal).sort(function(a,b){
+      return insumosTotal[b] - insumosTotal[a];
+    });
+
+    // Calcular max para barra
+    var maxDay = 0;
+    diasArr.forEach(function(d){ if (d.kg_total > maxDay) maxDay = d.kg_total; });
+    if (!maxDay) maxDay = 1;
+
+    var tblD = document.createElement('table');
+    tblD.className = 'data-table';
+
+    // Header dinámico con un column por insumo + total + %MS
+    var thead = '<thead><tr><th>Fecha</th>';
+    insumosOrden.forEach(function(ins){
+      thead += '<th class="right">'+ins+'</th>';
+    });
+    thead += '<th class="right">Total TC</th><th class="right">Total MS</th><th class="right">%MS</th><th style="width:140px">Volumen</th></tr></thead>';
+    tblD.innerHTML = thead;
+
+    var tbD = document.createElement('tbody');
+    // Mostrar de más reciente a más antiguo (al revés del array)
+    var diasRev = diasArr.slice().reverse();
+    diasRev.forEach(function(d) {
+      var barW    = (d.kg_total / maxDay * 100).toFixed(1);
+      var esDesc  = d.descartado === true;
+      var tr      = document.createElement('tr');
+      // Estilo del día descartado: fondo rosado claro + texto opaco
+      if (esDesc) {
+        tr.style.cssText = 'background:rgba(220,80,80,.06);color:rgba(26,22,18,.45)';
+        tr.title = 'Día descartado del cálculo (caída >30% — probable falta de datos de un mixer)';
+      }
+      var fechaCell = '<strong>'+fmtFecha(d.fecha)+'</strong>'
+        + (esDesc ? ' <span style="font-family:DM Mono,monospace;font-size:10px;color:#c0392b;background:rgba(220,80,80,.12);padding:1px 6px;border-radius:2px;margin-left:6px;letter-spacing:.06em">PARCIAL</span>' : '');
+      var html = '<td>'+fechaCell+'</td>';
+      insumosOrden.forEach(function(ins){
+        var v = (d.por_insumo||{})[ins];
+        var col = esDesc ? 'rgba(26,22,18,.35)' : 'rgba(26,22,18,.6)';
+        html += '<td class="right mono" style="color:'+col+'">'+(v ? fmtN(v) : '—')+'</td>';
+      });
+      var colTC = esDesc ? 'rgba(184,146,42,.5)' : '#b8922a';
+      var colMS = esDesc ? 'rgba(123,63,42,.5)' : '#7b3f2a';
+      var colPC = esDesc ? 'rgba(91,79,207,.5)' : '#5b4fcf';
+      var colBR = esDesc ? 'rgba(184,146,42,.4)' : '#b8922a';
+      html += '<td class="right mono" style="font-weight:700;color:'+colTC+'">'+fmtN(d.kg_total)+' kg</td>';
+      html += '<td class="right mono" style="font-weight:700;color:'+colMS+'">'+fmtN(d.kg_ms_total)+' kg</td>';
+      html += '<td class="right mono" style="color:'+colPC+'">'+(d.pct_ms != null ? d.pct_ms.toFixed(1).replace('.',',')+'%' : '—')+'</td>';
+      html += '<td style="padding:6px 16px;vertical-align:middle">'
+            +'<div style="flex:1;background:rgba(26,22,18,.07);border-radius:2px;height:8px">'
+            +'<div style="background:'+colBR+';height:100%;width:'+barW+'%;border-radius:2px"></div>'
+            +'</div></td>';
+      tr.innerHTML = html;
+      tbD.appendChild(tr);
+    });
+    tblD.appendChild(tbD);
+    secD.appendChild(tblD);
+
+    // Leyenda de días descartados (si hay)
+    var hayDescartados = diasArr.some(function(d){ return d.descartado === true; });
+    if (hayDescartados) {
+      var leyenda = document.createElement('div');
+      leyenda.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(220,80,80,.05);border-left:3px solid #c0392b;font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.7);line-height:1.6';
+      leyenda.innerHTML =
+        '<strong style="color:#c0392b">Nota:</strong> los días marcados como '
+        + '<span style="background:rgba(220,80,80,.12);color:#c0392b;padding:1px 6px;border-radius:2px">PARCIAL</span> '
+        + 'tienen una caída &gt;30% vs el promedio reciente. Posible causa: uno de los dos mixers no subió datos al Dropbox ese día. '
+        + 'Estos días NO se usan para calcular el promedio diario ni el total de los últimos 3 días.';
+      secD.appendChild(leyenda);
+    }
+
+    el.appendChild(secD);
+  }
+
+  // ── Gráfico: evolución diaria del suministro (últimos 30 días) ──
+  if (diasArr.length) {
+    var secG = document.createElement('div');
+    secG.style.cssText = 'margin-top:12px;margin-bottom:36px';
+
+    var promRef = semanal.promedio_diario_kg || 0;
+    var subTxt = 'kg TC/día · últimos '+diasArr.length+' días'
+      + (promRef > 0 ? ' · línea = promedio ('+fmtN(promRef)+' kg/día, excluye días parciales)' : '');
+
+    secG.innerHTML =
+      '<div class="section-header">'
+      +'<span class="section-title">Evolución del Suministro Diario</span>'
+      +'<span class="section-sub">'+subTxt+'</span>'
+      +'</div>';
+
+    var canvasWrap = document.createElement('div');
+    canvasWrap.style.cssText = 'position:relative;height:280px;background:#fff;border:1px solid rgba(26,22,18,.1);border-radius:2px;padding:16px';
+    var canvas = document.createElement('canvas');
+    canvas.id = 'consumoDiarioChart';
+    canvasWrap.appendChild(canvas);
+    secG.appendChild(canvasWrap);
+    el.appendChild(secG);
+
+    function fmtFechaCorta(iso){
+      if(!iso) return '';
+      var p = iso.split('-');
+      return p[2]+'/'+p[1];
+    }
+
+    var labels = diasArr.map(function(d){ return fmtFechaCorta(d.fecha); });
+    var valores = diasArr.map(function(d){ return d.kg_total || 0; });
+    var colores = diasArr.map(function(d){
+      return d.descartado ? 'rgba(26,22,18,.18)' : '#b8922a';
+    });
+    var bordes = diasArr.map(function(d){
+      return d.descartado ? 'rgba(26,22,18,.28)' : '#b8922a';
+    });
+    var lineaProm = diasArr.map(function(){ return promRef || null; });
+
+    if (_consumoDiarioChart) { _consumoDiarioChart.destroy(); _consumoDiarioChart = null; }
+
+    var ctx = canvas.getContext('2d');
+    _consumoDiarioChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'kg TC/día',
+            data: valores,
+            backgroundColor: colores,
+            borderColor: bordes,
+            borderWidth: 1,
+            borderRadius: 2,
+            categoryPercentage: 0.85,
+            barPercentage: 0.95,
+          },
+          {
+            type: 'line',
+            label: 'Promedio',
+            data: lineaProm,
+            borderColor: '#1a5276',
+            borderWidth: 1.5,
+            borderDash: [6, 4],
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            fill: false,
+            tension: 0,
+            spanGaps: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(26,22,18,.92)',
+            titleFont: { family: 'DM Mono, monospace', size: 11 },
+            bodyFont: { family: 'DM Mono, monospace', size: 11 },
+            padding: 10,
+            cornerRadius: 2,
+            callbacks: {
+              title: function(items){
+                if (!items || !items.length) return '';
+                var idx = items[0].dataIndex;
+                var d = diasArr[idx];
+                if (!d) return items[0].label;
+                var iso = d.fecha || '';
+                var p = iso.split('-');
+                return p.length === 3 ? (p[2]+'/'+p[1]+'/'+p[0]) : iso;
+              },
+              label: function(item){
+                var idx = item.dataIndex;
+                var d = diasArr[idx] || {};
+                if (item.dataset.label === 'Promedio'){
+                  return ' Promedio: '+fmtN(item.parsed.y)+' kg/día';
+                }
+                var lines = [' '+fmtN(d.kg_total)+' kg TC'];
+                if (d.kg_ms_total != null) lines.push(' '+fmtN(d.kg_ms_total)+' kg MS · '+(d.pct_ms != null ? d.pct_ms.toFixed(1).replace('.',',')+'% MS' : ''));
+                if (d.descartado) lines.push(' ⚠ día parcial — excluido del promedio');
+                return lines;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { font: { family: 'DM Mono, monospace', size: 10 }, color: 'rgba(26,22,18,.5)', maxRotation: 0, autoSkip: true, maxTicksLimit: 15 },
+            grid: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              font: { family: 'DM Mono, monospace', size: 10 },
+              color: 'rgba(26,22,18,.5)',
+              callback: function(v){ return Number(v).toLocaleString('es-AR'); },
+            },
+            grid: { color: 'rgba(26,22,18,.06)' },
+          },
+        },
+      },
+    });
   }
 }
 

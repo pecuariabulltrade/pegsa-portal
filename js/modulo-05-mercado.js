@@ -69,6 +69,7 @@ function renderTablaCommodities(){
 
 var MERCADO_DATA_CACHE  = null;
 var NEGOCIOS_DATA_CACHE = null;
+var NEGOCIOS_SNAPSHOTS_CACHE = null;
 
 function initMercado(){
   document.getElementById('mercadoLoading').style.display='block';
@@ -80,11 +81,14 @@ function initMercado(){
   Promise.all([
     fetch(STOCK_SB+'/mercado_precios.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
     fetch(STOCK_SB+'/negocios_resumen.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
+    fetch(STOCK_SB+'/negocios_snapshots.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
   ]).then(function(results){
     var data = results[0];
     var neg  = results[1];
+    var snap = results[2];
     MERCADO_DATA_CACHE  = data;
     NEGOCIOS_DATA_CACHE = neg;
+    NEGOCIOS_SNAPSHOTS_CACHE = snap;
 
     if(data){
       // Actualizar tablas de precios
@@ -744,7 +748,9 @@ function renderNegocios(){
       +'<th style="'+TH+'">Cabezas</th>'
       +'<th style="'+TH+'">$/kg</th>'
       +'<th style="'+TH+'">kg/cab</th>'
-      +'<th style="'+TH+'">Resultado</th>'
+      +'<th style="'+TH+'" title="Resultado simulado al momento de cargar la operación">Snapshot</th>'
+      +'<th style="'+TH+'" title="Resultado recalculado con parámetros y precios actuales">Actual</th>'
+      +'<th style="'+TH+'" title="Diferencia: Actual - Snapshot. Positivo: contexto mejoró. Negativo: contexto empeoró.">Δ</th>'
       +'<th style="'+TH+'">Indif. Compra</th>'
       +'<th style="'+TH+';text-align:left">Origen</th>'
       +'</tr></thead><tbody>';
@@ -758,17 +764,46 @@ function renderNegocios(){
       var kgTxt = c.kg_cab > 0
         ? c.kg_cab + ' kg'
         : (catSim ? '<span style="color:rgba(26,22,18,.35)" title="Peso estimado por categoría">'+(catSim.pesoE)+'*</span>' : '—');
-      // Resultado display
+      // Resultado ACTUAL display
       var resTxt = '—';
       var resStyle = 'color:rgba(26,22,18,.3)';
+      var roiActual = null;
       if(simRes && simRes.ingresoVenta > 0){
-        // Rent. s/Vta. = resultado / ingreso_venta (mismo criterio que Análisis Compra)
-        var roi = simRes.resEco / simRes.ingresoVenta * 100;
-        resStyle = 'font-weight:600;color:' + (roi >= 0 ? '#27613d' : '#c0392b');
-        resTxt   = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%'
+        roiActual = simRes.resEco / simRes.ingresoVenta * 100;
+        resStyle = 'font-weight:600;color:' + (roiActual >= 0 ? '#27613d' : '#c0392b');
+        resTxt   = (roiActual >= 0 ? '+' : '') + roiActual.toFixed(1) + '%'
           + '<br><span style="font-weight:400;font-size:12px;opacity:.7">$'
           + Number(simRes.resEco).toLocaleString('es-AR',{maximumFractionDigits:0})
           + '/cab</span>';
+      }
+
+      // Resultado SNAPSHOT (histórico, fijo al momento de cargar la operación)
+      var snapTxt = '<span style="color:rgba(26,22,18,.25);font-size:11px">sin snap</span>';
+      var snapStyle = '';
+      var roiSnap = null;
+      if(NEGOCIOS_SNAPSHOTS_CACHE && NEGOCIOS_SNAPSHOTS_CACHE.snapshots){
+        // Buscar snapshot por clave única (fecha+cat+origen+kgcab+precio+cabezas)
+        var clave = [c.fecha, c.categoria, c.origen, c.kg_cab, c.precio_kg, c.cabezas].join('|');
+        var snap = NEGOCIOS_SNAPSHOTS_CACHE.snapshots.find(function(s){ return s.clave_unica === clave; });
+        if(snap && snap.simulacion){
+          roiSnap = snap.simulacion.rentabilidad_pct;
+          snapStyle = 'font-weight:600;color:' + (roiSnap >= 0 ? '#27613d' : '#c0392b');
+          snapTxt = (roiSnap >= 0 ? '+' : '') + roiSnap.toFixed(1) + '%'
+            + '<br><span style="font-weight:400;font-size:12px;opacity:.7">$'
+            + Number(snap.simulacion.resEco).toLocaleString('es-AR',{maximumFractionDigits:0})
+            + '/cab</span>';
+        }
+      }
+
+      // Δ (diferencia Actual - Snapshot)
+      var deltaTxt = '<span style="color:rgba(26,22,18,.25)">—</span>';
+      var deltaStyle = '';
+      if(roiActual !== null && roiSnap !== null){
+        var deltaPP = roiActual - roiSnap;
+        var sign = deltaPP >= 0 ? '+' : '';
+        var col = Math.abs(deltaPP) < 1 ? 'rgba(26,22,18,.5)' : (deltaPP >= 0 ? '#27613d' : '#c0392b');
+        deltaTxt = '<span style="font-weight:600;color:'+col+'">'+sign+deltaPP.toFixed(1)+' pp</span>';
+        deltaStyle = 'color:'+col;
       }
       // Indiferencia compra display
       var pcIndTxt = '—';
@@ -790,13 +825,15 @@ function renderNegocios(){
         +'<td style="'+TD+';text-align:right">'+c.cabezas+'</td>'
         +'<td style="'+TD+';text-align:right">'+(c.precio_kg?'$'+Number(c.precio_kg).toLocaleString('es-AR',{maximumFractionDigits:0}):'—')+'</td>'
         +'<td style="'+TD+';text-align:right">'+kgTxt+'</td>'
+        +'<td style="'+TD+';text-align:right;'+snapStyle+'">'+snapTxt+'</td>'
         +'<td style="'+TD+';text-align:right;'+resStyle+'">'+resTxt+'</td>'
+        +'<td style="'+TD+';text-align:right;'+deltaStyle+'">'+deltaTxt+'</td>'
         +'<td style="'+TD+';text-align:right;'+pcIndStyle+'">'+pcIndTxt+'</td>'
         +'<td style="'+TD+';color:rgba(26,22,18,.5)">'+(c.origen||'—')+'</td>'
         +'</tr>';
     });
     html += '</tbody></table></div>';
-    html += '<div style="font-size:12px;color:rgba(26,22,18,.35);margin-top:6px;font-family:DM Mono,monospace">* Peso estimado por categoría (no registrado). Resultado simulado con parámetros actuales del simulador.</div>';
+    html += '<div style="font-size:12px;color:rgba(26,22,18,.35);margin-top:6px;font-family:DM Mono,monospace">* Peso estimado por categoría (no registrado). <strong>Snapshot</strong>: resultado fijo al momento de cargar la operación. <strong>Actual</strong>: recalculado con precios y parámetros de hoy. <strong>Δ</strong>: diferencia en puntos porcentuales (positivo = contexto mejoró).</div>';
   }
 
   if(!html){
@@ -1364,6 +1401,7 @@ function _histRenderTabla(){
     + '<div style="overflow-x:auto;border:1px solid var(--border);border-radius:2px">'
     + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
     + th
-    + '<tbody>'+rows+'</tbody>'
-    + '</table></div>';
+    + '<tbody>' + rows + '</tbody>'
+    + '</table>'
+    + '</div>';
 }
