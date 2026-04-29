@@ -930,14 +930,16 @@ function renderIndicadores(data) {
   var compHist = (typeof _comportamientoHistoricoData !== 'undefined' && _comportamientoHistoricoData) ? (_comportamientoHistoricoData.snapshots || []) : [];
   var prodMes  = (typeof _productivoData !== 'undefined' && _productivoData) ? (_productivoData.por_mes || {}) : {};
 
-  // Últimos 12 snapshots mensuales del feedlot
+  // Últimos 12 snapshots mensuales — extraer PEGSA en El Haras
+  // (los snapshots históricos no tienen por_establecimiento total, solo por_campo dentro de PEGSA)
   var ult12   = compHist.slice(-12);
   var nKg     = 0, sumKg = 0;
   var nCab    = 0, sumCab = 0;
   ult12.forEach(function(r){
     var hm = r && r.hacienda_masa;
-    if (hm && hm.total_kg)        { sumKg  += hm.total_kg;        nKg++; }
-    if (hm && hm.total_cabezas)   { sumCab += hm.total_cabezas;   nCab++; }
+    var haras = hm && hm.pegsa && hm.pegsa.por_campo && hm.pegsa.por_campo['El Haras'];
+    if (haras && haras.kg_proyectado) { sumKg  += haras.kg_proyectado; nKg++; }
+    if (haras && haras.cabezas)       { sumCab += haras.cabezas;       nCab++; }
   });
   var kgPVAnual = nKg  > 0 ? sumKg  / nKg  : 0;
   var cabAnual  = nCab > 0 ? sumCab / nCab : 0;
@@ -964,7 +966,7 @@ function renderIndicadores(data) {
   if (kgPVAnual > 0 || cabAnual > 0) {
     var hdrAnual = document.createElement('div');
     hdrAnual.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-top:28px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(26,22,18,.08)';
-    hdrAnual.innerHTML = 'Referencia anual <span style="text-transform:none;letter-spacing:0;color:rgba(26,22,18,.35);margin-left:8px">(últimos 12 meses · valores ponderados)</span>';
+    hdrAnual.innerHTML = 'Referencia anual <span style="text-transform:none;letter-spacing:0;color:rgba(26,22,18,.35);margin-left:8px">(últimos 12 meses · PEGSA en El Haras · valores ponderados)</span>';
     panel.appendChild(hdrAnual);
 
     var gridAnual = document.createElement('div');
