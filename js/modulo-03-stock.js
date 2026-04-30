@@ -958,7 +958,7 @@ function renderIndicadores(data) {
   // Cálculos anuales
   var msAnualDia    = (consAn.total_kg_ms || 0) / 365;
   var tcAnualDia    = (consAn.total_kg    || 0) / 365;
-  var pvAnual       = (kgPVAnual > 0) ? (msAnualDia / kgPVAnual * 100 / 0.92) : null;
+  var pvAnual       = (kgPVAnual > 0) ? (msAnualDia / kgPVAnual * 100) : null;
   var cabAnualDia   = (cabAnual  > 0) ? (tcAnualDia / cabAnual) : null;
   var msPorCabDia   = (cabAnual  > 0) ? (msAnualDia / cabAnual) : null;
   var convAnual     = (msPorCabDia != null && adpAnual > 0) ? (msPorCabDia / adpAnual) : null;
@@ -986,7 +986,7 @@ function renderIndicadores(data) {
     gridAnual.appendChild(makeRefCard(
       '% Consumo PV anual',
       pvAnual != null ? fmtD(pvAnual,2) + ' % PV' : '—',
-      'MS anual ÷ 365 ÷ kg PV prom. anual ÷ 0,92',
+      'MS anual ÷ 365 ÷ kg PV prom. anual',
       fmtN(consAn.total_kg_ms) + ' kg MS  ÷  ' + fmtN(kgPVAnual) + ' kg PV'
     ));
     gridAnual.appendChild(makeRefCard(
