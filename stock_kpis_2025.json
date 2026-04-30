@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generado": "2026-04-30T18:48:12.160027",
+    "generado": "2026-04-30T20:13:37.684780",
     "periodo": "2025",
     "tabla": "V_STOCK_HACIENDA",
-    "registros": 9731,
+    "registros": 9940,
     "columnas": [
       "ID_TRAZABILIDAD",
       "CANTIDAD",
@@ -53,12 +53,12 @@
     ]
   },
   "kpis": {
-    "total_cabezas": 9731,
-    "total_kg_estimado_hoy": 4304539,
-    "total_ton_estimado_hoy": 4304.54,
-    "kg_promedio_estimado": 442.4,
-    "dias_promedio_feedlot": 137.3,
-    "total_establecimientos": 3,
+    "total_cabezas": 9940,
+    "total_kg_estimado_hoy": 4346981,
+    "total_ton_estimado_hoy": 4346.98,
+    "kg_promedio_estimado": 437.3,
+    "dias_promedio_feedlot": 134.7,
+    "total_establecimientos": 4,
     "total_propietarios": 5,
     "por_categoria": {
       "NT": {
@@ -68,16 +68,16 @@
         "kg_promedio": 402.1
       },
       "TM": {
-        "cabezas": 2602.0,
-        "kg_estimado": 1047763,
-        "ton_estimado": 1047.76,
-        "kg_promedio": 402.7
+        "cabezas": 2761.0,
+        "kg_estimado": 1080486,
+        "ton_estimado": 1080.49,
+        "kg_promedio": 391.3
       },
       "TH": {
-        "cabezas": 1672.0,
-        "kg_estimado": 584905,
-        "ton_estimado": 584.91,
-        "kg_promedio": 349.8
+        "cabezas": 1722.0,
+        "kg_estimado": 594625,
+        "ton_estimado": 594.63,
+        "kg_promedio": 345.3
       },
       "VA": {
         "cabezas": 2074.0,
@@ -112,10 +112,10 @@
         "kg_promedio": 541.1
       },
       "PEGSA": {
-        "cabezas": 8584.0,
-        "kg_estimado": 3857744,
-        "ton_estimado": 3857.74,
-        "kg_promedio": 449.4
+        "cabezas": 8793.0,
+        "kg_estimado": 3900186,
+        "ton_estimado": 3900.19,
+        "kg_promedio": 443.6
       },
       "LAS TAPERAS": {
         "cabezas": 284.0,
@@ -154,20 +154,26 @@
         "kg_estimado": 132388,
         "ton_estimado": 132.39,
         "kg_promedio": 248.8
+      },
+      "La Cucuca": {
+        "cabezas": 209.0,
+        "kg_estimado": 42442,
+        "ton_estimado": 42.44,
+        "kg_promedio": 203.1
       }
     },
     "por_clasificacion": {
       "Macho": {
-        "cabezas": 5455.0,
-        "kg_estimado": 2305990,
-        "ton_estimado": 2305.99,
-        "kg_promedio": 422.7
+        "cabezas": 5614.0,
+        "kg_estimado": 2338712,
+        "ton_estimado": 2338.71,
+        "kg_promedio": 416.6
       },
       "Hembra": {
-        "cabezas": 2155.0,
-        "kg_estimado": 785126,
-        "ton_estimado": 785.13,
-        "kg_promedio": 364.3
+        "cabezas": 2205.0,
+        "kg_estimado": 794846,
+        "ton_estimado": 794.85,
+        "kg_promedio": 360.5
       },
       "Vaca": {
         "cabezas": 2074.0,
@@ -196,10 +202,10 @@
         "kg_promedio": 303.5
       },
       "ternera": {
-        "cabezas": 342.0,
-        "kg_estimado": 70785,
-        "ton_estimado": 70.78,
-        "kg_promedio": 207.0
+        "cabezas": 392.0,
+        "kg_estimado": 80505,
+        "ton_estimado": 80.5,
+        "kg_promedio": 205.4
       },
       "novillo": {
         "cabezas": 2888.0,
@@ -214,10 +220,10 @@
         "kg_promedio": 394.0
       },
       "ternero": {
-        "cabezas": 574.0,
-        "kg_estimado": 121232,
-        "ton_estimado": 121.23,
-        "kg_promedio": 211.2
+        "cabezas": 733.0,
+        "kg_estimado": 153954,
+        "ton_estimado": 153.95,
+        "kg_promedio": 210.0
       },
       "vaca mayor a 650 kg": {
         "cabezas": 545.0,
@@ -352,6 +358,20 @@
           "ton_estimado": 9.87,
           "kg_promedio": 282.1
         }
+      },
+      "La Cucuca": {
+        "ternera": {
+          "cabezas": 50.0,
+          "kg_estimado": 9719.99999999999,
+          "ton_estimado": 9.72,
+          "kg_promedio": 194.4
+        },
+        "ternero": {
+          "cabezas": 159.0,
+          "kg_estimado": 32722.19999999992,
+          "ton_estimado": 32.72,
+          "kg_promedio": 205.8
+        }
       }
     },
     "por_categoria_desglose": {
@@ -458,14 +478,20 @@
             "kg_estimado": 5881.4,
             "ton_estimado": 5.88,
             "kg_promedio": 226.2
+          },
+          "La Cucuca": {
+            "cabezas": 50.0,
+            "kg_estimado": 9719.99999999999,
+            "ton_estimado": 9.72,
+            "kg_promedio": 194.4
           }
         },
         "por_propietario": {
           "PEGSA": {
-            "cabezas": 261.0,
-            "kg_estimado": 52573.89999999997,
-            "ton_estimado": 52.57,
-            "kg_promedio": 201.4
+            "cabezas": 311.0,
+            "kg_estimado": 62293.900000000045,
+            "ton_estimado": 62.29,
+            "kg_promedio": 200.3
           },
           "TERCIO BRAVO SAS": {
             "cabezas": 64.0,
@@ -584,14 +610,20 @@
             "kg_estimado": 23228.800000000047,
             "ton_estimado": 23.23,
             "kg_promedio": 209.3
+          },
+          "La Cucuca": {
+            "cabezas": 159.0,
+            "kg_estimado": 32722.19999999992,
+            "ton_estimado": 32.72,
+            "kg_promedio": 205.8
           }
         },
         "por_propietario": {
           "PEGSA": {
-            "cabezas": 310.0,
-            "kg_estimado": 63015.29999999983,
-            "ton_estimado": 63.02,
-            "kg_promedio": 203.3
+            "cabezas": 469.0,
+            "kg_estimado": 95737.50000000029,
+            "ton_estimado": 95.74,
+            "kg_promedio": 204.1
           },
           "TERCIO BRAVO SAS": {
             "cabezas": 238.0,
