@@ -762,6 +762,47 @@ function renderIndicadores(data) {
   var cab   = ind.consumo_por_cabeza    || {};
   var conv  = ind.conversion_alimenticia || {};
 
+  // ── Pre-cálculo anual (necesario para sobrescribir la conversión diaria) ──
+  var consAn   = (typeof _consumoData !== 'undefined' && _consumoData) ? (_consumoData.anual || {}) : {};
+  var compHist = (typeof _comportamientoHistoricoData !== 'undefined' && _comportamientoHistoricoData) ? (_comportamientoHistoricoData.snapshots || []) : [];
+  var prodMes  = (typeof _productivoData !== 'undefined' && _productivoData) ? (_productivoData.por_mes || {}) : {};
+
+  var ult12 = compHist.slice(-12);
+  var nKg = 0, sumKg = 0, nCab = 0, sumCab = 0;
+  ult12.forEach(function(r){
+    var hm = r && r.hacienda_masa;
+    var haras = hm && hm.pegsa && hm.pegsa.por_campo && hm.pegsa.por_campo['El Haras'];
+    if (haras && haras.kg_proyectado) { sumKg  += haras.kg_proyectado; nKg++; }
+    if (haras && haras.cabezas)       { sumCab += haras.cabezas;       nCab++; }
+  });
+  var kgPVAnual = nKg  > 0 ? sumKg  / nKg  : 0;
+  var cabAnual  = nCab > 0 ? sumCab / nCab : 0;
+
+  var mesesProd = Object.keys(prodMes).sort().slice(-12);
+  var adpNum = 0, adpDen = 0;
+  mesesProd.forEach(function(m){
+    var d = prodMes[m] || {};
+    var c = d.cabezas || 0;
+    var a = d.adp_promedio || 0;
+    if (c > 0 && a > 0) { adpNum += a * c; adpDen += c; }
+  });
+  var adpAnual = adpDen > 0 ? adpNum / adpDen : 0;
+
+  var msAnualDia  = (consAn.total_kg_ms || 0) / 365;
+  var tcAnualDia  = (consAn.total_kg    || 0) / 365;
+  var pvAnual     = (kgPVAnual > 0) ? (msAnualDia / kgPVAnual * 100) : null;
+  var cabAnualDia = (cabAnual  > 0) ? (tcAnualDia / cabAnual) : null;
+  var msPorCabDia = (cabAnual  > 0) ? (msAnualDia / cabAnual) : null;
+  var convAnual   = (msPorCabDia != null && adpAnual > 0) ? (msPorCabDia / adpAnual) : null;
+
+  // Sobrescribir la conversión diaria con: (%PV anual × kg/cab Haras actual) ÷ ADP último mes
+  // El %PV anual actúa como factor "semi-fijo" para que la conversión diaria refleje el peso actual.
+  var kgCabHaras = (fuen.kg_stock_haras > 0 && fuen.cab_haras > 0) ? (fuen.kg_stock_haras / fuen.cab_haras) : 0;
+  var adpUltMes  = fuen.adp_promedio || 0;
+  if (pvAnual != null && kgCabHaras > 0 && adpUltMes > 0) {
+    conv.valor = pvAnual / 100 * kgCabHaras / adpUltMes;
+  }
+
   function fmtD(n, d) { return (n != null && n !== undefined) ? Number(n).toFixed(d||1).replace('.',',') : '—'; }
   function fmtN(n)    { return n != null ? Number(Math.round(n||0)).toLocaleString('es-AR') : '—'; }
 
@@ -901,13 +942,16 @@ function renderIndicadores(data) {
   ));
 
   // Card 3 — Conversión alimenticia
-  var msCabDia = fuen.cab_haras > 0 ? (fuen.prom_diario_ms / fuen.cab_haras).toFixed(1) : '—';
+  // Nuevo cálculo: (%PV anual × kg/cab Haras actuales) ÷ ADP último mes cerrado.
+  // El %PV anual actúa como factor "semi-fijo" para que el indicador refleje el estado actual del Haras.
   grid.appendChild(makeIndicCard(
     'Conversión Alimenticia',
     fmtD(conv.valor, 1) + '<span style="font-size:18px;margin-left:4px">: 1</span>',
-    msCabDia.replace('.',',') + ' kg MS/cab/día  ÷  ADP ' + fmtD(fuen.adp_promedio, 2) + ' kg/día' + (fuen.adp_mes ? '  ·  engorde ' + fuen.adp_mes : '') + '  ·  '+fmtN(cabDenom)+' cab',
+    (pvAnual != null ? fmtD(pvAnual,2)+'% PV anual' : '—')
+      + ' × ' + fmtD(kgCabHaras,1) + ' kg/cab Haras  ÷  ADP ' + fmtD(adpUltMes,2) + ' kg/día'
+      + (fuen.adp_mes ? '  ·  ' + fuen.adp_mes : ''),
     '5 : 1 – 8 : 1  ·  menor = más eficiente',
-    '(kg MS/día ÷ cabezas '+denominador+') ÷ ADP último mes cerrado',
+    '(% PV anual × kg/cab Haras) ÷ ADP último mes cerrado',
     sConv,
     barraRef(conv.valor, conv.ref_min, conv.ref_max, true)
   ));
@@ -926,47 +970,7 @@ function renderIndicadores(data) {
   panel.appendChild(nota);
 
   // ── Referencia anual: 3 tarjetas más chicas con promedios ponderados ──
-  var consAn   = (typeof _consumoData !== 'undefined' && _consumoData) ? (_consumoData.anual || {}) : {};
-  var compHist = (typeof _comportamientoHistoricoData !== 'undefined' && _comportamientoHistoricoData) ? (_comportamientoHistoricoData.snapshots || []) : [];
-  var prodMes  = (typeof _productivoData !== 'undefined' && _productivoData) ? (_productivoData.por_mes || {}) : {};
-
-  // Últimos 12 snapshots mensuales — extraer PEGSA en El Haras
-  // (los snapshots históricos no tienen por_establecimiento total, solo por_campo dentro de PEGSA)
-  var ult12   = compHist.slice(-12);
-  var nKg     = 0, sumKg = 0;
-  var nCab    = 0, sumCab = 0;
-  ult12.forEach(function(r){
-    var hm = r && r.hacienda_masa;
-    var haras = hm && hm.pegsa && hm.pegsa.por_campo && hm.pegsa.por_campo['El Haras'];
-    if (haras && haras.kg_proyectado) { sumKg  += haras.kg_proyectado; nKg++; }
-    if (haras && haras.cabezas)       { sumCab += haras.cabezas;       nCab++; }
-  });
-  var kgPVAnual = nKg  > 0 ? sumKg  / nKg  : 0;
-  var cabAnual  = nCab > 0 ? sumCab / nCab : 0;
-
-  // ADP anual ponderado por cabezas (últimos 12 meses de productivo)
-  var mesesProd = Object.keys(prodMes).sort().slice(-12);
-  var adpNum = 0, adpDen = 0;
-  mesesProd.forEach(function(m){
-    var d = prodMes[m] || {};
-    var c = d.cabezas || 0;
-    var a = d.adp_promedio || 0;
-    if (c > 0 && a > 0) { adpNum += a * c; adpDen += c; }
-  });
-  var adpAnual = adpDen > 0 ? adpNum / adpDen : 0;
-
-  // Cálculos anuales
-  var msAnualDia    = (consAn.total_kg_ms || 0) / 365;
-  var tcAnualDia    = (consAn.total_kg    || 0) / 365;
-  var pvAnual       = (kgPVAnual > 0) ? (msAnualDia / kgPVAnual * 100) : null;
-  var cabAnualDia   = (cabAnual  > 0) ? (tcAnualDia / cabAnual) : null;
-  var msPorCabDia   = (cabAnual  > 0) ? (msAnualDia / cabAnual) : null;
-  // Conversión anual: (%PV anual × kg/cab actuales del Haras) ÷ ADP último mes cerrado
-  var kgCabHaras    = (fuen.kg_stock_haras > 0 && fuen.cab_haras > 0) ? (fuen.kg_stock_haras / fuen.cab_haras) : 0;
-  var adpUltMes     = fuen.adp_promedio || 0;
-  var convAnual     = (pvAnual != null && kgCabHaras > 0 && adpUltMes > 0)
-    ? (pvAnual / 100 * kgCabHaras / adpUltMes) : null;
-
+  // (Los cálculos anuales se hicieron arriba para sobrescribir la conversión diaria.)
   if (kgPVAnual > 0 || cabAnual > 0) {
     var hdrAnual = document.createElement('div');
     hdrAnual.style.cssText = 'font-family:DM Mono,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-top:28px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(26,22,18,.08)';
@@ -1002,8 +1006,8 @@ function renderIndicadores(data) {
     gridAnual.appendChild(makeRefCard(
       'Conversión anual',
       convAnual != null ? fmtD(convAnual,1) + ' : 1' : '—',
-      '%PV anual × kg/cab Haras actual ÷ ADP ' + (fuen.adp_mes || 'último mes'),
-      (pvAnual != null ? fmtD(pvAnual,2)+'%' : '—') + ' × ' + fmtD(kgCabHaras,1) + ' kg/cab  ÷  ' + fmtD(adpUltMes,2) + ' kg/día'
+      'kg MS/cab/día anual ÷ ADP anual ponderado',
+      (msPorCabDia != null ? fmtD(msPorCabDia,1) : '—') + ' MS/cab/día  ÷  ' + fmtD(adpAnual,3) + ' kg/día'
     ));
 
     panel.appendChild(gridAnual);
