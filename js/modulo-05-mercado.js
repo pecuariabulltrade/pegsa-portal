@@ -1066,39 +1066,41 @@ function renderAnalisis(){
     el.innerHTML='<div style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:13px;padding:24px 0">Sin datos de compras disponibles. Ejecutá la actualización.</div>';
     return;
   }
-  var ins = (MERCADO_DATA_CACHE && MERCADO_DATA_CACHE.insumos) ? MERCADO_DATA_CACHE.insumos : {};
-  var bp  = bpGet();
+  // Las simulaciones se leen de los snapshots inmutables (negocios_snapshots.json).
+  // Cada snapshot fue generado al detectar la compra nueva en Google Sheets, congelando
+  // resultado y precios de indiferencia con los parámetros vigentes en ese momento.
+  // Las compras sin snapshot (o anteriores a marzo/2026 cuando no había simulador) van con guión.
+  var snapsCache = (NEGOCIOS_SNAPSHOTS_CACHE && NEGOCIOS_SNAPSHOTS_CACHE.snapshots) ? NEGOCIOS_SNAPSHOTS_CACHE.snapshots : [];
+  var snapByKey = {};
+  snapsCache.forEach(function(s){ if(s.clave_unica) snapByKey[s.clave_unica] = s; });
 
-  // Calcular resultado para cada compra
   var filas = [];
   neg.compras.forEach(function(c){
     var catNorm = _analNormCat(c.categoria);
-    var tipo    = _analCatToTipo(catNorm);
-    var pesoE   = c.kg_cab > 0 ? c.kg_cab : _analCatPesoE(catNorm);
-    var pesoS   = _analCatPesoS(catNorm);
     var mes     = _analFechaMes(c.fecha);
-    if(!c.precio_kg || !ins.maiz) { filas.push({cat:catNorm,origen:c.origen||'Sin datos',mes:mes,cab:c.cabezas||1,res:null,pcInd:null,pc:c.precio_kg,pesoE:pesoE,pesoS:pesoS,pesoEreal:c.kg_cab>0}); return; }
-    var bpTipo  = bp[tipo] || null;
-    var sim     = _segSimCat(tipo, pesoE, pesoS, c.precio_kg, ins, bpTipo);
+    var clave   = [c.fecha, c.categoria, c.origen, c.kg_cab, c.precio_kg, c.cabezas].join('|');
+    var snap    = snapByKey[clave] || null;
+    var sim     = (snap && snap.simulacion) ? snap.simulacion : null;
+
     filas.push({
-      cat:      catNorm,
-      origen:   (c.origen||'Sin datos').trim(),
-      mes:      mes,
-      cab:      c.cabezas||1,
-      pc:       c.precio_kg,
-      pesoE:    pesoE,
-      pesoS:    pesoS,
+      cat:       catNorm,
+      origen:    (c.origen||'Sin datos').trim(),
+      mes:       mes,
+      cab:       c.cabezas||1,
+      pc:        c.precio_kg,
+      pesoE:     sim ? sim.pesoE : (c.kg_cab > 0 ? c.kg_cab : null),
+      pesoS:     sim ? sim.pesoS : null,
       pesoEreal: c.kg_cab > 0,
-      res:      sim ? sim.resEco      : null,
-      pcInd:    sim ? sim.pcInd       : null,
-      pv:       sim ? sim.pv          : null,
-      dias:     sim ? sim.dias        : null,
-      ingV:     sim ? sim.ingresoVenta: null,
+      res:       sim ? sim.resEco       : null,
+      pcInd:     sim ? sim.pcInd        : null,
+      pv:        sim ? sim.pv           : null,
+      dias:      sim ? sim.dias         : null,
+      ingV:      sim ? sim.ingresoVenta : null,
     });
   });
 
-  // Filtro acumulativo: solo datos desde 01/03/2026
-  var CORTE_ACUM = '2026-03';
+  // Filtro acumulativo: datos desde 01/12/2025
+  var CORTE_ACUM = '2025-12';
   var filasAcum = filas.filter(function(f){ return f.mes && f.mes >= CORTE_ACUM; });
 
   var filasCon = filas.filter(function(f){ return f.res!==null; });
@@ -1106,7 +1108,7 @@ function renderAnalisis(){
   var cats     = Array.from(new Set(filas.map(function(f){return f.cat;}))).sort();
   var origs    = Array.from(new Set(filas.map(function(f){return f.origen;}))).filter(function(o){return o&&o!=='Sin datos';}).sort();
 
-  // Sets para las tablas acumulativas (solo desde 01/03/2026)
+  // Sets para las tablas acumulativas (solo desde 01/12/2025)
   var mesesAcum  = Array.from(new Set(filasAcum.map(function(f){return f.mes;}))).filter(Boolean).sort();
   var catsAcum   = Array.from(new Set(filasAcum.map(function(f){return f.cat;}))).sort();
   var origsAcum  = Array.from(new Set(filasAcum.map(function(f){return f.origen;}))).filter(function(o){return o&&o!=='Sin datos';}).sort();
@@ -1145,9 +1147,9 @@ function renderAnalisis(){
   var TD = 'padding:6px 10px;border-bottom:1px solid rgba(26,22,18,.06);font-family:DM Mono,monospace;font-size:13px;vertical-align:middle';
   var html = '';
 
-  // ── 1. Tabla resumen acumulado por Categoría (desde 01/03/2026) ──
+  // ── 1. Tabla resumen acumulado por Categoría (desde 01/12/2025) ──
   html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Resultado acumulado por Categoría</div>';
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-bottom:10px">Datos desde 01/03/2026 · Rent. s/Vta. = resultado / monto venta neto por cab</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-bottom:10px">Datos desde 01/12/2025 · Rent. s/Vta. = resultado / monto venta neto por cab</div>';
   html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
   html += '<thead><tr>'
@@ -1177,12 +1179,12 @@ function renderAnalisis(){
       +'<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+fmtPct(r)+'</td>'
       +'</tr>';
   });
-  if(!catsAcum.length) html += '<tr><td colspan="8" style="'+TD+';color:rgba(26,22,18,.4);text-align:center;padding:20px">Sin compras registradas desde 01/03/2026</td></tr>';
+  if(!catsAcum.length) html += '<tr><td colspan="8" style="'+TD+';color:rgba(26,22,18,.4);text-align:center;padding:20px">Sin compras registradas desde 01/12/2025</td></tr>';
   html += '</tbody></table></div>';
 
-  // ── 2. Tabla resumen acumulado por Proveedor (desde 01/03/2026) ──
+  // ── 2. Tabla resumen acumulado por Proveedor (desde 01/12/2025) ──
   html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Resultado acumulado por Proveedor / Origen</div>';
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-bottom:10px">Datos desde 01/03/2026 · Rent. s/Vta. = resultado / monto venta neto por cab</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-bottom:10px">Datos desde 01/12/2025 · Rent. s/Vta. = resultado / monto venta neto por cab</div>';
   html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
   html += '<thead><tr>'
@@ -1212,10 +1214,10 @@ function renderAnalisis(){
       +'<td style="'+TD+';text-align:right;'+bgCell(r)+'">'+fmtPct(r)+'</td>'
       +'</tr>';
   });
-  if(!origsAcum.length) html += '<tr><td colspan="8" style="'+TD+';color:rgba(26,22,18,.4);text-align:center;padding:20px">Sin compras registradas desde 01/03/2026</td></tr>';
+  if(!origsAcum.length) html += '<tr><td colspan="8" style="'+TD+';color:rgba(26,22,18,.4);text-align:center;padding:20px">Sin compras registradas desde 01/12/2025</td></tr>';
   html += '</tbody></table></div>';
 
-  // ── 3. Matriz mes × categoría (desde 01/03/2026) ────────────────
+  // ── 3. Matriz mes × categoría (desde 01/12/2025) ────────────────
   if(mesesAcum.length>1){
     html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Rentabilidad s/Vta. por Mes × Categoría</div>';
     html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
@@ -1236,7 +1238,7 @@ function renderAnalisis(){
     });
     html += '</tbody></table></div>';
 
-    // ── 4. Matriz mes × proveedor (desde 01/03/2026) ─────────────────
+    // ── 4. Matriz mes × proveedor (desde 01/12/2025) ─────────────────
     html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Rentabilidad s/Vta. por Mes × Proveedor</div>';
     html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
