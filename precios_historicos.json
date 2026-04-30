@@ -1,0 +1,9 @@
+{
+  "_doc": "Precios históricos mensuales para regenerar snapshots de compras viejas. Editar a mano. Unidades: maiz=$/tn, carne_*=$/kg gancho. Meses no listados usan los precios actuales (fallback). Meses en 'meses_excluidos' no generan snapshot (aparecen con guión en Análisis).",
+  "meses_excluidos": ["2025-11", "2025-12"],
+  "meses": {
+    "2026-01": { "maiz": 278655,    "carne_vaca": 6800, "carne_novillo": 8000, "carne_vaquillona": 7900 },
+    "2026-02": { "maiz": 253156.39, "carne_vaca": 7200, "carne_novillo": 8700, "carne_vaquillona": 8300 },
+    "2026-03": { "maiz": 243569.75, "carne_vaca": 7500, "carne_novillo": 8500, "carne_vaquillona": 8300 }
+  }
+}
