@@ -195,14 +195,20 @@ function renderTablaTermerosESYC() {
 // Simula 5 categorías con precios del día (MAG + insumos) y guarda
 // historial en localStorage para mostrar evolución de resultados y equilibrios.
 
+// Pesos de salida fijos por tipo: terneros 550, terneras 450, vacas 650.
+// Pesos de entrada = promedio del rango de la categoría (ESyC) o peso típico (MAG).
 var SEG_CATS = [
-  {nombre:'Novillito',    tipo:'terneros', pesoE:390, pesoS:500, precioKey:'Novillitos hasta 390'},
-  {nombre:'Novillo',      tipo:'terneros', pesoE:460, pesoS:500, precioKey:'Novillos 431/460'},
-  {nombre:'Vaquillona',   tipo:'terneras', pesoE:350, pesoS:450, precioKey:'Vaquillonas hasta 390'},
-  {nombre:'Vaca Buena',   tipo:'vacas',    pesoE:500, pesoS:600, precioKey:'Vacas Buenas'},
-  {nombre:'Vaca Regular', tipo:'vacas',    pesoE:450, pesoS:600, precioKey:'Vacas Regulares'},
+  {nombre:'Ternero 130-160',    tipo:'terneros', pesoE:145, pesoS:550, precioFuente:'esyc', precioKey:'Terneros 130-160 Kg.'},
+  {nombre:'Ternero 230-260',    tipo:'terneros', pesoE:245, pesoS:550, precioFuente:'esyc', precioKey:'Terneros 230-260 Kg.'},
+  {nombre:'Novillito 330-370',  tipo:'terneros', pesoE:350, pesoS:550, precioFuente:'esyc', precioKey:'Novillitos 330-370 Kg.'},
+  {nombre:'Ternera 130-150',    tipo:'terneras', pesoE:140, pesoS:450, precioFuente:'esyc', precioKey:'Terneras 130-150 Kg.'},
+  {nombre:'Ternera 150-170',    tipo:'terneras', pesoE:160, pesoS:450, precioFuente:'esyc', precioKey:'Terneras 150-170 Kg.'},
+  {nombre:'Vaquillona 250-290', tipo:'terneras', pesoE:270, pesoS:450, precioFuente:'esyc', precioKey:'Vaquillonas 250-290 Kg.'},
+  {nombre:'Vaquillona 320-360', tipo:'terneras', pesoE:340, pesoS:450, precioFuente:'esyc', precioKey:'Vaquillonas 320-360 Kg.'},
+  {nombre:'Vaca Buena',         tipo:'vacas',    pesoE:500, pesoS:650, precioFuente:'mag',  precioKey:'Vacas Buenas'},
+  {nombre:'Vaca Regular',       tipo:'vacas',    pesoE:450, pesoS:650, precioFuente:'mag',  precioKey:'Vacas Regulares'},
 ];
-var SEG_COLORS  = ['#2980b9','#27ae60','#c0392b','#d4a23a','#8e44ad'];
+var SEG_COLORS  = ['#1a6699','#2e86c1','#5dade2','#922b21','#cb4335','#e74c3c','#f1948a','#8e44ad','#c39bd3'];
 var SEG_METRICAS = [
   {key:'resEco', label:'Resultado / cab ($)'},
   {key:'pvInd',  label:'Equilibrio Precio Venta ($/kg)'},
@@ -327,16 +333,24 @@ function _segRun(data){
   var ins = data.insumos;
   // Cargar parámetros base (independientes del simulador sandbox)
   var baseParams = bpGet();
-  // Mapa de precios de hacienda: clave = nombre categoría
+  // Mapas de precios: MAG (hacienda) y ESyC (terneros_esyc)
   var hac = {};
   if(data.hacienda) data.hacienda.forEach(function(h){ hac[h.categoria]=h.precio; });
+  var esyc = {};
+  if(data.terneros_esyc) data.terneros_esyc.forEach(function(t){ esyc[t.categoria]=t.precio; });
 
   var hoy = data.fecha || new Date().toISOString().slice(0,10);
   var resultados = SEG_CATS.map(function(cat){
     var pc = null;
-    Object.keys(hac).forEach(function(k){
-      if(k.toLowerCase().indexOf(cat.precioKey.toLowerCase())>=0) pc=hac[k];
-    });
+    if(cat.precioFuente === 'esyc'){
+      // ESyC: match exacto del nombre de categoría
+      pc = esyc[cat.precioKey] || null;
+    } else {
+      // MAG: match parcial (los nombres del MAG varían levemente)
+      Object.keys(hac).forEach(function(k){
+        if(k.toLowerCase().indexOf(cat.precioKey.toLowerCase())>=0) pc=hac[k];
+      });
+    }
     if(!pc) return null;
     var bp = baseParams[cat.tipo] || null;
     var r = _segSimCat(cat.tipo, cat.pesoE, cat.pesoS, pc, ins, bp);
