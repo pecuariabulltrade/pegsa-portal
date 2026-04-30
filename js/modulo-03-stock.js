@@ -629,8 +629,52 @@ async function cargarProductivo() {
 function renderEficienciaHistorico(data) {
   var el = document.getElementById('productivoContent');
   if (!el || !data) return;
-  var registros = (data.registros || []).filter(function(r){ return r.fecha && r.conversion != null; });
-  if (registros.length < 2) return;
+  var registros = (data.registros || []).filter(function(r){ return r.fecha && r.kg_pv != null && r.cabezas; });
+  if (registros.length < 1) return;
+
+  // ── Cálculo de valores anuales (mismo criterio que renderIndicadores) ──
+  var consAn   = (typeof _consumoData !== 'undefined' && _consumoData) ? (_consumoData.anual || {}) : {};
+  var compHist = (typeof _comportamientoHistoricoData !== 'undefined' && _comportamientoHistoricoData) ? (_comportamientoHistoricoData.snapshots || []) : [];
+  var prodMes  = (typeof _productivoData !== 'undefined' && _productivoData) ? (_productivoData.por_mes || {}) : {};
+  var ult12 = compHist.slice(-12);
+  var sumKg = 0, nKg = 0, sumCab = 0, nCab = 0;
+  ult12.forEach(function(r){
+    var hm = r && r.hacienda_masa;
+    var haras = hm && hm.pegsa && hm.pegsa.por_campo && hm.pegsa.por_campo['El Haras'];
+    if (haras && haras.kg_proyectado) { sumKg  += haras.kg_proyectado; nKg++; }
+    if (haras && haras.cabezas)       { sumCab += haras.cabezas;       nCab++; }
+  });
+  var kgPVAnualEf = nKg  > 0 ? sumKg  / nKg  : 0;
+  var cabAnualEf  = nCab > 0 ? sumCab / nCab : 0;
+  var msAnualDiaEf = (consAn.total_kg_ms || 0) / 365;
+  var tcAnualDiaEf = (consAn.total_kg    || 0) / 365;
+  var pvAnualEf    = kgPVAnualEf > 0 ? (msAnualDiaEf / kgPVAnualEf * 100) : null;
+  var msPorCabAnEf = cabAnualEf  > 0 ? (msAnualDiaEf / cabAnualEf) : null;
+  var cabAnDiaEf   = cabAnualEf  > 0 ? (tcAnualDiaEf / cabAnualEf) : null;
+  var mesesProd2   = Object.keys(prodMes).sort().slice(-12);
+  var adpNum2 = 0, adpDen2 = 0;
+  mesesProd2.forEach(function(m){
+    var d = prodMes[m] || {};
+    if (d.cabezas > 0 && d.adp_promedio > 0) { adpNum2 += d.adp_promedio * d.cabezas; adpDen2 += d.cabezas; }
+  });
+  var adpAnualEf  = adpDen2 > 0 ? adpNum2 / adpDen2 : 0;
+  var convAnualEf = (msPorCabAnEf != null && adpAnualEf > 0) ? (msPorCabAnEf / adpAnualEf) : null;
+
+  // ── Recalcular cada registro con la fórmula nueva (consistente con tarjetas) ──
+  registros = registros.map(function(r){
+    var pctPVAj = r.pct_pv != null ? r.pct_pv / 0.92 : null;
+    var kgCabDia = (r.kg_pv > 0 && r.cabezas > 0) ? (r.kg_pv / r.cabezas) : null;
+    // Conversión nueva: (%PV anual × kg/cab del día) ÷ ADP del día
+    var convNueva = null;
+    if (pvAnualEf != null && kgCabDia != null && r.adp > 0) {
+      convNueva = pvAnualEf / 100 * kgCabDia / r.adp;
+    }
+    return Object.assign({}, r, {
+      pct_pv_aj:  pctPVAj,
+      conv_calc:  convNueva,
+      kg_cab_dia: kgCabDia,
+    });
+  });
 
   var wrap = document.createElement('div');
   wrap.style.cssText = 'margin-bottom:48px';
@@ -639,7 +683,7 @@ function renderEficienciaHistorico(data) {
   wrap.innerHTML =
     '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-l);margin-bottom:6px">HISTÓRICO DE EFICIENCIA</div>'
    +'<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;margin-bottom:4px">Evolución de Indicadores</div>'
-   +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.4);margin-bottom:20px">'+registros.length+' días registrados · El Haras</div>';
+   +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.4);margin-bottom:20px">'+registros.length+' día'+(registros.length!==1?'s':'')+' registrado'+(registros.length!==1?'s':'')+' · El Haras · líneas punteadas = referencia anual</div>';
 
   // Botones de período
   var btnBar = document.createElement('div');
@@ -655,22 +699,38 @@ function renderEficienciaHistorico(data) {
   function buildDatasets(dias) {
     var regs = dias > 0 ? registros.slice(-dias) : registros;
     var labels  = regs.map(function(r){ var p=r.fecha.split('-'); return p[2]+'/'+p[1]; });
+    var n = regs.length;
+    function lineaRef(val){ return Array(n).fill(val != null ? val : null); }
     return {
       labels: labels,
       datasets: [
         {
           label: '% Peso Vivo',
-          data: regs.map(function(r){ return r.pct_pv; }),
+          data: regs.map(function(r){ return r.pct_pv_aj; }),
           borderColor: '#c0392b', backgroundColor: 'rgba(192,57,43,.08)',
           yAxisID: 'yPv', tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
           borderWidth: 2, fill: false,
         },
         {
+          label: 'Ref. % PV anual',
+          data: lineaRef(pvAnualEf),
+          borderColor: 'rgba(192,57,43,.55)', borderDash: [5,4],
+          yAxisID: 'yPv', pointRadius: 0, pointHoverRadius: 0,
+          borderWidth: 1.5, fill: false, spanGaps: true,
+        },
+        {
           label: 'Conversión (:1)',
-          data: regs.map(function(r){ return r.conversion; }),
+          data: regs.map(function(r){ return r.conv_calc; }),
           borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.08)',
           yAxisID: 'yConv', tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
           borderWidth: 2, fill: false,
+        },
+        {
+          label: 'Ref. Conv. anual',
+          data: lineaRef(convAnualEf),
+          borderColor: 'rgba(39,97,61,.55)', borderDash: [5,4],
+          yAxisID: 'yConv', pointRadius: 0, pointHoverRadius: 0,
+          borderWidth: 1.5, fill: false, spanGaps: true,
         },
         {
           label: 'MS/cab/día (kg)',
@@ -678,6 +738,13 @@ function renderEficienciaHistorico(data) {
           borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.08)',
           yAxisID: 'yMs', tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
           borderWidth: 2, fill: false,
+        },
+        {
+          label: 'Ref. MS/cab anual',
+          data: lineaRef(msPorCabAnEf),
+          borderColor: 'rgba(184,146,42,.55)', borderDash: [5,4],
+          yAxisID: 'yMs', pointRadius: 0, pointHoverRadius: 0,
+          borderWidth: 1.5, fill: false, spanGaps: true,
         },
       ]
     };
