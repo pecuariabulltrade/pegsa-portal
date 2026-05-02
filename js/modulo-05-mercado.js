@@ -18,22 +18,24 @@ var PRECIOS_COMMODITIES = [
 function mercadoTab(tab, el){
   document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoAnalisis'].forEach(function(p){
-    document.getElementById(p).style.display='none';
+  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoAnalisis','panelMercadoIndiferencia'].forEach(function(p){
+    var n=document.getElementById(p); if(n) n.style.display='none';
   });
   var map = {
-    hacienda:     'panelMercadoHacienda',
-    negocios:     'panelMercadoNegocios',
-    historico:    'panelMercadoHistorico',
-    seguimiento:  'panelMercadoSeguimiento',
-    analisis:     'panelMercadoAnalisis',
+    hacienda:      'panelMercadoHacienda',
+    negocios:      'panelMercadoNegocios',
+    historico:     'panelMercadoHistorico',
+    seguimiento:   'panelMercadoSeguimiento',
+    analisis:      'panelMercadoAnalisis',
+    indiferencia:  'panelMercadoIndiferencia',
   };
   if(map[tab]){
     document.getElementById(map[tab]).style.display='block';
-    if(tab==='historico')   renderHistoricoChart();
-    if(tab==='negocios')    renderNegocios();
-    if(tab==='seguimiento') _segRun(MERCADO_DATA_CACHE);
-    if(tab==='analisis')    renderAnalisis();
+    if(tab==='historico')    renderHistoricoChart();
+    if(tab==='negocios')     renderNegocios();
+    if(tab==='seguimiento')  _segRun(MERCADO_DATA_CACHE);
+    if(tab==='analisis')     renderAnalisis();
+    if(tab==='indiferencia') renderIndiferencia();
   }
 }
 
@@ -70,6 +72,10 @@ function renderTablaCommodities(){
 var MERCADO_DATA_CACHE  = null;
 var NEGOCIOS_DATA_CACHE = null;
 var NEGOCIOS_SNAPSHOTS_CACHE = null;
+var INDIFERENCIA_DATA_CACHE = null;
+var _indiferenciaChart = null;
+var _indiferenciaPeriodo = 60;
+var _indiferenciaExpanded = {};
 
 function initMercado(){
   document.getElementById('mercadoLoading').style.display='block';
@@ -77,18 +83,21 @@ function initMercado(){
   var status = document.getElementById('mercadoSyncStatus');
   status.textContent = 'Cargando precios...';
 
-  // Cargar ambos JSONs en paralelo
+  // Cargar JSONs en paralelo
   Promise.all([
     fetch(STOCK_SB+'/mercado_precios.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
     fetch(STOCK_SB+'/negocios_resumen.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
     fetch(STOCK_SB+'/negocios_snapshots.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
+    fetch(STOCK_SB+'/precios_indiferencia_historico.json',{}).then(function(r){ return r.ok?r.json():null; }).catch(function(){return null;}),
   ]).then(function(results){
     var data = results[0];
     var neg  = results[1];
     var snap = results[2];
+    var ind  = results[3];
     MERCADO_DATA_CACHE  = data;
     NEGOCIOS_DATA_CACHE = neg;
     NEGOCIOS_SNAPSHOTS_CACHE = snap;
+    INDIFERENCIA_DATA_CACHE = ind;
 
     if(data){
       // Actualizar tablas de precios
@@ -1421,3 +1430,196 @@ function _histRenderTabla(){
     + '</table>'
     + '</div>';
 }
+
+// ── Pestaña Indiferencia ─────────────────────────────────────────────────
+function renderIndiferencia(){
+  var el = document.getElementById('indiferenciaBody');
+  if(!el) return;
+  var data = INDIFERENCIA_DATA_CACHE;
+  if(!data || !data.dias || !Object.keys(data.dias).length){
+    el.innerHTML = '<div style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:13px;padding:24px 0">Sin datos de indiferencia. Ejecutá la actualización.</div>';
+    return;
+  }
+
+  var fechas = Object.keys(data.dias).sort();
+  var hoyKey = fechas[fechas.length-1];
+  var hoy    = data.dias[hoyKey] || {};
+  var prev   = fechas.length > 1 ? data.dias[fechas[fechas.length-2]] : null;
+  var cats   = data.categorias || [];
+
+  // Mapeo PI -> categoria mas cercana del mercado para comparar
+  var hac  = {};
+  if(MERCADO_DATA_CACHE && MERCADO_DATA_CACHE.hacienda){
+    MERCADO_DATA_CACHE.hacienda.forEach(function(h){ hac[h.categoria]=h.precio; });
+  }
+  var esyc = {};
+  if(MERCADO_DATA_CACHE && MERCADO_DATA_CACHE.terneros_esyc){
+    MERCADO_DATA_CACHE.terneros_esyc.forEach(function(t){ esyc[t.categoria]=t.precio; });
+  }
+  function precioMercado(label){
+    var m = {
+      novillo_250:    esyc['Terneros 230-260 Kg.'],
+      novillo_350:    esyc['Novillitos 330-370 Kg.'],
+      vaquillona_200: esyc['Terneras 150-170 Kg.'],
+      vaquillona_300: esyc['Vaquillonas 250-290 Kg.'],
+      vaca_400:       hac['Vacas Buenas'],
+      vaca_500:       hac['Vacas Buenas'],
+    };
+    return m[label] || null;
+  }
+
+  function fmtMoney(n){ return n!=null ? '$'+Number(Math.round(n)).toLocaleString('es-AR') : '—'; }
+  function fmtMoneyD(n,d){ return n!=null ? '$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}) : '—'; }
+
+  var TH = 'font-family:DM Mono,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.42);padding:8px 10px;background:rgba(26,22,18,.03);border-bottom:2px solid rgba(26,22,18,.1);white-space:nowrap;text-align:right;font-weight:400';
+  var TD = 'padding:9px 10px;border-bottom:1px solid rgba(26,22,18,.06);font-family:DM Mono,monospace;font-size:13px;vertical-align:middle';
+
+  var html = '';
+  var fechaLeg = hoyKey.split('-').reverse().join('/');
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resumen del día · '+fechaLeg+'</div>';
+  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html += '<thead><tr>'
+    + '<th style="'+TH+';text-align:left">Categoría</th>'
+    + '<th style="'+TH+'">PesoE</th>'
+    + '<th style="'+TH+'">PesoS</th>'
+    + '<th style="'+TH+'">Días</th>'
+    + '<th style="'+TH+'">PI ($/kg)</th>'
+    + '<th style="'+TH+'">Mercado</th>'
+    + '<th style="'+TH+'">Margen</th>'
+    + '<th style="'+TH+'">Δ vs ayer</th>'
+    + '<th style="'+TH+';width:30px"></th>'
+    + '</tr></thead><tbody>';
+
+  cats.forEach(function(c){
+    var d = hoy[c.label] || {};
+    var pi = d.pi_kg || null;
+    var pmkt = precioMercado(c.label);
+    var margen = (pi && pmkt) ? (pmkt - pi) : null;
+    var pct = (pi && pmkt) ? (margen / pi * 100) : null;
+    var mCol = margen == null ? 'rgba(26,22,18,.3)' : (margen <= 0 ? '#27613d' : '#c0392b');
+    var mTxt = margen == null ? '—' : (margen <= 0 ? 'Conviene ' : 'Caro ') + (margen<=0?'-':'+') + '$'+Math.abs(Math.round(margen)).toLocaleString('es-AR');
+
+    var dPrev = prev ? (prev[c.label] || {}) : {};
+    var deltaPrev = (pi && dPrev.pi_kg) ? (pi - dPrev.pi_kg) : null;
+    var deltaCol = deltaPrev == null ? 'rgba(26,22,18,.3)' : (deltaPrev >= 0 ? '#27613d' : '#c0392b');
+    var deltaTxt = deltaPrev == null ? '—' : (deltaPrev>=0?'+':'')+'$'+Math.round(deltaPrev).toLocaleString('es-AR');
+
+    var expanded = !!_indiferenciaExpanded[c.label];
+    var arrow = expanded ? '▾' : '▸';
+
+    html += '<tr style="cursor:pointer" onclick="_toggleIndiferenciaRow(\''+c.label+'\')">'
+      + '<td style="'+TD+'"><strong>'+c.nombre_corto+'</strong></td>'
+      + '<td style="'+TD+';text-align:right">'+c.pesoE+' kg</td>'
+      + '<td style="'+TD+';text-align:right">'+(d.pesoS||'—')+' kg</td>'
+      + '<td style="'+TD+';text-align:right">'+(d.dias!=null?d.dias:'—')+'</td>'
+      + '<td style="'+TD+';text-align:right;font-weight:700;color:#1a5276">'+fmtMoneyD(pi,2)+'</td>'
+      + '<td style="'+TD+';text-align:right">'+fmtMoney(pmkt)+'</td>'
+      + '<td style="'+TD+';text-align:right;color:'+mCol+';font-weight:600">'+mTxt+(pct!=null?' <span style="font-weight:400;font-size:11px">('+(pct>=0?'+':'')+pct.toFixed(1)+'%)</span>':'')+'</td>'
+      + '<td style="'+TD+';text-align:right;color:'+deltaCol+'">'+deltaTxt+'</td>'
+      + '<td style="'+TD+';text-align:center;color:rgba(26,22,18,.4)">'+arrow+'</td>'
+      + '</tr>';
+
+    if(expanded){
+      var ingTC = d.consumoDiario && d.dias ? d.consumoDiario * d.dias : 0;
+      var adp   = d.dias > 0 ? ((d.pesoS - d.pesoE)/d.dias).toFixed(2).replace('.',',')+' kg/día' : '—';
+      html += '<tr style="background:rgba(26,22,18,.02)"><td colspan="9" style="padding:14px 22px">'
+        + '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-bottom:8px">Detalle a precio indiferencia</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-family:DM Mono,monospace;font-size:12px">'
+        + '<div><div style="color:rgba(26,22,18,.5)">Compra neta</div><strong>'+fmtMoney(d.compraNeta)+'</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">Alimentación</div><strong>'+fmtMoney(d.alimentacion)+'</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">Ingreso venta</div><strong>'+fmtMoney(d.ingresoVenta)+'</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">Resultado</div><strong style="color:#27613d">+'+fmtMoney(d.rent_obtenido)+'</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">ADP</div><strong>'+adp+'</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">Consumo TC</div><strong>'+(d.consumoDiario?d.consumoDiario.toFixed(1).replace('.',','):'—')+' kg/día · '+Math.round(ingTC).toLocaleString('es-AR')+' total</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">Pcarne usado</div><strong>'+fmtMoney(d.pcarne_usado)+'/kg gancho</strong></div>'
+        + '<div><div style="color:rgba(26,22,18,.5)">Pv vivo</div><strong>'+fmtMoneyD(d.pv,1)+'/kg</strong></div>'
+        + '</div></td></tr>';
+    }
+  });
+  html += '</tbody></table></div>';
+
+  // Selector + canvas
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Evolución histórica</div>';
+  html += '<div style="display:flex;gap:6px;margin-bottom:12px">';
+  [30,60,90,0].forEach(function(d){
+    var lbl = d===0 ? 'Todo' : d+'d';
+    var on = (_indiferenciaPeriodo === d);
+    html += '<button onclick="_setIndiferenciaPeriodo('+d+')" style="font-family:DM Mono,monospace;font-size:11px;padding:5px 12px;border-radius:2px;cursor:pointer;border:1px solid '+(on?'rgba(26,22,18,.4)':'rgba(26,22,18,.18)')+';background:'+(on?'rgba(26,22,18,.08)':'transparent')+';color:rgba(26,22,18,.7)">'+lbl+'</button>';
+  });
+  html += '</div>';
+  html += '<div style="position:relative;height:320px;background:#fff;border:1px solid rgba(26,22,18,.1);border-radius:2px;padding:16px"><canvas id="indiferenciaCanvas"></canvas></div>';
+
+  // Footer trazabilidad
+  var hoyMaiz = (hoy && Object.values(hoy)[0]) ? Object.values(hoy)[0].ins_maiz : null;
+  var pcarneT  = (hoy && hoy.novillo_350)    ? hoy.novillo_350.pcarne_usado    : null;
+  var pcarneVq = (hoy && hoy.vaquillona_300) ? hoy.vaquillona_300.pcarne_usado : null;
+  var pcarneV  = (hoy && hoy.vaca_400)       ? hoy.vaca_400.pcarne_usado       : null;
+  html += '<div style="margin-top:18px;padding:10px 14px;background:rgba(26,22,18,.03);border-left:3px solid rgba(26,22,18,.15);font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.55);line-height:1.6">'
+    + '<strong>Trazabilidad:</strong> Calculado con parámetros base al '+fechaLeg+'. '
+    + 'Pcarne terneros: '+fmtMoney(pcarneT)+'/kg · '
+    + 'Pcarne terneras: '+fmtMoney(pcarneVq)+'/kg · '
+    + 'Pcarne vacas: '+fmtMoney(pcarneV)+'/kg · '
+    + 'Maíz: '+fmtMoney(hoyMaiz)+'/tn'
+    + '</div>';
+
+  el.innerHTML = html;
+  _renderIndiferenciaChart();
+}
+
+function _toggleIndiferenciaRow(label){
+  _indiferenciaExpanded[label] = !_indiferenciaExpanded[label];
+  renderIndiferencia();
+}
+
+function _setIndiferenciaPeriodo(dias){
+  _indiferenciaPeriodo = dias;
+  renderIndiferencia();
+}
+
+function _renderIndiferenciaChart(){
+  var data = INDIFERENCIA_DATA_CACHE;
+  var canvas = document.getElementById('indiferenciaCanvas');
+  if(!canvas || !data || !data.dias) return;
+  var fechas = Object.keys(data.dias).sort();
+  if(_indiferenciaPeriodo > 0) fechas = fechas.slice(-_indiferenciaPeriodo);
+  var cats = data.categorias || [];
+
+  var labels = fechas.map(function(f){ var p=f.split('-'); return p[2]+'/'+p[1]; });
+  var COLORES = ['#1a6699','#27613d','#922b21','#cb4335','#5b4fcf','#b8922a'];
+  var datasets = cats.map(function(c, i){
+    return {
+      label: c.nombre_corto,
+      data: fechas.map(function(f){ var d=data.dias[f]; return d && d[c.label] ? d[c.label].pi_kg : null; }),
+      borderColor: COLORES[i % COLORES.length],
+      backgroundColor: 'transparent',
+      tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+      borderWidth: 2, fill: false, spanGaps: true,
+    };
+  });
+
+  if(_indiferenciaChart) _indiferenciaChart.destroy();
+  _indiferenciaChart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { family: 'DM Mono, monospace', size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: {
+          backgroundColor: 'rgba(26,22,18,.92)',
+          titleFont: { family: 'DM Mono, monospace', size: 11 },
+          bodyFont:  { family: 'DM Mono, monospace', size: 11 },
+          padding: 10, cornerRadius: 2,
+          callbacks: { label: function(item){ return ' '+item.dataset.label+': $'+Number(item.parsed.y).toLocaleString('es-AR',{maximumFractionDigits:0}); } },
+        },
+      },
+      scales: {
+        x: { ticks: { font: { family: 'DM Mono, monospace', size: 10 }, color: 'rgba(26,22,18,.5)', maxTicksLimit: 12 }, grid: { color: 'rgba(26,22,18,.05)' } },
+        y: { ticks: { font: { family: 'DM Mono, monospace', size: 10 }, color: 'rgba(26,22,18,.5)', callback: function(v){ return '$'+Number(v).toLocaleString('es-AR'); } }, grid: { color: 'rgba(26,22,18,.06)' } },
+      },
+    },
+  });
+}
+

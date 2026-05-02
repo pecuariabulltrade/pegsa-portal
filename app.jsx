@@ -37,6 +37,83 @@ function goToPortalModule(panelId) {
   }
 }
 
+// Widget Precios de Indiferencia para el panel principal
+function IndiferenciaWidget() {
+  const [data, setData] = React.useState(null);
+
+  React.useEffect(() => {
+    fetch("./datos/precios_indiferencia_historico.json")
+      .then(r => r.ok ? r.json() : null)
+      .then(setData)
+      .catch(() => setData(null));
+  }, []);
+
+  if (!data || !data.dias || !Object.keys(data.dias).length) return null;
+  const fechas = Object.keys(data.dias).sort();
+  const hoy    = data.dias[fechas[fechas.length - 1]] || {};
+  const prev   = fechas.length > 1 ? data.dias[fechas[fechas.length - 2]] : null;
+  const cats   = data.categorias || [];
+
+  const fmt = (n) => n != null ? "$ " + Math.round(n).toLocaleString("es-AR") : "—";
+
+  const goToIndiferencia = () => {
+    if (typeof window.openModule === "function") {
+      window.openModule("mercado");
+      setTimeout(() => {
+        const tab = document.getElementById("mercadoTabIndiferencia");
+        if (tab && typeof window.mercadoTab === "function") {
+          window.mercadoTab("indiferencia", tab);
+        }
+      }, 200);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 4px 12px" }}>
+        <div style={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--ink)", fontWeight: 700 }}>
+          Precios de Indiferencia · Objetivo $100k/cab
+        </div>
+        <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+        <span style={{ fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-mute)", fontWeight: 600 }}>
+          Click → Mercado · Indiferencia
+        </span>
+      </div>
+      <div className="subkpi-row">
+        {cats.map(c => {
+          const d = hoy[c.label] || {};
+          const dPrev = prev ? (prev[c.label] || {}) : {};
+          const pi = d.pi_kg;
+          const delta = (pi && dPrev.pi_kg) ? (pi - dPrev.pi_kg) : null;
+          const pct = (pi && dPrev.pi_kg) ? (delta / dPrev.pi_kg * 100) : null;
+          return (
+            <div
+              key={c.label}
+              className="subkpi size-sm"
+              data-group="mercado"
+              onClick={goToIndiferencia}
+              style={{ cursor: "pointer" }}
+            >
+              <div className="subkpi-label">
+                <span>{c.nombre_corto}</span>
+                {pct != null && (
+                  <span className={`delta ${delta < 0 ? "neg" : ""}`}>
+                    {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+              <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>{fmt(pi)}</div>
+              <div className="subkpi-meta">
+                <span>{c.pesoE}→{d.pesoS || "—"} kg · {d.dias != null ? d.dias + "d" : "—"}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Panel() {
   const D = window.PEGSA_DATA;
   const [drillModulo, setDrillModulo] = useState(null);
@@ -155,6 +232,9 @@ function Panel() {
             <div className="subkpi-meta"><span>Cierre 25/04</span></div>
           </div>
         </div>
+
+        {/* === PRECIOS DE INDIFERENCIA · 6 mini-cards === */}
+        <IndiferenciaWidget />
 
         {/* === HERO KPIs === */}
         <div className="hero-row" style={{ display: "none" }}>
