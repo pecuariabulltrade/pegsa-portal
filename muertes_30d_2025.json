@@ -1,58 +1,59 @@
 {
   "meta": {
-    "generado": "2026-05-01T19:01:50.921216",
+    "generado": "2026-05-02T13:25:56.952111",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "ventana": "30 días",
-    "desde": "2026-04-01",
-    "hasta": "2026-05-01",
-    "label_periodo": "Últimos 30 días (01/04/2026 – 01/05/2026)",
+    "desde": "2026-04-02",
+    "hasta": "2026-05-02",
+    "label_periodo": "Últimos 30 días (02/04/2026 – 02/05/2026)",
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_30d": 14,
-    "ingresos_30d": 931,
-    "stock_haras_hoy": 7849,
-    "denominador": 8780,
-    "tasa_mensual_pct": 0.159,
+    "muertes_30d": 114,
+    "ingresos_30d": 881,
+    "stock_haras_hoy": 8024,
+    "denominador": 8905,
+    "tasa_mensual_pct": 1.28,
     "formula": "tasa = muertes_30d / (ingresos_30d + stock_hoy)",
     "por_grupo": {
       "Vacas": {
         "muertes": 8,
-        "ingresos": 239,
-        "stock": 2074,
-        "denominador": 2313,
-        "tasa_mensual_pct": 0.346
+        "ingresos": 160,
+        "stock": 2110,
+        "denominador": 2270,
+        "tasa_mensual_pct": 0.352
       },
       "Machos": {
-        "muertes": 5,
-        "ingresos": 503,
-        "stock": 4501,
-        "denominador": 5004,
-        "tasa_mensual_pct": 0.1
+        "muertes": 75,
+        "ingresos": 462,
+        "stock": 4547,
+        "denominador": 5009,
+        "tasa_mensual_pct": 1.497
       },
       "Hembras": {
-        "muertes": 1,
-        "ingresos": 189,
-        "stock": 1274,
-        "denominador": 1463,
-        "tasa_mensual_pct": 0.068
+        "muertes": 31,
+        "ingresos": 259,
+        "stock": 1367,
+        "denominador": 1626,
+        "tasa_mensual_pct": 1.907
       }
     }
   },
   "detalle": {
-    "total_muertes": 14,
+    "total_muertes": 114,
     "por_categoria": {
+      "TM": 73,
+      "TH": 30,
       "VA": 8,
-      "TM": 3,
       "NT": 1,
       "VQ": 1,
       "NV": 1
     },
     "por_grupo": {
       "Vacas": 8,
-      "Machos": 5,
-      "Hembras": 1
+      "Machos": 75,
+      "Hembras": 31
     }
   }
 }

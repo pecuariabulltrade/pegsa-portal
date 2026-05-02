@@ -1,29 +1,29 @@
 {
   "meta": {
-    "generado": "2026-05-01T19:01:51.100718",
+    "generado": "2026-05-02T13:25:57.337977",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 41071,
-    "registros_filtrados": 15347,
+    "registros_totales": 41058,
+    "registros_filtrados": 15141,
     "excluidos": {
-      "motivo": 397,
-      "rfid": 3957,
+      "motivo": 497,
+      "rfid": 3937,
       "estadia": 263,
-      "adp": 371,
-      "fecha": 20736
+      "adp": 365,
+      "fecha": 20855
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 15347,
+    "cabezas": 15141,
     "adp_promedio": 1.531,
     "adp_min": 0.01,
     "adp_max": 5.0,
-    "estadia_promedio": 132.7,
+    "estadia_promedio": 133.3,
     "estadia_min": 3,
     "estadia_max": 450
   },
@@ -56,12 +56,12 @@
       "estadia_max": 448
     },
     "TERNERO": {
-      "cabezas": 487,
-      "adp_promedio": 1.233,
+      "cabezas": 484,
+      "adp_promedio": 1.232,
       "adp_min": 0.49,
       "adp_max": 2.78,
-      "estadia_promedio": 246.7,
-      "estadia_min": 104,
+      "estadia_promedio": 247.4,
+      "estadia_min": 111,
       "estadia_max": 449
     },
     "TORO": {
@@ -74,11 +74,11 @@
       "estadia_max": 368
     },
     "VACA": {
-      "cabezas": 7890,
-      "adp_promedio": 1.624,
+      "cabezas": 7715,
+      "adp_promedio": 1.628,
       "adp_min": 0.01,
       "adp_max": 4.96,
-      "estadia_promedio": 110.2,
+      "estadia_promedio": 110.7,
       "estadia_min": 31,
       "estadia_max": 350
     },
@@ -201,11 +201,11 @@
   },
   "por_mes": {
     "2025-05": {
-      "cabezas": 1664,
-      "adp_promedio": 1.468,
-      "adp_min": 0.03,
+      "cabezas": 1458,
+      "adp_promedio": 1.467,
+      "adp_min": 0.04,
       "adp_max": 4.92,
-      "estadia_promedio": 124.0,
+      "estadia_promedio": 128.6,
       "estadia_min": 5,
       "estadia_max": 448
     },

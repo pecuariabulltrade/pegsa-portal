@@ -1,53 +1,55 @@
 {
-  "generado": "2026-05-01T18:59:38.396467",
+  "generado": "2026-05-02T13:23:37.748686",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
       "ok": true,
-      "registros": 9940,
-      "cabezas": 9940
+      "registros": 9946,
+      "cabezas": 9946
     },
     "stock_insumos": {
       "ok": true,
       "registros": 7,
-      "total_kg": 1250399.61
+      "total_kg": 1151374.61
     },
     "movimientos": {
       "ok": true
     },
     "muertes": {
       "ok": true,
-      "total_anio": 282,
-      "total_mes_ant": 14,
-      "tasa_mensual_pct": 1.072
+      "total_anio": 382,
+      "total_mes_ant": 114,
+      "tasa_mensual_pct": 1.439
     },
     "muertes_30d": {
       "ok": true,
-      "total_30d": 14,
-      "tasa_mensual_pct": 0.159
+      "total_30d": 114,
+      "tasa_mensual_pct": 1.28
     },
     "productivo": {
       "ok": true,
       "adp_promedio": 1.531,
-      "estadia_promedio": 132.7,
-      "cabezas": 15347
+      "estadia_promedio": 133.3,
+      "cabezas": 15141
     },
     "consumo": {
       "ok": true,
-      "total_anual_kg": 42474731.0,
+      "total_anual_kg": 42405811.0,
       "promedio_diario_kg": 94785.0
     },
     "indicadores": {
       "ok": true,
       "denominador": "El Haras",
-      "pct_peso_vivo": 1.6,
-      "consumo_cab_tc": 12.08,
-      "consumo_cab_ms": 7.81,
-      "conversion": 7.82
+      "pct_peso_vivo": 1.57,
+      "consumo_cab_tc": 11.81,
+      "consumo_cab_ms": 7.64,
+      "conversion": 7.65
     },
     "tesoreria": {
-      "ok": false,
-      "error": "[Errno 13] Permission denied: 'C:\\\\Users\\\\USER\\\\OneDrive - pecuaria el garabi sa\\\\PEGSA_Portal\\\\datos\\\\financiero\\\\2026-04-25_financiero.xlsx'"
+      "ok": true,
+      "cortes": 5,
+      "ultimo_corte": "2026-04-25",
+      "saldo_disp": -449790476.97
     },
     "historico": {
       "ok": true,
@@ -65,7 +67,7 @@
     "stock_diario": {
       "ok": true,
       "dias": 91,
-      "ultima_fecha": "2026-05-01",
+      "ultima_fecha": "2026-05-02",
       "metodo": "running_balance"
     }
   }
