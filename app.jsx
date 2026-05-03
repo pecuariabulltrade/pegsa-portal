@@ -42,7 +42,7 @@ function IndiferenciaWidget() {
   const [data, setData] = React.useState(null);
 
   React.useEffect(() => {
-    fetch("./datos/precios_indiferencia_historico.json")
+    fetch("./precios_indiferencia_historico.json")
       .then(r => r.ok ? r.json() : null)
       .then(setData)
       .catch(() => setData(null));

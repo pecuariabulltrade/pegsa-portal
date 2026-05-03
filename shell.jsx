@@ -7,6 +7,127 @@ function IconCalendar() { return <svg width="13" height="13" viewBox="0 0 24 24"
 function IconClose() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m18 6-12 12M6 6l12 12" /></svg>; }
 function IconExport() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" /></svg>; }
 
+// Componente: vista rápida del Stock de Insumos (lee del JSON real, no mock)
+function StockInsumosDrill() {
+  const [data, setData]   = React.useState(null);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("./stock_insumos_2025.json")
+      .then(r => r.ok ? r.json() : Promise.reject("HTTP " + r.status))
+      .then(d => setData(d))
+      .catch(() => setError(true));
+  }, []);
+
+  if (error) return <p style={{ color: "var(--neg, #c0392b)" }}>No se pudo cargar stock_insumos_2025.json</p>;
+  if (!data) return <p style={{ color: "var(--ink-mute)" }}>Cargando datos…</p>;
+
+  const insumos = data.insumos || [];
+  const totalKg = data.total_kg || 0;
+  const meta    = data.meta    || {};
+
+  // Crítico: insumo con MENOR días positivos (ignora stock negativo y consumo 0)
+  const conDias = insumos.filter(i => i.dias_restantes != null && i.dias_restantes > 0 && i.stock_kg > 0);
+  const critico = conDias.length
+    ? conDias.reduce((a, b) => a.dias_restantes < b.dias_restantes ? a : b)
+    : null;
+
+  const esDiesel = (n) => /diesel|gasoil|combustible/i.test(n || "");
+  const fmt      = (n) => Number(Math.round(n)).toLocaleString("es-AR");
+  const fmtD1    = (n) => Number(n).toFixed(1).replace(".", ",");
+  const fechaUpd = meta.generado
+    ? new Date(meta.generado).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
+    : "—";
+  const hayNegativos = insumos.some(i => i.stock_kg < 0);
+
+  return (
+    <>
+      <div className="drill-stats">
+        <div className="drill-stat">
+          <div className="l">Stock total</div>
+          <div className="v">{fmtD1(totalKg/1000)} t</div>
+        </div>
+        <div className="drill-stat">
+          <div className="l">Insumos</div>
+          <div className="v">{insumos.length} ítems</div>
+        </div>
+        <div className="drill-stat">
+          <div className="l">Crítico</div>
+          <div className={`v ${critico ? "neg" : ""}`}>
+            {critico ? critico.nombre : "—"}
+          </div>
+        </div>
+        <div className="drill-stat">
+          <div className="l">Días restantes</div>
+          <div className="v">{critico ? fmtD1(critico.dias_restantes) : "—"}</div>
+        </div>
+      </div>
+      <div className="drill-section-title">Detalle por insumo</div>
+      <table className="tbl">
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th className="num">Stock (kg)</th>
+            <th className="num">Consumo/día</th>
+            <th className="num">Días rest.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {insumos.map((ins, i) => {
+            const stockNeg  = ins.stock_kg < 0;
+            const cons      = ins.consumo_diario_tc;
+            const sinCons   = !cons || cons <= 0;
+            const dias      = ins.dias_restantes;
+            const tooltipCons = sinCons
+              ? (esDiesel(ins.nombre)
+                  ? "Consumo no automatizado · cargar desde surtidor"
+                  : "Sin consumo registrado en el Mixer")
+              : null;
+
+            // Días: si stock negativo o sin consumo → "—"
+            let diasCell;
+            if (stockNeg || sinCons || dias == null) {
+              diasCell = <span style={{ color: "var(--ink-mute)" }}>—</span>;
+            } else {
+              const chip = dias < 7 ? "neg" : dias < 15 ? "neutral" : "pos";
+              diasCell = <span className={`chip ${chip}`}>{fmtD1(dias)}</span>;
+            }
+
+            return (
+              <tr key={i}>
+                <td className="name">
+                  {ins.nombre}
+                  {stockNeg && (
+                    <span title="Stock inconsistente · revisar contabilidad"
+                          style={{ marginLeft: 6, color: "#c0392b", cursor: "help" }}>⚠</span>
+                  )}
+                </td>
+                <td className="num" style={stockNeg ? { color: "#c0392b" } : {}}>
+                  {fmt(ins.stock_kg)}
+                </td>
+                <td className="num"
+                    title={tooltipCons || undefined}
+                    style={sinCons ? { color: "var(--ink-mute)", cursor: tooltipCons ? "help" : "default" } : {}}>
+                  {sinCons ? "—" : fmt(cons)}
+                </td>
+                <td className="num">{diasCell}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {hayNegativos && (
+        <p style={{ fontSize: 12, color: "#c0392b", marginTop: 10, fontStyle: "italic" }}>
+          ⚠ Stock inconsistente · revisar contabilidad. Algún insumo registró más consumo que ingresos en WinCampo.
+        </p>
+      )}
+      <p style={{ fontSize: 11, color: "var(--ink-mute)", marginTop: 14, textAlign: "right", fontStyle: "italic" }}>
+        Datos al {fechaUpd} · Origen WinCampo + Mixer
+      </p>
+    </>
+  );
+}
+
 function Sidebar({ active, onSelect, modulos, usuario }) {
   return (
     <aside className="sidebar">
@@ -158,28 +279,7 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
           </>
         );
       case "stock-insumos":
-        return (
-          <>
-            <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Stock total</div><div className="v">2.840 t</div></div>
-              <div className="drill-stat"><div className="l">Insumos</div><div className="v">12 ítems</div></div>
-              <div className="drill-stat"><div className="l">Crítico</div><div className="v neg">Diesel</div></div>
-              <div className="drill-stat"><div className="l">Días restantes</div><div className="v">18</div></div>
-            </div>
-            <div className="drill-section-title">Detalle por insumo</div>
-            <table className="tbl">
-              <thead><tr><th>Insumo</th><th className="num">Stock (kg)</th><th className="num">Consumo/día</th><th className="num">Días rest.</th></tr></thead>
-              <tbody>
-                <tr><td className="name">Diesel</td><td className="num">28.500</td><td className="num">1.580</td><td className="num"><span className="chip neg">18</span></td></tr>
-                <tr><td className="name">Maíz</td><td className="num">1.420.000</td><td className="num">22.000</td><td className="num"><span className="chip pos">64</span></td></tr>
-                <tr><td className="name">Soja</td><td className="num">680.000</td><td className="num">8.400</td><td className="num"><span className="chip pos">81</span></td></tr>
-                <tr><td className="name">Gluten Feed</td><td className="num">412.000</td><td className="num">7.100</td><td className="num"><span className="chip pos">58</span></td></tr>
-                <tr><td className="name">Núcleo</td><td className="num">82.000</td><td className="num">1.250</td><td className="num"><span className="chip neutral">65</span></td></tr>
-                <tr><td className="name">Germen</td><td className="num">218.000</td><td className="num">3.400</td><td className="num"><span className="chip pos">64</span></td></tr>
-              </tbody>
-            </table>
-          </>
-        );
+        return <StockInsumosDrill />;
       case "mercado":
         return (
           <>
