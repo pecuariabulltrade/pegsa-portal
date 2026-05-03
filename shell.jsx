@@ -26,13 +26,19 @@ function StockInsumosDrill() {
   const totalKg = data.total_kg || 0;
   const meta    = data.meta    || {};
 
-  // Crítico: insumo con MENOR días positivos (ignora stock negativo y consumo 0)
+  const esDiesel = (n) => /diesel|gasoil|combustible/i.test(n || "");
+  const DIESEL_UMBRAL = 1000;
+
+  // Crítico:
+  //   1) Si hay Diesel con stock < umbral, gana siempre (operativamente crítico).
+  //   2) Sino, el insumo con MENOR días positivos (ignora stock negativo y consumo 0).
+  const dieselCritico = insumos.find(i => esDiesel(i.nombre) && i.stock_kg > 0 && i.stock_kg < DIESEL_UMBRAL);
   const conDias = insumos.filter(i => i.dias_restantes != null && i.dias_restantes > 0 && i.stock_kg > 0);
-  const critico = conDias.length
+  const criticoDias = conDias.length
     ? conDias.reduce((a, b) => a.dias_restantes < b.dias_restantes ? a : b)
     : null;
-
-  const esDiesel = (n) => /diesel|gasoil|combustible/i.test(n || "");
+  const critico = dieselCritico || criticoDias;
+  const criticoEsDiesel = !!dieselCritico;
   const fmt      = (n) => Number(Math.round(n)).toLocaleString("es-AR");
   const fmtD1    = (n) => Number(n).toFixed(1).replace(".", ",");
   const fechaUpd = meta.generado
@@ -59,7 +65,9 @@ function StockInsumosDrill() {
         </div>
         <div className="drill-stat">
           <div className="l">Días restantes</div>
-          <div className="v">{critico ? fmtD1(critico.dias_restantes) : "—"}</div>
+          <div className="v">
+            {criticoEsDiesel ? "< 1.000 lt" : (critico && critico.dias_restantes ? fmtD1(critico.dias_restantes) : "—")}
+          </div>
         </div>
       </div>
       <div className="drill-section-title">Detalle por insumo</div>
@@ -78,6 +86,7 @@ function StockInsumosDrill() {
             const cons      = ins.consumo_diario_tc;
             const sinCons   = !cons || cons <= 0;
             const dias      = ins.dias_restantes;
+            const dieselBajo = esDiesel(ins.nombre) && ins.stock_kg > 0 && ins.stock_kg < DIESEL_UMBRAL;
             const tooltipCons = sinCons
               ? (esDiesel(ins.nombre)
                   ? "Consumo no automatizado · cargar desde surtidor"
@@ -93,16 +102,23 @@ function StockInsumosDrill() {
               diasCell = <span className={`chip ${chip}`}>{fmtD1(dias)}</span>;
             }
 
+            const filaStyle = dieselBajo ? { background: "rgba(192,57,43,.06)" } : {};
+            const stockColor = stockNeg || dieselBajo ? "#c0392b" : undefined;
+
             return (
-              <tr key={i}>
+              <tr key={i} style={filaStyle}>
                 <td className="name">
                   {ins.nombre}
                   {stockNeg && (
                     <span title="Stock inconsistente · revisar contabilidad"
                           style={{ marginLeft: 6, color: "#c0392b", cursor: "help" }}>⚠</span>
                   )}
+                  {dieselBajo && (
+                    <span title="Stock crítico · reabastecer"
+                          style={{ marginLeft: 6, color: "#c0392b", cursor: "help" }}>⚠</span>
+                  )}
                 </td>
-                <td className="num" style={stockNeg ? { color: "#c0392b" } : {}}>
+                <td className="num" style={stockColor ? { color: stockColor, fontWeight: dieselBajo ? 700 : "inherit" } : {}}>
                   {fmt(ins.stock_kg)}
                 </td>
                 <td className="num"
