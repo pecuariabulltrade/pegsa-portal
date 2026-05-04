@@ -197,6 +197,87 @@ function CompositionDonut({ centros }) {
   );
 }
 
+// === Donut: hacienda por establecimiento (cabezas + kg + %) ===
+function EstablecimientoDonut({ items }) {
+  const [hover, setHover] = useState(null);
+
+  if (!items || !items.length) return null;
+  const total = items.reduce((a, b) => a + b.cabezas, 0);
+  const totalKg = items.reduce((a, b) => a + b.kg, 0);
+
+  const colors = [
+    "oklch(0.42 0.13 256)",
+    "oklch(0.62 0.14 200)",
+    "oklch(0.55 0.13 155)",
+    "oklch(0.7 0.14 90)",
+    "oklch(0.55 0.13 230)",
+  ];
+
+  const cx = 90, cy = 90, r = 72, rIn = 50;
+  let acc = 0;
+  const segs = items.map((it, i) => {
+    const frac = it.cabezas / total;
+    const start = acc;
+    const end = acc + frac;
+    acc = end;
+    const a0 = start * 2 * Math.PI - Math.PI / 2;
+    const a1 = end * 2 * Math.PI - Math.PI / 2;
+    const lg = frac > 0.5 ? 1 : 0;
+    const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    const xi0 = cx + rIn * Math.cos(a0), yi0 = cy + rIn * Math.sin(a0);
+    const xi1 = cx + rIn * Math.cos(a1), yi1 = cy + rIn * Math.sin(a1);
+    const d = `M${x0},${y0} A${r},${r} 0 ${lg} 1 ${x1},${y1} L${xi1},${yi1} A${rIn},${rIn} 0 ${lg} 0 ${xi0},${yi0} Z`;
+    return { d, color: colors[i % colors.length], frac, item: it };
+  });
+
+  const center = hover != null
+    ? { val: items[hover].cabezas, lbl: items[hover].nombre, frac: items[hover].cabezas / total }
+    : { val: total, lbl: "PEGSA total", frac: 1 };
+
+  return (
+    <div className="donut-wrap">
+      <svg viewBox="0 0 180 180" className="donut-svg">
+        {segs.map((s, i) => (
+          <path
+            key={i}
+            d={s.d}
+            fill={s.color}
+            opacity={hover == null || hover === i ? 1 : 0.3}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover(null)}
+            style={{ cursor: "default", transition: "opacity 0.15s" }}
+          >
+            <title>{`${s.item.nombre} · ${s.item.cabezas.toLocaleString("es-AR")} cab · ${(s.item.kg/1000).toFixed(1).replace('.',',')} t · ${(s.frac*100).toFixed(1)}%`}</title>
+          </path>
+        ))}
+        <text x="90" y="86" textAnchor="middle" className="donut-center">
+          {center.val.toLocaleString("es-AR")}
+        </text>
+        <text x="90" y="103" textAnchor="middle" className="donut-center-label">
+          {hover != null ? `${(center.frac * 100).toFixed(1)}%` : center.lbl}
+        </text>
+      </svg>
+      <div className="donut-legend">
+        {segs.map((s, i) => (
+          <div
+            key={i}
+            className={`donut-legend-row ${hover != null && hover !== i ? "dim" : ""}`}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover(null)}
+            style={{ cursor: "default" }}
+          >
+            <span className="legend-dot" style={{ background: s.color }} />
+            <span className="legend-name">{s.item.nombre}</span>
+            <span className="legend-pct">{(s.frac * 100).toFixed(1)}%</span>
+            <span className="legend-val">{s.item.cabezas.toLocaleString("es-AR")} cab</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // === Bars horizontal ===
 function StockBars({ items }) {
   const max = Math.max(...items.map(i => i.kg));
@@ -299,4 +380,4 @@ function Heatmap({ data, meses }) {
   );
 }
 
-Object.assign(window, { Sparkline, PatrimonioChart, CompositionDonut, StockBars, Heatmap });
+Object.assign(window, { Sparkline, PatrimonioChart, CompositionDonut, EstablecimientoDonut, StockBars, Heatmap });

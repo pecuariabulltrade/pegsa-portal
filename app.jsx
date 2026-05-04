@@ -384,16 +384,31 @@ function Panel() {
           </div>
         </div>
 
-        {/* === ROW: STOCK POR CATEGORÍA === */}
-        <div className="panel-row">
-          <div className="panel">
+        {/* === ROW: STOCK POR CATEGORÍA + HACIENDA PEGSA POR ESTABLECIMIENTO === */}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
+          {/* Izquierda: bloque grupo completo (70%) */}
+          <div className="panel" style={{ flex: "7 1 480px", margin: 0 }}>
             <div className="panel-head">
               <div>
-                <h3>Stock por categoría</h3>
-                <p>Total grupo · 9.861 cabezas · click para ver el módulo de Stock de Masa</p>
+                <h3>Stock por categoría · Grupo completo (PEGSA + hoteleros)</h3>
+                <p>
+                  {(D.hero?.stock?.total?.cabezas || 0).toLocaleString("es-AR")} cabezas · todas las haciendas en el sistema · click para ver el módulo de Stock de Masa
+                </p>
               </div>
             </div>
             <StockBars items={D.stockCategorias} />
+          </div>
+          {/* Derecha: torta solo PEGSA (30%) */}
+          <div className="panel" style={{ flex: "3 1 280px", margin: 0 }}>
+            <div className="panel-head">
+              <div>
+                <h3>Hacienda PEGSA por establecimiento</h3>
+                <p>
+                  {((D.haciendaPegsaTotal?.cabezas) || 0).toLocaleString("es-AR")} cabezas · solo hacienda propia · {(D.haciendaPegsaPorEstab?.length || 0)} establecimientos
+                </p>
+              </div>
+            </div>
+            <EstablecimientoDonut items={D.haciendaPegsaPorEstab || []} />
           </div>
         </div>
 

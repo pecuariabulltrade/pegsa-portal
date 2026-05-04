@@ -102,7 +102,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -111,6 +111,7 @@ window.PEGSA_DATA = {
     fetchJson('financiero_historico.json'),
     fetchJson('negocios_resumen.json'),
     fetchJson('valuacion_historica.json'),
+    fetchJson('stock_prop_PEGSA_2025.json'),
   ]);
 
   const D = window.PEGSA_DATA;
@@ -131,6 +132,27 @@ window.PEGSA_DATA = {
         .filter(c => c.cabezas > 0)
         .sort((a, b) => b.kg - a.kg);
       if (cats.length > 0) D.stockCategorias = cats;
+    }
+  }
+
+  // Hacienda PEGSA por establecimiento (filtrada solo a hacienda propia)
+  if (stockPegsa?.kpis?.por_establecimiento) {
+    const pe = stockPegsa.kpis.por_establecimiento;
+    const arr = Object.entries(pe)
+      .map(([nombre, d]) => ({
+        nombre: nombre,
+        cabezas: Math.round(d?.cabezas || 0),
+        kg: Math.round(d?.kg_estimado || 0),
+        kgPromedio: Math.round(d?.kg_promedio || 0),
+      }))
+      .filter(e => e.cabezas > 0)
+      .sort((a, b) => b.cabezas - a.cabezas);
+    if (arr.length > 0) {
+      D.haciendaPegsaPorEstab = arr;
+      D.haciendaPegsaTotal = {
+        cabezas: stockPegsa.kpis.total_cabezas || arr.reduce((s, e) => s + e.cabezas, 0),
+        kg: stockPegsa.kpis.total_kg_estimado_hoy || arr.reduce((s, e) => s + e.kg, 0),
+      };
     }
   }
 
