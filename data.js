@@ -102,7 +102,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -110,6 +110,7 @@ window.PEGSA_DATA = {
     fetchJson('tesoreria_ultimo.json'),
     fetchJson('financiero_historico.json'),
     fetchJson('negocios_resumen.json'),
+    fetchJson('valuacion_historica.json'),
   ]);
 
   const D = window.PEGSA_DATA;
@@ -168,19 +169,22 @@ window.PEGSA_DATA = {
     if (pos.usd_ars && pos.usd_cant) D.hero.patrimonio.mep = Math.round(pos.usd_ars / pos.usd_cant);
   }
 
-  // Patrimonio histórico
-  if (financierohist?.cortes && financierohist.cortes.length > 0) {
-    const cortes = financierohist.cortes.slice().sort((a, b) => (a.fecha_corte || '').localeCompare(b.fecha_corte || ''));
-    const patM = cortes.map(c => {
-      const pos = c.posicion || {};
-      const ars = (Array.isArray(pos.bancos_peg) ? pos.bancos_peg.reduce((s, b) => s + (b.saldo || 0), 0) : 0)
-                + (Array.isArray(pos.bancos_bull) ? pos.bancos_bull.reduce((s, b) => s + (b.saldo || 0), 0) : 0)
-                + (pos.efectivo || 0) + (pos.becerra || 0) + (pos.fima_peg || 0) + (pos.fima_bull || 0) + (pos.fci || 0) + (pos.echeq || 0);
-      const fecha = c.fecha_corte || '';
-      const mn = fecha.split('-')[1] || '';
-      const dia = fecha.split('-')[2] || '';
-      const ml = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][parseInt(mn) - 1] || mn;
-      return { mes: dia ? ml + ' ' + dia : ml, ars: Math.round(ars / 1e6), usd: Math.round((pos.usd_cant || 0) / 1e3) };
+  // Patrimonio histórico — usa valuacion_historica.json (patrimonio total mensual:
+  // hacienda + insumos + financiero + USD). El TC USD MEP ya viene aplicado por el pipeline.
+  if (valuacionhist?.snapshots && valuacionhist.snapshots.length > 0) {
+    const snaps = valuacionhist.snapshots.slice().sort((a, b) => (a.periodo || '').localeCompare(b.periodo || ''));
+    const MES_LBL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const patM = snaps.map(s => {
+      const c = s.componentes || {};
+      const periodo = s.periodo || '';
+      const yr = (periodo.split('-')[0] || '').slice(2);
+      const mn = periodo.split('-')[1] || '';
+      const ml = MES_LBL[parseInt(mn) - 1] || mn;
+      return {
+        mes: ml + (yr ? " '" + yr : ''),
+        ars: Math.round((c.total_pesos || 0) / 1e6),    // $M
+        usd: Math.round((c.total_usd   || 0) / 1e3),    // U$S K
+      };
     }).filter(p => p.ars > 0);
     if (patM.length >= 2) {
       D.patrimonioMensual = patM;

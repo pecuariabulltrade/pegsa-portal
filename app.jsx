@@ -176,17 +176,54 @@ function Panel() {
             <div className="subkpi-meta"><span>4.324 t · 3 establecimientos</span><span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span></div>
           </div>
 
-          {/* === TIER 2 · ACTIVO + TESORERÍA + RENTABILIDAD (LG) === */}
-          <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
-            <div className="subkpi-label"><span>Activo Corriente · ARS</span><span className="delta">+22,8%</span></div>
-            <div className="subkpi-value">$ 16,43<span className="u">B</span></div>
-            <div className="subkpi-meta"><span>Período 2025-12</span><span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioArs} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span></div>
-          </div>
-          <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
-            <div className="subkpi-label"><span>Activo Corriente · USD</span><span className="delta">MEP</span></div>
-            <div className="subkpi-value">U$S 11,49<span className="u">M</span></div>
-            <div className="subkpi-meta"><span>MEP $1.430/USD</span><span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioUsd} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span></div>
-          </div>
+          {/* === TIER 2 · PATRIMONIO + TESORERÍA + RENTABILIDAD (LG) === */}
+          {(() => {
+            const pm = D.patrimonioMensual || [];
+            const last = pm[pm.length - 1] || {};
+            const prev12 = pm.length >= 13 ? pm[pm.length - 13] : null;
+            const deltaArs = (last.ars && prev12?.ars) ? ((last.ars - prev12.ars) / prev12.ars * 100) : null;
+            const deltaUsd = (last.usd && prev12?.usd) ? ((last.usd - prev12.usd) / prev12.usd * 100) : null;
+            // Formato ARS: si está en miles de M (B), usa B; sino M
+            const arsB = last.ars >= 1000 ? (last.ars / 1000).toFixed(2).replace('.', ',') : null;
+            const usdM = last.usd >= 1000 ? (last.usd / 1000).toFixed(2).replace('.', ',') : null;
+            const fmtPct = (v) => v == null ? '' : (v >= 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + '%';
+            return (
+              <>
+                <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
+                  <div className="subkpi-label">
+                    <span>Patrimonio Total · ARS</span>
+                    {deltaArs != null && <span className={`delta ${deltaArs < 0 ? "neg" : ""}`}>{fmtPct(deltaArs)}</span>}
+                  </div>
+                  <div className="subkpi-value">
+                    {arsB != null
+                      ? <>$ {arsB}<span className="u">B</span></>
+                      : <>$ {Math.round(last.ars || 0).toLocaleString("es-AR")}<span className="u">M</span></>}
+                  </div>
+                  <div className="subkpi-meta">
+                    <span>{last.mes || '—'}{prev12 ? ' · YoY' : ''}</span>
+                    <span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioArs} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span>
+                  </div>
+                </div>
+                <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
+                  <div className="subkpi-label">
+                    <span>Patrimonio Total · USD</span>
+                    {deltaUsd != null
+                      ? <span className={`delta ${deltaUsd < 0 ? "neg" : ""}`}>{fmtPct(deltaUsd)}</span>
+                      : <span className="delta">MEP</span>}
+                  </div>
+                  <div className="subkpi-value">
+                    {usdM != null
+                      ? <>U$S {usdM}<span className="u">M</span></>
+                      : <>U$S {Math.round(last.usd || 0).toLocaleString("es-AR")}<span className="u">K</span></>}
+                  </div>
+                  <div className="subkpi-meta">
+                    <span>MEP cotización mensual</span>
+                    <span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioUsd} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
           <div className="subkpi size-lg" data-group="tesoreria" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "tesoreria"))}>
             <div className="subkpi-label"><span>Tesorería · Último positivo</span></div>
             <div className="subkpi-value" style={{ color: "var(--pos)" }}>25 abr<span className="u">'25</span></div>
@@ -325,7 +362,7 @@ function Panel() {
           <div className="panel">
             <div className="panel-head">
               <div>
-                <h3>Evolución patrimonial · 2025</h3>
+                <h3>Patrimonio Total · Evolución Mensual</h3>
                 <p>Activo corriente consolidado · cierre mensual</p>
               </div>
               <div className="panel-tabs">
