@@ -102,7 +102,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -112,6 +112,7 @@ window.PEGSA_DATA = {
     fetchJson('negocios_resumen.json'),
     fetchJson('valuacion_historica.json'),
     fetchJson('stock_prop_PEGSA_2025.json'),
+    fetchJson('consumo_2025.json'),
   ]);
 
   const D = window.PEGSA_DATA;
@@ -222,8 +223,29 @@ window.PEGSA_DATA = {
     if (series.length >= 3) D.sparks.stockKg = series;
   }
 
+  // Mixer status — días de retraso del último día completo del Mixer
+  if (consumo?.meta?.ultimo_completo) {
+    const ult = new Date(consumo.meta.ultimo_completo + 'T00:00:00');
+    const hoy0 = new Date();
+    hoy0.setHours(0, 0, 0, 0);
+    const diasRetraso = Math.max(0, Math.floor((hoy0 - ult) / 86400000));
+    const nivel = diasRetraso >= 5 ? 'rojo' : (diasRetraso >= 3 ? 'amarillo' : 'verde');
+    D.mixerStatus = {
+      ultimo_completo: consumo.meta.ultimo_completo,
+      dias_retraso:    diasRetraso,
+      nivel:           nivel,
+    };
+  }
+
   // Alertas dinámicas
   const newAl = [];
+  if (D.mixerStatus && D.mixerStatus.nivel !== 'verde') {
+    newAl.push({
+      tipo:   D.mixerStatus.nivel === 'rojo' ? 'critico' : 'warn',
+      texto:  '⚠ Mixer desactualizado · última lectura ' + D.mixerStatus.ultimo_completo + ' · hace ' + D.mixerStatus.dias_retraso + ' días',
+      action: 'open-stock-materiaseca',
+    });
+  }
   if (Array.isArray(stockInsumos?.insumos)) {
     const crit = stockInsumos.insumos.filter(i => i.dias_restantes != null && i.dias_restantes >= 0).sort((a, b) => a.dias_restantes - b.dias_restantes)[0];
     if (crit) newAl.push({ tipo: 'warn', texto: crit.nombre + ': ' + crit.dias_restantes.toFixed(0) + ' días de stock restantes' });
