@@ -137,7 +137,22 @@ function Panel() {
         {/* Alerts */}
         <div className="alerts-row">
           {D.alertas.map((a, i) => (
-            <div key={i} className={`alert-chip ${a.tipo}`}>
+            <div
+              key={i}
+              className={`alert-chip ${a.tipo}`}
+              onClick={a.action === 'open-stock-materiaseca' ? () => {
+                if (typeof window.openModule === 'function') {
+                  window.openModule('stock');
+                  setTimeout(() => {
+                    if (typeof window.stockTab === 'function') {
+                      const tab = document.getElementById('stockTabMateriaSeca') || document.querySelector('[onclick*="materiaseca"]');
+                      window.stockTab('materiaseca', tab);
+                    }
+                  }, 200);
+                }
+              } : undefined}
+              style={a.action ? { cursor: 'pointer' } : undefined}
+            >
               <span className="led" />
               {a.texto}
             </div>
@@ -390,7 +405,24 @@ function Panel() {
           <div className="panel" style={{ flex: "7 1 480px", margin: 0 }}>
             <div className="panel-head">
               <div>
-                <h3>Stock por categoría · Grupo completo (PEGSA + hoteleros)</h3>
+                <h3>
+                  Stock por categoría · Grupo completo (PEGSA + hoteleros)
+                  {D.mixerStatus && D.mixerStatus.nivel !== 'verde' && (
+                    <span style={{
+                      marginLeft: 10,
+                      padding: '2px 8px',
+                      borderRadius: 3,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      background: D.mixerStatus.nivel === 'rojo' ? 'rgba(192,57,43,.12)' : 'rgba(184,146,42,.15)',
+                      color: D.mixerStatus.nivel === 'rojo' ? '#c0392b' : '#b8922a',
+                    }}>
+                      ⚠ Mixer hace {D.mixerStatus.dias_retraso} días
+                    </span>
+                  )}
+                </h3>
                 <p>
                   {(D.hero?.stock?.total?.cabezas || 0).toLocaleString("es-AR")} cabezas · todas las haciendas en el sistema · click para ver el módulo de Stock de Masa
                 </p>

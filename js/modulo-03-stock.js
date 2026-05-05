@@ -1342,6 +1342,30 @@ function renderConsumo(data) {
   function fmtN(n)   { return n != null ? Number(Math.round(n||0)).toLocaleString('es-AR') : '—'; }
   function fmtD(n,d) { return n != null ? Number(n).toFixed(d||1).replace('.',',') : '—'; }
 
+  // ── Banner de datos desactualizados (verde/amarillo/rojo) ──
+  if (meta.ultimo_completo) {
+    var ult = new Date(meta.ultimo_completo + 'T00:00:00');
+    var hoy0 = new Date(); hoy0.setHours(0,0,0,0);
+    var diasRetraso = Math.max(0, Math.floor((hoy0 - ult) / 86400000));
+    if (diasRetraso >= 3) {
+      var rojo = diasRetraso >= 5;
+      var col = rojo ? '#c0392b' : '#b8922a';
+      var bg  = rojo ? 'rgba(192,57,43,.07)' : 'rgba(184,146,42,.09)';
+      var icon = rojo ? '🔴' : '⚠';
+      var banner = document.createElement('div');
+      banner.style.cssText = 'background:'+bg+';border-left:4px solid '+col+';padding:14px 18px;border-radius:2px;margin-bottom:24px;display:flex;align-items:center;gap:12px;font-family:DM Mono,monospace';
+      banner.innerHTML =
+        '<span style="font-size:18px">'+icon+'</span>'
+        + '<div style="flex:1">'
+        +   '<div style="font-weight:700;color:'+col+';font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Mixer desactualizado</div>'
+        +   '<div style="font-size:13px;color:rgba(26,22,18,.75)">Última lectura: <strong>' + meta.ultimo_completo + '</strong> · hace <strong>' + diasRetraso + ' días</strong>'
+        +     '<span style="color:rgba(26,22,18,.45);font-size:12px;margin-left:10px">(la próxima corrida del pipeline puede regenerar los datos)</span>'
+        +   '</div>'
+        + '</div>';
+      el.appendChild(banner);
+    }
+  }
+
   // ── Separador (separa el resumen % MS del detalle de insumos) ──
   var sep = document.createElement('hr');
   sep.style.cssText = 'border:none;border-top:2px solid rgba(26,22,18,.08);margin:40px 0 32px';
