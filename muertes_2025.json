@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-05-07T19:02:45.381942",
+    "generado": "2026-05-07T20:03:34.680030",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "mes_actual": "2026-05",
@@ -12,11 +12,11 @@
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_anio": 287,
+    "muertes_anio": 288,
     "ingresos_anio": 18542,
-    "stock_haras_hoy": 8135,
-    "denominador": 26677,
-    "tasa_mensual_pct": 1.076,
+    "stock_haras_hoy": 8200,
+    "denominador": 26742,
+    "tasa_mensual_pct": 1.077,
     "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
     "por_grupo": {
       "Vacas": {
@@ -29,25 +29,25 @@
       "Machos": {
         "muertes": 74,
         "ingresos": 7424,
-        "stock": 4573,
-        "denominador": 11997,
-        "tasa_mensual_pct": 0.617
+        "stock": 4639,
+        "denominador": 12063,
+        "tasa_mensual_pct": 0.613
       },
       "Hembras": {
-        "muertes": 35,
+        "muertes": 36,
         "ingresos": 2838,
-        "stock": 1413,
-        "denominador": 4251,
-        "tasa_mensual_pct": 0.823
+        "stock": 1412,
+        "denominador": 4250,
+        "tasa_mensual_pct": 0.847
       }
     }
   },
   "anio": {
-    "total_muertes": 287,
+    "total_muertes": 288,
     "por_categoria": {
       "VA": 178,
       "TM": 52,
-      "TH": 30,
+      "TH": 31,
       "NV": 13,
       "NT": 9,
       "VQ": 5
@@ -55,7 +55,7 @@
     "por_grupo": {
       "Vacas": 178,
       "Machos": 74,
-      "Hembras": 35
+      "Hembras": 36
     },
     "por_mes": {
       "2025-05": 23,
@@ -70,25 +70,25 @@
       "2026-02": 22,
       "2026-03": 26,
       "2026-04": 14,
-      "2026-05": 5
+      "2026-05": 6
     }
   },
   "mes_anterior": {
     "nombre": "Últimos 30 días (07/04/2026 – 07/05/2026)",
     "mes": "2026-04-07",
-    "total_muertes": 19,
+    "total_muertes": 20,
     "por_categoria": {
       "VA": 8,
       "TM": 6,
+      "TH": 2,
       "NV": 2,
-      "TH": 1,
       "NT": 1,
       "VQ": 1
     },
     "por_grupo": {
       "Vacas": 8,
       "Machos": 9,
-      "Hembras": 2
+      "Hembras": 3
     }
   }
 }
