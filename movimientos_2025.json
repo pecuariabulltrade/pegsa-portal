@@ -1,35 +1,35 @@
 {
   "meta": {
-    "generado": "2026-05-10T23:05:57.621195",
+    "generado": "2026-05-11T00:07:43.762322",
     "periodo": "2025",
     "mes_actual": "2026-05",
     "nombre_mes": "Mayo 2026",
     "mes_anterior": "2026-04",
     "nombre_mes_ant": "Abril 2026",
-    "desde_anio": "2025-05-10",
-    "hasta": "2026-05-10",
+    "desde_anio": "2025-05-11",
+    "hasta": "2026-05-11",
     "filtros": "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos."
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 18672,
-      "kg_ingresado": 6536473.4,
-      "kg_promedio_ingreso": 350.1,
+      "cabezas_ingresadas": 18587,
+      "kg_ingresado": 6513139.4,
+      "kg_promedio_ingreso": 350.4,
       "cabezas_egresadas": 19385,
       "kg_egresado": 10400313.5,
       "kg_promedio_egreso": 536.5,
-      "saldo_cabezas": -713,
-      "saldo_kg": -3863840.1
+      "saldo_cabezas": -798,
+      "saldo_kg": -3887174.1
     },
     "ingresos": {
-      "total_cabezas": 18672,
-      "total_kg": 6536473.4,
-      "kg_promedio": 350.1,
+      "total_cabezas": 18587,
+      "total_kg": 6513139.4,
+      "kg_promedio": 350.4,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 15245,
-          "kg": 5485400.9,
-          "kg_promedio": 359.8
+          "cabezas": 15160,
+          "kg": 5462066.9,
+          "kg_promedio": 360.3
         },
         "DARWASH SA": {
           "cabezas": 1141,
@@ -73,20 +73,15 @@
         }
       },
       "por_categoria": {
-        "TERNERA": {
-          "cabezas": 1730,
-          "kg": 337941.4,
-          "kg_promedio": 195.3
-        },
-        "TERNERO": {
-          "cabezas": 2920,
-          "kg": 640484.3,
-          "kg_promedio": 219.3
-        },
         "VACA": {
           "cabezas": 8445,
           "kg": 3714406.5,
           "kg_promedio": 439.8
+        },
+        "TERNERO": {
+          "cabezas": 2890,
+          "kg": 631968.3,
+          "kg_promedio": 218.7
         },
         "NOVILLO": {
           "cabezas": 2258,
@@ -107,13 +102,18 @@
           "cabezas": 2105,
           "kg": 577656.7,
           "kg_promedio": 274.4
+        },
+        "TERNERA": {
+          "cabezas": 1675,
+          "kg": 323123.4,
+          "kg_promedio": 192.9
         }
       },
       "por_mes": {
         "2025-05": {
-          "cabezas": 1458,
-          "kg": 569600.0,
-          "kg_promedio": 390.7
+          "cabezas": 1373,
+          "kg": 546266.0,
+          "kg_promedio": 397.9
         },
         "2025-06": {
           "cabezas": 1727,
@@ -178,23 +178,18 @@
       },
       "por_mes_detalle": {
         "2025-05": {
-          "cabezas": 1458,
-          "kg": 569600.0,
+          "cabezas": 1373,
+          "kg": 546266.0,
           "por_categoria": {
-            "TERNERA": {
-              "cabezas": 65,
-              "kg": 17180.0,
-              "kg_promedio": 264.3
-            },
-            "TERNERO": {
-              "cabezas": 133,
-              "kg": 27489.5,
-              "kg_promedio": 206.7
-            },
             "VACA": {
               "cabezas": 1063,
               "kg": 456363.0,
               "kg_promedio": 429.3
+            },
+            "TERNERO": {
+              "cabezas": 103,
+              "kg": 18973.5,
+              "kg_promedio": 184.2
             },
             "NOVILLO": {
               "cabezas": 74,
@@ -215,13 +210,18 @@
               "cabezas": 69,
               "kg": 17921.5,
               "kg_promedio": 259.7
+            },
+            "TERNERA": {
+              "cabezas": 10,
+              "kg": 2362.0,
+              "kg_promedio": 236.2
             }
           },
           "por_propietario": {
             "PEGSA": {
-              "cabezas": 780,
-              "kg": 318991.0,
-              "kg_promedio": 409.0
+              "cabezas": 695,
+              "kg": 295657.0,
+              "kg_promedio": 425.4
             },
             "DARWASH SA": {
               "cabezas": 594,
@@ -234,7 +234,7 @@
               "kg_promedio": 199.3
             }
           },
-          "kg_promedio": 390.7
+          "kg_promedio": 397.9
         },
         "2025-06": {
           "cabezas": 1727,
