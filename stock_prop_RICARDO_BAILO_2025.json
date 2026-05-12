@@ -9,12 +9,6 @@
     "total_establecimientos": 1,
     "total_propietarios": 1,
     "por_categoria": {
-      "NV": {
-        "cabezas": 191.0,
-        "kg_estimado": 99059,
-        "ton_estimado": 99.06,
-        "kg_promedio": 518.6
-      },
       "NT": {
         "cabezas": 40.0,
         "kg_estimado": 26000,
@@ -26,6 +20,12 @@
         "kg_estimado": 17531,
         "ton_estimado": 17.53,
         "kg_promedio": 649.3
+      },
+      "NV": {
+        "cabezas": 191.0,
+        "kg_estimado": 99059,
+        "ton_estimado": 99.06,
+        "kg_promedio": 518.6
       }
     },
     "por_propietario": {
@@ -53,54 +53,36 @@
       }
     },
     "por_categoria_final": {
-      "novillo": {
-        "cabezas": 133.0,
-        "kg_estimado": 63994,
-        "ton_estimado": 63.99,
-        "kg_promedio": 481.2
-      },
       "novillo mayor a 550 kg": {
         "cabezas": 125.0,
         "kg_estimado": 78597,
         "ton_estimado": 78.6,
         "kg_promedio": 628.8
+      },
+      "novillo": {
+        "cabezas": 133.0,
+        "kg_estimado": 63994,
+        "ton_estimado": 63.99,
+        "kg_promedio": 481.2
       }
     },
     "por_establecimiento_categoria": {
       "El Haras": {
-        "novillo": {
-          "cabezas": 133.0,
-          "kg_estimado": 63993.600000000144,
-          "ton_estimado": 63.99,
-          "kg_promedio": 481.2
-        },
         "novillo mayor a 550 kg": {
           "cabezas": 125.0,
           "kg_estimado": 78596.70000000003,
           "ton_estimado": 78.6,
           "kg_promedio": 628.8
+        },
+        "novillo": {
+          "cabezas": 133.0,
+          "kg_estimado": 63993.60000000016,
+          "ton_estimado": 63.99,
+          "kg_promedio": 481.2
         }
       }
     },
     "por_categoria_desglose": {
-      "novillo": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 133.0,
-            "kg_estimado": 63993.600000000144,
-            "ton_estimado": 63.99,
-            "kg_promedio": 481.2
-          }
-        },
-        "por_propietario": {
-          "RICARDO BAILO": {
-            "cabezas": 133.0,
-            "kg_estimado": 63993.600000000144,
-            "ton_estimado": 63.99,
-            "kg_promedio": 481.2
-          }
-        }
-      },
       "novillo mayor a 550 kg": {
         "por_establecimiento": {
           "El Haras": {
@@ -116,6 +98,24 @@
             "kg_estimado": 78596.70000000003,
             "ton_estimado": 78.6,
             "kg_promedio": 628.8
+          }
+        }
+      },
+      "novillo": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 133.0,
+            "kg_estimado": 63993.60000000016,
+            "ton_estimado": 63.99,
+            "kg_promedio": 481.2
+          }
+        },
+        "por_propietario": {
+          "RICARDO BAILO": {
+            "cabezas": 133.0,
+            "kg_estimado": 63993.60000000016,
+            "ton_estimado": 63.99,
+            "kg_promedio": 481.2
           }
         }
       }
