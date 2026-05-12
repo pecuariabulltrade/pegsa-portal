@@ -411,6 +411,13 @@ body.has-sidebar #modalProp{
 .sb-brand-sub{ font-size:9.5px; letter-spacing:.15em; color:rgba(255,255,255,.4); margin-top:3px; font-weight:500; }
 
 .sb-section{ margin-bottom:14px; }
+/* Variante con separador para el grupo "Análisis Económico":
+   margin-top extra + línea horizontal sutil de 1px. */
+.sb-section.sb-section-divider{
+  border-top:1px solid rgba(255,255,255,.07);
+  padding-top:12px;
+  margin-top:8px;
+}
 .sb-section-label{
   font-size:10px; letter-spacing:.15em; text-transform:uppercase;
   color:rgba(255,255,255,.35); padding:0 10px 8px;

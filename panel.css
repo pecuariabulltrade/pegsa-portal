@@ -102,6 +102,13 @@ html, body {
   color: oklch(0.85 0.02 256 / 0.5);
   font-weight: 600;
 }
+/* Variante con separador para el grupo "Análisis Económico":
+   margin-top extra + línea horizontal sutil de 1px. */
+.sidebar-section-label.sidebar-section-divider {
+  margin: 14px 10px 0;
+  padding: 18px 12px 8px;
+  border-top: 1px solid oklch(1 0 0 / 0.07);
+}
 
 .sidebar-nav { flex: 1; padding: 4px 12px 16px; overflow-y: auto; }
 .nav-item {
