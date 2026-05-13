@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-05-13T12:02:59.329544",
+    "generado": "2026-05-13T13:02:48.574140",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "mes_actual": "2026-05",
@@ -12,19 +12,19 @@
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_anio": 301,
+    "muertes_anio": 302,
     "ingresos_anio": 18587,
-    "stock_haras_hoy": 8241,
-    "denominador": 26828,
-    "tasa_mensual_pct": 1.122,
+    "stock_haras_hoy": 8043,
+    "denominador": 26630,
+    "tasa_mensual_pct": 1.134,
     "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
     "por_grupo": {
       "Vacas": {
-        "muertes": 182,
+        "muertes": 183,
         "ingresos": 8445,
-        "stock": 2157,
-        "denominador": 10602,
-        "tasa_mensual_pct": 1.717
+        "stock": 1960,
+        "denominador": 10405,
+        "tasa_mensual_pct": 1.759
       },
       "Machos": {
         "muertes": 80,
@@ -36,16 +36,16 @@
       "Hembras": {
         "muertes": 39,
         "ingresos": 2758,
-        "stock": 1408,
-        "denominador": 4166,
+        "stock": 1407,
+        "denominador": 4165,
         "tasa_mensual_pct": 0.936
       }
     }
   },
   "anio": {
-    "total_muertes": 301,
+    "total_muertes": 302,
     "por_categoria": {
-      "VA": 182,
+      "VA": 183,
       "TM": 56,
       "TH": 33,
       "NV": 15,
@@ -53,7 +53,7 @@
       "VQ": 6
     },
     "por_grupo": {
-      "Vacas": 182,
+      "Vacas": 183,
       "Machos": 80,
       "Hembras": 39
     },
@@ -70,23 +70,23 @@
       "2026-02": 22,
       "2026-03": 26,
       "2026-04": 23,
-      "2026-05": 10
+      "2026-05": 11
     }
   },
   "mes_anterior": {
     "nombre": "Últimos 30 días (13/04/2026 – 13/05/2026)",
     "mes": "2026-04-13",
-    "total_muertes": 31,
+    "total_muertes": 32,
     "por_categoria": {
+      "VA": 11,
       "TM": 10,
-      "VA": 10,
       "TH": 4,
       "NV": 4,
       "VQ": 2,
       "NT": 1
     },
     "por_grupo": {
-      "Vacas": 10,
+      "Vacas": 11,
       "Machos": 15,
       "Hembras": 6
     }
