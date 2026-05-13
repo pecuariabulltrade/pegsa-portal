@@ -182,13 +182,25 @@ function Panel() {
           {/* === TIER 1 · STOCK (XL) === */}
           <div className="subkpi size-xl" data-group="stock" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"))}>
             <div className="subkpi-label"><span>Stock PEGSA</span><span className="delta">+5,1%</span></div>
-            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>8.651<span className="u">cab</span></div>
-            <div className="subkpi-meta"><span>3.626 t proyectadas</span><span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span></div>
+            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>
+              {(D.hero?.stock?.pegsa?.cabezas || 0).toLocaleString("es-AR")}<span className="u">cab</span>
+            </div>
+            <div className="subkpi-meta">
+              <span>{((D.hero?.stock?.pegsa?.kg || 0) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 })} t estimadas</span>
+              <span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span>
+            </div>
           </div>
           <div className="subkpi size-xl" data-group="stock" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"))}>
             <div className="subkpi-label"><span>Stock Total · Grupo</span><span className="delta">+5,1%</span></div>
-            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>9.861<span className="u">cab</span></div>
-            <div className="subkpi-meta"><span>4.324 t · 3 establecimientos</span><span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span></div>
+            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>
+              {(D.hero?.stock?.total?.cabezas || 0).toLocaleString("es-AR")}<span className="u">cab</span>
+            </div>
+            <div className="subkpi-meta">
+              <span>
+                {((D.hero?.stock?.total?.kg || 0) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 })} t · {D.hero?.stock?.total?.establecimientos || 0} establecimientos
+              </span>
+              <span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span>
+            </div>
           </div>
 
           {/* === TIER 2 · PATRIMONIO + TESORERÍA + RENTABILIDAD (LG) === */}
