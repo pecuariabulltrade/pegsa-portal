@@ -1,25 +1,25 @@
 {
   "meta": {
-    "generado": "2026-05-12T20:03:51.596643",
+    "generado": "2026-05-13T10:03:14.006187",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
     "registros_totales": 40472,
-    "registros_filtrados": 14777,
+    "registros_filtrados": 14743,
     "excluidos": {
       "motivo": 417,
       "rfid": 4020,
-      "estadia": 239,
+      "estadia": 237,
       "adp": 349,
-      "fecha": 20670
+      "fecha": 20706
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 14777,
+    "cabezas": 14743,
     "adp_promedio": 1.53,
     "adp_min": 0.01,
     "adp_max": 5.0,
@@ -29,20 +29,20 @@
   },
   "por_categoria": {
     "NOVILLITO": {
-      "cabezas": 833,
-      "adp_promedio": 1.277,
+      "cabezas": 822,
+      "adp_promedio": 1.273,
       "adp_min": 0.08,
-      "adp_max": 3.31,
-      "estadia_promedio": 177.3,
+      "adp_max": 2.92,
+      "estadia_promedio": 178.1,
       "estadia_min": 32,
       "estadia_max": 348
     },
     "NOVILLO": {
-      "cabezas": 685,
-      "adp_promedio": 1.724,
+      "cabezas": 673,
+      "adp_promedio": 1.733,
       "adp_min": 0.27,
       "adp_max": 4.54,
-      "estadia_promedio": 96.7,
+      "estadia_promedio": 97.2,
       "estadia_min": 30,
       "estadia_max": 329
     },
@@ -169,7 +169,7 @@
       "adp_max_range": 1.84
     },
     "VACA": {
-      "cabezas": 1125,
+      "cabezas": 1124,
       "adp_promedio": 1.321,
       "adp_min": 0.03,
       "adp_max": 4.55,
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-05": {
-      "cabezas": 1050,
-      "adp_promedio": 1.457,
+      "cabezas": 1016,
+      "adp_promedio": 1.452,
       "adp_min": 0.18,
-      "adp_max": 4.92,
-      "estadia_promedio": 133.3,
-      "estadia_min": 13,
+      "adp_max": 3.82,
+      "estadia_promedio": 133.5,
+      "estadia_min": 15,
       "estadia_max": 448
     },
     "2025-06": {

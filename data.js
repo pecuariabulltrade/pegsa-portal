@@ -74,18 +74,15 @@ window.PEGSA_DATA = {
     ]
   },
   modulos: [
-    // ── Operativos ─────────────────────────────────────────────
-    { n: "01", grupo: "operativo", id: "stock-masa",        titulo: "Stock de Masa — Kilos",desc: "WinCampo · OneDrive · 07:00 AM",             estado: "vivo",       kpi: "9.861 cab",       kpiLabel: "4.324.000 kg estimados hoy" },
-    { n: "02", grupo: "operativo", id: "stock-insumos",     titulo: "Stock de Insumos",     desc: "Diesel · maíz · soja · gluten · más",        estado: "vivo",       kpi: "12 ítems",        kpiLabel: "Diesel: 18 días restantes" },
-    { n: "03", grupo: "operativo", id: "mercado",           titulo: "Mercado y Precios",    desc: "MAG · BCR · E&C",                            estado: "disponible", kpi: "$4.557",          kpiLabel: "Novillo 461/490 · MAG hoy" },
-    { n: "04", grupo: "operativo", id: "tesoreria",         titulo: "Tesorería",            desc: "Saldos · cheques · USD · deuda",             estado: "vivo",       kpi: "$1.138.000.000",  kpiLabel: "Cartera positiva · sem. 25/04" },
-    { n: "05", grupo: "operativo", id: "simulador",         titulo: "Simulador Feedlot",    desc: "Terneros · vacas · invernada",               estado: "disponible", kpi: "TIR ~38%",        kpiLabel: "Equiv. anual sandbox" },
-    { n: "06", grupo: "operativo", id: "historico",         titulo: "Histórico & Evolución",desc: "Hasta 30 meses de historia",                 estado: "acumulando", kpi: "+22,8%",          kpiLabel: "Patrimonio USD vs ene-25" },
-    // ── Análisis económico ─────────────────────────────────────
-    { n: "07", grupo: "economico", id: "estado-resultados", titulo: "Estado de Resultados", desc: "Análisis por centro · operativo + tenencia", estado: "disponible", kpi: "+$9.191.348.874", kpiLabel: "Resultado neto del período" },
-    { n: "08", grupo: "economico", id: "flujo-fondos",      titulo: "Flujo de Fondos",      desc: "Origen y aplicación · cobros y pagos",       estado: "disponible", kpi: "+$3.803.431.457", kpiLabel: "Superávit de caja operativo" },
-    // ── Config (no se muestra en sidebar; se accede vía el Simulador) ──
-    { n: "09", grupo: "config",    id: "parametros-base",   titulo: "Parámetros Base",      desc: "Configuración del simulador · Precios y rendimientos por categoría", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" }
+    { n: "01", id: "estado-resultados", titulo: "Estado de Resultados", desc: "Análisis por centro · operativo + tenencia", estado: "disponible", kpi: "+$9.191.348.874", kpiLabel: "Resultado neto del período" },
+    { n: "02", id: "flujo-fondos",      titulo: "Flujo de Fondos",      desc: "Origen y aplicación · cobros y pagos",       estado: "disponible", kpi: "+$3.803.431.457", kpiLabel: "Superávit de caja operativo" },
+    { n: "03", id: "stock-masa",        titulo: "Stock de Masa — Kilos",desc: "WinCampo · OneDrive · 07:00 AM",             estado: "vivo",       kpi: "9.861 cab",       kpiLabel: "4.324.000 kg estimados hoy" },
+    { n: "04", id: "stock-insumos",     titulo: "Stock de Insumos",     desc: "Diesel · maíz · soja · gluten · más",        estado: "vivo",       kpi: "12 ítems",        kpiLabel: "Diesel: 18 días restantes" },
+    { n: "05", id: "mercado",           titulo: "Mercado y Precios",    desc: "MAG · BCR · E&C",                            estado: "disponible", kpi: "$4.557",          kpiLabel: "Novillo 461/490 · MAG hoy" },
+    { n: "06", id: "tesoreria",         titulo: "Tesorería",            desc: "Saldos · cheques · USD · deuda",             estado: "vivo",       kpi: "$1.138.000.000",  kpiLabel: "Cartera positiva · sem. 25/04" },
+    { n: "07", id: "simulador",         titulo: "Simulador Feedlot",    desc: "Terneros · vacas · invernada",               estado: "disponible", kpi: "TIR ~38%",        kpiLabel: "Equiv. anual sandbox" },
+    { n: "08", id: "historico",         titulo: "Histórico & Evolución",desc: "Hasta 30 meses de historia",                 estado: "acumulando", kpi: "+22,8%",          kpiLabel: "Patrimonio USD vs ene-25" },
+    { n: "09", id: "parametros-base",   titulo: "Parámetros Base",      desc: "Configuración del simulador · Precios y rendimientos por categoría", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" }
   ],
   alertas: [
     { tipo: "warn", texto: "Diesel: 18 días de stock restantes" },
