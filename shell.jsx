@@ -145,6 +145,23 @@ function StockInsumosDrill() {
 }
 
 function Sidebar({ active, onSelect, modulos, usuario }) {
+  // Helper inline: un ítem de navegación de módulo
+  const renderNavItem = (m) => (
+    <div
+      key={m.id}
+      className={`nav-item ${active === m.id ? "active" : ""}`}
+      onClick={() => onSelect(m.id)}
+    >
+      <span className="nav-num">{m.n}</span>
+      <span style={{ flex: 1 }}>{m.titulo.replace("Estado de Resultados", "Estado Resultados")}</span>
+    </div>
+  );
+
+  // Particionar módulos por grupo. `config` se omite del sidebar
+  // (parametros-base se accede vía el Simulador, no es módulo de uso diario).
+  const operativos = modulos.filter(m => m.grupo === "operativo");
+  const economicos = modulos.filter(m => m.grupo === "economico");
+
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
@@ -165,17 +182,11 @@ function Sidebar({ active, onSelect, modulos, usuario }) {
           Panel Principal
         </div>
 
-        <div className="sidebar-section-label">Módulos</div>
-        {modulos.map(m => (
-          <div
-            key={m.id}
-            className={`nav-item ${active === m.id ? "active" : ""}`}
-            onClick={() => onSelect(m.id)}
-          >
-            <span className="nav-num">{m.n}</span>
-            <span style={{ flex: 1 }}>{m.titulo.replace("Estado de Resultados", "Estado Resultados")}</span>
-          </div>
-        ))}
+        <div className="sidebar-section-label">Módulos Operativos</div>
+        {operativos.map(renderNavItem)}
+
+        <div className="sidebar-section-label sidebar-section-divider">Análisis Económico</div>
+        {economicos.map(renderNavItem)}
       </nav>
 
       <div className="sidebar-foot">

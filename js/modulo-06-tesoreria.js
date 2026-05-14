@@ -70,7 +70,7 @@ function renderTesoreria(d) {
   var hdr = document.createElement('div');
   hdr.style.cssText = 'margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border)';
   hdr.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-l);margin-bottom:8px">Tesorería & Posición Financiera</div>'
-    + '<div style="font-family:Playfair Display,serif;font-size:28px;font-weight:700;margin-bottom:4px">Módulo 6 · Posición al ' + (d.fecha_corte||'—').split('-').reverse().join('/') + '</div>'
+    + '<div style="font-family:Playfair Display,serif;font-size:28px;font-weight:700;margin-bottom:4px">Módulo 04 · Posición al' + (d.fecha_corte||'—').split('-').reverse().join('/') + '</div>'
     + '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.4)">Fuente: ' + (d.archivo||'—') + ' · OneDrive · actualización automática</div>';
   el.appendChild(hdr);
 
