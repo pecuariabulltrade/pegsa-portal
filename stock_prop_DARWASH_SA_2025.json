@@ -9,12 +9,6 @@
     "total_establecimientos": 1,
     "total_propietarios": 1,
     "por_categoria": {
-      "VA": {
-        "cabezas": 62.0,
-        "kg_estimado": 40155,
-        "ton_estimado": 40.16,
-        "kg_promedio": 647.7
-      },
       "TM": {
         "cabezas": 9.0,
         "kg_estimado": 5738,
@@ -26,6 +20,12 @@
         "kg_estimado": 650,
         "ton_estimado": 0.65,
         "kg_promedio": 650.0
+      },
+      "VA": {
+        "cabezas": 62.0,
+        "kg_estimado": 40155,
+        "ton_estimado": 40.16,
+        "kg_promedio": 647.7
       }
     },
     "por_propietario": {
@@ -45,12 +45,6 @@
       }
     },
     "por_clasificacion": {
-      "Vaca": {
-        "cabezas": 62.0,
-        "kg_estimado": 40155,
-        "ton_estimado": 40.16,
-        "kg_promedio": 647.7
-      },
       "Macho": {
         "cabezas": 9.0,
         "kg_estimado": 5738,
@@ -62,21 +56,15 @@
         "kg_estimado": 650,
         "ton_estimado": 0.65,
         "kg_promedio": 650.0
+      },
+      "Vaca": {
+        "cabezas": 62.0,
+        "kg_estimado": 40155,
+        "ton_estimado": 40.16,
+        "kg_promedio": 647.7
       }
     },
     "por_categoria_final": {
-      "vaca mayor a 650 kg": {
-        "cabezas": 56.0,
-        "kg_estimado": 36400,
-        "ton_estimado": 36.4,
-        "kg_promedio": 650.0
-      },
-      "vaca": {
-        "cabezas": 6.0,
-        "kg_estimado": 3755,
-        "ton_estimado": 3.76,
-        "kg_promedio": 625.9
-      },
       "novillo mayor a 550 kg": {
         "cabezas": 9.0,
         "kg_estimado": 5738,
@@ -88,22 +76,22 @@
         "kg_estimado": 650,
         "ton_estimado": 0.65,
         "kg_promedio": 650.0
+      },
+      "vaca mayor a 650 kg": {
+        "cabezas": 56.0,
+        "kg_estimado": 36400,
+        "ton_estimado": 36.4,
+        "kg_promedio": 650.0
+      },
+      "vaca": {
+        "cabezas": 6.0,
+        "kg_estimado": 3755,
+        "ton_estimado": 3.76,
+        "kg_promedio": 625.9
       }
     },
     "por_establecimiento_categoria": {
       "El Haras": {
-        "vaca mayor a 650 kg": {
-          "cabezas": 56.0,
-          "kg_estimado": 36400.0,
-          "ton_estimado": 36.4,
-          "kg_promedio": 650.0
-        },
-        "vaca": {
-          "cabezas": 6.0,
-          "kg_estimado": 3755.2,
-          "ton_estimado": 3.76,
-          "kg_promedio": 625.9
-        },
         "novillo mayor a 550 kg": {
           "cabezas": 9.0,
           "kg_estimado": 5738.0,
@@ -115,46 +103,22 @@
           "kg_estimado": 650.0,
           "ton_estimado": 0.65,
           "kg_promedio": 650.0
+        },
+        "vaca mayor a 650 kg": {
+          "cabezas": 56.0,
+          "kg_estimado": 36400.0,
+          "ton_estimado": 36.4,
+          "kg_promedio": 650.0
+        },
+        "vaca": {
+          "cabezas": 6.0,
+          "kg_estimado": 3755.2,
+          "ton_estimado": 3.76,
+          "kg_promedio": 625.9
         }
       }
     },
     "por_categoria_desglose": {
-      "vaca mayor a 650 kg": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 56.0,
-            "kg_estimado": 36400.0,
-            "ton_estimado": 36.4,
-            "kg_promedio": 650.0
-          }
-        },
-        "por_propietario": {
-          "DARWASH SA": {
-            "cabezas": 56.0,
-            "kg_estimado": 36400.0,
-            "ton_estimado": 36.4,
-            "kg_promedio": 650.0
-          }
-        }
-      },
-      "vaca": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 6.0,
-            "kg_estimado": 3755.2,
-            "ton_estimado": 3.76,
-            "kg_promedio": 625.9
-          }
-        },
-        "por_propietario": {
-          "DARWASH SA": {
-            "cabezas": 6.0,
-            "kg_estimado": 3755.2,
-            "ton_estimado": 3.76,
-            "kg_promedio": 625.9
-          }
-        }
-      },
       "novillo mayor a 550 kg": {
         "por_establecimiento": {
           "El Haras": {
@@ -188,6 +152,42 @@
             "kg_estimado": 650.0,
             "ton_estimado": 0.65,
             "kg_promedio": 650.0
+          }
+        }
+      },
+      "vaca mayor a 650 kg": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 56.0,
+            "kg_estimado": 36400.0,
+            "ton_estimado": 36.4,
+            "kg_promedio": 650.0
+          }
+        },
+        "por_propietario": {
+          "DARWASH SA": {
+            "cabezas": 56.0,
+            "kg_estimado": 36400.0,
+            "ton_estimado": 36.4,
+            "kg_promedio": 650.0
+          }
+        }
+      },
+      "vaca": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 6.0,
+            "kg_estimado": 3755.2,
+            "ton_estimado": 3.76,
+            "kg_promedio": 625.9
+          }
+        },
+        "por_propietario": {
+          "DARWASH SA": {
+            "cabezas": 6.0,
+            "kg_estimado": 3755.2,
+            "ton_estimado": 3.76,
+            "kg_promedio": 625.9
           }
         }
       }
