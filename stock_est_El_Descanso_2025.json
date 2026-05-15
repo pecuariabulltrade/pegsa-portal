@@ -9,6 +9,12 @@
     "total_establecimientos": 1,
     "total_propietarios": 2,
     "por_categoria": {
+      "NT": {
+        "cabezas": 1.0,
+        "kg_estimado": 308,
+        "ton_estimado": 0.31,
+        "kg_promedio": 308.0
+      },
       "TM": {
         "cabezas": 282.0,
         "kg_estimado": 80893,
@@ -20,12 +26,6 @@
         "kg_estimado": 80642,
         "ton_estimado": 80.64,
         "kg_promedio": 281.0
-      },
-      "NT": {
-        "cabezas": 1.0,
-        "kg_estimado": 308,
-        "ton_estimado": 0.31,
-        "kg_promedio": 308.0
       }
     },
     "por_propietario": {
@@ -71,17 +71,17 @@
         "ton_estimado": 52.76,
         "kg_promedio": 296.4
       },
-      "vaquillona": {
-        "cabezas": 221.0,
-        "kg_estimado": 66800,
-        "ton_estimado": 66.8,
-        "kg_promedio": 302.3
-      },
       "novillo": {
         "cabezas": 37.0,
         "kg_estimado": 13738,
         "ton_estimado": 13.74,
         "kg_promedio": 371.3
+      },
+      "vaquillona": {
+        "cabezas": 221.0,
+        "kg_estimado": 66800,
+        "ton_estimado": 66.8,
+        "kg_promedio": 302.3
       },
       "ternera": {
         "cabezas": 66.0,
@@ -104,17 +104,17 @@
           "ton_estimado": 52.76,
           "kg_promedio": 296.4
         },
-        "vaquillona": {
-          "cabezas": 221.0,
-          "kg_estimado": 66799.5,
-          "ton_estimado": 66.8,
-          "kg_promedio": 302.3
-        },
         "novillo": {
           "cabezas": 37.0,
           "kg_estimado": 13738.0,
           "ton_estimado": 13.74,
           "kg_promedio": 371.3
+        },
+        "vaquillona": {
+          "cabezas": 221.0,
+          "kg_estimado": 66799.5,
+          "ton_estimado": 66.8,
+          "kg_promedio": 302.3
         },
         "ternera": {
           "cabezas": 66.0,
@@ -155,6 +155,24 @@
           }
         }
       },
+      "novillo": {
+        "por_establecimiento": {
+          "El Descanso": {
+            "cabezas": 37.0,
+            "kg_estimado": 13738.0,
+            "ton_estimado": 13.74,
+            "kg_promedio": 371.3
+          }
+        },
+        "por_propietario": {
+          "PEGSA": {
+            "cabezas": 37.0,
+            "kg_estimado": 13738.0,
+            "ton_estimado": 13.74,
+            "kg_promedio": 371.3
+          }
+        }
+      },
       "vaquillona": {
         "por_establecimiento": {
           "El Descanso": {
@@ -176,24 +194,6 @@
             "kg_estimado": 4877.5,
             "ton_estimado": 4.88,
             "kg_promedio": 271.0
-          }
-        }
-      },
-      "novillo": {
-        "por_establecimiento": {
-          "El Descanso": {
-            "cabezas": 37.0,
-            "kg_estimado": 13738.0,
-            "ton_estimado": 13.74,
-            "kg_promedio": 371.3
-          }
-        },
-        "por_propietario": {
-          "PEGSA": {
-            "cabezas": 37.0,
-            "kg_estimado": 13738.0,
-            "ton_estimado": 13.74,
-            "kg_promedio": 371.3
           }
         }
       },

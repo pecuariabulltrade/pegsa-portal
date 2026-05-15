@@ -290,20 +290,33 @@ function StockBars({ items, variant, hideTotal = false }) {
   const cls = variant ? `bars bars--${variant}` : 'bars';
   return (
     <div className={cls}>
-      {items.map((it, i) => (
-        <div key={i} className="bar-row" title={`${it.cabezas.toLocaleString("es-AR")} cabezas`}>
-          <span className="bar-name">{it.categoria}</span>
-          <div className="bar-track">
-            <div className="bar-fill" style={{ width: `${(it.kg / max) * 100}%` }}>
-              <span className="bar-fill-label">{(it.kg / 1000).toFixed(0)} t</span>
+      {items.map((it, i) => {
+        const pct = (it.kg / max) * 100;
+        const outside = pct < 40;
+        const label = `${(it.kg / 1000).toFixed(0)} t`;
+        return (
+          <div key={i} className="bar-row" title={`${it.cabezas.toLocaleString("es-AR")} cabezas`}>
+            <span className="bar-name">{it.categoria}</span>
+            <div className={`bar-track${outside ? ' bar-track--has-outside' : ''}`}>
+              <div className="bar-fill" style={{ width: `${pct}%` }}>
+                {!outside && <span className="bar-fill-label">{label}</span>}
+              </div>
+              {outside && (
+                <span
+                  className="bar-fill-label bar-fill-label--outside"
+                  style={{ left: `calc(${pct}% + 6px)` }}
+                >
+                  {label}
+                </span>
+              )}
             </div>
+            <span className="bar-meta">
+              {it.cabezas.toLocaleString("es-AR")}
+              <small>cabezas</small>
+            </span>
           </div>
-          <span className="bar-meta">
-            {it.cabezas.toLocaleString("es-AR")}
-            <small>cabezas</small>
-          </span>
-        </div>
-      ))}
+        );
+      })}
       {!hideTotal && (
         <div style={{ marginTop: 6, paddingTop: 12, borderTop: "1px dashed var(--border)", display: "flex", justifyContent: "space-between", fontSize: 12 }}>
           <span style={{ color: "var(--ink-mute)" }}>Total</span>

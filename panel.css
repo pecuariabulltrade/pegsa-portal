@@ -630,6 +630,20 @@ html, body {
   color: white;
   font-variant-numeric: tabular-nums;
 }
+/* Si la barra es < 40% del max, mover el label "X t" a la derecha de la barra */
+.bar-track--has-outside { overflow: visible; }
+.bar-fill-label--outside {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .bar-meta {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12.5px;
