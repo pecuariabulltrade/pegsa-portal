@@ -292,19 +292,65 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
             </table>
           </>
         );
-      case "stock-masa":
+      case "stock-masa": {
+        const pegCab = data.hero?.stock?.pegsa?.cabezas || 0;
+        const pegKg  = data.hero?.stock?.pegsa?.kg     || 0;
+        const totCab = data.hero?.stock?.total?.cabezas || 0;
+        const totKg  = data.hero?.stock?.total?.kg     || 0;
+        const totEst = data.hero?.stock?.total?.establecimientos || 0;
+        const totPro = data.hero?.stock?.total?.propietarios || 0;
+        const hoteleros = Math.max(0, totPro - 1);
+        const pctPegsa = totCab > 0 ? (pegCab / totCab * 100) : 0;
+
+        const fmtCab = (n) => n.toLocaleString("es-AR");
+        const fmtT   = (kg) => (kg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+        const fmtPct = (n) => n.toFixed(1).replace('.', ',') + '%';
+
         return (
-          <>
-            <div className="drill-stats">
-              <div className="drill-stat"><div className="l">PEGSA</div><div className="v">8.651 cab</div></div>
-              <div className="drill-stat"><div className="l">Total grupo</div><div className="v">9.861 cab</div></div>
-              <div className="drill-stat"><div className="l">Kilos PEGSA</div><div className="v">3.626 t</div></div>
-              <div className="drill-stat"><div className="l">Establecimientos</div><div className="v">3</div></div>
+          <div className="drill-stock-grid">
+
+            {/* ============= CARD PEGSA ============= */}
+            <div className="drill-stock-card drill-stock-card--pegsa">
+              <div className="drill-stock-card-header">
+                <div className="drill-stock-card-eyebrow">Hacienda PEGSA</div>
+                <div className="drill-stock-card-kpi">{fmtCab(pegCab)}<span className="u">cab</span></div>
+                <div className="drill-stock-card-sub">
+                  {fmtT(pegKg)} t · {fmtPct(pctPegsa)} del grupo
+                </div>
+              </div>
+
+              <div className="drill-section-title">Stock por categoría · PEGSA</div>
+              <StockBars items={data.stockCategoriasPegsa || []} variant="pegsa" hideTotal />
+
+              <div className="drill-section-title" style={{ marginTop: 18 }}>Hacienda PEGSA por establecimiento</div>
+              <EstablecimientoDonut items={data.haciendaPegsaPorEstab || []} size={140} />
+
+              <div className="drill-stock-card-foot">
+                Total: <b className="mono tnum">{fmtCab(pegCab)} cab · {fmtT(pegKg)} t</b>
+              </div>
             </div>
-            <div className="drill-section-title">Stock por categoría</div>
-            <StockBars items={data.stockCategorias} />
-          </>
+
+            {/* ============= CARD GRUPO ============= */}
+            <div className="drill-stock-card drill-stock-card--grupo">
+              <div className="drill-stock-card-header">
+                <div className="drill-stock-card-eyebrow">Grupo completo</div>
+                <div className="drill-stock-card-kpi">{fmtCab(totCab)}<span className="u">cab</span></div>
+                <div className="drill-stock-card-sub">
+                  {fmtT(totKg)} t · PEGSA + {hoteleros} hotelero{hoteleros === 1 ? '' : 's'}
+                </div>
+              </div>
+
+              <div className="drill-section-title">Stock por categoría · Grupo</div>
+              <StockBars items={data.stockCategorias || []} variant="grupo" hideTotal />
+
+              <div className="drill-stock-card-foot">
+                Total: <b className="mono tnum">{fmtCab(totCab)} cab · {fmtT(totKg)} t · {totEst} establecimientos</b>
+              </div>
+            </div>
+
+          </div>
         );
+      }
       case "stock-insumos":
         return <StockInsumosDrill />;
       case "mercado":

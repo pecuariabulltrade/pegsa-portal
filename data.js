@@ -129,6 +129,7 @@ window.PEGSA_DATA = {
     if (k.total_cabezas) D.hero.stock.total.cabezas = k.total_cabezas;
     if (k.total_kg_estimado_hoy) D.hero.stock.total.kg = k.total_kg_estimado_hoy;
     if (k.total_establecimientos) D.hero.stock.total.establecimientos = k.total_establecimientos;
+    if (k.total_propietarios) D.hero.stock.total.propietarios = k.total_propietarios;
 
     if (k.por_categoria_final && typeof k.por_categoria_final === 'object') {
       const cats = Object.entries(k.por_categoria_final)
@@ -157,6 +158,15 @@ window.PEGSA_DATA = {
         cabezas: stockPegsa.kpis.total_cabezas || arr.reduce((s, e) => s + e.cabezas, 0),
         kg: stockPegsa.kpis.total_kg_estimado_hoy || arr.reduce((s, e) => s + e.kg, 0),
       };
+    }
+
+    // Stock por categoría · solo PEGSA (para card PEGSA del drill stock-masa)
+    if (stockPegsa.kpis.por_categoria_final && typeof stockPegsa.kpis.por_categoria_final === 'object') {
+      const catsPeg = Object.entries(stockPegsa.kpis.por_categoria_final)
+        .map(([n, d]) => ({ categoria: n.charAt(0).toUpperCase() + n.slice(1), cabezas: d?.cabezas || 0, kg: Math.round(d?.kg_estimado || 0) }))
+        .filter(c => c.cabezas > 0)
+        .sort((a, b) => b.kg - a.kg);
+      if (catsPeg.length > 0) D.stockCategoriasPegsa = catsPeg;
     }
   }
 

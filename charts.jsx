@@ -198,7 +198,7 @@ function CompositionDonut({ centros }) {
 }
 
 // === Donut: hacienda por establecimiento (cabezas + kg + %) ===
-function EstablecimientoDonut({ items }) {
+function EstablecimientoDonut({ items, size = 180 }) {
   const [hover, setHover] = useState(null);
 
   if (!items || !items.length) return null;
@@ -213,7 +213,9 @@ function EstablecimientoDonut({ items }) {
     "oklch(0.55 0.13 230)",
   ];
 
-  const cx = 90, cy = 90, r = 72, rIn = 50;
+  const cx = size / 2, cy = size / 2;
+  const r = size * 0.4;     // antes 72 cuando size=180
+  const rIn = size * 0.278; // antes 50 cuando size=180
   let acc = 0;
   const segs = items.map((it, i) => {
     const frac = it.cabezas / total;
@@ -237,7 +239,7 @@ function EstablecimientoDonut({ items }) {
 
   return (
     <div className="donut-wrap">
-      <svg viewBox="0 0 180 180" className="donut-svg">
+      <svg viewBox={`0 0 ${size} ${size}`} className="donut-svg" style={{ width: size, height: size }}>
         {segs.map((s, i) => (
           <path
             key={i}
@@ -251,10 +253,10 @@ function EstablecimientoDonut({ items }) {
             <title>{`${s.item.nombre} · ${s.item.cabezas.toLocaleString("es-AR")} cab · ${(s.item.kg/1000).toFixed(1).replace('.',',')} t · ${(s.frac*100).toFixed(1)}%`}</title>
           </path>
         ))}
-        <text x="90" y="86" textAnchor="middle" className="donut-center">
+        <text x={cx} y={cy - 4} textAnchor="middle" className="donut-center">
           {center.val.toLocaleString("es-AR")}
         </text>
-        <text x="90" y="103" textAnchor="middle" className="donut-center-label">
+        <text x={cx} y={cy + 13} textAnchor="middle" className="donut-center-label">
           {hover != null ? `${(center.frac * 100).toFixed(1)}%` : center.lbl}
         </text>
       </svg>
@@ -279,13 +281,15 @@ function EstablecimientoDonut({ items }) {
 }
 
 // === Bars horizontal ===
-function StockBars({ items }) {
+function StockBars({ items, variant, hideTotal = false }) {
+  if (!items || items.length === 0) return null;
   const max = Math.max(...items.map(i => i.kg));
   const totalKg = items.reduce((a, b) => a + b.kg, 0);
   const totalCab = items.reduce((a, b) => a + b.cabezas, 0);
 
+  const cls = variant ? `bars bars--${variant}` : 'bars';
   return (
-    <div className="bars">
+    <div className={cls}>
       {items.map((it, i) => (
         <div key={i} className="bar-row" title={`${it.cabezas.toLocaleString("es-AR")} cabezas`}>
           <span className="bar-name">{it.categoria}</span>
@@ -300,12 +304,14 @@ function StockBars({ items }) {
           </span>
         </div>
       ))}
-      <div style={{ marginTop: 6, paddingTop: 12, borderTop: "1px dashed var(--border)", display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-        <span style={{ color: "var(--ink-mute)" }}>Total</span>
-        <span className="mono tnum" style={{ fontWeight: 700, fontSize: 14 }}>
-          {totalCab.toLocaleString("es-AR")} cab · {(totalKg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 })} t
-        </span>
-      </div>
+      {!hideTotal && (
+        <div style={{ marginTop: 6, paddingTop: 12, borderTop: "1px dashed var(--border)", display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+          <span style={{ color: "var(--ink-mute)" }}>Total</span>
+          <span className="mono tnum" style={{ fontWeight: 700, fontSize: 14 }}>
+            {totalCab.toLocaleString("es-AR")} cab · {(totalKg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 })} t
+          </span>
+        </div>
+      )}
     </div>
   );
 }
