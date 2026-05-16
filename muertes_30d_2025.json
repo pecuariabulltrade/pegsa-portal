@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-05-16T13:02:28.227992",
+    "generado": "2026-05-16T14:02:38.690831",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "ventana": "30 días",
@@ -11,18 +11,18 @@
   },
   "mortandad": {
     "muertes_30d": 30,
-    "ingresos_30d": 1415,
+    "ingresos_30d": 1610,
     "stock_haras_hoy": 8450,
-    "denominador": 9865,
-    "tasa_mensual_pct": 0.304,
+    "denominador": 10060,
+    "tasa_mensual_pct": 0.298,
     "formula": "tasa = muertes_30d / (ingresos_30d + stock_hoy)",
     "por_grupo": {
       "Vacas": {
         "muertes": 9,
-        "ingresos": 565,
+        "ingresos": 685,
         "stock": 2234,
-        "denominador": 2799,
-        "tasa_mensual_pct": 0.322
+        "denominador": 2919,
+        "tasa_mensual_pct": 0.308
       },
       "Machos": {
         "muertes": 15,
@@ -33,10 +33,10 @@
       },
       "Hembras": {
         "muertes": 6,
-        "ingresos": 468,
+        "ingresos": 543,
         "stock": 1470,
-        "denominador": 1938,
-        "tasa_mensual_pct": 0.31
+        "denominador": 2013,
+        "tasa_mensual_pct": 0.298
       }
     }
   },
