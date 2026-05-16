@@ -1,26 +1,26 @@
 {
   "meta": {
-    "generado": "2026-05-15T23:09:31.023593",
+    "generado": "2026-05-16T00:08:38.991461",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 40731,
-    "registros_filtrados": 14851,
+    "registros_totales": 40477,
+    "registros_filtrados": 14746,
     "excluidos": {
       "motivo": 419,
-      "rfid": 4012,
+      "rfid": 3962,
       "estadia": 238,
-      "adp": 358,
-      "fecha": 20853
+      "adp": 351,
+      "fecha": 20761
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 14851,
-    "adp_promedio": 1.521,
+    "cabezas": 14746,
+    "adp_promedio": 1.522,
     "adp_min": 0.01,
     "adp_max": 5.0,
     "estadia_promedio": 134.5,
@@ -29,8 +29,8 @@
   },
   "por_categoria": {
     "NOVILLITO": {
-      "cabezas": 809,
-      "adp_promedio": 1.273,
+      "cabezas": 806,
+      "adp_promedio": 1.274,
       "adp_min": 0.08,
       "adp_max": 2.92,
       "estadia_promedio": 177.5,
@@ -38,11 +38,11 @@
       "estadia_max": 348
     },
     "NOVILLO": {
-      "cabezas": 672,
-      "adp_promedio": 1.733,
+      "cabezas": 654,
+      "adp_promedio": 1.744,
       "adp_min": 0.27,
       "adp_max": 4.54,
-      "estadia_promedio": 97.2,
+      "estadia_promedio": 96.8,
       "estadia_min": 30,
       "estadia_max": 329
     },
@@ -65,20 +65,20 @@
       "estadia_max": 449
     },
     "TORO": {
-      "cabezas": 29,
-      "adp_promedio": 1.124,
+      "cabezas": 24,
+      "adp_promedio": 1.126,
       "adp_min": 0.06,
       "adp_max": 1.92,
-      "estadia_promedio": 174.9,
+      "estadia_promedio": 182.0,
       "estadia_min": 77,
       "estadia_max": 368
     },
     "VACA": {
-      "cabezas": 7836,
-      "adp_promedio": 1.608,
+      "cabezas": 7766,
+      "adp_promedio": 1.611,
       "adp_min": 0.01,
       "adp_max": 4.96,
-      "estadia_promedio": 112.2,
+      "estadia_promedio": 112.0,
       "estadia_min": 31,
       "estadia_max": 350
     },
@@ -94,16 +94,16 @@
   },
   "por_categoria_90d": {
     "NOVILLITO": {
-      "cabezas": 50,
-      "adp_promedio": 1.215,
+      "cabezas": 34,
+      "adp_promedio": 1.127,
       "adp_min": 0.08,
-      "adp_max": 1.65,
-      "estadia_promedio": 173.2,
+      "adp_max": 1.64,
+      "estadia_promedio": 150.3,
       "estadia_min": 78,
       "estadia_max": 303,
       "adp_teorico": 1.489,
       "adp_calibrado": 1.2657,
-      "variacion_pct": -18.4,
+      "variacion_pct": -24.31,
       "ajustado": true,
       "adp_min_range": 1.2657,
       "adp_max_range": 1.7124
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-05": {
-      "cabezas": 872,
-      "adp_promedio": 1.429,
-      "adp_min": 0.18,
+      "cabezas": 767,
+      "adp_promedio": 1.454,
+      "adp_min": 0.25,
       "adp_max": 3.82,
-      "estadia_promedio": 133.9,
-      "estadia_min": 16,
+      "estadia_promedio": 134.8,
+      "estadia_min": 24,
       "estadia_max": 448
     },
     "2025-06": {

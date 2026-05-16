@@ -1,40 +1,40 @@
 {
   "meta": {
-    "generado": "2026-05-15T23:09:27.964470",
+    "generado": "2026-05-16T00:08:35.942397",
     "periodo": "2025",
     "mes_actual": "2026-05",
     "nombre_mes": "Mayo 2026",
     "mes_anterior": "2026-04",
     "nombre_mes_ant": "Abril 2026",
-    "desde_anio": "2025-05-15",
-    "hasta": "2026-05-15",
+    "desde_anio": "2025-05-16",
+    "hasta": "2026-05-16",
     "filtros": "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos."
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 18429,
-      "kg_ingresado": 6531869.4,
-      "kg_promedio_ingreso": 354.4,
+      "cabezas_ingresadas": 18088,
+      "kg_ingresado": 6384296.4,
+      "kg_promedio_ingreso": 353.0,
       "cabezas_egresadas": 19297,
       "kg_egresado": 10368760.5,
       "kg_promedio_egreso": 537.3,
-      "saldo_cabezas": -868,
-      "saldo_kg": -3836891.1
+      "saldo_cabezas": -1209,
+      "saldo_kg": -3984464.1
     },
     "ingresos": {
-      "total_cabezas": 18429,
-      "total_kg": 6531869.4,
-      "kg_promedio": 354.4,
+      "total_cabezas": 18088,
+      "total_kg": 6384296.4,
+      "kg_promedio": 353.0,
       "por_propietario": {
-        "PEGSA": {
-          "cabezas": 15228,
-          "kg": 5568324.9,
-          "kg_promedio": 365.7
-        },
         "DARWASH SA": {
-          "cabezas": 849,
-          "kg": 355052.0,
-          "kg_promedio": 418.2
+          "cabezas": 708,
+          "kg": 294941.0,
+          "kg_promedio": 416.6
+        },
+        "PEGSA": {
+          "cabezas": 15028,
+          "kg": 5480862.9,
+          "kg_promedio": 364.7
         },
         "LAS TAPERAS": {
           "cabezas": 822,
@@ -74,29 +74,24 @@
       },
       "por_categoria": {
         "VACA": {
-          "cabezas": 8084,
-          "kg": 3680720.5,
-          "kg_promedio": 455.3
-        },
-        "NOVILLO": {
-          "cabezas": 2294,
-          "kg": 863163.5,
-          "kg_promedio": 376.3
-        },
-        "TORO": {
-          "cabezas": 131,
-          "kg": 59478.0,
-          "kg_promedio": 454.0
-        },
-        "VAQUILLONA": {
-          "cabezas": 1103,
-          "kg": 368089.0,
-          "kg_promedio": 333.7
+          "cabezas": 7857,
+          "kg": 3578638.5,
+          "kg_promedio": 455.5
         },
         "NOVILLITO": {
           "cabezas": 2105,
           "kg": 577656.7,
           "kg_promedio": 274.4
+        },
+        "TORO": {
+          "cabezas": 123,
+          "kg": 55338.0,
+          "kg_promedio": 449.9
+        },
+        "VAQUILLONA": {
+          "cabezas": 1071,
+          "kg": 355010.0,
+          "kg_promedio": 331.5
         },
         "TERNERO": {
           "cabezas": 2940,
@@ -107,13 +102,18 @@
           "cabezas": 1772,
           "kg": 340700.7,
           "kg_promedio": 192.3
+        },
+        "NOVILLO": {
+          "cabezas": 2220,
+          "kg": 834891.5,
+          "kg_promedio": 376.1
         }
       },
       "por_mes": {
         "2025-05": {
-          "cabezas": 874,
-          "kg": 346627.0,
-          "kg_promedio": 396.6
+          "cabezas": 533,
+          "kg": 199054.0,
+          "kg_promedio": 373.5
         },
         "2025-06": {
           "cabezas": 1727,
@@ -178,33 +178,28 @@
       },
       "por_mes_detalle": {
         "2025-05": {
-          "cabezas": 874,
-          "kg": 346627.0,
+          "cabezas": 533,
+          "kg": 199054.0,
           "por_categoria": {
             "VACA": {
-              "cabezas": 582,
-              "kg": 260074.0,
-              "kg_promedio": 446.9
-            },
-            "NOVILLO": {
-              "cabezas": 74,
-              "kg": 28272.0,
-              "kg_promedio": 382.1
-            },
-            "TORO": {
-              "cabezas": 12,
-              "kg": 6168.0,
-              "kg_promedio": 514.0
-            },
-            "VAQUILLONA": {
-              "cabezas": 42,
-              "kg": 16206.0,
-              "kg_promedio": 385.9
+              "cabezas": 355,
+              "kg": 157992.0,
+              "kg_promedio": 445.0
             },
             "NOVILLITO": {
               "cabezas": 69,
               "kg": 17921.5,
               "kg_promedio": 259.7
+            },
+            "TORO": {
+              "cabezas": 4,
+              "kg": 2028.0,
+              "kg_promedio": 507.0
+            },
+            "VAQUILLONA": {
+              "cabezas": 10,
+              "kg": 3127.0,
+              "kg_promedio": 312.7
             },
             "TERNERO": {
               "cabezas": 85,
@@ -218,15 +213,15 @@
             }
           },
           "por_propietario": {
-            "PEGSA": {
-              "cabezas": 488,
-              "kg": 204319.0,
-              "kg_promedio": 418.7
-            },
             "DARWASH SA": {
-              "cabezas": 302,
-              "kg": 125563.0,
-              "kg_promedio": 415.8
+              "cabezas": 161,
+              "kg": 65452.0,
+              "kg_promedio": 406.5
+            },
+            "PEGSA": {
+              "cabezas": 288,
+              "kg": 116857.0,
+              "kg_promedio": 405.8
             },
             "LAS TAPERAS": {
               "cabezas": 84,
@@ -234,7 +229,7 @@
               "kg_promedio": 199.3
             }
           },
-          "kg_promedio": 396.6
+          "kg_promedio": 373.5
         },
         "2025-06": {
           "cabezas": 1727,
@@ -926,15 +921,15 @@
         },
         {
           "nombre": "FERIA RODEO HUINCA S.R.L",
-          "cabezas": 2488,
+          "cabezas": 2147,
           "por_categoria": {
-            "VACA": 1206,
-            "NOVILLO": 553,
-            "VAQUILLONA": 338,
+            "VACA": 979,
+            "NOVILLO": 479,
+            "VAQUILLONA": 306,
             "TERNERA": 183,
             "NOVILLITO": 100,
             "TERNERO": 86,
-            "TORO": 22
+            "TORO": 14
           }
         },
         {
@@ -1252,15 +1247,15 @@
               "kg": 42333.0,
               "kg_promedio": 399.4
             },
-            "DARWASH SA": {
-              "cabezas": 71,
-              "kg": 27701.0,
-              "kg_promedio": 390.2
-            },
             "LAS TAPERAS": {
               "cabezas": 1,
               "kg": 379.0,
               "kg_promedio": 379.0
+            },
+            "DARWASH SA": {
+              "cabezas": 71,
+              "kg": 27701.0,
+              "kg_promedio": 390.2
             }
           },
           "kg_promedio": 472.6
@@ -1812,15 +1807,15 @@
               "kg": 10398.0,
               "kg_promedio": 577.7
             },
-            "TERNERO": {
-              "cabezas": 16,
-              "kg": 7316.0,
-              "kg_promedio": 457.2
-            },
             "NOVILLITO": {
               "cabezas": 3,
               "kg": 1301.0,
               "kg_promedio": 433.7
+            },
+            "TERNERO": {
+              "cabezas": 16,
+              "kg": 7316.0,
+              "kg_promedio": 457.2
             }
           },
           "por_propietario": {
