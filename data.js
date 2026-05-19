@@ -281,6 +281,53 @@ window.PEGSA_DATA = {
   newAl.push({ tipo: 'info', texto: 'Cierre mensual: ' + (financierohist?.cortes?.length ? 'último corte ' + financierohist.cortes[financierohist.cortes.length - 1].fecha_corte : 'pendiente') });
   if (newAl.length > 0) D.alertas = newAl;
 
+  // Insumos críticos (top 2 sin Diesel/Gasoil, dias > 0, ordenado ascendente)
+  if (Array.isArray(stockInsumos?.insumos)) {
+    const INSUMO_DISPLAY_NAMES = {
+      'GLUTEN DE MAIZ': 'Gluten de maíz',
+      'NUCLEO CONC 5% LDB': 'Núcleo concentrado 5%',
+      'MAIZ GRANO': 'Maíz grano',
+      'HARINA GERMEN': 'Harina de germen',
+      'SILO DE MAIZ': 'Silo de maíz',
+      'HOMINY FEED': 'Hominy feed',
+      'ROLLO': 'Rollo',
+      'SOJA': 'Soja',
+      'DIESEL': 'Diesel',
+    };
+    const INSUMO_DESCRIPCIONES = {
+      'GLUTEN DE MAIZ': 'Concentrado proteico',
+      'NUCLEO CONC 5% LDB': 'Núcleo balanceado',
+      'MAIZ GRANO': 'Concentrado energético',
+      'HARINA GERMEN': 'Subproducto cerealero',
+      'SILO DE MAIZ': 'Voluminoso fermentado',
+      'HOMINY FEED': 'Subproducto maíz',
+      'ROLLO': 'Voluminoso seco',
+      'SOJA': 'Concentrado proteico',
+      'DIESEL': 'Combustible',
+    };
+    const toTitle = (s) => s.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+
+    const criticos = stockInsumos.insumos
+      .filter(i => {
+        const n = (i.nombre || '').toLowerCase();
+        return !n.includes('diesel') && !n.includes('gasoil')
+            && i.dias_restantes != null && i.dias_restantes > 0;
+      })
+      .sort((a, b) => a.dias_restantes - b.dias_restantes)
+      .slice(0, 2)
+      .map(i => ({
+        nombre: INSUMO_DISPLAY_NAMES[i.nombre] || toTitle(i.nombre),
+        descripcion: INSUMO_DESCRIPCIONES[i.nombre] || null,
+        stock_kg: i.stock_kg,
+        consumo_kg_dia: i.consumo_diario_tc,
+        dias: i.dias_restantes,
+        estado: i.dias_restantes < 10 ? 'bad' : (i.dias_restantes < 30 ? 'warn' : 'ok'),
+        fecha_ult_compra: null, // no disponible en stock_insumos_2025.json
+      }));
+
+    if (criticos.length > 0) D.insumosCriticos = criticos;
+  }
+
   // Módulos · KPIs dinámicos
   if (D.hero.stock.total.cabezas) {
     const m3 = D.modulos.find(m => m.id === 'stock-masa');

@@ -280,140 +280,81 @@ function Panel() {
           })()}
         </div>
 
-        {/* === TIER 2 (transitorio · se reemplaza en Sprint 4) === */}
-        <div className="subkpi-row" style={{ marginBottom: 24 }}>
-          {/* === TIER 2 · PATRIMONIO + TESORERÍA + RENTABILIDAD (LG) === */}
-          {(() => {
-            const pm = D.patrimonioMensual || [];
-            const last = pm[pm.length - 1] || {};
-            const prev12 = pm.length >= 13 ? pm[pm.length - 13] : null;
-            const deltaArs = (last.ars && prev12?.ars) ? ((last.ars - prev12.ars) / prev12.ars * 100) : null;
-            const deltaUsd = (last.usd && prev12?.usd) ? ((last.usd - prev12.usd) / prev12.usd * 100) : null;
-            // Formato ARS: si está en miles de M (B), usa B; sino M
-            const arsB = last.ars >= 1000 ? (last.ars / 1000).toFixed(2).replace('.', ',') : null;
-            const usdM = last.usd >= 1000 ? (last.usd / 1000).toFixed(2).replace('.', ',') : null;
-            const fmtPct = (v) => v == null ? '' : (v >= 0 ? '+' : '') + v.toFixed(1).replace('.', ',') + '%';
-            return (
-              <>
-                <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
-                  <div className="subkpi-label">
-                    <span>Patrimonio Total · ARS</span>
-                    {deltaArs != null && <span className={`delta ${deltaArs < 0 ? "neg" : ""}`}>{fmtPct(deltaArs)}</span>}
-                  </div>
-                  <div className="subkpi-value">
-                    {arsB != null
-                      ? <>$ {arsB}<span className="u">B</span></>
-                      : <>$ {Math.round(last.ars || 0).toLocaleString("es-AR")}<span className="u">M</span></>}
-                  </div>
-                  <div className="subkpi-meta">
-                    <span>{last.mes || '—'}{prev12 ? ' · YoY' : ''}</span>
-                    <span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioArs} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span>
-                  </div>
-                </div>
-                <div className="subkpi size-lg" data-group="activo" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "historico"))}>
-                  <div className="subkpi-label">
-                    <span>Patrimonio Total · USD</span>
-                    {deltaUsd != null
-                      ? <span className={`delta ${deltaUsd < 0 ? "neg" : ""}`}>{fmtPct(deltaUsd)}</span>
-                      : <span className="delta">MEP</span>}
-                  </div>
-                  <div className="subkpi-value">
-                    {usdM != null
-                      ? <>U$S {usdM}<span className="u">M</span></>
-                      : <>U$S {Math.round(last.usd || 0).toLocaleString("es-AR")}<span className="u">K</span></>}
-                  </div>
-                  <div className="subkpi-meta">
-                    <span>MEP cotización mensual</span>
-                    <span style={{ width: 50, height: 18, flexShrink: 0 }}><Sparkline data={D.sparks.patrimonioUsd} color="oklch(0.55 0.15 230)" height={18} fill={false} strokeWidth={1.4} /></span>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-          <div className="subkpi size-lg" data-group="tesoreria" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "tesoreria"))}>
-            <div className="subkpi-label"><span>Tesorería · Último positivo</span></div>
-            <div className="subkpi-value" style={{ color: "var(--pos)" }}>25 abr<span className="u">'25</span></div>
-            <div className="subkpi-meta"><span>Cartera cheques $1.130 M</span></div>
+        {/* === Patrimonio Total · Evolución Mensual (Sprint 2B lo transforma) === */}
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <h3>Patrimonio Total · Evolución Mensual</h3>
+              <p>Activo corriente consolidado · cierre mensual</p>
+            </div>
+            <div className="panel-tabs">
+              <button className={`panel-tab ${heroCurrency === "ars" ? "active" : ""}`} onClick={() => setHeroCurrency("ars")}>ARS (M)</button>
+              <button className={`panel-tab ${heroCurrency === "usd" ? "active" : ""}`} onClick={() => setHeroCurrency("usd")}>USD MEP (K)</button>
+            </div>
           </div>
-          <div className="subkpi size-lg" data-group="rentabilidad" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "estado-resultados"))}>
-            <div className="subkpi-label"><span>Rentabilidad acum. s/Vta</span></div>
-            <div className="subkpi-value" style={{ color: "var(--pos)" }}>+7,3<span className="u">%</span></div>
-            <div className="subkpi-meta"><span>Análisis compras · desde Mar 2025</span></div>
-          </div>
-
+          <PatrimonioChart data={D.patrimonioMensual} currency={heroCurrency} />
         </div>
 
-        {/* === ROW: PATRIMONIO + COMPOSICIÓN === */}
-        <div className="panel-row split-2">
-          <div className="panel">
-            <div className="panel-head">
-              <div>
-                <h3>Patrimonio Total · Evolución Mensual</h3>
-                <p>Activo corriente consolidado · cierre mensual</p>
-              </div>
-              <div className="panel-tabs">
-                <button className={`panel-tab ${heroCurrency === "ars" ? "active" : ""}`} onClick={() => setHeroCurrency("ars")}>ARS (M)</button>
-                <button className={`panel-tab ${heroCurrency === "usd" ? "active" : ""}`} onClick={() => setHeroCurrency("usd")}>USD MEP (K)</button>
-              </div>
+        {/* === SECCIÓN 2 · Insumos críticos === */}
+        {Array.isArray(D.insumosCriticos) && D.insumosCriticos.length > 0 && (
+          <>
+            <div className="section-2-header">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "middle" }}>
+                <path d="M12 2L13.09 8.26L19 9L14.5 13.5L15.82 19.5L12 16.5L8.18 19.5L9.5 13.5L5 9L10.91 8.26L12 2Z" />
+              </svg>
+              <span>Insumos críticos</span>
             </div>
-            <PatrimonioChart data={D.patrimonioMensual} currency={heroCurrency} />
-          </div>
-
-          <div className="panel">
-            <div className="panel-head">
-              <div>
-                <h3>Composición del resultado</h3>
-                <p>Por centro de negocio · positivos</p>
-              </div>
+            <div className="section-2-grid">
+              {D.insumosCriticos.map((it, i) => {
+                const stockT = it.stock_kg != null ? (it.stock_kg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : "—";
+                const consumoT = it.consumo_kg_dia != null && it.consumo_kg_dia > 0 ? (it.consumo_kg_dia / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 }) + " t/día" : "—";
+                const ultCompra = it.fecha_ult_compra || "—";
+                const chipLabel = it.estado === 'bad' ? 'CRÍTICO' : it.estado === 'warn' ? 'ATENCIÓN' : 'OK';
+                return (
+                  <div
+                    key={i}
+                    className="insumo-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-insumos"))}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrillModulo(D.modulos.find(x => x.id === "stock-insumos")); } }}
+                  >
+                    <div className="insumo-card-head">
+                      <div className="insumo-card-head-text">
+                        <h3>{it.nombre}</h3>
+                        {it.descripcion && <p className="insumo-card-desc">{it.descripcion}</p>}
+                      </div>
+                      <span className={`state-chip ${it.estado}`}>
+                        <span className="led" />
+                        {chipLabel}
+                      </span>
+                    </div>
+                    <div className="insumo-hero">
+                      <div className={`days-big ${it.estado}`}>
+                        <div className="days-big-num">{it.dias.toLocaleString("es-AR", { maximumFractionDigits: 1 })}</div>
+                        <div className="days-big-label">días</div>
+                      </div>
+                      <div className="insumo-meta">
+                        <div className="insumo-meta-row">
+                          <span className="k">Stock actual</span>
+                          <span className="v">{stockT} t</span>
+                        </div>
+                        <div className="insumo-meta-row">
+                          <span className="k">Consumo / día</span>
+                          <span className="v">{consumoT}</span>
+                        </div>
+                        <div className="insumo-meta-row">
+                          <span className="k">Última compra</span>
+                          <span className="v">{ultCompra}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <CompositionDonut centros={D.centros} />
-          </div>
-        </div>
-
-        {/* === ROW: STOCK POR CATEGORÍA + HACIENDA PEGSA POR ESTABLECIMIENTO === */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 16 }}>
-          {/* Izquierda: bloque grupo completo (70%) */}
-          <div className="panel" style={{ flex: "7 1 480px", margin: 0 }}>
-            <div className="panel-head">
-              <div>
-                <h3>
-                  Stock por categoría · Grupo completo (PEGSA + hoteleros)
-                  {D.mixerStatus && D.mixerStatus.nivel !== 'verde' && (
-                    <span style={{
-                      marginLeft: 10,
-                      padding: '2px 8px',
-                      borderRadius: 3,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                      background: D.mixerStatus.nivel === 'rojo' ? 'rgba(192,57,43,.12)' : 'rgba(184,146,42,.15)',
-                      color: D.mixerStatus.nivel === 'rojo' ? '#c0392b' : '#b8922a',
-                    }}>
-                      ⚠ Mixer hace {D.mixerStatus.dias_retraso} días
-                    </span>
-                  )}
-                </h3>
-                <p>
-                  {(D.hero?.stock?.total?.cabezas || 0).toLocaleString("es-AR")} cabezas · todas las haciendas en el sistema · click para ver el módulo de Stock de Masa
-                </p>
-              </div>
-            </div>
-            <StockBars items={D.stockCategorias} />
-          </div>
-          {/* Derecha: torta solo PEGSA (30%) */}
-          <div className="panel" style={{ flex: "3 1 280px", margin: 0 }}>
-            <div className="panel-head">
-              <div>
-                <h3>Hacienda PEGSA por establecimiento</h3>
-                <p>
-                  {((D.haciendaPegsaTotal?.cabezas) || 0).toLocaleString("es-AR")} cabezas · solo hacienda propia · {(D.haciendaPegsaPorEstab?.length || 0)} establecimientos
-                </p>
-              </div>
-            </div>
-            <EstablecimientoDonut items={D.haciendaPegsaPorEstab || []} />
-          </div>
-        </div>
+          </>
+        )}
 
         {/* === MÓDULOS === */}
         <div className="modules-section">
