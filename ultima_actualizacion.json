@@ -1,26 +1,36 @@
 {
-  "generado": "2026-05-19T00:00:03.440376",
+  "generado": "2026-05-19T01:00:03.514875",
   "periodo": "2025",
   "modulos": {
+    "stock_hacienda": {
+      "ok": true,
+      "registros": 10372,
+      "cabezas": 10372
+    },
+    "stock_insumos": {
+      "ok": true,
+      "registros": 7,
+      "total_kg": -9260189.39
+    },
     "movimientos": {
       "ok": true
     },
     "muertes": {
       "ok": true,
-      "total_anio": 0,
-      "total_mes_ant": 0,
-      "tasa_mensual_pct": null
+      "total_anio": 306,
+      "total_mes_ant": 33,
+      "tasa_mensual_pct": 1.146
     },
     "muertes_30d": {
       "ok": true,
-      "total_30d": 0,
-      "tasa_mensual_pct": null
+      "total_30d": 33,
+      "tasa_mensual_pct": 0.348
     },
     "productivo": {
       "ok": true,
-      "adp_promedio": null,
-      "estadia_promedio": null,
-      "cabezas": 0
+      "adp_promedio": 1.522,
+      "estadia_promedio": 134.5,
+      "cabezas": 14746
     },
     "consumo": {
       "ok": true,
@@ -28,8 +38,12 @@
       "promedio_diario_kg": 113446.7
     },
     "indicadores": {
-      "ok": false,
-      "error": "cannot access local variable 'kpis_haras' where it is not associated with a value"
+      "ok": true,
+      "denominador": "El Haras",
+      "pct_peso_vivo": 1.75,
+      "consumo_cab_tc": 13.43,
+      "consumo_cab_ms": 8.7,
+      "conversion": 8.82
     },
     "tesoreria": {
       "ok": true,
@@ -38,8 +52,9 @@
       "saldo_disp": -418027516.21999997
     },
     "historico": {
-      "ok": false,
-      "error": "list index out of range"
+      "ok": true,
+      "snapshots": 13,
+      "rango": "2025-05 → 2026-05"
     },
     "comportamiento_historico": {
       "ok": true,
