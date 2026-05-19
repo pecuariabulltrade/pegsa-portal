@@ -1,59 +1,52 @@
 {
   "meta": {
-    "generado": "2026-05-18T23:09:23.650849",
+    "generado": "2026-05-19T00:05:25.218554",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "ventana": "30 días",
-    "desde": "2026-04-18",
-    "hasta": "2026-05-18",
-    "label_periodo": "Últimos 30 días (18/04/2026 – 18/05/2026)",
+    "desde": "2026-04-19",
+    "hasta": "2026-05-19",
+    "label_periodo": "Últimos 30 días (19/04/2026 – 19/05/2026)",
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_30d": 34,
-    "ingresos_30d": 1034,
-    "stock_haras_hoy": 8446,
-    "denominador": 9480,
-    "tasa_mensual_pct": 0.359,
+    "muertes_30d": 0,
+    "ingresos_30d": 0,
+    "stock_haras_hoy": 0,
+    "denominador": 0,
+    "tasa_mensual_pct": null,
     "formula": "tasa = muertes_30d / (ingresos_30d + stock_hoy)",
     "por_grupo": {
       "Vacas": {
-        "muertes": 10,
-        "ingresos": 561,
-        "stock": 2233,
-        "denominador": 2794,
-        "tasa_mensual_pct": 0.358
+        "muertes": 0,
+        "ingresos": 0,
+        "stock": 0,
+        "denominador": 0,
+        "tasa_mensual_pct": null
       },
       "Machos": {
-        "muertes": 16,
-        "ingresos": 234,
-        "stock": 4745,
-        "denominador": 4979,
-        "tasa_mensual_pct": 0.321
+        "muertes": 0,
+        "ingresos": 0,
+        "stock": 0,
+        "denominador": 0,
+        "tasa_mensual_pct": null
       },
       "Hembras": {
-        "muertes": 8,
-        "ingresos": 239,
-        "stock": 1468,
-        "denominador": 1707,
-        "tasa_mensual_pct": 0.469
+        "muertes": 0,
+        "ingresos": 0,
+        "stock": 0,
+        "denominador": 0,
+        "tasa_mensual_pct": null
       }
     }
   },
   "detalle": {
-    "total_muertes": 34,
-    "por_categoria": {
-      "TM": 10,
-      "VA": 10,
-      "NV": 5,
-      "TH": 4,
-      "VQ": 4,
-      "NT": 1
-    },
+    "total_muertes": 0,
+    "por_categoria": {},
     "por_grupo": {
-      "Vacas": 10,
-      "Machos": 16,
-      "Hembras": 8
+      "Vacas": 0,
+      "Machos": 0,
+      "Hembras": 0
     }
   }
 }
