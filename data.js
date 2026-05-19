@@ -307,23 +307,33 @@ window.PEGSA_DATA = {
     };
     const toTitle = (s) => s.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
 
-    const criticos = stockInsumos.insumos
-      .filter(i => {
-        const n = (i.nombre || '').toLowerCase();
-        return !n.includes('diesel') && !n.includes('gasoil')
-            && i.dias_restantes != null && i.dias_restantes > 0;
+    // Targets fijos: los 2 voluminosos base del feedlot (en este orden)
+    const TARGETS = ['SILO DE MAIZ', 'MAIZ GRANO'];
+    const byName = new Map();
+    stockInsumos.insumos.forEach(i => byName.set(i.nombre, i));
+
+    const criticos = TARGETS
+      .map(name => {
+        const i = byName.get(name);
+        if (!i) return null;
+        const stock = i.stock_kg;
+        const dias = i.dias_restantes;
+        const isInconsistente = (stock != null && stock < 0) || (dias != null && dias < 0);
+        const estado = isInconsistente
+          ? 'inconsistente'
+          : (dias == null ? 'ok' : (dias < 10 ? 'bad' : (dias < 30 ? 'warn' : 'ok')));
+        return {
+          nombre: INSUMO_DISPLAY_NAMES[i.nombre] || toTitle(i.nombre),
+          descripcion: INSUMO_DESCRIPCIONES[i.nombre] || null,
+          stock_kg: stock,
+          consumo_kg_dia: i.consumo_diario_tc,
+          dias: dias,
+          estado: estado,
+          inconsistente: isInconsistente,
+          fecha_ult_compra: null, // no disponible en stock_insumos_2025.json
+        };
       })
-      .sort((a, b) => a.dias_restantes - b.dias_restantes)
-      .slice(0, 2)
-      .map(i => ({
-        nombre: INSUMO_DISPLAY_NAMES[i.nombre] || toTitle(i.nombre),
-        descripcion: INSUMO_DESCRIPCIONES[i.nombre] || null,
-        stock_kg: i.stock_kg,
-        consumo_kg_dia: i.consumo_diario_tc,
-        dias: i.dias_restantes,
-        estado: i.dias_restantes < 10 ? 'bad' : (i.dias_restantes < 30 ? 'warn' : 'ok'),
-        fecha_ult_compra: null, // no disponible en stock_insumos_2025.json
-      }));
+      .filter(Boolean);
 
     if (criticos.length > 0) D.insumosCriticos = criticos;
   }

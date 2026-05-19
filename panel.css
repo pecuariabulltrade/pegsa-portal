@@ -1465,6 +1465,37 @@ html, body {
 .days-big.ok   { background: var(--pos-soft); border-color: oklch(0.85 0.1 155); }
 .days-big.ok   .days-big-num { color: var(--pos); }
 
+/* Estado inconsistente (stock_kg < 0 o dias_restantes < 0) */
+.state-chip.inconsistente {
+  background: oklch(0.94 0.03 65);
+  color: oklch(0.42 0.13 65);
+}
+.state-chip.inconsistente .led {
+  background: oklch(0.55 0.15 65);
+  box-shadow: 0 0 6px oklch(0.55 0.15 65);
+}
+.days-big.inconsistente {
+  background: oklch(0.96 0.005 256);
+  border-color: var(--border-strong);
+}
+.days-big.inconsistente .days-big-num {
+  color: var(--ink-mute);
+  font-size: 32px;  /* más chico porque es un guión */
+}
+.insumo-card-warning {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--warn-soft);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  color: oklch(0.42 0.13 65);
+  line-height: 1.4;
+}
+.insumo-meta-row .v.neg-stock {
+  color: var(--neg);
+}
+
 .insumo-meta {
   display: flex; flex-direction: column;
 }

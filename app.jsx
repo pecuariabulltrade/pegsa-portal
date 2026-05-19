@@ -306,10 +306,14 @@ function Panel() {
             </div>
             <div className="section-2-grid">
               {D.insumosCriticos.map((it, i) => {
-                const stockT = it.stock_kg != null ? (it.stock_kg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : "—";
+                const stockNeg = it.stock_kg != null && it.stock_kg < 0;
+                const stockT = it.stock_kg != null ? (Math.abs(it.stock_kg) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : null;
                 const consumoT = it.consumo_kg_dia != null && it.consumo_kg_dia > 0 ? (it.consumo_kg_dia / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 }) + " t/día" : "—";
                 const ultCompra = it.fecha_ult_compra || "—";
-                const chipLabel = it.estado === 'bad' ? 'CRÍTICO' : it.estado === 'warn' ? 'ATENCIÓN' : 'OK';
+                const chipLabel = it.estado === 'bad' ? 'CRÍTICO'
+                                : it.estado === 'warn' ? 'ATENCIÓN'
+                                : it.estado === 'inconsistente' ? 'INCONSISTENTE'
+                                : 'OK';
                 return (
                   <div
                     key={i}
@@ -331,13 +335,24 @@ function Panel() {
                     </div>
                     <div className="insumo-hero">
                       <div className={`days-big ${it.estado}`}>
-                        <div className="days-big-num">{it.dias.toLocaleString("es-AR", { maximumFractionDigits: 1 })}</div>
-                        <div className="days-big-label">días</div>
+                        {it.estado === 'inconsistente' ? (
+                          <>
+                            <div className="days-big-num">—</div>
+                            <div className="days-big-label">stock</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="days-big-num">{it.dias != null ? it.dias.toLocaleString("es-AR", { maximumFractionDigits: 1 }) : "—"}</div>
+                            <div className="days-big-label">días</div>
+                          </>
+                        )}
                       </div>
                       <div className="insumo-meta">
                         <div className="insumo-meta-row">
                           <span className="k">Stock actual</span>
-                          <span className="v">{stockT} t</span>
+                          <span className={`v${stockNeg ? " neg-stock" : ""}`}>
+                            {stockT != null ? (stockNeg ? "−" : "") + stockT + " t" : "—"}
+                          </span>
                         </div>
                         <div className="insumo-meta-row">
                           <span className="k">Consumo / día</span>
@@ -349,6 +364,11 @@ function Panel() {
                         </div>
                       </div>
                     </div>
+                    {it.inconsistente && (
+                      <div className="insumo-card-warning">
+                        ⚠ Stock contable inconsistente — revisar en módulo
+                      </div>
+                    )}
                   </div>
                 );
               })}
