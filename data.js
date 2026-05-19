@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -116,6 +116,7 @@ window.PEGSA_DATA = {
     fetchJson('valuacion_historica.json'),
     fetchJson('stock_prop_PEGSA_2025.json'),
     fetchJson('consumo_2025.json'),
+    fetchJson('stock_historico.json'),
   ]);
 
   const D = window.PEGSA_DATA;
@@ -138,6 +139,19 @@ window.PEGSA_DATA = {
         .sort((a, b) => b.kg - a.kg);
       if (cats.length > 0) D.stockCategorias = cats;
     }
+  }
+
+  // Hoteleros: cabezas de terceros (Grupo - PEGSA)
+  if (D.hero.stock.total.cabezas && D.hero.stock.pegsa.cabezas) {
+    D.hoteleros = { cabezas: D.hero.stock.total.cabezas - D.hero.stock.pegsa.cabezas };
+  }
+
+  // Variación 12m de cabezas — desde stock_historico.json (snapshots mensuales)
+  if (stockHistorico?.snapshots && stockHistorico.snapshots.length >= 13) {
+    const snaps = stockHistorico.snapshots.slice().sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+    const last = snaps[snaps.length - 1]?.hacienda?.total_cabezas || 0;
+    const first = snaps[snaps.length - 13]?.hacienda?.total_cabezas || 0;
+    if (last && first) D.stockVar12m = (last - first) / first * 100;
   }
 
   // Hacienda PEGSA por establecimiento (filtrada solo a hacienda propia)
@@ -178,13 +192,14 @@ window.PEGSA_DATA = {
     const soja    = find(mercado.commodities, 'soja');
     const ter330  = find(mercado.terneros_esyc, '330');
     const dolar   = mercado.insumos?.dolar || mercado.insumos?.mep;
-    if (novillo?.precio) { D.mercado.novillo.precio = novillo.precio; D.mercado.novillo.delta = novillo.variacion || 0; }
-    if (vaca?.precio)    { D.mercado.vaca.precio = vaca.precio; D.mercado.vaca.delta = vaca.variacion || 0; }
-    if (maiz?.precio)    { D.mercado.maiz.precio = maiz.precio; D.mercado.maiz.delta = maiz.variacion || 0; }
-    if (soja?.precio)    { D.mercado.soja.precio = soja.precio; D.mercado.soja.delta = soja.variacion || 0; }
-    if (ter330?.precio)  { D.mercado.ternero.precio = ter330.precio; D.mercado.ternero.delta = ter330.variacion || 0; }
+    if (novillo?.precio) { D.mercado.novillo.precio = novillo.precio; D.mercado.novillo.delta = (novillo.variacion != null) ? novillo.variacion : null; }
+    if (vaca?.precio)    { D.mercado.vaca.precio = vaca.precio; D.mercado.vaca.delta = (vaca.variacion != null) ? vaca.variacion : null; }
+    if (maiz?.precio)    { D.mercado.maiz.precio = maiz.precio; D.mercado.maiz.delta = (maiz.variacion != null) ? maiz.variacion : null; }
+    if (soja?.precio)    { D.mercado.soja.precio = soja.precio; D.mercado.soja.delta = (soja.variacion != null) ? soja.variacion : null; }
+    if (ter330?.precio)  { D.mercado.ternero.precio = ter330.precio; D.mercado.ternero.delta = (ter330.variacion != null) ? ter330.variacion : null; }
     const mepP = typeof dolar === 'number' ? dolar : (dolar?.precio || dolar?.valor);
     if (mepP) D.mercado.mep.precio = mepP;
+    if (mercado.fecha) D.mercado.fecha = mercado.fecha;
   }
 
   // Tesorería real

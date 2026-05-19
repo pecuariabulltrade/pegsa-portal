@@ -165,44 +165,123 @@ function Panel() {
           </div>
         </div>
 
-        {/* === RESUMEN OPERATIVO · 12 TARJETAS EN ORDEN PRIORITARIO === */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "8px 4px 12px" }}>
-          <div style={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--ink)", fontWeight: 700 }}>
-            Resumen Operativo
-          </div>
-          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-          <div style={{ display: "flex", gap: 14, fontSize: 10.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-mute)", fontWeight: 600 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 2, background: "oklch(0.65 0.16 240)" }} />Stock</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 2, background: "oklch(0.55 0.18 230)" }} />Activo</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 2, background: "oklch(0.65 0.18 155)" }} />Tesorería</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 2, background: "oklch(0.78 0.10 80)" }} />Mercado</span>
-          </div>
-        </div>
-        <div className="subkpi-row" style={{ marginBottom: 24 }}>
-          {/* === TIER 1 · STOCK (XL) === */}
-          <div className="subkpi size-xl" data-group="stock" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"))}>
-            <div className="subkpi-label"><span>Stock PEGSA</span><span className="delta">+5,1%</span></div>
-            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>
-              {(D.hero?.stock?.pegsa?.cabezas || 0).toLocaleString("es-AR")}<span className="u">cab</span>
-            </div>
-            <div className="subkpi-meta">
-              <span>{((D.hero?.stock?.pegsa?.kg || 0) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 })} t estimadas</span>
-              <span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span>
-            </div>
-          </div>
-          <div className="subkpi size-xl" data-group="stock" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"))}>
-            <div className="subkpi-label"><span>Stock Total · Grupo</span><span className="delta">+5,1%</span></div>
-            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>
-              {(D.hero?.stock?.total?.cabezas || 0).toLocaleString("es-AR")}<span className="u">cab</span>
-            </div>
-            <div className="subkpi-meta">
-              <span>
-                {((D.hero?.stock?.total?.kg || 0) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 })} t · {D.hero?.stock?.total?.establecimientos || 0} establecimientos
-              </span>
-              <span style={{ width: 100, height: 28, flexShrink: 0 }}><Sparkline data={D.sparks.stockKg} color="var(--primary)" height={28} fill={true} strokeWidth={1.6} /></span>
-            </div>
-          </div>
+        {/* === SECCIÓN 1 · Lo más importante (Sprint 1) === */}
+        <div className="section-1-grid">
+          {(() => {
+            const pegCab = D.hero?.stock?.pegsa?.cabezas || 0;
+            const pegKg  = D.hero?.stock?.pegsa?.kg     || 0;
+            const totCab = D.hero?.stock?.total?.cabezas || 0;
+            const totKg  = D.hero?.stock?.total?.kg     || 0;
+            const totEst = D.hero?.stock?.total?.establecimientos || 0;
+            const pegEst = D.haciendaPegsaPorEstab?.length || 0;
+            const hotCab = D.hoteleros?.cabezas != null ? D.hoteleros.cabezas : Math.max(0, totCab - pegCab);
+            const var12m = D.stockVar12m;
+            const fmtCab = (n) => n.toLocaleString("es-AR");
+            const fmtKg  = (n) => n.toLocaleString("es-AR");
+            const fmtPerCab = (kg, cab) => cab > 0 ? Math.round(kg / cab).toLocaleString("es-AR") : "—";
+            const fmtVar = (v) => v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(1).replace('.', ',') + "%";
 
+            const openStockDrill = () => setDrillModulo(D.modulos.find(x => x.id === "stock-masa"));
+            const onKey = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openStockDrill(); } };
+
+            return (
+              <div className="stock-hero">
+                <div className="stock-hero-head">
+                  <div>
+                    <h3>Stock de hacienda</h3>
+                    <p>Cabezas y kilogramos · grupo completo</p>
+                  </div>
+                  <button
+                    className="stock-hero-btn"
+                    onClick={(e) => { e.stopPropagation(); openStockDrill(); }}
+                  >módulo →</button>
+                </div>
+                <div className="stock-hero-body">
+                  <div className="stock-hero-cell" role="button" tabIndex={0} onClick={openStockDrill} onKeyDown={onKey}>
+                    <div className="stock-hero-cell-head">
+                      <span className="stock-hero-label">PEGSA</span>
+                      <span className="stock-hero-pill">propio</span>
+                    </div>
+                    <div className="stock-hero-big">{fmtCab(pegCab)}<span className="u">cab</span></div>
+                    <div className="stock-hero-meta">
+                      <span>{fmtKg(pegKg)} kg total</span>
+                      <span>{fmtPerCab(pegKg, pegCab)} kg/cab</span>
+                      <span>{pegEst} establecimientos</span>
+                    </div>
+                  </div>
+                  <div className="stock-hero-cell" role="button" tabIndex={0} onClick={openStockDrill} onKeyDown={onKey}>
+                    <div className="stock-hero-cell-head">
+                      <span className="stock-hero-label">GRUPO</span>
+                      <span className="stock-hero-pill">total</span>
+                    </div>
+                    <div className="stock-hero-big">{fmtCab(totCab)}<span className="u">cab</span></div>
+                    <div className="stock-hero-meta">
+                      <span>{fmtKg(totKg)} kg total</span>
+                      <span>{fmtPerCab(totKg, totCab)} kg/cab</span>
+                      <span>{totEst} establecimientos</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="stock-hero-foot">
+                  <div>
+                    <span className="stock-hero-foot-label">Variación cabezas 12m</span>
+                    <span className={`stock-hero-foot-val ${var12m != null && var12m < 0 ? "neg" : (var12m != null ? "pos" : "")}`}>
+                      {fmtVar(var12m)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="stock-hero-foot-label">Hoteleros · cabezas de terceros</span>
+                    <span className="stock-hero-foot-val">{fmtCab(hotCab)}<span className="stock-hero-foot-u"> cab</span></span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {(() => {
+            const openMercado = () => setDrillModulo(D.modulos.find(x => x.id === "mercado"));
+            const onKey = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMercado(); } };
+            const fechaMep = D.mercado.fecha ? D.mercado.fecha.split('-').reverse().slice(0, 2).join('/') : null;
+
+            const cots = [
+              { id: 'novillo', label: 'Novillo MAG',  ctx: '$/kg pie · 461/490 kg' },
+              { id: 'vaca',    label: 'Vaca MAG',     ctx: '$/kg pie · Vaca buena' },
+              { id: 'ternero', label: 'Ternero E&C',  ctx: '$/kg pie · 330–370 kg' },
+              { id: 'maiz',    label: 'Maíz BCR',     ctx: '$/tn · Pizarra' },
+              { id: 'soja',    label: 'Soja BCR',     ctx: '$/tn · Pizarra' },
+              { id: 'mep',     label: 'Dólar MEP',    ctx: fechaMep ? `$/USD · cierre ${fechaMep}` : '$/USD' },
+            ];
+
+            return (
+              <div className="cot-grid">
+                {cots.map(c => {
+                  const m = D.mercado[c.id] || {};
+                  const precio = m.precio || 0;
+                  const delta = m.delta;
+                  const prev = (delta != null && delta !== 0) ? precio - delta : null;
+                  const pct = (prev && prev > 0) ? (delta / prev * 100) : (delta === 0 ? 0 : null);
+                  return (
+                    <div key={c.id} className="cot-cell" role="button" tabIndex={0} onClick={openMercado} onKeyDown={onKey}>
+                      <div className="cot-line1">
+                        <span className="cot-label">{c.label}</span>
+                        {pct != null && (
+                          <span className={`cot-delta ${pct < 0 ? "neg" : ""}`}>
+                            {pct >= 0 ? '+' : ''}{pct.toFixed(1).replace('.', ',')}%
+                          </span>
+                        )}
+                      </div>
+                      <div className="cot-value">${precio.toLocaleString("es-AR")}</div>
+                      <div className="cot-ctx">{c.ctx}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* === TIER 2 (transitorio · se reemplaza en Sprint 4) === */}
+        <div className="subkpi-row" style={{ marginBottom: 24 }}>
           {/* === TIER 2 · PATRIMONIO + TESORERÍA + RENTABILIDAD (LG) === */}
           {(() => {
             const pm = D.patrimonioMensual || [];
@@ -262,43 +341,7 @@ function Panel() {
             <div className="subkpi-meta"><span>Análisis compras · desde Mar 2025</span></div>
           </div>
 
-          {/* === TIER 3 · MERCADO (SM, 6 cards en una fila) === */}
-          {[
-            { ...D.mercado.novillo, spark: D.sparks.novillo, fmtVal: v => `$${v.toLocaleString("es-AR")}` },
-            { ...D.mercado.vaca, spark: D.sparks.vaca, fmtVal: v => `$${v.toLocaleString("es-AR")}` },
-            { ...D.mercado.maiz, spark: D.sparks.maiz, fmtVal: v => `$${v.toLocaleString("es-AR")}` },
-            { ...D.mercado.soja, spark: D.sparks.soja, fmtVal: v => `$${v.toLocaleString("es-AR")}` },
-          ].map((m, i) => (
-            <div key={"mkt"+i} className="subkpi size-sm" data-group="mercado" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "mercado"))}>
-              <div className="subkpi-label">
-                <span>{m.label}</span>
-                <span className={`delta ${m.delta < 0 ? "neg" : ""}`}>
-                  {m.delta >= 0 ? "+" : ""}{Math.abs(m.delta) >= 1000 ? (m.delta/1000).toFixed(1)+"k" : m.delta}
-                </span>
-              </div>
-              <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>{m.fmtVal(m.precio)}</div>
-              <div className="subkpi-meta">
-                <span>{m.fuente}</span>
-                <span style={{ width: 36, height: 16, flexShrink: 0 }}>
-                  <Sparkline data={m.spark} color="var(--ink-faint)" height={16} fill={false} strokeWidth={1.2} />
-                </span>
-              </div>
-            </div>
-          ))}
-          <div className="subkpi size-sm" data-group="mercado" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "mercado"))}>
-            <div className="subkpi-label"><span>Ternero E&C</span></div>
-            <div className="subkpi-value" style={{ color: "var(--primary-deep)" }}>$ 5.097</div>
-            <div className="subkpi-meta"><span>330–370 kg · $/kg vivo</span></div>
-          </div>
-          <div className="subkpi size-sm" data-group="fx" onClick={() => setDrillModulo(D.modulos.find(x => x.id === "mercado"))}>
-            <div className="subkpi-label"><span>Tipo cambio MEP</span></div>
-            <div className="subkpi-value">$ 1.430<span className="u">/USD</span></div>
-            <div className="subkpi-meta"><span>Cierre 25/04</span></div>
-          </div>
         </div>
-
-        {/* === PRECIOS DE INDIFERENCIA · 6 mini-cards === */}
-        <IndiferenciaWidget />
 
         {/* === ROW: PATRIMONIO + COMPOSICIÓN === */}
         <div className="panel-row split-2">
