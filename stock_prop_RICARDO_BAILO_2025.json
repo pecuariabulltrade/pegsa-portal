@@ -9,6 +9,12 @@
     "total_establecimientos": 1,
     "total_propietarios": 1,
     "por_categoria": {
+      "NV": {
+        "cabezas": 256.0,
+        "kg_estimado": 122818,
+        "ton_estimado": 122.82,
+        "kg_promedio": 479.8
+      },
       "NT": {
         "cabezas": 40.0,
         "kg_estimado": 26000,
@@ -20,18 +26,12 @@
         "kg_estimado": 17547,
         "ton_estimado": 17.55,
         "kg_promedio": 649.9
-      },
-      "NV": {
-        "cabezas": 256.0,
-        "kg_estimado": 122818,
-        "ton_estimado": 122.82,
-        "kg_promedio": 479.8
       }
     },
     "por_propietario": {
       "RICARDO BAILO": {
         "cabezas": 323.0,
-        "kg_estimado": 166366,
+        "kg_estimado": 166365,
         "ton_estimado": 166.37,
         "kg_promedio": 515.1
       }
@@ -39,7 +39,7 @@
     "por_establecimiento": {
       "El Haras": {
         "cabezas": 323.0,
-        "kg_estimado": 166366,
+        "kg_estimado": 166365,
         "ton_estimado": 166.37,
         "kg_promedio": 515.1
       }
@@ -47,18 +47,12 @@
     "por_clasificacion": {
       "Macho": {
         "cabezas": 323.0,
-        "kg_estimado": 166366,
+        "kg_estimado": 166365,
         "ton_estimado": 166.37,
         "kg_promedio": 515.1
       }
     },
     "por_categoria_final": {
-      "novillo mayor a 550 kg": {
-        "cabezas": 141.0,
-        "kg_estimado": 87995,
-        "ton_estimado": 87.99,
-        "kg_promedio": 624.1
-      },
       "novillo": {
         "cabezas": 125.0,
         "kg_estimado": 59703,
@@ -70,19 +64,19 @@
         "kg_estimado": 18668,
         "ton_estimado": 18.67,
         "kg_promedio": 327.5
+      },
+      "novillo mayor a 550 kg": {
+        "cabezas": 141.0,
+        "kg_estimado": 87995,
+        "ton_estimado": 87.99,
+        "kg_promedio": 624.1
       }
     },
     "por_establecimiento_categoria": {
       "El Haras": {
-        "novillo mayor a 550 kg": {
-          "cabezas": 141.0,
-          "kg_estimado": 87994.60000000008,
-          "ton_estimado": 87.99,
-          "kg_promedio": 624.1
-        },
         "novillo": {
           "cabezas": 125.0,
-          "kg_estimado": 59703.099999999846,
+          "kg_estimado": 59703.10000000018,
           "ton_estimado": 59.7,
           "kg_promedio": 477.6
         },
@@ -91,33 +85,21 @@
           "kg_estimado": 18667.799999999996,
           "ton_estimado": 18.67,
           "kg_promedio": 327.5
+        },
+        "novillo mayor a 550 kg": {
+          "cabezas": 141.0,
+          "kg_estimado": 87994.60000000008,
+          "ton_estimado": 87.99,
+          "kg_promedio": 624.1
         }
       }
     },
     "por_categoria_desglose": {
-      "novillo mayor a 550 kg": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 141.0,
-            "kg_estimado": 87994.60000000008,
-            "ton_estimado": 87.99,
-            "kg_promedio": 624.1
-          }
-        },
-        "por_propietario": {
-          "RICARDO BAILO": {
-            "cabezas": 141.0,
-            "kg_estimado": 87994.60000000008,
-            "ton_estimado": 87.99,
-            "kg_promedio": 624.1
-          }
-        }
-      },
       "novillo": {
         "por_establecimiento": {
           "El Haras": {
             "cabezas": 125.0,
-            "kg_estimado": 59703.099999999846,
+            "kg_estimado": 59703.10000000018,
             "ton_estimado": 59.7,
             "kg_promedio": 477.6
           }
@@ -125,7 +107,7 @@
         "por_propietario": {
           "RICARDO BAILO": {
             "cabezas": 125.0,
-            "kg_estimado": 59703.099999999846,
+            "kg_estimado": 59703.10000000018,
             "ton_estimado": 59.7,
             "kg_promedio": 477.6
           }
@@ -146,6 +128,24 @@
             "kg_estimado": 18667.799999999996,
             "ton_estimado": 18.67,
             "kg_promedio": 327.5
+          }
+        }
+      },
+      "novillo mayor a 550 kg": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 141.0,
+            "kg_estimado": 87994.60000000008,
+            "ton_estimado": 87.99,
+            "kg_promedio": 624.1
+          }
+        },
+        "por_propietario": {
+          "RICARDO BAILO": {
+            "cabezas": 141.0,
+            "kg_estimado": 87994.60000000008,
+            "ton_estimado": 87.99,
+            "kg_promedio": 624.1
           }
         }
       }
