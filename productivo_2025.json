@@ -1,18 +1,18 @@
 {
   "meta": {
-    "generado": "2026-05-19T23:09:15.434161",
+    "generado": "2026-05-20T00:08:15.164262",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 40543,
+    "registros_totales": 40282,
     "registros_filtrados": 14952,
     "excluidos": {
       "motivo": 423,
       "rfid": 4000,
       "estadia": 238,
       "adp": 351,
-      "fecha": 20579
+      "fecha": 20318
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
@@ -109,16 +109,16 @@
       "adp_max_range": 1.7124
     },
     "NOVILLO": {
-      "cabezas": 107,
-      "adp_promedio": 1.066,
+      "cabezas": 106,
+      "adp_promedio": 1.071,
       "adp_min": 0.38,
       "adp_max": 2.32,
-      "estadia_promedio": 131.5,
-      "estadia_min": 33,
+      "estadia_promedio": 132.4,
+      "estadia_min": 73,
       "estadia_max": 314,
       "adp_teorico": 1.231,
-      "adp_calibrado": 1.066,
-      "variacion_pct": -13.4,
+      "adp_calibrado": 1.071,
+      "variacion_pct": -13.0,
       "ajustado": false,
       "adp_min_range": 1.0464,
       "adp_max_range": 1.4157
@@ -139,11 +139,11 @@
       "adp_max_range": 1.5226
     },
     "TERNERO": {
-      "cabezas": 75,
+      "cabezas": 74,
       "adp_promedio": 1.248,
       "adp_min": 0.73,
       "adp_max": 2.78,
-      "estadia_promedio": 280.6,
+      "estadia_promedio": 282.3,
       "estadia_min": 128,
       "estadia_max": 449,
       "adp_teorico": 1.371,
@@ -169,17 +169,17 @@
       "adp_max_range": 1.84
     },
     "VACA": {
-      "cabezas": 1270,
-      "adp_promedio": 1.27,
+      "cabezas": 1062,
+      "adp_promedio": 1.171,
       "adp_min": 0.02,
-      "adp_max": 4.55,
-      "estadia_promedio": 134.2,
-      "estadia_min": 33,
+      "adp_max": 3.36,
+      "estadia_promedio": 142.1,
+      "estadia_min": 34,
       "estadia_max": 350,
       "adp_teorico": 1.399,
-      "adp_calibrado": 1.27,
-      "variacion_pct": -9.22,
-      "ajustado": false,
+      "adp_calibrado": 1.1891,
+      "variacion_pct": -16.3,
+      "ajustado": true,
       "adp_min_range": 1.1891,
       "adp_max_range": 1.6088
     },
