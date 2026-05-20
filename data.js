@@ -282,7 +282,7 @@ window.PEGSA_DATA = {
       ? new Date(proxs4[proxs4.length - 1].fechaIni.getTime() + 6 * 86400000)
       : null;
 
-    const submet = (v) => v >= 0 ? 'Cobranzas > pagos' : 'Necesidad de fondos';
+    const submet = (v) => v >= 0 ? 'Excedente de caja' : 'Necesidad de fondos';
     const signo = (v) => v >= 0 ? 'pos' : 'neg';
 
     D.flujoSemanal = {
