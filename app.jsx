@@ -117,7 +117,6 @@ function IndiferenciaWidget() {
 function Panel() {
   const D = window.PEGSA_DATA;
   const [drillModulo, setDrillModulo] = useState(null);
-  const [heroCurrency, setHeroCurrency] = useState("ars");
   const [heatPeriod, setHeatPeriod] = useState("12m");
 
   const sortedCentros = useMemo(() => D.centros.slice().sort((a, b) => b.total - a.total), [D.centros]);
@@ -280,20 +279,143 @@ function Panel() {
           })()}
         </div>
 
-        {/* === Patrimonio Total · Evolución Mensual (Sprint 2B lo transforma) === */}
-        <div className="panel">
-          <div className="panel-head">
-            <div>
-              <h3>Patrimonio Total · Evolución Mensual</h3>
-              <p>Activo corriente consolidado · cierre mensual</p>
+        {/* === SECCIÓN 3 · Sub-datos de referencia === */}
+        {(() => {
+          const fmtMonto = (n) => {
+            if (n == null) return '—';
+            const abs = Math.abs(n);
+            const sign = n < 0 ? '−' : '';
+            if (abs >= 1e9) return sign + '$' + (abs / 1e9).toFixed(2).replace('.', ',') + ' B';
+            if (abs >= 1e6) return sign + '$' + Math.round(abs / 1e6).toLocaleString("es-AR") + ' M';
+            return sign + '$' + Math.round(abs).toLocaleString("es-AR");
+          };
+
+          const openDrill = (id) => () => setDrillModulo(D.modulos.find(x => x.id === id));
+          const onKey = (id) => (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrillModulo(D.modulos.find(x => x.id === id)); }
+          };
+
+          // Card 2: Patrimonio USD
+          const pUsd = D.patrimonioUsdSerie || [];
+          const pUsdLast = pUsd[pUsd.length - 1];
+          const pUsdFirst = pUsd[0];
+          const pUsdYoy = (pUsdFirst && pUsdFirst.usd > 0 && pUsdLast)
+            ? (pUsdLast.usd - pUsdFirst.usd) / pUsdFirst.usd * 100 : null;
+          const pUsdLastM = pUsdLast ? (pUsdLast.usd / 1000).toFixed(2).replace('.', ',') : '—';
+
+          // Card 3: Stock kilos diario
+          const sKd = D.stockKilosDiarioSerie || [];
+          const sKdLast = sKd[sKd.length - 1];
+          const sKdFirst = sKd[0];
+          const sKdDelta = (sKdFirst && sKdFirst.kg > 0 && sKdLast)
+            ? (sKdLast.kg - sKdFirst.kg) / sKdFirst.kg * 100 : null;
+          const sKdLastT = sKdLast ? Math.round(sKdLast.kg / 1000).toLocaleString("es-AR") : '—';
+
+          return (
+            <div className="section-3-grid">
+              {/* --- Card 1: Financiero · flujo semanal --- */}
+              {D.flujoSemanal && (
+                <div className="flujo-semanal-card" role="button" tabIndex={0}
+                     onClick={openDrill("tesoreria")} onKeyDown={onKey("tesoreria")}>
+                  <div className="chart-card-head">
+                    <div>
+                      <h3>Financiero · flujo semanal</h3>
+                      <p>Última semana cerrada · proyección a 4 semanas</p>
+                    </div>
+                    <span className="chart-card-chip">Sem {D.flujoSemanal.semanaNumActual} · {D.flujoSemanal.anioActual}</span>
+                  </div>
+
+                  <div className="week-stats">
+                    {D.flujoSemanal.cerrada && (
+                      <div className={`week-stat ${D.flujoSemanal.cerrada.signo}`}>
+                        <div className="week-stat-label">Semana cerrada · {D.flujoSemanal.cerrada.rangoLabel}</div>
+                        <div className="week-stat-val">{fmtMonto(D.flujoSemanal.cerrada.valor)}</div>
+                        <div className="week-stat-sub">{D.flujoSemanal.cerrada.subMetrica}</div>
+                      </div>
+                    )}
+                    <div className="week-arrow">→</div>
+                    {D.flujoSemanal.proxima && (
+                      <div className={`week-stat ${D.flujoSemanal.proxima.signo}`}>
+                        <div className="week-stat-label">Próxima semana · {D.flujoSemanal.proxima.rangoLabel}</div>
+                        <div className="week-stat-val">{fmtMonto(D.flujoSemanal.proxima.valor)}</div>
+                        <div className="week-stat-sub">{D.flujoSemanal.proxima.subMetrica}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="week-bars">
+                    {(() => {
+                      const maxAbs = Math.max(1, ...D.flujoSemanal.semanas.map(x => Math.abs(x.saldoSemanal)));
+                      return D.flujoSemanal.semanas.map((s, i) => {
+                        const heightPct = Math.abs(s.saldoSemanal) / maxAbs * 50;
+                        const isPos = s.saldoSemanal >= 0;
+                        return (
+                          <div key={i} className={`wb ${s.estado}`} title={`${s.label}: ${fmtMonto(s.saldoSemanal)}`}>
+                            <div className="wb-track">
+                              <div
+                                className={`wb-bar ${isPos ? 'pos' : 'neg'}`}
+                                style={isPos
+                                  ? { height: `${heightPct}%`, bottom: '50%' }
+                                  : { height: `${heightPct}%`, top: '50%' }}
+                              />
+                            </div>
+                            <div className="wb-label">{s.label}</div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  {D.flujoSemanal.acumulado4w && (
+                    <div className={`cover-row ${D.flujoSemanal.acumulado4w.signo}`}>
+                      <div>
+                        <div className="cover-label">A cubrir · acumulado</div>
+                        <div className="cover-sub">Próximas 4 semanas ({D.flujoSemanal.acumulado4w.rangoLabel})</div>
+                      </div>
+                      <div className={`cover-val ${D.flujoSemanal.acumulado4w.signo}`}>
+                        {fmtMonto(D.flujoSemanal.acumulado4w.valor)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* --- Card 2: Patrimonio USD --- */}
+              {pUsd.length > 0 && (
+                <div className="chart-card" role="button" tabIndex={0}
+                     onClick={openDrill("historico")} onKeyDown={onKey("historico")}>
+                  <div className="chart-card-head">
+                    <div>
+                      <h3>Patrimonio · USD</h3>
+                      <p>U$S {pUsdLastM} M{pUsdYoy != null ? ' · ' + (pUsdYoy >= 0 ? '+' : '') + pUsdYoy.toFixed(1).replace('.', ',') + '% YoY' : ''}</p>
+                    </div>
+                    <span className="chart-card-chip">12 meses</span>
+                  </div>
+                  <div className="chart-card-body">
+                    <PatrimonioChart data={pUsd} currency="usd" />
+                  </div>
+                </div>
+              )}
+
+              {/* --- Card 3: Stock kilos diario --- */}
+              {sKd.length > 0 && (
+                <div className="chart-card" role="button" tabIndex={0}
+                     onClick={openDrill("historico")} onKeyDown={onKey("historico")}>
+                  <div className="chart-card-head">
+                    <div>
+                      <h3>Stock kilos · diario</h3>
+                      <p>{sKdLastT} t{sKdDelta != null ? ' · ' + (sKdDelta >= 0 ? '+' : '') + sKdDelta.toFixed(1).replace('.', ',') + '% en 90 d' : ''}</p>
+                    </div>
+                    <span className="chart-card-chip">90 días</span>
+                  </div>
+                  <div className="chart-card-body">
+                    <StockKilosChart data={sKd} />
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="panel-tabs">
-              <button className={`panel-tab ${heroCurrency === "ars" ? "active" : ""}`} onClick={() => setHeroCurrency("ars")}>ARS (M)</button>
-              <button className={`panel-tab ${heroCurrency === "usd" ? "active" : ""}`} onClick={() => setHeroCurrency("usd")}>USD MEP (K)</button>
-            </div>
-          </div>
-          <PatrimonioChart data={D.patrimonioMensual} currency={heroCurrency} />
-        </div>
+          );
+        })()}
 
         {/* === SECCIÓN 2 · Insumos críticos === */}
         {Array.isArray(D.insumosCriticos) && D.insumosCriticos.length > 0 && (

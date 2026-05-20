@@ -220,6 +220,92 @@ window.PEGSA_DATA = {
     if (pos.usd_ars && pos.usd_cant) D.hero.patrimonio.mep = Math.round(pos.usd_ars / pos.usd_cant);
   }
 
+  // Flujo semanal (Sprint 2C) — 1 cerrada + 1 next + 4 proyectadas desde tesoreria_ultimo.json.flujo
+  if (tesoreria?.flujo && Array.isArray(tesoreria.flujo.semanas)) {
+    const fl = tesoreria.flujo;
+    const fechaCorte = tesoreria.fecha_corte || new Date().toISOString().slice(0, 10);
+    const [anioCorte] = fechaCorte.split('-').map(Number);
+    const hoy0 = new Date();
+    hoy0.setHours(0, 0, 0, 0);
+
+    const parseLabel = (lbl) => {
+      const [d, m] = lbl.split('/').map(Number);
+      return new Date(anioCorte, m - 1, d);
+    };
+    const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const fmtRango = (ini) => {
+      const fin = new Date(ini); fin.setDate(fin.getDate() + 6);
+      const mismoMes = ini.getMonth() === fin.getMonth();
+      return mismoMes
+        ? `${ini.getDate()} al ${fin.getDate()} ${MESES[ini.getMonth()]}`
+        : `${ini.getDate()} ${MESES[ini.getMonth()]} al ${fin.getDate()} ${MESES[fin.getMonth()]}`;
+    };
+    const fmtDDMM = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    const semNumIso = (d) => {
+      const tmp = new Date(d.getTime());
+      tmp.setHours(0, 0, 0, 0);
+      tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+      const yStart = new Date(tmp.getFullYear(), 0, 1);
+      return Math.ceil((((tmp - yStart) / 86400000) + 1) / 7);
+    };
+    const detectarEstado = (ini) => {
+      const fin = new Date(ini); fin.setDate(fin.getDate() + 6); fin.setHours(23, 59, 59, 999);
+      if (fin < hoy0) return 'done';
+      if (ini <= hoy0 && hoy0 <= fin) return 'next';
+      return 'proj';
+    };
+
+    const saldos = (fl.series && fl.series.saldo_semanal) || [];
+    const todasSemanas = fl.semanas.map((lbl, i) => {
+      const fechaIni = parseLabel(lbl);
+      return {
+        label: lbl,
+        fechaIni: fechaIni,
+        rangoLabel: fmtRango(fechaIni),
+        saldoSemanal: saldos[i] || 0,
+        estado: detectarEstado(fechaIni),
+      };
+    });
+
+    let nextIdx = todasSemanas.findIndex(s => s.estado === 'next');
+    if (nextIdx < 0) nextIdx = todasSemanas.findIndex(s => s.estado === 'proj');
+    if (nextIdx < 0) nextIdx = todasSemanas.length - 1;
+
+    const doneIdx = Math.max(0, nextIdx - 1);
+    const seis = todasSemanas.slice(doneIdx, doneIdx + 6);
+
+    const cerrada = todasSemanas[nextIdx - 1] || null;
+    const proxima = todasSemanas[nextIdx] || null;
+    const proxs4 = todasSemanas.slice(nextIdx + 1, nextIdx + 5);
+    const acumValor = proxs4.reduce((s, x) => s + x.saldoSemanal, 0);
+    const acumFin = proxs4.length > 0
+      ? new Date(proxs4[proxs4.length - 1].fechaIni.getTime() + 6 * 86400000)
+      : null;
+
+    const submet = (v) => v >= 0 ? 'Cobranzas > pagos' : 'Necesidad de fondos';
+    const signo = (v) => v >= 0 ? 'pos' : 'neg';
+
+    D.flujoSemanal = {
+      fechaCorte: fechaCorte,
+      semanaNumActual: semNumIso(hoy0),
+      anioActual: hoy0.getFullYear(),
+      semanas: seis.map(s => ({ label: s.label, estado: s.estado, saldoSemanal: s.saldoSemanal })),
+      cerrada: cerrada ? {
+        label: cerrada.label, rangoLabel: cerrada.rangoLabel,
+        valor: cerrada.saldoSemanal, subMetrica: submet(cerrada.saldoSemanal), signo: signo(cerrada.saldoSemanal),
+      } : null,
+      proxima: proxima ? {
+        label: proxima.label, rangoLabel: proxima.rangoLabel,
+        valor: proxima.saldoSemanal, subMetrica: submet(proxima.saldoSemanal), signo: signo(proxima.saldoSemanal),
+      } : null,
+      acumulado4w: proxs4.length > 0 ? {
+        valor: acumValor,
+        rangoLabel: proxs4[0].label + ' – ' + fmtDDMM(acumFin),
+        signo: signo(acumValor),
+      } : null,
+    };
+  }
+
   // Patrimonio histórico — usa valuacion_historica.json (patrimonio total mensual:
   // hacienda + insumos + financiero + USD). El TC USD MEP ya viene aplicado por el pipeline.
   if (valuacionhist?.snapshots && valuacionhist.snapshots.length > 0) {
@@ -249,6 +335,18 @@ window.PEGSA_DATA = {
     const snaps = stockDiario.snapshots.slice(-12);
     const series = snaps.map(s => (s.hacienda?.total_kg_estimado_hoy || 0) / 1e6).filter(v => v > 0);
     if (series.length >= 3) D.sparks.stockKg = series;
+  }
+
+  // Patrimonio USD serie (Sprint 2C) — últimos 12 meses para chart Sección 3
+  if (D.patrimonioMensual && D.patrimonioMensual.length > 0) {
+    D.patrimonioUsdSerie = D.patrimonioMensual.slice(-12);
+  }
+
+  // Stock kilos diario serie (Sprint 2C) — últimos 90 puntos para chart Sección 3
+  if (stockDiario?.snapshots && stockDiario.snapshots.length > 0) {
+    D.stockKilosDiarioSerie = stockDiario.snapshots.slice(-90)
+      .map(s => ({ fecha: s.fecha, kg: s.hacienda?.total_kg_estimado || 0 }))
+      .filter(p => p.kg > 0);
   }
 
   // Mixer status — días de retraso del último día completo del Mixer

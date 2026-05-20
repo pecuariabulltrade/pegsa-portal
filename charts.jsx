@@ -117,6 +117,106 @@ function PatrimonioChart({ data, currency = "ars" }) {
   );
 }
 
+// === Line chart para Stock kilos diario (Sprint 2C) ===
+function StockKilosChart({ data }) {
+  const [hover, setHover] = useState(null);
+  const ref = useRef(null);
+  const W = 720, H = 220, padL = 50, padR = 16, padT = 10, padB = 28;
+
+  if (!data || data.length === 0) return null;
+
+  const values = data.map(d => d.kg / 1000); // en t
+  const min = Math.min(...values) * 0.98;
+  const max = Math.max(...values) * 1.02;
+  const range = max - min || 1;
+
+  const xAt = i => padL + (i / (data.length - 1)) * (W - padL - padR);
+  const yAt = v => padT + (1 - (v - min) / range) * (H - padT - padB);
+
+  const linePath = data.map((d, i) => {
+    const x = xAt(i), y = yAt(d.kg / 1000);
+    return (i === 0 ? `M${x},${y}` : `L${x},${y}`);
+  }).join(" ");
+
+  const areaPath = `${linePath} L${xAt(data.length - 1)},${H - padB} L${xAt(0)},${H - padB} Z`;
+
+  const ticks = 4;
+  const tickVals = Array.from({ length: ticks + 1 }, (_, i) => min + (range * i) / ticks);
+
+  // X labels: ~5 ticks
+  const xLabelEvery = Math.max(1, Math.floor(data.length / 5));
+
+  const fechaShort = (iso) => {
+    if (!iso || iso.length < 10) return iso || '';
+    return iso.slice(8, 10) + '/' + iso.slice(5, 7);
+  };
+
+  const onMove = (e) => {
+    const rect = ref.current.getBoundingClientRect();
+    const xRatio = (e.clientX - rect.left) / rect.width;
+    const idx = Math.max(0, Math.min(data.length - 1, Math.round(xRatio * (data.length - 1))));
+    setHover({ idx, clientX: e.clientX, clientY: e.clientY, rect });
+  };
+
+  const fmtT = (v) => `${v.toLocaleString("es-AR", { maximumFractionDigits: 1 })} t`;
+
+  const tipPos = hover ? (() => {
+    const rect = ref.current.getBoundingClientRect();
+    const x = (xAt(hover.idx) / W) * rect.width;
+    const v = data[hover.idx].kg / 1000;
+    const y = (yAt(v) / H) * rect.height;
+    return { x, y };
+  })() : null;
+
+  const COLOR = "oklch(0.55 0.13 155)";
+
+  return (
+    <div className="chart-wrap" ref={ref} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 220 }}>
+        <defs>
+          <linearGradient id="kilosGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={COLOR} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={COLOR} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {tickVals.map((tv, i) => (
+          <g key={i}>
+            <line x1={padL} x2={W - padR} y1={yAt(tv)} y2={yAt(tv)} stroke="oklch(0.91 0.008 256)" strokeWidth="1" />
+            <text x={padL - 8} y={yAt(tv) + 3} textAnchor="end" fontSize="10" fill="oklch(0.58 0.02 256)" fontFamily="JetBrains Mono">
+              {tv.toFixed(0)} t
+            </text>
+          </g>
+        ))}
+        {data.map((d, i) => (
+          (i % xLabelEvery === 0 || i === data.length - 1) ? (
+            <text key={i} x={xAt(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="oklch(0.58 0.02 256)" fontWeight="500">
+              {fechaShort(d.fecha)}
+            </text>
+          ) : null
+        ))}
+        <path d={areaPath} fill="url(#kilosGrad)" />
+        <path d={linePath} fill="none" stroke={COLOR} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        {hover && (
+          <>
+            <line
+              x1={xAt(hover.idx)} x2={xAt(hover.idx)}
+              y1={padT} y2={H - padB}
+              stroke={COLOR} strokeDasharray="3,3" strokeWidth="1" opacity="0.5"
+            />
+            <circle cx={xAt(hover.idx)} cy={yAt(data[hover.idx].kg / 1000)} r={5} fill="white" stroke={COLOR} strokeWidth={2.5} />
+          </>
+        )}
+      </svg>
+      {hover && tipPos && (
+        <div className="chart-tip show" style={{ left: tipPos.x, top: tipPos.y - 10 }}>
+          <small>{data[hover.idx].fecha}</small>
+          <b>{fmtT(data[hover.idx].kg / 1000)}</b>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // === Donut composición por centro ===
 function CompositionDonut({ centros }) {
   const [hover, setHover] = useState(null);
