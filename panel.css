@@ -1689,6 +1689,54 @@ html, body {
 .cover-val.pos { color: var(--pos); }
 .cover-val.neg { color: var(--neg); }
 
+/* Caja "Cierre · semana N" arriba (Sprint 2C-fix-2: saldo proyectado) */
+.saldo-cierre-box {
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  background: var(--surface-alt);
+  border-left: 3px solid var(--border);
+}
+.saldo-cierre-box.pos { border-left-color: var(--pos); background: var(--pos-soft); }
+.saldo-cierre-box.neg { border-left-color: var(--neg); background: var(--neg-soft); }
+.saldo-cierre-label {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  font-weight: 600;
+}
+.saldo-cierre-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  margin-top: 4px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.saldo-cierre-box.pos .saldo-cierre-val { color: var(--pos); }
+.saldo-cierre-box.neg .saldo-cierre-val { color: var(--neg); }
+
+/* Mini-chart sparkline + labels de semanas (Sprint 2C-fix-2) */
+.saldo-mini-chart {
+  padding: 4px 0;
+}
+.saldo-mini-labels {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  margin-top: 6px;
+}
+.saldo-mini-labels .next {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 /* Línea "Saldo de partida" en card Financiero (Sprint 2C fix) */
 .saldo-partida-row {
   display: flex;

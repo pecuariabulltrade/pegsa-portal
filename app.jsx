@@ -313,81 +313,75 @@ function Panel() {
 
           return (
             <div className="section-3-grid">
-              {/* --- Card 1: Financiero · flujo semanal --- */}
-              {D.flujoSemanal && (
-                <div className="flujo-semanal-card" role="button" tabIndex={0}
-                     onClick={openDrill("tesoreria")} onKeyDown={onKey("tesoreria")}>
-                  <div className="chart-card-head">
-                    <div>
-                      <h3>Financiero · flujo semanal</h3>
-                      <p>Última semana cerrada · proyección a 4 semanas</p>
-                    </div>
-                    <span className="chart-card-chip">Sem {D.flujoSemanal.semanaNumActual} · {D.flujoSemanal.anioActual}</span>
-                  </div>
-
-                  <div className="week-stats">
-                    {D.flujoSemanal.cerrada && (
-                      <div className={`week-stat ${D.flujoSemanal.cerrada.signo}`}>
-                        <div className="week-stat-label">Semana cerrada · {D.flujoSemanal.cerrada.rangoLabel}</div>
-                        <div className="week-stat-val">{fmtMonto(D.flujoSemanal.cerrada.valor)}</div>
-                        <div className="week-stat-sub">{D.flujoSemanal.cerrada.subMetrica}</div>
-                      </div>
-                    )}
-                    <div className="week-arrow">→</div>
-                    {D.flujoSemanal.proxima && (
-                      <div className={`week-stat ${D.flujoSemanal.proxima.signo}`}>
-                        <div className="week-stat-label">Próxima semana · {D.flujoSemanal.proxima.rangoLabel}</div>
-                        <div className="week-stat-val">{fmtMonto(D.flujoSemanal.proxima.valor)}</div>
-                        <div className="week-stat-sub">{D.flujoSemanal.proxima.subMetrica}</div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="week-bars">
-                    {(() => {
-                      const maxAbs = Math.max(1, ...D.flujoSemanal.semanas.map(x => Math.abs(x.saldoSemanal)));
-                      return D.flujoSemanal.semanas.map((s, i) => {
-                        const heightPct = Math.abs(s.saldoSemanal) / maxAbs * 50;
-                        const isPos = s.saldoSemanal >= 0;
-                        return (
-                          <div key={i} className={`wb ${s.estado}`} title={`${s.label}: ${fmtMonto(s.saldoSemanal)}`}>
-                            <div className="wb-track">
-                              <div
-                                className={`wb-bar ${isPos ? 'pos' : 'neg'}`}
-                                style={isPos
-                                  ? { height: `${heightPct}%`, bottom: '50%' }
-                                  : { height: `${heightPct}%`, top: '50%' }}
-                              />
-                            </div>
-                            <div className="wb-label">{s.label}</div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-
-                  {D.flujoSemanal.saldoInicial != null && (
-                    <div className="saldo-partida-row">
-                      <span className="saldo-partida-label">Saldo de partida</span>
-                      <span className={`saldo-partida-val ${D.flujoSemanal.saldoInicial < 0 ? 'neg' : 'pos'}`}>
-                        {fmtMonto(D.flujoSemanal.saldoInicial)}
-                      </span>
-                    </div>
-                  )}
-
-                  {D.flujoSemanal.acumulado4w && (
-                    <div className={`cover-row ${D.flujoSemanal.acumulado4w.signo}`}>
+              {/* --- Card 1: Financiero · saldo proyectado (Sprint 2C-fix-2: cambio de delta semanal a saldo acumulado) --- */}
+              {D.flujoSemanal && (() => {
+                // Formateador local: SIEMPRE en M (no abreviar a B). Coherente con módulo Tesorería.
+                const fmtMontoM = (n) => {
+                  if (n == null) return '—';
+                  const abs = Math.abs(n);
+                  const sign = n < 0 ? '−' : '';
+                  return sign + '$' + Math.round(abs / 1e6).toLocaleString("es-AR") + ' M';
+                };
+                return (
+                  <div className="flujo-semanal-card" role="button" tabIndex={0}
+                       onClick={openDrill("tesoreria")} onKeyDown={onKey("tesoreria")}>
+                    <div className="chart-card-head">
                       <div>
-                        <div className="cover-label">A cubrir · acumulado</div>
-                        <div className="cover-sub">Próximas 4 semanas ({D.flujoSemanal.acumulado4w.rangoLabel})</div>
+                        <h3>Financiero · saldo proyectado</h3>
+                        <p>Saldo bancario proyectado al cierre de cada semana</p>
                       </div>
-                      <div className={`cover-val ${D.flujoSemanal.acumulado4w.signo}`}>
-                        {fmtMonto(D.flujoSemanal.acumulado4w.valor)}
+                      <span className="chart-card-chip">Sem {D.flujoSemanal.semanaNumActual} · {D.flujoSemanal.anioActual}</span>
+                    </div>
+
+                    {/* Caja arriba: cierre primera semana */}
+                    {D.flujoSemanal.cierrePrimera && (
+                      <div className={`saldo-cierre-box ${D.flujoSemanal.cierrePrimera.signo}`}>
+                        <div className="saldo-cierre-label">Cierre · {D.flujoSemanal.cierrePrimera.rangoLabel}</div>
+                        <div className="saldo-cierre-val">{fmtMontoM(D.flujoSemanal.cierrePrimera.valor)}</div>
+                      </div>
+                    )}
+
+                    {/* Mini-chart sparkline con saldo acumulado de las 6 semanas */}
+                    <div className="saldo-mini-chart">
+                      <Sparkline
+                        data={D.flujoSemanal.semanas.map(s => s.saldoAcumulado / 1e6)}
+                        color="oklch(0.55 0.15 230)"
+                        height={56}
+                        fill={true}
+                        strokeWidth={1.8}
+                      />
+                      <div className="saldo-mini-labels">
+                        {D.flujoSemanal.semanas.map((s, i) => (
+                          <span key={i} className={s.estado === 'next' ? 'next' : ''}>{s.label}</span>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {/* Línea saldo de partida (arranque de la curva = "Hoy") */}
+                    {D.flujoSemanal.saldoInicial != null && (
+                      <div className="saldo-partida-row">
+                        <span className="saldo-partida-label">Saldo de partida</span>
+                        <span className={`saldo-partida-val ${D.flujoSemanal.saldoInicial < 0 ? 'neg' : 'pos'}`}>
+                          {fmtMontoM(D.flujoSemanal.saldoInicial)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Caja abajo: saldo proyectado al cierre del horizonte (última semana visible) */}
+                    {D.flujoSemanal.cierreFinal && (
+                      <div className={`cover-row ${D.flujoSemanal.cierreFinal.signo}`}>
+                        <div>
+                          <div className="cover-label">Saldo proyectado</div>
+                          <div className="cover-sub">Cierre semana {D.flujoSemanal.cierreFinal.label}</div>
+                        </div>
+                        <div className={`cover-val ${D.flujoSemanal.cierreFinal.signo}`}>
+                          {fmtMontoM(D.flujoSemanal.cierreFinal.valor)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* --- Card 2: Patrimonio USD --- */}
               {pUsd.length > 0 && (

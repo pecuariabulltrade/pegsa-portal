@@ -256,6 +256,7 @@ window.PEGSA_DATA = {
     };
 
     const saldos = (fl.series && fl.series.saldo_semanal) || [];
+    const saldosAcum = (fl.series && fl.series.saldo_acumulado) || [];
     const todasSemanas = fl.semanas.map((lbl, i) => {
       const fechaIni = parseLabel(lbl);
       return {
@@ -263,6 +264,7 @@ window.PEGSA_DATA = {
         fechaIni: fechaIni,
         rangoLabel: fmtRango(fechaIni),
         saldoSemanal: saldos[i] || 0,
+        saldoAcumulado: saldosAcum[i] || 0,
         estado: detectarEstado(fechaIni),
       };
     });
@@ -274,36 +276,34 @@ window.PEGSA_DATA = {
     const doneIdx = Math.max(0, nextIdx - 1);
     const seis = todasSemanas.slice(doneIdx, doneIdx + 6);
 
-    const cerrada = todasSemanas[nextIdx - 1] || null;
-    const proxima = todasSemanas[nextIdx] || null;
-    const proxs4 = todasSemanas.slice(nextIdx + 1, nextIdx + 5);
-    const acumValor = proxs4.reduce((s, x) => s + x.saldoSemanal, 0);
-    const acumFin = proxs4.length > 0
-      ? new Date(proxs4[proxs4.length - 1].fechaIni.getTime() + 6 * 86400000)
-      : null;
-
-    const submet = (v) => v >= 0 ? 'Excedente de caja' : 'Necesidad de fondos';
     const signo = (v) => v >= 0 ? 'pos' : 'neg';
+    const primeraVisible = seis[0] || null;
+    const ultimaVisible  = seis[seis.length - 1] || null;
 
     D.flujoSemanal = {
       fechaCorte: fechaCorte,
       semanaNumActual: semNumIso(hoy0),
       anioActual: hoy0.getFullYear(),
       saldoInicial: fl.saldo_inicial || 0,
-      semanas: seis.map(s => ({ label: s.label, estado: s.estado, saldoSemanal: s.saldoSemanal })),
-      cerrada: cerrada ? {
-        label: cerrada.label, rangoLabel: cerrada.rangoLabel,
-        valor: cerrada.saldoSemanal, subMetrica: submet(cerrada.saldoSemanal), signo: signo(cerrada.saldoSemanal),
+      semanas: seis.map(s => ({
+        label: s.label,
+        estado: s.estado,
+        saldoSemanal: s.saldoSemanal,
+        saldoAcumulado: s.saldoAcumulado,
+      })),
+      cierrePrimera: primeraVisible ? {
+        label: primeraVisible.label,
+        rangoLabel: primeraVisible.rangoLabel,
+        valor: primeraVisible.saldoAcumulado,
+        signo: signo(primeraVisible.saldoAcumulado),
       } : null,
-      proxima: proxima ? {
-        label: proxima.label, rangoLabel: proxima.rangoLabel,
-        valor: proxima.saldoSemanal, subMetrica: submet(proxima.saldoSemanal), signo: signo(proxima.saldoSemanal),
+      cierreFinal: ultimaVisible ? {
+        label: ultimaVisible.label,
+        rangoLabel: ultimaVisible.rangoLabel,
+        valor: ultimaVisible.saldoAcumulado,
+        signo: signo(ultimaVisible.saldoAcumulado),
       } : null,
-      acumulado4w: proxs4.length > 0 ? {
-        valor: acumValor,
-        rangoLabel: proxs4[0].label + ' – ' + fmtDDMM(acumFin),
-        signo: signo(acumValor),
-      } : null,
+      // Eliminado en Sprint 2C-fix-2: cerrada, proxima, acumulado4w (modelo de delta semanal reemplazado por saldo acumulado)
     };
   }
 
