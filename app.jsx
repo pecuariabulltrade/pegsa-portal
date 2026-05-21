@@ -366,6 +366,15 @@ function Panel() {
                     })()}
                   </div>
 
+                  {D.flujoSemanal.saldoInicial != null && (
+                    <div className="saldo-partida-row">
+                      <span className="saldo-partida-label">Saldo de partida</span>
+                      <span className={`saldo-partida-val ${D.flujoSemanal.saldoInicial < 0 ? 'neg' : 'pos'}`}>
+                        {fmtMonto(D.flujoSemanal.saldoInicial)}
+                      </span>
+                    </div>
+                  )}
+
                   {D.flujoSemanal.acumulado4w && (
                     <div className={`cover-row ${D.flujoSemanal.acumulado4w.signo}`}>
                       <div>

@@ -1688,3 +1688,26 @@ html, body {
 }
 .cover-val.pos { color: var(--pos); }
 .cover-val.neg { color: var(--neg); }
+
+/* Línea "Saldo de partida" en card Financiero (Sprint 2C fix) */
+.saldo-partida-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 14px;
+  font-size: 11.5px;
+  color: var(--ink-mute);
+}
+.saldo-partida-label {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.saldo-partida-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+}
+.saldo-partida-val.neg { color: var(--neg); }
+.saldo-partida-val.pos { color: var(--ink); }

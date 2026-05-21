@@ -289,6 +289,7 @@ window.PEGSA_DATA = {
       fechaCorte: fechaCorte,
       semanaNumActual: semNumIso(hoy0),
       anioActual: hoy0.getFullYear(),
+      saldoInicial: fl.saldo_inicial || 0,
       semanas: seis.map(s => ({ label: s.label, estado: s.estado, saldoSemanal: s.saldoSemanal })),
       cerrada: cerrada ? {
         label: cerrada.label, rangoLabel: cerrada.rangoLabel,
