@@ -1,26 +1,26 @@
 {
   "meta": {
-    "generado": "2026-05-20T23:03:06.764033",
+    "generado": "2026-05-21T00:03:04.677074",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 40282,
-    "registros_filtrados": 14952,
+    "registros_totales": 40215,
+    "registros_filtrados": 14768,
     "excluidos": {
       "motivo": 423,
-      "rfid": 4000,
-      "estadia": 238,
-      "adp": 351,
-      "fecha": 20318
+      "rfid": 3988,
+      "estadia": 236,
+      "adp": 350,
+      "fecha": 20450
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 14952,
-    "adp_promedio": 1.516,
+    "cabezas": 14768,
+    "adp_promedio": 1.518,
     "adp_min": 0.01,
     "adp_max": 5.0,
     "estadia_promedio": 135.1,
@@ -29,17 +29,17 @@
   },
   "por_categoria": {
     "NOVILLITO": {
-      "cabezas": 831,
-      "adp_promedio": 1.265,
+      "cabezas": 770,
+      "adp_promedio": 1.258,
       "adp_min": 0.08,
       "adp_max": 2.92,
-      "estadia_promedio": 176.7,
+      "estadia_promedio": 181.4,
       "estadia_min": 32,
       "estadia_max": 348
     },
     "NOVILLO": {
-      "cabezas": 684,
-      "adp_promedio": 1.7,
+      "cabezas": 683,
+      "adp_promedio": 1.701,
       "adp_min": 0.27,
       "adp_max": 4.54,
       "estadia_promedio": 97.5,
@@ -47,16 +47,16 @@
       "estadia_max": 329
     },
     "TERNERA": {
-      "cabezas": 264,
-      "adp_promedio": 1.154,
-      "adp_min": 0.37,
+      "cabezas": 255,
+      "adp_promedio": 1.175,
+      "adp_min": 0.42,
       "adp_max": 3.11,
-      "estadia_promedio": 230.7,
+      "estadia_promedio": 225.4,
       "estadia_min": 106,
       "estadia_max": 448
     },
     "TERNERO": {
-      "cabezas": 506,
+      "cabezas": 505,
       "adp_promedio": 1.223,
       "adp_min": 0.49,
       "adp_max": 2.78,
@@ -83,11 +83,11 @@
       "estadia_max": 350
     },
     "VAQUILLONA": {
-      "cabezas": 449,
-      "adp_promedio": 1.305,
+      "cabezas": 413,
+      "adp_promedio": 1.311,
       "adp_min": 0.18,
       "adp_max": 3.14,
-      "estadia_promedio": 130.7,
+      "estadia_promedio": 133.4,
       "estadia_min": 32,
       "estadia_max": 341
     }
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-05": {
-      "cabezas": 767,
-      "adp_promedio": 1.454,
-      "adp_min": 0.25,
+      "cabezas": 583,
+      "adp_promedio": 1.498,
+      "adp_min": 0.31,
       "adp_max": 3.82,
-      "estadia_promedio": 134.8,
-      "estadia_min": 24,
+      "estadia_promedio": 134.0,
+      "estadia_min": 27,
       "estadia_max": 448
     },
     "2025-06": {
