@@ -114,10 +114,92 @@ function IndiferenciaWidget() {
   );
 }
 
+// === Helpers Sprint 5 ===
+
+// Saludo dinámico según hora del día
+function getSaludo() {
+  const h = new Date().getHours();
+  if (h < 12) return "Buen día";
+  if (h < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+// Fecha completa en es-AR, mayúsculas
+function fechaLargaUpper() {
+  const f = new Date();
+  const dias  = ['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+  const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  return `${dias[f.getDay()]} ${f.getDate()} DE ${meses[f.getMonth()]} DE ${f.getFullYear()}`;
+}
+
+// Hash estable de alerta (tipo + texto) para localStorage descartadas
+function hashAlerta(a) {
+  const s = (a.tipo || '') + '|' + (a.texto || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return 'a_' + Math.abs(h).toString(36);
+}
+
+// LocalStorage key + helpers para alertas descartadas
+const ALERTAS_LS_KEY = 'pegsa_alertas_descartadas';
+const SIETE_DIAS_MS = 7 * 86400000;
+
+// Carga el set de hashes descartados podando entradas > 7 días
+function cargarDescartadas() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ALERTAS_LS_KEY) || '{}');
+    const ahora = Date.now();
+    const limpio = {};
+    Object.entries(raw).forEach(([k, ts]) => {
+      if (typeof ts === 'number' && ahora - ts < SIETE_DIAS_MS) limpio[k] = ts;
+    });
+    if (Object.keys(limpio).length !== Object.keys(raw).length) {
+      localStorage.setItem(ALERTAS_LS_KEY, JSON.stringify(limpio));
+    }
+    return new Set(Object.keys(limpio));
+  } catch (e) { return new Set(); }
+}
+
+// Persiste una alerta descartada con timestamp
+function descartarAlertaLS(hash) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ALERTAS_LS_KEY) || '{}');
+    raw[hash] = Date.now();
+    localStorage.setItem(ALERTAS_LS_KEY, JSON.stringify(raw));
+  } catch (e) { /* localStorage no disponible */ }
+}
+
+// Sub-componente "Actualizado · hace X min" con auto-refresh cada 60s
+function LastUpdate({ iso }) {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (!iso) return;
+    const t = setInterval(() => setTick(x => x + 1), 60000);
+    return () => clearInterval(t);
+  }, [iso]);
+
+  const style = { fontSize: 12, color: "var(--ink-mute)" };
+  if (!iso) return <span style={style}>Actualizado recientemente</span>;
+
+  const fecha = new Date(iso);
+  if (isNaN(fecha.getTime())) return <span style={style}>Actualizado recientemente</span>;
+
+  const diffMin = Math.max(0, Math.round((Date.now() - fecha.getTime()) / 60000));
+  let label;
+  if (diffMin < 60) label = `hace ${diffMin} min`;
+  else if (diffMin < 1440) label = `hace ${Math.floor(diffMin / 60)} h`;
+  else label = `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')} ${String(fecha.getHours()).padStart(2,'0')}:${String(fecha.getMinutes()).padStart(2,'0')}`;
+
+  return <span style={style}>Actualizado · {label}</span>;
+}
+
 function Panel() {
   const D = window.PEGSA_DATA;
   const [drillModulo, setDrillModulo] = useState(null);
   const [heatPeriod, setHeatPeriod] = useState("12m");
+  const [alertasDescartadas, setAlertasDescartadas] = useState(() => cargarDescartadas());
 
   const sortedCentros = useMemo(() => D.centros.slice().sort((a, b) => b.total - a.total), [D.centros]);
 
@@ -126,43 +208,85 @@ function Panel() {
       <Topbar periodo={D.periodo} />
 
       <div className="content">
-        {/* Page header */}
-        <div className="page-head">
-          <div className="page-eyebrow">PERÍODO ENERO – DICIEMBRE 2025</div>
-          <h1 className="page-title">PECUARIA EL GARABÍ SA <em>& BULLTRADE SRL</em></h1>
-          <p className="page-sub">Sistema integrado de gestión · Resumen ejecutivo y acceso a los 8 módulos del portal</p>
-        </div>
-
-        {/* Alerts */}
-        <div className="alerts-row">
-          {D.alertas.map((a, i) => (
-            <div
-              key={i}
-              className={`alert-chip ${a.tipo}`}
-              onClick={a.action === 'open-stock-materiaseca' ? () => {
-                if (typeof window.openModule === 'function') {
-                  window.openModule('stock');
-                  setTimeout(() => {
-                    if (typeof window.stockTab === 'function') {
-                      const tab = document.getElementById('stockTabMateriaSeca') || document.querySelector('[onclick*="materiaseca"]');
-                      window.stockTab('materiaseca', tab);
-                    }
-                  }, 200);
-                }
-              } : undefined}
-              style={a.action ? { cursor: 'pointer' } : undefined}
-            >
-              <span className="led" />
-              {a.texto}
+        {/* Page header (Sprint 5 — B.1: saludo dinámico "Buen día, dirección") */}
+        {(() => {
+          const alertasVisibles = (D.alertas || []).filter(a => !alertasDescartadas.has(hashAlerta(a)));
+          const nAlertas = alertasVisibles.length;
+          const subTexto = nAlertas > 0
+            ? `${nAlertas} alerta${nAlertas === 1 ? '' : 's'} ${nAlertas === 1 ? 'requiere' : 'requieren'} atención · resumen ejecutivo del portal`
+            : "Sin alertas activas · resumen ejecutivo del portal";
+          return (
+            <div className="page-head">
+              <div className="page-eyebrow">{fechaLargaUpper()}</div>
+              <h1 className="page-title">{getSaludo()}, <em>dirección</em></h1>
+              <p className="page-sub">{subTexto}</p>
             </div>
-          ))}
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "var(--ink-mute)" }}>Actualizado · 25/04/2025 07:00 AM</span>
-            <button className="btn ghost" style={{ padding: "6px 12px", fontSize: 12 }}>
-              <IconExport /> Exportar
-            </button>
-          </div>
-        </div>
+          );
+        })()}
+
+        {/* Alerts (Sprint 5 — B.3: dismiss + localStorage) */}
+        {(() => {
+          const alertasVisibles = (D.alertas || []).filter(a => !alertasDescartadas.has(hashAlerta(a)));
+          if (alertasVisibles.length === 0) {
+            // Sin alertas: solo mostrar el bloque derecho (Actualizado + Exportar)
+            return (
+              <div className="alerts-row alerts-row--empty">
+                <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+                  <LastUpdate iso={D.lastUpdate} />
+                  <button className="btn ghost" style={{ padding: "6px 12px", fontSize: 12 }}>
+                    <IconExport /> Exportar
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className="alerts-row">
+              {alertasVisibles.map((a, i) => {
+                const h = hashAlerta(a);
+                const navigable = a.action === 'open-stock-materiaseca';
+                const onClick = navigable ? () => {
+                  if (typeof window.openModule === 'function') {
+                    window.openModule('stock');
+                    setTimeout(() => {
+                      if (typeof window.stockTab === 'function') {
+                        const tab = document.getElementById('stockTabMateriaSeca') || document.querySelector('[onclick*="materiaseca"]');
+                        window.stockTab('materiaseca', tab);
+                      }
+                    }, 200);
+                  }
+                } : undefined;
+                return (
+                  <div
+                    key={h}
+                    className={`alert-chip ${a.tipo}`}
+                    onClick={onClick}
+                    style={a.action ? { cursor: 'pointer' } : undefined}
+                  >
+                    <span className="led" />
+                    <span className="alert-chip-text">{a.texto}</span>
+                    <button
+                      className="alert-dismiss"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        descartarAlertaLS(h);
+                        setAlertasDescartadas(prev => new Set([...prev, h]));
+                      }}
+                      title="Descartar alerta"
+                      aria-label="Descartar alerta"
+                    >×</button>
+                  </div>
+                );
+              })}
+              <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+                <LastUpdate iso={D.lastUpdate} />
+                <button className="btn ghost" style={{ padding: "6px 12px", fontSize: 12 }}>
+                  <IconExport /> Exportar
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* === SECCIÓN 1 · Lo más importante (Sprint 1) === */}
         <div className="section-1-grid">

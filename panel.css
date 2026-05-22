@@ -1099,6 +1099,33 @@ html, body {
 .alert-chip.warn .led { background: var(--warn); }
 .alert-chip.info .led { background: var(--primary); }
 
+/* Botón "×" para descartar alerta (Sprint 5 — B.3) */
+.alert-chip-text { flex: 1; }
+.alert-dismiss {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  margin-left: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  color: currentColor;
+  opacity: 0.5;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+.alert-dismiss:hover { opacity: 1; }
+.alert-dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+  border-radius: 2px;
+  opacity: 1;
+}
+
+/* Alerts-row vacío (sin chips, solo lado derecho) */
+.alerts-row--empty { min-height: 32px; }
+
 /* Toggle small */
 .seg {
   display: inline-flex;

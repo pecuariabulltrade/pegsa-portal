@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -117,7 +117,11 @@ window.PEGSA_DATA = {
     fetchJson('stock_prop_PEGSA_2025.json'),
     fetchJson('consumo_2025.json'),
     fetchJson('stock_historico.json'),
+    fetchJson('ultima_actualizacion.json'),
   ]);
+
+  // Última actualización del pipeline (Sprint 5 — B.2)
+  if (ultimaAct?.generado) window.PEGSA_DATA.lastUpdate = ultimaAct.generado;
 
   const D = window.PEGSA_DATA;
 
