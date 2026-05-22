@@ -1,39 +1,39 @@
 {
   "meta": {
-    "generado": "2026-05-21T23:10:02.536735",
+    "generado": "2026-05-22T00:09:04.731726",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
     "registros_totales": 40216,
-    "registros_filtrados": 14768,
+    "registros_filtrados": 14578,
     "excluidos": {
       "motivo": 424,
-      "rfid": 3988,
+      "rfid": 3903,
       "estadia": 236,
       "adp": 350,
-      "fecha": 20450
+      "fecha": 20725
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 14768,
-    "adp_promedio": 1.518,
+    "cabezas": 14578,
+    "adp_promedio": 1.514,
     "adp_min": 0.01,
     "adp_max": 5.0,
-    "estadia_promedio": 135.1,
+    "estadia_promedio": 135.5,
     "estadia_min": 3,
     "estadia_max": 450
   },
   "por_categoria": {
     "NOVILLITO": {
-      "cabezas": 770,
+      "cabezas": 768,
       "adp_promedio": 1.258,
       "adp_min": 0.08,
       "adp_max": 2.92,
-      "estadia_promedio": 181.4,
+      "estadia_promedio": 181.6,
       "estadia_min": 32,
       "estadia_max": 348
     },
@@ -56,7 +56,7 @@
       "estadia_max": 448
     },
     "TERNERO": {
-      "cabezas": 505,
+      "cabezas": 502,
       "adp_promedio": 1.223,
       "adp_min": 0.49,
       "adp_max": 2.78,
@@ -74,11 +74,11 @@
       "estadia_max": 368
     },
     "VACA": {
-      "cabezas": 7766,
-      "adp_promedio": 1.611,
+      "cabezas": 7663,
+      "adp_promedio": 1.608,
       "adp_min": 0.01,
       "adp_max": 4.96,
-      "estadia_promedio": 112.0,
+      "estadia_promedio": 112.3,
       "estadia_min": 31,
       "estadia_max": 350
     },
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-05": {
-      "cabezas": 583,
-      "adp_promedio": 1.498,
+      "cabezas": 393,
+      "adp_promedio": 1.346,
       "adp_min": 0.31,
-      "adp_max": 3.82,
-      "estadia_promedio": 134.0,
-      "estadia_min": 27,
+      "adp_max": 3.23,
+      "estadia_promedio": 150.2,
+      "estadia_min": 28,
       "estadia_max": 448
     },
     "2025-06": {
