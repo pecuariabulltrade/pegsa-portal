@@ -465,20 +465,22 @@ function Panel() {
                       </div>
                     )}
 
-                    {/* Mini-chart sparkline con saldo acumulado de las 6 semanas */}
-                    <div className="saldo-mini-chart">
-                      <Sparkline
-                        data={D.flujoSemanal.semanas.map(s => s.saldoAcumulado / 1e6)}
-                        color="oklch(0.55 0.15 230)"
-                        height={56}
-                        fill={true}
-                        strokeWidth={1.8}
-                      />
-                      <div className="saldo-mini-labels">
-                        {D.flujoSemanal.semanas.map((s, i) => (
-                          <span key={i} className={s.estado === 'next' ? 'next' : ''}>{s.label}</span>
-                        ))}
-                      </div>
+                    {/* Mini bar-chart con saldo acumulado de las 6 semanas (Sprint 5 fix: barras en vez de sparkline) */}
+                    <div className="saldo-bars">
+                      {(() => {
+                        const maxAbs = Math.max(1, ...D.flujoSemanal.semanas.map(s => Math.abs(s.saldoAcumulado)));
+                        return D.flujoSemanal.semanas.map((s, i) => {
+                          const heightPct = Math.abs(s.saldoAcumulado) / maxAbs * 100;
+                          return (
+                            <div key={i} className={`saldo-bar-cell ${s.estado}`} title={`${s.label}: ${fmtMontoM(s.saldoAcumulado)}`}>
+                              <div className="saldo-bar-track">
+                                <div className="saldo-bar-fill" style={{ height: `${heightPct}%` }} />
+                              </div>
+                              <div className="saldo-bar-label">{s.label}</div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
 
                     {/* Línea saldo de partida (arranque de la curva = "Hoy") */}
