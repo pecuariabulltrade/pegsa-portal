@@ -403,6 +403,87 @@ function Panel() {
           })()}
         </div>
 
+        {/* === SECCIÓN 2 · Insumos críticos === */}
+        {Array.isArray(D.insumosCriticos) && D.insumosCriticos.length > 0 && (
+          <>
+            <div className="section-2-header">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "middle" }}>
+                <path d="M12 2L13.09 8.26L19 9L14.5 13.5L15.82 19.5L12 16.5L8.18 19.5L9.5 13.5L5 9L10.91 8.26L12 2Z" />
+              </svg>
+              <span>Insumos críticos</span>
+            </div>
+            <div className="section-2-grid">
+              {D.insumosCriticos.map((it, i) => {
+                const stockNeg = it.stock_kg != null && it.stock_kg < 0;
+                const stockT = it.stock_kg != null ? (Math.abs(it.stock_kg) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : null;
+                const consumoT = it.consumo_kg_dia != null && it.consumo_kg_dia > 0 ? (it.consumo_kg_dia / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 }) + " t/día" : "—";
+                const ultCompra = it.fecha_ult_compra || "—";
+                const chipLabel = it.estado === 'bad' ? 'CRÍTICO'
+                                : it.estado === 'warn' ? 'ATENCIÓN'
+                                : it.estado === 'inconsistente' ? 'INCONSISTENTE'
+                                : 'OK';
+                return (
+                  <div
+                    key={i}
+                    className="insumo-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-insumos"))}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrillModulo(D.modulos.find(x => x.id === "stock-insumos")); } }}
+                  >
+                    <div className="insumo-card-head">
+                      <div className="insumo-card-head-text">
+                        <h3>{it.nombre}</h3>
+                        {it.descripcion && <p className="insumo-card-desc">{it.descripcion}</p>}
+                      </div>
+                      <span className={`state-chip ${it.estado}`}>
+                        <span className="led" />
+                        {chipLabel}
+                      </span>
+                    </div>
+                    <div className="insumo-hero">
+                      <div className={`days-big ${it.estado}`}>
+                        {it.estado === 'inconsistente' ? (
+                          <>
+                            <div className="days-big-num">—</div>
+                            <div className="days-big-label">stock</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="days-big-num">{it.dias != null ? it.dias.toLocaleString("es-AR", { maximumFractionDigits: 1 }) : "—"}</div>
+                            <div className="days-big-label">días</div>
+                          </>
+                        )}
+                      </div>
+                      <div className="insumo-meta">
+                        <div className="insumo-meta-row">
+                          <span className="k">Stock actual</span>
+                          <span className={`v${stockNeg ? " neg-stock" : ""}`}>
+                            {stockT != null ? (stockNeg ? "−" : "") + stockT + " t" : "—"}
+                          </span>
+                        </div>
+                        <div className="insumo-meta-row">
+                          <span className="k">Consumo / día</span>
+                          <span className="v">{consumoT}</span>
+                        </div>
+                        <div className="insumo-meta-row">
+                          <span className="k">Última compra</span>
+                          <span className="v">{ultCompra}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {it.inconsistente && (
+                      <div className="insumo-card-warning">
+                        ⚠ Stock contable inconsistente — revisar en módulo
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         {/* === SECCIÓN 3 · Sub-datos de referencia === */}
         {(() => {
           const fmtMonto = (n) => {
@@ -545,87 +626,6 @@ function Panel() {
             </div>
           );
         })()}
-
-        {/* === SECCIÓN 2 · Insumos críticos === */}
-        {Array.isArray(D.insumosCriticos) && D.insumosCriticos.length > 0 && (
-          <>
-            <div className="section-2-header">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: "middle" }}>
-                <path d="M12 2L13.09 8.26L19 9L14.5 13.5L15.82 19.5L12 16.5L8.18 19.5L9.5 13.5L5 9L10.91 8.26L12 2Z" />
-              </svg>
-              <span>Insumos críticos</span>
-            </div>
-            <div className="section-2-grid">
-              {D.insumosCriticos.map((it, i) => {
-                const stockNeg = it.stock_kg != null && it.stock_kg < 0;
-                const stockT = it.stock_kg != null ? (Math.abs(it.stock_kg) / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : null;
-                const consumoT = it.consumo_kg_dia != null && it.consumo_kg_dia > 0 ? (it.consumo_kg_dia / 1000).toLocaleString("es-AR", { maximumFractionDigits: 2 }) + " t/día" : "—";
-                const ultCompra = it.fecha_ult_compra || "—";
-                const chipLabel = it.estado === 'bad' ? 'CRÍTICO'
-                                : it.estado === 'warn' ? 'ATENCIÓN'
-                                : it.estado === 'inconsistente' ? 'INCONSISTENTE'
-                                : 'OK';
-                return (
-                  <div
-                    key={i}
-                    className="insumo-card"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setDrillModulo(D.modulos.find(x => x.id === "stock-insumos"))}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrillModulo(D.modulos.find(x => x.id === "stock-insumos")); } }}
-                  >
-                    <div className="insumo-card-head">
-                      <div className="insumo-card-head-text">
-                        <h3>{it.nombre}</h3>
-                        {it.descripcion && <p className="insumo-card-desc">{it.descripcion}</p>}
-                      </div>
-                      <span className={`state-chip ${it.estado}`}>
-                        <span className="led" />
-                        {chipLabel}
-                      </span>
-                    </div>
-                    <div className="insumo-hero">
-                      <div className={`days-big ${it.estado}`}>
-                        {it.estado === 'inconsistente' ? (
-                          <>
-                            <div className="days-big-num">—</div>
-                            <div className="days-big-label">stock</div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="days-big-num">{it.dias != null ? it.dias.toLocaleString("es-AR", { maximumFractionDigits: 1 }) : "—"}</div>
-                            <div className="days-big-label">días</div>
-                          </>
-                        )}
-                      </div>
-                      <div className="insumo-meta">
-                        <div className="insumo-meta-row">
-                          <span className="k">Stock actual</span>
-                          <span className={`v${stockNeg ? " neg-stock" : ""}`}>
-                            {stockT != null ? (stockNeg ? "−" : "") + stockT + " t" : "—"}
-                          </span>
-                        </div>
-                        <div className="insumo-meta-row">
-                          <span className="k">Consumo / día</span>
-                          <span className="v">{consumoT}</span>
-                        </div>
-                        <div className="insumo-meta-row">
-                          <span className="k">Última compra</span>
-                          <span className="v">{ultCompra}</span>
-                        </div>
-                      </div>
-                    </div>
-                    {it.inconsistente && (
-                      <div className="insumo-card-warning">
-                        ⚠ Stock contable inconsistente — revisar en módulo
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
 
         {/* === MÓDULOS === */}
         <div className="modules-section">
