@@ -20,6 +20,8 @@ echo.
 echo [2/4] Agregando cambios a Git...
 git add index.html *.json .nojekyll README.md requirements.txt .gitignore 2>nul
 git add *.json 2>nul
+REM Vista mobile (mobile.html, mobile.css, mobile.jsx, mobile-data.js, manifest.json)
+git add mobile.html mobile.css mobile.jsx mobile-data.js manifest.json 2>nul
 
 echo.
 echo [3/4] Commit...
