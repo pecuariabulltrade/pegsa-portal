@@ -1357,6 +1357,114 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* ============================================================
+   v5: Tarjeta "Todos los insumos" — lista compacta clickable
+   (espejo del módulo Stock Insumos del desktop). Cada item:
+   nombre + días con semáforo + stock + mini-bar del %.
+   ============================================================ */
+.ins-all {
+  margin-top: 10px;
+}
+.ins-all-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ins-all-list li { margin: 0; padding: 0; }
+
+.ins-all-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  border-bottom: 1px solid var(--border);
+}
+.ins-all-list li:last-child .ins-all-row { border-bottom: 0; }
+.ins-all-row:active { background: var(--surface-alt); }
+
+.ins-all-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.ins-all-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ins-all-days {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-mute);
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.ins-all-days.bad  { color: var(--neg); }
+.ins-all-days.warn { color: oklch(0.55 0.14 75); }
+.ins-all-days.ok   { color: var(--pos); }
+.ins-all-days-u {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+}
+
+.ins-all-row-mid {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11.5px;
+}
+.ins-all-stock {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-mute);
+}
+.ins-all-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-mute);
+}
+
+.ins-all-bar {
+  height: 4px;
+  background: var(--surface-alt);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.ins-all-bar-fill {
+  height: 100%;
+  background: var(--ink-mute);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.ins-all-bar-fill.bad  { background: var(--neg); }
+.ins-all-bar-fill.warn { background: oklch(0.65 0.14 75); }
+.ins-all-bar-fill.ok   { background: var(--pos); }
+
+/* ============================================================
    v3: Logout button en header (variant del .hdr-btn)
    ============================================================ */
 .hdr-btn-logout {

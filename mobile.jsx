@@ -433,20 +433,31 @@ function StockHero() {
       sub: h.sub,
       body: (
         <>
-          {/* Block 1: barras por categoría del Grupo completo
-              (espejo del módulo Stock del desktop, ordenado desc por kg). */}
-          {h.categorias && h.categorias.length > 0 && (
+          {/* v5: PEGSA primero (lo que el usuario más necesita ver), Grupo
+              después como referencia. Si no hay categoriasPegsa (data.js
+              vieja sin el campo) cae al Grupo solo, sin romper. */}
+
+          {/* Block 1: barras por categoría · PEGSA propio. */}
+          {h.categoriasPegsa && h.categoriasPegsa.length > 0 && (
             <div className="modal-section">
-              <h4>Por categoría · Grupo completo</h4>
-              <CategoriasBars items={h.categorias} />
+              <h4>Por categoría · PEGSA propio</h4>
+              <CategoriasBars items={h.categoriasPegsa} />
             </div>
           )}
 
-          {/* Block 2: torta por establecimiento (sólo PEGSA propio). */}
+          {/* Block 2: torta por establecimiento (PEGSA propio). */}
           {h.detallePorEstab && h.detallePorEstab.length > 0 && (
             <div className="modal-section">
               <h4>Por establecimiento · PEGSA propio</h4>
               <EstabDonut items={h.detallePorEstab} />
+            </div>
+          )}
+
+          {/* Block 3: barras por categoría · Grupo completo (referencia). */}
+          {h.categorias && h.categorias.length > 0 && (
+            <div className="modal-section">
+              <h4>Por categoría · Grupo completo</h4>
+              <CategoriasBars items={h.categorias} />
             </div>
           )}
 
@@ -639,6 +650,98 @@ function Insumos() {
     <>
       {D.INSUMOS.map((i) => <InsumoCard key={i.id} insumo={i} />)}
     </>
+  );
+}
+
+/* ============================================================
+   v5 · "Todos los insumos" — espejo del módulo Stock Insumos del
+   desktop. Lista compacta con todos los insumos (no solo los 2
+   críticos voluminosos), con semáforo de días (< 7 rojo / 7-15
+   ámbar / ≥15 verde) y mini-bar del % del total. Cada item abre
+   un modal con el mismo detalle.
+   ============================================================ */
+function InsumosTodos() {
+  const modal = useModal();
+  const list  = (D.INSUMOS_ALL || []);
+  const tot   = D.INSUMOS_TOTAL || { totalKg: 0, count: 0, fecha: null };
+  const { fmt } = D;
+
+  if (!list.length) return null;
+
+  const openItem = (it) => {
+    const semClass = it.semaforo || (it.dias != null ? (it.dias < 7 ? "bad" : (it.dias < 15 ? "warn" : "ok")) : "");
+    modal.open({
+      title: it.nombre,
+      sub: it.descripcion || "",
+      body: (
+        <>
+          <div className="modal-section">
+            {kvList([
+              { k: "Días restantes",
+                v: it.dias != null ? it.diasFmt + " d" : "N/D",
+                cls: semClass },
+              { k: "Stock",
+                v: it.stockKg != null
+                  ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg"
+                  : "N/D",
+                cls: (it.stockKg != null && it.stockKg < 0) ? "neg" : "" },
+              { k: "Consumo / día",
+                v: it.consumoKgDia != null ? fmt(Math.round(it.consumoKgDia)) + " kg" : "—" },
+              { k: "% del stock total",
+                v: it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—" }
+            ])}
+          </div>
+          {it.inconsistente && (
+            <div className="modal-note neg">
+              ⚠ Stock negativo o días negativos — datos contables a revisar
+            </div>
+          )}
+        </>
+      )
+    });
+  };
+
+  return (
+    <div className="card ins-all">
+      <div className="card-head">
+        <div>
+          <h3>Todos los insumos</h3>
+          <div className="card-head-sub">
+            {tot.count} ítems · {fmt(Math.round(tot.totalKg || 0))} kg total
+          </div>
+        </div>
+      </div>
+      <ul className="ins-all-list">
+        {list.map((it) => {
+          const sem = it.semaforo || (it.dias != null ? (it.dias < 7 ? "bad" : (it.dias < 15 ? "warn" : "ok")) : "");
+          const pct = Math.max(0, Math.min(100, it.pctTotal != null ? Math.abs(it.pctTotal) : 0));
+          return (
+            <li key={it.id}>
+              <button className="ins-all-row drill" onClick={() => openItem(it)}>
+                <div className="ins-all-row-top">
+                  <span className="ins-all-name">{it.nombre}</span>
+                  <span className={"ins-all-days " + sem}>
+                    {it.dias != null ? it.diasFmt : "—"}
+                    <span className="ins-all-days-u">d</span>
+                  </span>
+                </div>
+                <div className="ins-all-row-mid">
+                  <span className="ins-all-stock">
+                    {it.stockKg != null
+                      ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg"
+                      : "N/D"}
+                  </span>
+                  <span className="ins-all-pct">{it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—"}</span>
+                </div>
+                <div className="ins-all-bar">
+                  <div className={"ins-all-bar-fill " + sem} style={{ width: pct + "%" }} />
+                </div>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -1076,6 +1179,7 @@ function App() {
             <h2><span className="ico">🌾</span>Insumos críticos</h2>
           </div>
           <Insumos />
+          <InsumosTodos />
 
           <hr className="sec-div" />
 

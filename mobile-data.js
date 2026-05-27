@@ -205,9 +205,17 @@
       var12m: var12mStock,
       var12mLabel: "Variación 12 m",
       hoteleros: hoteleros,
-      // Para el modal drill (espejo del desktop): barras por categoría
-      // (D.stockCategorias, Grupo completo) + torta por establecimiento
-      // PEGSA (D.haciendaPegsaPorEstab).
+      // Para el modal drill (espejo del desktop):
+      //  - categoriasPegsa: barras por categoría de PEGSA propio
+      //    (D.stockCategoriasPegsa, parsed en data.js desde
+      //    stock_prop_PEGSA_2025.json.por_categoria_final).
+      //  - categorias: barras por categoría del Grupo completo
+      //    (D.stockCategorias, desde stock_kpis_2025.json).
+      //  - detallePorEstab: torta por establecimiento PEGSA propio
+      //    (D.haciendaPegsaPorEstab).
+      // v5: ahora mostramos PEGSA primero, Grupo segundo (el desktop
+      // expone ambos vía módulo Stock).
+      categoriasPegsa: Array.isArray(D.stockCategoriasPegsa) ? D.stockCategoriasPegsa : [],
       categorias: Array.isArray(D.stockCategorias) ? D.stockCategorias : [],
       detallePorEstab: Array.isArray(D.haciendaPegsaPorEstab) ? D.haciendaPegsaPorEstab : []
     };
