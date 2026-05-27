@@ -1,7 +1,11 @@
 /* ============================================================
-   mobile-data.js  —  Adaptador de datos REALES para la vista movil
+   mobile-data.js  —  Adaptador de datos REALES para la vista mobile
    Lee window.PEGSA_DATA (data.js) y arma window.MOBILE_DATA.
    Re-construye al recibir 'panel:data-ready' (JSONs reales).
+
+   v3 (2026-05-27): auditoría aplicada — todos los datos vienen de
+   PEGSA_DATA real, etiquetas dinámicas según frecuencia de serie,
+   sanitización de fechas ISO en alertas, var12m / flujo semanal reales.
    ============================================================ */
 (function (root) {
   "use strict";
@@ -20,15 +24,15 @@
     var v = fmt(Math.abs(n));
     return sign + "$ " + v + (suffix ? " " + suffix : "");
   };
-  // Compactar montos: 1.363.651.930 → "1,4 MM", 352.200.997 → "352 M"
+  // Compactar montos: 1.363.651.930 → "$1,4 MM", 352.200.997 → "$352 M"
   var fmtMoneyCompact = function (n) {
     if (n == null || isNaN(n)) return "—";
     var a = Math.abs(n);
     var sign = n < 0 ? "-" : "";
-    if (a >= 1e9) return sign + "$ " + (n / 1e9).toFixed(2).replace(".", ",").replace("-", "") + " MM";
-    if (a >= 1e6) return sign + "$ " + Math.round(Math.abs(n) / 1e6) + " M";
-    if (a >= 1e3) return sign + "$ " + Math.round(Math.abs(n) / 1e3) + " k";
-    return sign + "$ " + fmt(Math.abs(n));
+    if (a >= 1e9) return sign + "$ " + (a / 1e9).toFixed(2).replace(".", ",") + " MM";
+    if (a >= 1e6) return sign + "$ " + Math.round(a / 1e6) + " M";
+    if (a >= 1e3) return sign + "$ " + Math.round(a / 1e3) + " k";
+    return sign + "$ " + fmt(a);
   };
   var fmtCompact = function (n) {
     if (n == null || isNaN(n)) return "—";
@@ -54,20 +58,11 @@
     if (!s) return "";
     try {
       var d = new Date(s);
-      if (isNaN(d.getTime())) {
-        // No es ISO válido — devolver primer fragmento legible
-        return String(s).split("T")[0].split(" ")[0];
-      }
+      if (isNaN(d.getTime())) return String(s).split("T")[0].split(" ")[0];
       var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
-      var dd = pad(d.getDate());
-      var mm = pad(d.getMonth() + 1);
-      var yy = String(d.getFullYear()).slice(-2);
-      var hh = pad(d.getHours());
-      var mi = pad(d.getMinutes());
-      return dd + "/" + mm + "/" + yy + " " + hh + ":" + mi;
-    } catch (e) {
-      return String(s);
-    }
+      return pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + String(d.getFullYear()).slice(-2) +
+             " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+    } catch (e) { return String(s); }
   };
   var fmtFechaCorta = function (s) {
     if (!s) return "";
@@ -79,6 +74,43 @@
     } catch (e) { return String(s); }
   };
 
+  // Saludo dinámico según hora (6-12: día, 12-19: tardes, resto: noches)
+  var getSaludo = function () {
+    var h = new Date().getHours();
+    if (h >= 6 && h < 12) return "Buen día";
+    if (h >= 12 && h < 20) return "Buenas tardes";
+    return "Buenas noches";
+  };
+
+  // Sanitiza fechas ISO YYYY-MM-DD dentro de un texto → DD/MM
+  var sanitizarFechas = function (s) {
+    if (!s) return s;
+    return String(s).replace(/(\d{4})-(\d{2})-(\d{2})(?:T[\d:.]+)?/g, function (_, _y, m, d) {
+      return d + "/" + m;
+    });
+  };
+
+  // Label dinámico de delta según N puntos y primer periodo de la serie
+  // Para series mensuales (sparks de patrimonio): "vs MMM-YY"
+  // Para series diarias (sparks de stock diario): "últ. N días"
+  var buildDeltaLabel = function (kind, nPuntos, firstPeriodo) {
+    if (!nPuntos || nPuntos < 2) return "";
+    if (kind === "mensual" && firstPeriodo) {
+      // firstPeriodo formato YYYY-MM
+      var p = String(firstPeriodo).split("-");
+      var MESES_SHORT = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+      var mIdx = parseInt(p[1], 10) - 1;
+      var yShort = (p[0] || "").slice(-2);
+      if (mIdx >= 0 && mIdx < 12 && yShort) {
+        return "vs " + MESES_SHORT[mIdx] + "-" + yShort;
+      }
+      return nPuntos + " m";
+    }
+    if (kind === "diario") return "últ. " + nPuntos + " días";
+    if (kind === "diario-meses") return "últ. " + nPuntos + " m";
+    return nPuntos + " p";
+  };
+
   var MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   var TABS = ["Importante", "Insumos", "Sub-datos", "Módulos"];
   var BOTTOM_TABS = [
@@ -87,6 +119,20 @@
     { id: "alertas", label: "Alertas", icon: "bell" },
     { id: "modulos", label: "Módulos", icon: "grid" }
   ];
+
+  // Mapping mobile module id → portal module id (id que entiende openModule)
+  // Espejo del _PANEL_TO_PORTAL_ID en app.jsx del desktop.
+  var PANEL_TO_PORTAL_ID = {
+    "stock-masa":        "stock",
+    "stock-insumos":     "insumos",
+    "mercado":           "mercado",
+    "tesoreria":         "tesoreria",
+    "simulador":         "simulador",
+    "historico":         "historico",
+    "estado-resultados": "resultados",
+    "flujo-fondos":      "flujo",
+    "parametros-base":   "baseparams"
+  };
 
   // ---------- Builder ----------
   function buildMobileData() {
@@ -104,7 +150,7 @@
 
     var SALUDO = {
       eyebrow: "PERÍODO " + (D.periodo || "—").toUpperCase(),
-      h1Pre: "Buen día, ",
+      h1Pre: getSaludo() + ", ",
       h1Em: "dirección",
       h1Post: ".",
       sub: "Última act. " + lastUpdateFmt +
@@ -114,7 +160,12 @@
 
     var sevMap = { warn: "warn", info: "info", bad: "bad", error: "bad", critico: "bad" };
     var ALERTAS = (D.alertas || []).map(function (a, i) {
-      return { id: "a" + i, sev: sevMap[a.tipo] || "info", text: a.texto };
+      return {
+        id: "a" + i,
+        sev: sevMap[a.tipo] || "info",
+        text: sanitizarFechas(a.texto),
+        textRaw: a.texto || ""
+      };
     });
 
     // ---------- Stock hero ----------
@@ -125,7 +176,14 @@
     var totalKg  = (stockH.total && stockH.total.kg) || 0;
     var totalEst = (stockH.total && stockH.total.establecimientos) || 0;
     var hoteleros = (D.hoteleros && D.hoteleros.cabezas) || Math.max(0, totalCab - pegsaCab);
-    var var12mStock = deltaTotal(D.sparks && D.sparks.stockKg);
+
+    // var12m REAL — viene de D.stockVar12m (Sprint 1, calculado desde
+    // stock_historico.json con snapshots mensuales). Si no existe, "N/D".
+    var var12mStock = (typeof D.stockVar12m === "number") ? D.stockVar12m : null;
+
+    // pegsa.est REAL — desde D.haciendaPegsaPorEstab (Sprint 1) o null.
+    var pegsaEst = (Array.isArray(D.haciendaPegsaPorEstab) && D.haciendaPegsaPorEstab.length)
+                 ? D.haciendaPegsaPorEstab.length : null;
 
     var STOCK_HERO = {
       title: "Stock de hacienda",
@@ -135,7 +193,7 @@
         cab: pegsaCab,
         t: Math.round(pegsaKg / 1000),
         kgCab: pegsaCab ? Math.round(pegsaKg / pegsaCab) : 0,
-        est: (stockH.pegsa && stockH.pegsa.establecimientos) || null
+        est: pegsaEst
       },
       grupo: {
         tag: "total",
@@ -145,31 +203,56 @@
         est: totalEst
       },
       var12m: var12mStock,
-      hoteleros: hoteleros
+      var12mLabel: "Variación 12 m",
+      hoteleros: hoteleros,
+      // Para el modal drill
+      detallePorEstab: Array.isArray(D.haciendaPegsaPorEstab) ? D.haciendaPegsaPorEstab : []
     };
 
     // ---------- Mercado · cotizaciones ----------
     var M = D.mercado || {};
-    function cot(key, label) {
+    var fechaMercado = M.fecha ? fmtFechaCorta(M.fecha) : null;
+
+    function cot(key, label, fuente) {
       var m = M[key];
-      if (!m) return { label: label, delta: null, value: "—", unit: "" };
-      var spark = D.sparks && D.sparks[key];
-      var dPct = deltaSerie(spark);
+      if (!m) return { label: label, fuente: fuente, delta: null, value: "—", unit: "", deltaSrc: null };
+
+      // Delta real: D.mercado[key].delta es diferencia absoluta en $ vs día anterior.
+      // Convertimos a %: delta / (precio - delta) * 100. Si delta=null o precio<=0, null.
+      var dAbs = (typeof m.delta === "number") ? m.delta : null;
+      var pAct = m.precio || 0;
+      var dPct = null;
+      if (dAbs != null && pAct > 0) {
+        var pPrev = pAct - dAbs;
+        if (pPrev > 0) dPct = (dAbs / pPrev) * 100;
+      }
+
       var value;
-      if (key === "maiz" || key === "soja") value = "$ " + fmtCompact(m.precio);
-      else value = "$ " + fmt(m.precio);
-      return { label: label, delta: dPct, value: value, unit: m.unidad || "" };
+      if (key === "maiz" || key === "soja") value = "$ " + fmtCompact(pAct);
+      else value = "$ " + fmt(pAct);
+
+      return {
+        label: label,
+        fuente: fuente,
+        delta: dPct,
+        deltaAbs: dAbs,
+        value: value,
+        precio: pAct,
+        unit: m.unidad || "",
+        deltaSrc: dAbs != null ? "vs día anterior" : null
+      };
     }
     var COTIZACIONES = {
       title: "Mercado · cotizaciones",
-      sub: "MAG · BCR · E&C",
+      sub: "MAG · BCR · E&C", // label fijo de fuentes (no es dato)
+      fecha: fechaMercado,
       items: [
-        cot("novillo", "Novillo MAG"),
-        cot("vaca",    "Vaca MAG"),
-        cot("ternero", "Ternero E&C"),
-        cot("maiz",    "Maíz BCR"),
-        cot("soja",    "Soja BCR"),
-        cot("mep",     "Dólar MEP")
+        cot("novillo", "Novillo MAG",  "MAG"),
+        cot("vaca",    "Vaca MAG",     "MAG"),
+        cot("ternero", "Ternero E&C",  "E&C"),
+        cot("maiz",    "Maíz BCR",     "BCR"),
+        cot("soja",    "Soja BCR",     "BCR"),
+        cot("mep",     "Dólar MEP",    "BCR")
       ]
     };
 
@@ -205,7 +288,7 @@
           { k: "Stock",       v: fmtT(it.stock_kg) },
           { k: "Consumo/día", v: fmtTDia(it.consumo_kg_dia) },
           { k: it.fecha_ult_compra ? "Últ. compra" : "Reposición",
-            v: it.fecha_ult_compra ? fmtFechaCorta(it.fecha_ult_compra) : "—" }
+            v: it.fecha_ult_compra ? fmtFechaCorta(it.fecha_ult_compra) : "N/D" }
         ];
       }
       return {
@@ -215,7 +298,11 @@
         state: stateMap[it.estado] || "warn",
         stateLabel: stateLabelMap[it.estado] || "Atención",
         dias: fmtDiasInsumo(it),
+        diasRaw: it.dias,
         inconsistente: !!it.inconsistente,
+        stockKg: it.stock_kg,
+        consumoKgDia: it.consumo_kg_dia,
+        ultCompra: it.fecha_ult_compra,
         rows: rows
       };
     });
@@ -236,86 +323,123 @@
       });
     }
 
-    // ---------- Tesorería · posición ----------
-    var tes = D.tesoreria || {};
-    var FLUJO_SEMANAL = {
-      title: "Tesorería · posición",
-      sub: tes.semana ? ("Sem. " + tes.semana + " · cartera + bancos") : "Semana actual",
-      cerrada: {
-        label: "CARTERA",
-        range: "Cobranzas pendientes",
-        // Compactamos en MM (miles de millones) para que entre
-        value: tes.cartera
-      },
-      proxima: {
-        label: "BANCOS",
-        range: "Saldos bancarios al cierre",
-        value: tes.bancos
-      },
-      bars: (function () {
-        var s = D.sparks && D.sparks.patrimonioArs;
-        if (!Array.isArray(s) || s.length < 6) return [];
-        var last6 = s.slice(-6);
-        var prev = s.length >= 7 ? s[s.length - 7] : last6[0];
-        var labels = MESES.slice(-6);
-        return last6.map(function (v, i) {
-          var previo = i === 0 ? prev : last6[i - 1];
-          var d = v - previo;
+    // ---------- Financiero · saldo proyectado (Sprint 2C real) ----------
+    var fs = D.flujoSemanal || null;
+    var FLUJO_SEMANAL;
+    if (fs) {
+      // Datos REALES desde tesoreria_ultimo.json.flujo (Sprint 2C-fix-2)
+      var primera = fs.cierrePrimera || {};
+      var ultima  = fs.cierreFinal || {};
+      var sems = Array.isArray(fs.semanas) ? fs.semanas : [];
+
+      FLUJO_SEMANAL = {
+        title: "Financiero · saldo proyectado",
+        sub: "Sem " + (fs.semanaNumActual || "—") + " · " + (fs.anioActual || ""),
+        cerrada: {
+          label: "CIERRE",
+          range: primera.rangoLabel || primera.label || "—",
+          value: primera.valor != null ? primera.valor : null
+        },
+        proxima: {
+          label: "SALDO PROYECTADO",
+          range: "Cierre semana " + (ultima.label || "—"),
+          value: ultima.valor != null ? ultima.valor : null
+        },
+        bars: sems.map(function (s, i) {
           return {
-            label: labels[i],
-            v: d,
-            kind: i === last6.length - 1 ? "next" : (i < last6.length - 2 ? "past" : "proj")
+            label: s.label,
+            v: s.saldoAcumulado != null ? s.saldoAcumulado : 0,
+            kind: s.estado === "next" ? "next" : (s.estado === "done" ? "past" : "proj")
           };
-        });
-      })(),
-      acumulado: {
-        label: "Posición USD",
-        sub: "Inversiones + caja USD",
-        value: tes.usd_pos
-      }
-    };
+        }),
+        acumulado: {
+          label: "Saldo de partida",
+          sub: "Hoy",
+          value: fs.saldoInicial != null ? fs.saldoInicial : null
+        },
+        fechaCorte: fs.fechaCorte
+      };
+    } else {
+      // Fallback si no hay datos de flujo (improbable, pero no inventar)
+      var tes = D.tesoreria || {};
+      FLUJO_SEMANAL = {
+        title: "Financiero · saldo proyectado",
+        sub: "Sin datos de flujo semanal",
+        cerrada: { label: "CARTERA", range: "Cobranzas pendientes", value: tes.cartera != null ? tes.cartera : null },
+        proxima: { label: "BANCOS", range: "Saldos bancarios", value: tes.bancos != null ? tes.bancos : null },
+        bars: [],
+        acumulado: { label: "Posición USD", sub: "Inversiones + caja", value: tes.usd_pos != null ? tes.usd_pos : null }
+      };
+    }
 
     // ---------- Patrimonio USD (line chart) ----------
-    // El valor "verdad" viene del hero (en USD). El spark sirve solo para la
-    // forma del chart (escala relativa, delta % válida).
+    // Sparks vienen de D.sparks.patrimonioUsd (rebuildeado en data.js desde
+    // valuacion_historica.json, snapshots mensuales). Cantidad = 12 a 16 puntos.
+    // patrimonioMensual tiene mes (string) y usd (en miles USD).
     var heroPatUsd = (D.hero && D.hero.patrimonio && D.hero.patrimonio.usd) || 0;
     var heroPatUsdM = heroPatUsd / 1e6;
+    var patMensual = Array.isArray(D.patrimonioMensual) ? D.patrimonioMensual : [];
     var sparkUsd = (D.sparks && D.sparks.patrimonioUsd) || [];
     var usdPoints = sparkUsd.map(function (v, i) {
-      return { x: MESES[i % 12], v: v };
+      var mes = patMensual[i] && patMensual[i].mes ? patMensual[i].mes : MESES[i % 12];
+      return { x: mes, v: v };
     });
+    // Label dinámico: si tenemos info del primer periodo, "vs mmm-yy"
+    var firstPeriodoUsd = null;
+    if (patMensual.length && patMensual[0].mes) {
+      // patMensual[i].mes formato típico "Mar '25" — extraer
+      var mm = String(patMensual[0].mes).match(/^([A-Za-z]+)\s*'?(\d{2,4})/);
+      if (mm) {
+        var MES_MAP = { Ene:"01", Feb:"02", Mar:"03", Abr:"04", May:"05", Jun:"06",
+                        Jul:"07", Ago:"08", Sep:"09", Oct:"10", Nov:"11", Dic:"12" };
+        var mNum = MES_MAP[mm[1]] || "01";
+        var yFull = mm[2].length === 2 ? "20" + mm[2] : mm[2];
+        firstPeriodoUsd = yFull + "-" + mNum;
+      }
+    }
 
     var PATRIMONIO_USD = {
       title: "Patrimonio · USD",
       sub: heroPatUsdM ? ("U$S " + heroPatUsdM.toFixed(2).replace(".", ",") + " M")
                        : (usdPoints.length ? "U$S " + usdPoints[usdPoints.length - 1].v.toFixed(1).replace(".", ",") : "—"),
       delta: deltaTotal(sparkUsd),
+      deltaLabel: buildDeltaLabel("mensual", sparkUsd.length, firstPeriodoUsd),
       yLabels: (function () {
         if (!usdPoints.length) return [];
         var vs = usdPoints.map(function (p) { return p.v; });
         var max = Math.max.apply(null, vs);
         var min = Math.min.apply(null, vs);
-        // Etiquetas como "min, mid, max" sin unidad — son referenciales
         return [max.toFixed(0), Math.round((max + min) / 2), min.toFixed(0)];
       })(),
-      xLabels: ["Ene", "Abr", "Ago", "Dic"],
+      xLabels: (function () {
+        if (usdPoints.length === 0) return [];
+        if (usdPoints.length <= 4) return usdPoints.map(function (p) { return p.x; });
+        var step = Math.floor(usdPoints.length / 4);
+        return [usdPoints[0].x, usdPoints[step].x, usdPoints[step * 2].x, usdPoints[usdPoints.length - 1].x];
+      })(),
       points: usdPoints.length ? usdPoints : [{ x: "—", v: 0 }],
-      unit: "",
-      color: "primary"
+      unit: "U$S",
+      color: "primary",
+      // Para modal
+      lastM: heroPatUsdM,
+      firstPeriodo: firstPeriodoUsd,
+      nPuntos: sparkUsd.length
     };
 
-    // ---------- Stock kilos (line chart) ----------
-    // Valor verdad: hero.stock.total.kg
+    // ---------- Stock kilos diario (line chart) ----------
+    // sparks.stockKg viene de stockDiario.snapshots.slice(-12) — son últimos
+    // 12 puntos DIARIOS (no mensuales). Valor en kg/1e6 (escalado).
     var stockKgTotal = totalKg;
     var stockSpark = (D.sparks && D.sparks.stockKg) || [];
     var stockPoints = stockSpark.map(function (v, i) {
-      return { x: MESES[i % 12], v: v };
+      return { x: String(i + 1), v: v };
     });
 
     var STOCK_KILOS = {
-      title: "Stock kilos · mensual",
+      title: "Stock kilos · diario",
       sub: stockKgTotal ? (Math.round(stockKgTotal / 1000).toLocaleString("es-AR") + " t") : "—",
       delta: deltaTotal(stockSpark),
+      deltaLabel: buildDeltaLabel("diario", stockSpark.length),
       yLabels: (function () {
         if (!stockPoints.length) return [];
         var vs = stockPoints.map(function (p) { return p.v; });
@@ -327,10 +451,17 @@
           min.toFixed(2).replace(".", ",")
         ];
       })(),
-      xLabels: ["Ene", "Abr", "Ago", "Dic"],
+      xLabels: (function () {
+        var n = stockPoints.length;
+        if (n === 0) return [];
+        if (n <= 4) return stockPoints.map(function (p) { return p.x; });
+        return ["1", String(Math.floor(n / 3)), String(Math.floor(2 * n / 3)), String(n)];
+      })(),
       points: stockPoints.length ? stockPoints : [{ x: "—", v: 0 }],
-      unit: "",
-      color: "pos"
+      unit: "t (M)",
+      color: "pos",
+      lastT: stockKgTotal ? Math.round(stockKgTotal / 1000) : null,
+      nPuntos: stockSpark.length
     };
 
     // ---------- Módulos ----------
@@ -341,7 +472,7 @@
           m.id === "flujo-fondos" || m.id === "simulador") return "pos";
       return "primary";
     }
-    // Override de KPIs: para algunos módulos usamos versión compactada legible
+    var tes = D.tesoreria || {};
     var kpiOverrides = {
       "tesoreria": function () {
         if (tes.posicion == null) return null;
@@ -352,32 +483,32 @@
         if (!r) return null;
         return { kpi: (r.total >= 0 ? "+" : "") + fmtMoneyCompact(r.total).replace("$ ", "$"), unit: "", sub: "Resultado neto del período" };
       },
-      "flujo-fondos": function () {
-        return null; // mantener original o calcular si tenés cobros - pagos
-      }
+      "flujo-fondos": function () { return null; }
     };
     var MODULOS = (D.modulos || [])
       .filter(function (m) { return m.grupo !== "config"; })
       .slice(0, 8)
       .map(function (m) {
         var override = kpiOverrides[m.id] && kpiOverrides[m.id]();
+        var base = {
+          n: m.n,
+          id: m.id,
+          portalId: PANEL_TO_PORTAL_ID[m.id] || m.id,
+          title: m.titulo,
+          state: ledMap[m.estado] || "disponible",
+          kind: kindByModulo(m)
+        };
         if (override && override.kpi != null) {
-          return {
-            n: m.n,
-            title: m.titulo,
-            state: ledMap[m.estado] || "disponible",
+          return Object.assign(base, {
             kpi: override.kpi,
             unit: override.unit || "",
-            sub: override.sub || m.kpiLabel || m.desc || "",
-            kind: kindByModulo(m)
-          };
+            sub: override.sub || m.kpiLabel || m.desc || ""
+          });
         }
-        // Default: separar KPI número y unidad
         var kpi = m.kpi || "—";
         var unit = "";
         var matchUnit = kpi.match(/^(.+?)\s+([a-zA-ZÀ-ſ%]+)$/);
         if (matchUnit) { kpi = matchUnit[1]; unit = matchUnit[2]; }
-        // Compactar números > 1M en módulos
         var matchNum = kpi.match(/^([+-]?)\$([\d\.]+)$/);
         if (matchNum) {
           var raw = parseFloat(matchNum[2].replace(/\./g, ""));
@@ -386,15 +517,11 @@
             unit = "";
           }
         }
-        return {
-          n: m.n,
-          title: m.titulo,
-          state: ledMap[m.estado] || "disponible",
+        return Object.assign(base, {
           kpi: kpi,
           unit: unit,
-          sub: m.kpiLabel || m.desc || "",
-          kind: kindByModulo(m)
-        };
+          sub: m.kpiLabel || m.desc || ""
+        });
       });
 
     return {
@@ -410,11 +537,15 @@
       MODULOS: MODULOS,
       TABS: TABS,
       BOTTOM_TABS: BOTTOM_TABS,
+      // Helpers
       fmt: fmt,
       fmtPct: fmtPct,
       fmtMoney: fmtMoney,
       fmtMoneyCompact: fmtMoneyCompact,
-      fmtCompact: fmtCompact
+      fmtCompact: fmtCompact,
+      fmtFechaCorta: fmtFechaCorta,
+      // Mapping para navegación
+      PANEL_TO_PORTAL_ID: PANEL_TO_PORTAL_ID
     };
   }
 
