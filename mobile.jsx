@@ -259,9 +259,9 @@ function InsumoCard({ insumo }) {
         </span>
       </div>
       <div className="insumo-body">
-        <div className={"insumo-days " + insumo.state}>
+        <div className={"insumo-days " + insumo.state + (insumo.inconsistente ? " inconsistente" : "")}>
           <div className="insumo-days-num">{insumo.dias}</div>
-          <div className="insumo-days-label">días</div>
+          <div className="insumo-days-label">{insumo.inconsistente ? "rev." : "días"}</div>
         </div>
         <div className="insumo-rows">
           {insumo.rows.map((r, i) => (
@@ -289,7 +289,9 @@ function Insumos() {
    ============================================================ */
 function FlujoSemanal() {
   const f = D.FLUJO_SEMANAL;
-  const { fmtMoney } = D;
+  const { fmtMoneyCompact } = D;
+  const cerradaIsPos = (f.cerrada.value ?? 0) >= 0;
+  const proxIsPos = (f.proxima.value ?? 0) >= 0;
   const maxAbs = Math.max(1, ...f.bars.map((b) => Math.abs(b.v)));
   return (
     <article className="card flujo">
@@ -300,22 +302,22 @@ function FlujoSemanal() {
         </div>
       </div>
 
-      <div className="flujo-panel pos">
+      <div className={"flujo-panel " + (cerradaIsPos ? "pos" : "neg")}>
         <div>
           <div className="flujo-panel-label">{f.cerrada.label}</div>
           <div className="flujo-panel-sub">{f.cerrada.range}</div>
         </div>
-        <div className="flujo-panel-val">{fmtMoney(f.cerrada.value, "M")}</div>
+        <div className="flujo-panel-val">{fmtMoneyCompact(f.cerrada.value)}</div>
       </div>
 
       <div className="flujo-arrow">↓</div>
 
-      <div className="flujo-panel neg">
+      <div className={"flujo-panel " + (proxIsPos ? "pos" : "neg")}>
         <div>
           <div className="flujo-panel-label">{f.proxima.label}</div>
           <div className="flujo-panel-sub">{f.proxima.range}</div>
         </div>
-        <div className="flujo-panel-val">{fmtMoney(f.proxima.value, "M")}</div>
+        <div className="flujo-panel-val">{fmtMoneyCompact(f.proxima.value)}</div>
       </div>
 
       {f.bars.length > 0 && (
@@ -347,7 +349,7 @@ function FlujoSemanal() {
           <div className="flujo-acum-label">{f.acumulado.label}</div>
           <div className="flujo-acum-sub">{f.acumulado.sub}</div>
         </div>
-        <div className="flujo-acum-val">{fmtMoney(f.acumulado.value, "M")}</div>
+        <div className="flujo-acum-val">{fmtMoneyCompact(f.acumulado.value)}</div>
       </div>
     </article>
   );
