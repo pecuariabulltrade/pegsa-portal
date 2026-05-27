@@ -1,13 +1,56 @@
 /* mobile.jsx — Panel ejecutivo PEGSA & Bulltrade — vista mobile
    React 18 UMD + Babel standalone.
    Datos: window.MOBILE_DATA (mobile-data.js, adaptador de window.PEGSA_DATA)
+
+   v3 (2026-05-27): login + drill modals + navegación a módulos desktop
    --------------------------------------------------------------- */
 
-const { useState, useRef, useEffect, useMemo } = React;
+const { useState, useRef, useEffect, useMemo, useContext, createContext } = React;
 
 // Referencia que se actualiza al recibir 'mobile:data-ready'. <App/> incrementa
 // un tick para forzar re-render cuando los datos reales llegan.
 let D = window.MOBILE_DATA;
+
+/* ============================================================
+   USERS (espejo de js/core-home.js, mantener sincronizado)
+   ============================================================ */
+const USERS = {
+  'pegsa':    { pass: 'garobi2025', name: 'PEGSA Admin',     initials: 'PA' },
+  'bulltrade':{ pass: 'bull2025',   name: 'Bulltrade Admin', initials: 'BA' },
+  'gerencia': { pass: 'gestion25',  name: 'Gerencia',        initials: 'GR' },
+  'admin':    { pass: 'admin123',   name: 'Administrador',   initials: 'AD' }
+};
+const SESSION_KEY = 'pegsa_mobile_user';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || !s.ts || !s.username) return null;
+    if (Date.now() - s.ts > SESSION_TTL_MS) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return s;
+  } catch (e) { return null; }
+}
+function saveSession(username) {
+  const acc = USERS[username];
+  if (!acc) return;
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      username: username,
+      name: acc.name,
+      initials: acc.initials,
+      ts: Date.now()
+    }));
+  } catch (e) {}
+}
+function clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+}
 
 /* ============================================================
    Iconos SVG inline
@@ -48,6 +91,17 @@ const Icon = {
       <rect x="14" y="14" width="7" height="7" rx="1.5" />
     </svg>
   ),
+  LogOut: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  ),
+  Close: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  ),
 };
 
 const TabIcon = ({ name }) => {
@@ -59,9 +113,120 @@ const TabIcon = ({ name }) => {
 };
 
 /* ============================================================
+   Modal context
+   ============================================================ */
+const ModalCtx = createContext({ open: () => {}, close: () => {} });
+const useModal = () => useContext(ModalCtx);
+
+function Modal({ content, onClose }) {
+  // Bloquear scroll del body mientras modal abierto
+  useEffect(() => {
+    if (!content) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [content]);
+
+  if (!content) return null;
+
+  const onBackdrop = (e) => {
+    if (e.target.classList.contains("modal-backdrop")) onClose();
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onBackdrop} role="dialog" aria-modal="true">
+      <div className="modal-sheet">
+        <div className="modal-handle" />
+        <div className="modal-head">
+          <div className="modal-head-text">
+            <h3>{content.title}</h3>
+            {content.sub && <div className="modal-head-sub">{content.sub}</div>}
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Cerrar">
+            <Icon.Close />
+          </button>
+        </div>
+        <div className="modal-body">
+          {content.body}
+        </div>
+        {content.foot && (
+          <div className="modal-foot">{content.foot}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   LoginScreen
+   ============================================================ */
+function LoginScreen({ onLogin }) {
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+  const [err, setErr] = useState("");
+  const userRef = useRef(null);
+
+  useEffect(() => { if (userRef.current) userRef.current.focus(); }, []);
+
+  const submit = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const u = user.trim().toLowerCase();
+    const p = pass;
+    if (!u || !p) { setErr("Completá usuario y contraseña."); return; }
+    const acc = USERS[u];
+    if (!acc || acc.pass !== p) { setErr("Usuario o contraseña incorrectos."); return; }
+    saveSession(u);
+    onLogin(u);
+  };
+
+  return (
+    <div className="login-mobile">
+      <div className="login-card">
+        <div className="login-logo">PB</div>
+        <div className="login-eyebrow">PEGSA & BULLTRADE</div>
+        <h1 className="login-title">Acceso <em>restringido</em>.</h1>
+        <div className="login-sub">Ingresá tus credenciales para entrar al panel</div>
+
+        <form className="login-form" onSubmit={submit} noValidate>
+          <label className="login-field">
+            <span>Usuario</span>
+            <input
+              ref={userRef}
+              type="text"
+              autoComplete="username"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              value={user}
+              onChange={(e) => { setUser(e.target.value); setErr(""); }}
+              inputMode="text"
+              placeholder="usuario"
+            />
+          </label>
+          <label className="login-field">
+            <span>Contraseña</span>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={pass}
+              onChange={(e) => { setPass(e.target.value); setErr(""); }}
+              placeholder="••••••••"
+            />
+          </label>
+          {err && <div className="login-err">{err}</div>}
+          <button type="submit" className="login-btn">Entrar</button>
+        </form>
+
+        <div className="login-foot">Uso interno · Dirección</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    Header
    ============================================================ */
-function Header() {
+function Header({ session, onLogout }) {
   const { brand, sub, notifications } = D.HEADER;
   return (
     <header className="hdr">
@@ -71,12 +236,14 @@ function Header() {
           <div className="hdr-brand-name">{brand}</div>
           <div className="hdr-brand-sub">{sub}</div>
         </div>
-        <button className="hdr-btn" aria-label="Menu"><Icon.Menu /></button>
         <button className="hdr-btn" aria-label="Notificaciones">
           <Icon.Bell />
           {notifications > 0 && (
             <span className="hdr-badge">{notifications}</span>
           )}
+        </button>
+        <button className="hdr-btn hdr-btn-logout" aria-label="Salir" onClick={onLogout} title={session ? "Salir (" + session.name + ")" : "Salir"}>
+          <Icon.LogOut />
         </button>
       </div>
     </header>
@@ -150,19 +317,83 @@ function Alertas() {
 }
 
 /* ============================================================
-   Stock hero card
+   Helpers para construir contenido de modales
+   ============================================================ */
+function kvList(rows) {
+  return (
+    <div className="modal-kv">
+      {rows.map((r, i) => (
+        <div key={i} className="modal-kv-row">
+          <span className="modal-kv-k">{r.k}</span>
+          <span className={"modal-kv-v " + (r.cls || "")}>{r.v}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
+   Stock hero card (clickable → modal)
    ============================================================ */
 function StockHero() {
   const h = D.STOCK_HERO;
   const { fmt, fmtPct } = D;
+  const modal = useModal();
+
+  const open = () => {
+    modal.open({
+      title: "Stock de hacienda",
+      sub: h.sub,
+      body: (
+        <>
+          <div className="modal-section">
+            <h4>PEGSA · propio</h4>
+            {kvList([
+              { k: "Cabezas",    v: fmt(h.pegsa.cab) + " cab" },
+              { k: "Toneladas",  v: fmt(h.pegsa.t) + " t" },
+              { k: "Kg / cab",   v: h.pegsa.kgCab + " kg" },
+              { k: "Establec.",  v: h.pegsa.est != null ? h.pegsa.est : "N/D" }
+            ])}
+          </div>
+          <div className="modal-section">
+            <h4>Grupo · total (PEGSA + hoteleros)</h4>
+            {kvList([
+              { k: "Cabezas",    v: fmt(h.grupo.cab) + " cab" },
+              { k: "Toneladas",  v: fmt(h.grupo.t) + " t" },
+              { k: "Kg / cab",   v: h.grupo.kgCab + " kg" },
+              { k: "Establec.",  v: h.grupo.est }
+            ])}
+          </div>
+          {h.detallePorEstab && h.detallePorEstab.length > 0 && (
+            <div className="modal-section">
+              <h4>Detalle PEGSA por establecimiento</h4>
+              {kvList(h.detallePorEstab.map((e) => ({
+                k: e.nombre,
+                v: fmt(e.cabezas) + " cab · " + fmt(Math.round(e.kg / 1000)) + " t"
+              })))}
+            </div>
+          )}
+          <div className="modal-section">
+            <h4>Referencia</h4>
+            {kvList([
+              { k: h.var12mLabel, v: h.var12m != null ? fmtPct(h.var12m) : "N/D", cls: (h.var12m != null && h.var12m < 0) ? "neg" : "pos" },
+              { k: "Hoteleros (terceros)", v: fmt(h.hoteleros) + " cab" }
+            ])}
+          </div>
+        </>
+      )
+    });
+  };
+
   return (
-    <article className="stock-hero">
+    <article className="stock-hero drill" onClick={open} role="button" tabIndex={0}
+             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}>
       <div className="sh-head">
         <div>
           <h3>{h.title}</h3>
           <div className="sh-head-sub">{h.sub}</div>
         </div>
-        <button className="sh-btn">módulo <Icon.ArrowRight /></button>
+        <span className="sh-btn">ver detalle <Icon.ArrowRight /></span>
       </div>
 
       <div className="sh-cols">
@@ -197,8 +428,10 @@ function StockHero() {
 
       <div className="sh-foot">
         <div className="sh-foot-row">
-          <span>Variación cabezas 12m</span>
-          <span className={"sh-foot-val " + (h.var12m >= 0 ? "pos" : "")}>{h.var12m != null ? fmtPct(h.var12m) : "—"}</span>
+          <span>{h.var12mLabel}</span>
+          <span className={"sh-foot-val " + (h.var12m != null && h.var12m >= 0 ? "pos" : (h.var12m != null ? "neg" : ""))}>
+            {h.var12m != null ? fmtPct(h.var12m) : "N/D"}
+          </span>
         </div>
         <div className="sh-foot-row">
           <span>Hoteleros · terceros</span>
@@ -210,21 +443,37 @@ function StockHero() {
 }
 
 /* ============================================================
-   Mercado · cotizaciones
+   Mercado · cotizaciones (cada cell clickable → modal)
    ============================================================ */
 function Cotizaciones() {
   const c = D.COTIZACIONES;
+  const modal = useModal();
+
+  const openCell = (it) => {
+    modal.open({
+      title: it.label,
+      sub: it.fuente + (c.fecha ? " · " + c.fecha : ""),
+      body: kvList([
+        { k: "Precio",            v: it.value + (it.unit ? " " + it.unit : "") },
+        { k: it.deltaSrc || "Variación", v: it.delta != null ? D.fmtPct(it.delta) : "N/D",
+          cls: it.delta != null && it.delta < 0 ? "neg" : (it.delta != null ? "pos" : "") },
+        ...(it.deltaAbs != null ? [{ k: "Δ absoluto", v: D.fmtMoney(it.deltaAbs) }] : []),
+        { k: "Fuente",            v: it.fuente }
+      ])
+    });
+  };
+
   return (
     <article className="card cot-card">
       <div className="card-head">
         <div>
           <h3>{c.title}</h3>
-          <div className="card-head-sub">{c.sub}</div>
+          <div className="card-head-sub">{c.sub}{c.fecha ? " · " + c.fecha : ""}</div>
         </div>
       </div>
       <div className="cot-grid">
         {c.items.map((it, i) => (
-          <div key={i} className="cot-cell">
+          <button key={i} className="cot-cell drill" onClick={() => openCell(it)}>
             <div className="cot-top">
               <span className="cot-label">{it.label}</span>
               {it.delta !== null && (
@@ -235,7 +484,7 @@ function Cotizaciones() {
             </div>
             <div className="cot-val">{it.value}</div>
             <div className="cot-unit">{it.unit}</div>
-          </div>
+          </button>
         ))}
       </div>
     </article>
@@ -243,11 +492,39 @@ function Cotizaciones() {
 }
 
 /* ============================================================
-   Insumos críticos
+   Insumos críticos (cada card clickable → modal)
    ============================================================ */
 function InsumoCard({ insumo }) {
+  const modal = useModal();
+  const open = () => {
+    modal.open({
+      title: insumo.title,
+      sub: insumo.sub,
+      body: (
+        <>
+          <div className="modal-section">
+            {kvList([
+              { k: "Estado",       v: insumo.stateLabel, cls: insumo.state },
+              { k: "Días",         v: insumo.inconsistente ? "Datos inconsistentes" : insumo.dias },
+              { k: "Stock",        v: insumo.stockKg != null ? (insumo.stockKg < 0 ? "−" : "") + D.fmt(Math.abs(insumo.stockKg)) + " kg" : "N/D",
+                cls: (insumo.stockKg != null && insumo.stockKg < 0) ? "neg" : "" },
+              { k: "Consumo / día", v: insumo.consumoKgDia != null ? D.fmt(insumo.consumoKgDia) + " kg" : "N/D" },
+              { k: "Última compra", v: insumo.ultCompra ? D.fmtFechaCorta(insumo.ultCompra) : "N/D" }
+            ])}
+          </div>
+          {insumo.inconsistente && (
+            <div className="modal-note neg">
+              ⚠ Datos contables inconsistentes — revisar en módulo Stock Insumos
+            </div>
+          )}
+        </>
+      )
+    });
+  };
+
   return (
-    <article className="card insumo">
+    <article className="card insumo drill" onClick={open} role="button" tabIndex={0}
+             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}>
       <div className="card-head">
         <div>
           <h3>{insumo.title}</h3>
@@ -285,16 +562,59 @@ function Insumos() {
 }
 
 /* ============================================================
-   Financiero · flujo semanal
+   Financiero · saldo proyectado (clickable → modal)
    ============================================================ */
 function FlujoSemanal() {
   const f = D.FLUJO_SEMANAL;
-  const { fmtMoneyCompact } = D;
+  const { fmtMoneyCompact, fmtMoney } = D;
+  const modal = useModal();
   const cerradaIsPos = (f.cerrada.value ?? 0) >= 0;
   const proxIsPos = (f.proxima.value ?? 0) >= 0;
   const maxAbs = Math.max(1, ...f.bars.map((b) => Math.abs(b.v)));
+
+  const open = () => {
+    modal.open({
+      title: f.title,
+      sub: f.sub + (f.fechaCorte ? " · corte " + D.fmtFechaCorta(f.fechaCorte) : ""),
+      body: (
+        <>
+          <div className="modal-section">
+            <h4>{f.cerrada.label}</h4>
+            <div className={"modal-big " + (cerradaIsPos ? "pos" : "neg")}>
+              {f.cerrada.value != null ? fmtMoneyCompact(f.cerrada.value) : "N/D"}
+            </div>
+            <div className="modal-section-sub">{f.cerrada.range}</div>
+          </div>
+          <div className="modal-section">
+            <h4>{f.proxima.label}</h4>
+            <div className={"modal-big " + (proxIsPos ? "pos" : "neg")}>
+              {f.proxima.value != null ? fmtMoneyCompact(f.proxima.value) : "N/D"}
+            </div>
+            <div className="modal-section-sub">{f.proxima.range}</div>
+          </div>
+          {f.bars.length > 0 && (
+            <div className="modal-section">
+              <h4>Saldo proyectado · {f.bars.length} semanas</h4>
+              {kvList(f.bars.map((b) => ({
+                k: b.label + (b.kind === "next" ? " · actual" : ""),
+                v: fmtMoneyCompact(b.v),
+                cls: b.v >= 0 ? "pos" : "neg"
+              })))}
+            </div>
+          )}
+          <div className="modal-section">
+            {kvList([
+              { k: f.acumulado.label, v: f.acumulado.value != null ? fmtMoneyCompact(f.acumulado.value) : "N/D" }
+            ])}
+          </div>
+        </>
+      )
+    });
+  };
+
   return (
-    <article className="card flujo">
+    <article className="card flujo drill" onClick={open} role="button" tabIndex={0}
+             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}>
       <div className="card-head">
         <div>
           <h3>{f.title}</h3>
@@ -307,7 +627,7 @@ function FlujoSemanal() {
           <div className="flujo-panel-label">{f.cerrada.label}</div>
           <div className="flujo-panel-sub">{f.cerrada.range}</div>
         </div>
-        <div className="flujo-panel-val">{fmtMoneyCompact(f.cerrada.value)}</div>
+        <div className="flujo-panel-val">{f.cerrada.value != null ? fmtMoneyCompact(f.cerrada.value) : "N/D"}</div>
       </div>
 
       <div className="flujo-arrow">↓</div>
@@ -317,7 +637,7 @@ function FlujoSemanal() {
           <div className="flujo-panel-label">{f.proxima.label}</div>
           <div className="flujo-panel-sub">{f.proxima.range}</div>
         </div>
-        <div className="flujo-panel-val">{fmtMoneyCompact(f.proxima.value)}</div>
+        <div className="flujo-panel-val">{f.proxima.value != null ? fmtMoneyCompact(f.proxima.value) : "N/D"}</div>
       </div>
 
       {f.bars.length > 0 && (
@@ -349,7 +669,7 @@ function FlujoSemanal() {
           <div className="flujo-acum-label">{f.acumulado.label}</div>
           <div className="flujo-acum-sub">{f.acumulado.sub}</div>
         </div>
-        <div className="flujo-acum-val">{fmtMoneyCompact(f.acumulado.value)}</div>
+        <div className="flujo-acum-val">{f.acumulado.value != null ? fmtMoneyCompact(f.acumulado.value) : "N/D"}</div>
       </div>
     </article>
   );
@@ -387,7 +707,6 @@ function LineChart({ data }) {
     " L" + padL.toFixed(2) + "," + (padT + innerH).toFixed(2) +
     " Z";
 
-  // Gridlines y labels (yLabels puede ser array de strings o numbers)
   const gridLines = data.yLabels.map((yl) => {
     let v;
     if (typeof yl === "string") {
@@ -492,11 +811,43 @@ function LineChart({ data }) {
   );
 }
 
+/* ============================================================
+   ChartCard (Patrimonio USD + Stock kilos) — clickable
+   ============================================================ */
 function ChartCard({ data }) {
   const isPos = data.delta != null && data.delta >= 0;
-  const sufijo = data.title.toLowerCase().includes("usd") ? "YoY" : "12 m";
+  const modal = useModal();
+
+  const open = () => {
+    const lastP = data.points[data.points.length - 1];
+    const firstP = data.points[0];
+    modal.open({
+      title: data.title,
+      sub: data.sub,
+      body: (
+        <>
+          <div className="modal-section">
+            {kvList([
+              { k: "Actual", v: data.sub },
+              { k: data.deltaLabel || "Variación", v: data.delta != null ? D.fmtPct(data.delta) : "N/D",
+                cls: data.delta != null && data.delta < 0 ? "neg" : (data.delta != null ? "pos" : "") },
+              { k: "Cantidad de puntos", v: data.nPuntos != null ? String(data.nPuntos) : "—" },
+              { k: "Primer punto", v: firstP ? (firstP.x + ": " + Number(firstP.v).toLocaleString("es-AR", { maximumFractionDigits: 2 }).replace(".", ",")) : "—" },
+              { k: "Último punto", v: lastP ? (lastP.x + ": " + Number(lastP.v).toLocaleString("es-AR", { maximumFractionDigits: 2 }).replace(".", ",")) : "—" }
+            ])}
+          </div>
+          <div className="modal-note">
+            La serie se construye en data.js desde los JSONs del pipeline.
+            Para ver la serie completa, abrí el módulo Histórico.
+          </div>
+        </>
+      )
+    });
+  };
+
   return (
-    <article className="card chart-card">
+    <article className="card chart-card drill" onClick={open} role="button" tabIndex={0}
+             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}>
       <div className="card-head">
         <div>
           <h3>{data.title}</h3>
@@ -504,7 +855,7 @@ function ChartCard({ data }) {
             <span className="chart-head-val">{data.sub}</span>
             {data.delta != null && (
               <span className={"chart-head-delta " + (isPos ? "pos" : "neg")}>
-                {D.fmtPct(data.delta)} {sufijo}
+                {D.fmtPct(data.delta)} {data.deltaLabel || ""}
               </span>
             )}
           </div>
@@ -516,14 +867,19 @@ function ChartCard({ data }) {
 }
 
 /* ============================================================
-   Módulos grid
+   Módulos grid — navegación real a index.html?mod=<id>
    ============================================================ */
+function navigateToModule(portalId) {
+  // querystring para evitar ambigüedad con anchors
+  window.location.href = "index.html?mod=" + encodeURIComponent(portalId);
+}
+
 function Modulos() {
   return (
     <div className="modulos">
       {D.MODULOS.map((m) => (
         <button key={m.n} className="mod"
-                onClick={() => alert("Abrir módulo: " + m.title)}>
+                onClick={() => navigateToModule(m.portalId)}>
           <div className="mod-top">
             <span>{m.n}</span>
             <span className={"mod-led " + m.state} />
@@ -543,9 +899,11 @@ function Modulos() {
 /* ============================================================
    Footer
    ============================================================ */
-function Footer() {
+function Footer({ session }) {
   return (
-    <div className="foot">PEGSA & BULLTRADE · Uso interno · {new Date().toLocaleDateString("es-AR", { month: "short", year: "numeric" })}</div>
+    <div className="foot">
+      PEGSA & BULLTRADE · {session ? session.name + " · " : ""}{new Date().toLocaleDateString("es-AR", { month: "short", year: "numeric" })}
+    </div>
   );
 }
 
@@ -568,11 +926,13 @@ function TabBar({ active, onChange }) {
 }
 
 /* ============================================================
-   App raíz
+   App raíz — con login gate + ModalProvider
    ============================================================ */
 function App() {
+  const [session, setSession] = useState(() => loadSession());
   const [tab, setTab] = useState(0);
   const [bottomTab, setBottomTab] = useState("panel");
+  const [modalContent, setModalContent] = useState(null);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -584,50 +944,69 @@ function App() {
     return () => window.removeEventListener("mobile:data-ready", onReady);
   }, []);
 
+  // Login gate
+  if (!session) {
+    return <LoginScreen onLogin={(u) => setSession(loadSession())} />;
+  }
+
+  const onLogout = () => {
+    clearSession();
+    setSession(null);
+  };
+
+  const modalApi = {
+    open: (content) => setModalContent(content),
+    close: () => setModalContent(null)
+  };
+
   return (
-    <div className="app">
-      <Header />
-      <Tabs active={tab} onChange={setTab} />
+    <ModalCtx.Provider value={modalApi}>
+      <div className="app">
+        <Header session={session} onLogout={onLogout} />
+        <Tabs active={tab} onChange={setTab} />
 
-      <main className="main">
-        <Saludo />
-        <Alertas />
+        <main className="main">
+          <Saludo />
+          <Alertas />
 
-        <div className="sec-head">
-          <h2><span className="ico">🔔</span>Lo más importante</h2>
-        </div>
-        <StockHero />
-        <Cotizaciones />
+          <div className="sec-head">
+            <h2><span className="ico">🔔</span>Lo más importante</h2>
+          </div>
+          <StockHero />
+          <Cotizaciones />
 
-        <hr className="sec-div" />
+          <hr className="sec-div" />
 
-        <div className="sec-head">
-          <h2><span className="ico">🌾</span>Insumos críticos</h2>
-        </div>
-        <Insumos />
+          <div className="sec-head">
+            <h2><span className="ico">🌾</span>Insumos críticos</h2>
+          </div>
+          <Insumos />
 
-        <hr className="sec-div" />
+          <hr className="sec-div" />
 
-        <div className="sec-head">
-          <h2><span className="ico">📋</span>Sub-datos</h2>
-        </div>
-        <FlujoSemanal />
-        <ChartCard data={D.PATRIMONIO_USD} />
-        <ChartCard data={D.STOCK_KILOS} />
+          <div className="sec-head">
+            <h2><span className="ico">📋</span>Sub-datos</h2>
+          </div>
+          <FlujoSemanal />
+          <ChartCard data={D.PATRIMONIO_USD} />
+          <ChartCard data={D.STOCK_KILOS} />
 
-        <hr className="sec-div" />
+          <hr className="sec-div" />
 
-        <div className="sec-head">
-          <h2><span className="ico">📂</span>Módulos</h2>
-          <span className="sec-head-sub">{D.MODULOS.length} módulos · tocar para abrir</span>
-        </div>
-        <Modulos />
+          <div className="sec-head">
+            <h2><span className="ico">📂</span>Módulos</h2>
+            <span className="sec-head-sub">{D.MODULOS.length} módulos · tocar para abrir</span>
+          </div>
+          <Modulos />
 
-        <Footer />
-      </main>
+          <Footer session={session} />
+        </main>
 
-      <TabBar active={bottomTab} onChange={setBottomTab} />
-    </div>
+        <TabBar active={bottomTab} onChange={setBottomTab} />
+
+        <Modal content={modalContent} onClose={() => setModalContent(null)} />
+      </div>
+    </ModalCtx.Provider>
   );
 }
 
