@@ -205,7 +205,10 @@
       var12m: var12mStock,
       var12mLabel: "Variación 12 m",
       hoteleros: hoteleros,
-      // Para el modal drill
+      // Para el modal drill (espejo del desktop): barras por categoría
+      // (D.stockCategorias, Grupo completo) + torta por establecimiento
+      // PEGSA (D.haciendaPegsaPorEstab).
+      categorias: Array.isArray(D.stockCategorias) ? D.stockCategorias : [],
       detallePorEstab: Array.isArray(D.haciendaPegsaPorEstab) ? D.haciendaPegsaPorEstab : []
     };
 
@@ -472,56 +475,31 @@
           m.id === "flujo-fondos" || m.id === "simulador") return "pos";
       return "primary";
     }
-    var tes = D.tesoreria || {};
-    var kpiOverrides = {
-      "tesoreria": function () {
-        if (tes.posicion == null) return null;
-        return { kpi: fmtMoneyCompact(tes.posicion), unit: "", sub: "Posición · sem. " + (tes.semana || "—") };
-      },
-      "estado-resultados": function () {
-        var r = D.hero && D.hero.resultado;
-        if (!r) return null;
-        return { kpi: (r.total >= 0 ? "+" : "") + fmtMoneyCompact(r.total).replace("$ ", "$"), unit: "", sub: "Resultado neto del período" };
-      },
-      "flujo-fondos": function () { return null; }
-    };
+    // v4 fix: NO hay kpiOverrides. Mobile muestra el m.kpi / m.kpiLabel
+    // exactamente como vienen de D.modulos (poblado por data.js y
+    // actualizado en runtime) — debe coincidir con el portal desktop.
+    // Sólo se separa la unidad cuando aparece como sufijo (kg, t, %, etc.)
+    // para que el layout pueda mostrar el número grande y la unidad chica.
+    // NO se recompacta el valor numérico — eso cambiaría lo mostrado.
     var MODULOS = (D.modulos || [])
       .filter(function (m) { return m.grupo !== "config"; })
       .slice(0, 8)
       .map(function (m) {
-        var override = kpiOverrides[m.id] && kpiOverrides[m.id]();
-        var base = {
+        var kpi = m.kpi || "—";
+        var unit = "";
+        var matchUnit = kpi.match(/^(.+?)\s+([a-zA-ZÀ-ſ%]+)$/);
+        if (matchUnit) { kpi = matchUnit[1]; unit = matchUnit[2]; }
+        return {
           n: m.n,
           id: m.id,
           portalId: PANEL_TO_PORTAL_ID[m.id] || m.id,
           title: m.titulo,
           state: ledMap[m.estado] || "disponible",
-          kind: kindByModulo(m)
-        };
-        if (override && override.kpi != null) {
-          return Object.assign(base, {
-            kpi: override.kpi,
-            unit: override.unit || "",
-            sub: override.sub || m.kpiLabel || m.desc || ""
-          });
-        }
-        var kpi = m.kpi || "—";
-        var unit = "";
-        var matchUnit = kpi.match(/^(.+?)\s+([a-zA-ZÀ-ſ%]+)$/);
-        if (matchUnit) { kpi = matchUnit[1]; unit = matchUnit[2]; }
-        var matchNum = kpi.match(/^([+-]?)\$([\d\.]+)$/);
-        if (matchNum) {
-          var raw = parseFloat(matchNum[2].replace(/\./g, ""));
-          if (!isNaN(raw) && Math.abs(raw) >= 1e6) {
-            kpi = matchNum[1] + fmtMoneyCompact(raw * (matchNum[1] === "-" ? -1 : 1));
-            unit = "";
-          }
-        }
-        return Object.assign(base, {
+          kind: kindByModulo(m),
           kpi: kpi,
           unit: unit,
           sub: m.kpiLabel || m.desc || ""
-        });
+        };
       });
 
     return {

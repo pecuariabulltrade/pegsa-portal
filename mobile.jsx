@@ -250,26 +250,10 @@ function Header({ session, onLogout }) {
   );
 }
 
-/* ============================================================
-   Tabs (top)
-   ============================================================ */
-function Tabs({ active, onChange }) {
-  return (
-    <nav className="tabs">
-      <div className="tabs-row">
-        {D.TABS.map((t, i) => (
-          <button
-            key={t}
-            className={"tab-pill " + (active === i ? "on" : "")}
-            onClick={() => onChange(i)}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-    </nav>
-  );
-}
+/* v4: La barra de tabs superior (Importante / Insumos / Sub-datos /
+   Módulos) fue removida — las secciones ya están separadas con
+   .sec-head + .sec-div dentro del main. La nav de abajo (Panel/Datos/
+   Alertas/Módulos) cubre la navegación principal. */
 
 /* ============================================================
    Saludo
@@ -332,6 +316,109 @@ function kvList(rows) {
   );
 }
 
+/* Barras horizontales en CSS puro — usadas en el drill del Stock hero
+   para mostrar D.stockCategorias (espejo del block 1 del módulo Stock
+   del desktop, ordenado desc por kg). */
+function CategoriasBars({ items }) {
+  if (!items || !items.length) return null;
+  const { fmt } = D;
+  const max = Math.max.apply(null, items.map((it) => it.cabezas || 0)) || 1;
+  return (
+    <div className="mbars">
+      {items.map((it, i) => {
+        const pct = Math.max(2, Math.round((it.cabezas || 0) / max * 100));
+        return (
+          <div key={i} className="mbar-row">
+            <div className="mbar-head">
+              <span className="mbar-name">{it.categoria}</span>
+              <span className="mbar-val">
+                {fmt(it.cabezas)} cab · {fmt(Math.round((it.kg || 0) / 1000))} t
+              </span>
+            </div>
+            <div className="mbar-track">
+              <div className="mbar-fill" style={{ width: pct + "%" }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Donut SVG puro — usado en el drill del Stock hero para mostrar
+   D.haciendaPegsaPorEstab (espejo del block 2 del módulo Stock del
+   desktop, distribución de cabezas PEGSA por establecimiento).
+   Hasta 7 segmentos coloreados con la paleta del portal. */
+const DONUT_PALETTE = [
+  "oklch(0.42 0.13 256)",
+  "oklch(0.55 0.13 155)",
+  "oklch(0.72 0.15 75)",
+  "oklch(0.50 0.12 200)",
+  "oklch(0.55 0.14 320)",
+  "oklch(0.60 0.10 280)",
+  "oklch(0.55 0.16 30)"
+];
+function EstabDonut({ items }) {
+  if (!items || !items.length) return null;
+  const { fmt } = D;
+  const total = items.reduce((s, it) => s + (it.cabezas || 0), 0);
+  if (!total) return null;
+
+  const R = 50, r = 30, cx = 60, cy = 60;
+  let acc = 0;
+  const arcPath = (start, end) => {
+    if (end - start >= 0.9999) {
+      // Caso 1 solo segmento: dibujar como dos medios arcos para evitar M==L
+      return [
+        "M", cx + R, cy,
+        "A", R, R, 0, 1, 1, cx - R, cy,
+        "A", R, R, 0, 1, 1, cx + R, cy,
+        "L", cx + r, cy,
+        "A", r, r, 0, 1, 0, cx - r, cy,
+        "A", r, r, 0, 1, 0, cx + r, cy,
+        "Z"
+      ].join(" ");
+    }
+    const a1 = start * 2 * Math.PI - Math.PI / 2;
+    const a2 = end   * 2 * Math.PI - Math.PI / 2;
+    const large = (end - start) > 0.5 ? 1 : 0;
+    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    const x2 = cx + R * Math.cos(a2), y2 = cy + R * Math.sin(a2);
+    const xi1 = cx + r * Math.cos(a1), yi1 = cy + r * Math.sin(a1);
+    const xi2 = cx + r * Math.cos(a2), yi2 = cy + r * Math.sin(a2);
+    return `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z`;
+  };
+
+  return (
+    <div className="mdonut-wrap">
+      <svg viewBox="0 0 120 120" className="mdonut-svg" aria-hidden="true">
+        {items.map((it, i) => {
+          const start = acc / total;
+          acc += (it.cabezas || 0);
+          const end = acc / total;
+          if (end <= start) return null;
+          const color = DONUT_PALETTE[i % DONUT_PALETTE.length];
+          return <path key={i} d={arcPath(start, end)} fill={color} stroke="#fff" strokeWidth="0.8" />;
+        })}
+        <text x="60" y="58" textAnchor="middle" className="mdonut-num">{fmt(total)}</text>
+        <text x="60" y="72" textAnchor="middle" className="mdonut-num-sub">cab</text>
+      </svg>
+      <ul className="mdonut-leg">
+        {items.map((it, i) => {
+          const pct = ((it.cabezas || 0) / total) * 100;
+          return (
+            <li key={i}>
+              <span className="mleg-dot" style={{ background: DONUT_PALETTE[i % DONUT_PALETTE.length] }} />
+              <span className="mleg-name">{it.nombre}</span>
+              <span className="mleg-pct">{pct.toFixed(pct < 10 ? 1 : 0).replace(".", ",")}%</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 /* ============================================================
    Stock hero card (clickable → modal)
    ============================================================ */
@@ -346,38 +433,32 @@ function StockHero() {
       sub: h.sub,
       body: (
         <>
-          <div className="modal-section">
-            <h4>PEGSA · propio</h4>
-            {kvList([
-              { k: "Cabezas",    v: fmt(h.pegsa.cab) + " cab" },
-              { k: "Toneladas",  v: fmt(h.pegsa.t) + " t" },
-              { k: "Kg / cab",   v: h.pegsa.kgCab + " kg" },
-              { k: "Establec.",  v: h.pegsa.est != null ? h.pegsa.est : "N/D" }
-            ])}
-          </div>
-          <div className="modal-section">
-            <h4>Grupo · total (PEGSA + hoteleros)</h4>
-            {kvList([
-              { k: "Cabezas",    v: fmt(h.grupo.cab) + " cab" },
-              { k: "Toneladas",  v: fmt(h.grupo.t) + " t" },
-              { k: "Kg / cab",   v: h.grupo.kgCab + " kg" },
-              { k: "Establec.",  v: h.grupo.est }
-            ])}
-          </div>
-          {h.detallePorEstab && h.detallePorEstab.length > 0 && (
+          {/* Block 1: barras por categoría del Grupo completo
+              (espejo del módulo Stock del desktop, ordenado desc por kg). */}
+          {h.categorias && h.categorias.length > 0 && (
             <div className="modal-section">
-              <h4>Detalle PEGSA por establecimiento</h4>
-              {kvList(h.detallePorEstab.map((e) => ({
-                k: e.nombre,
-                v: fmt(e.cabezas) + " cab · " + fmt(Math.round(e.kg / 1000)) + " t"
-              })))}
+              <h4>Por categoría · Grupo completo</h4>
+              <CategoriasBars items={h.categorias} />
             </div>
           )}
+
+          {/* Block 2: torta por establecimiento (sólo PEGSA propio). */}
+          {h.detallePorEstab && h.detallePorEstab.length > 0 && (
+            <div className="modal-section">
+              <h4>Por establecimiento · PEGSA propio</h4>
+              <EstabDonut items={h.detallePorEstab} />
+            </div>
+          )}
+
+          {/* Referencia: var 12m y hoteleros (terceros). */}
           <div className="modal-section">
             <h4>Referencia</h4>
             {kvList([
-              { k: h.var12mLabel, v: h.var12m != null ? fmtPct(h.var12m) : "N/D", cls: (h.var12m != null && h.var12m < 0) ? "neg" : "pos" },
-              { k: "Hoteleros (terceros)", v: fmt(h.hoteleros) + " cab" }
+              { k: h.var12mLabel, v: h.var12m != null ? fmtPct(h.var12m) : "N/D",
+                cls: (h.var12m != null && h.var12m < 0) ? "neg" : "pos" },
+              { k: "Hoteleros (terceros)", v: fmt(h.hoteleros) + " cab" },
+              { k: "PEGSA propio",         v: fmt(h.pegsa.cab) + " cab · " + fmt(h.pegsa.t) + " t" },
+              { k: "Grupo total",          v: fmt(h.grupo.cab) + " cab · " + fmt(h.grupo.t) + " t" }
             ])}
           </div>
         </>
@@ -930,7 +1011,7 @@ function TabBar({ active, onChange }) {
    ============================================================ */
 function App() {
   const [session, setSession] = useState(() => loadSession());
-  const [tab, setTab] = useState(0);
+  // v4: state `tab` eliminado junto con la barra de tabs superior.
   const [bottomTab, setBottomTab] = useState("panel");
   const [modalContent, setModalContent] = useState(null);
   const [, setTick] = useState(0);
@@ -940,8 +1021,23 @@ function App() {
       D = window.MOBILE_DATA;
       setTick((t) => t + 1);
     };
+    // v4 fix: si la referencia de MOBILE_DATA cambió entre el initial value
+    // de `let D` (cuando Babel ejecutó este script) y el primer effect (post-
+    // commit), forzar refresh — cubre el caso race en que 'mobile:data-ready'
+    // disparó después del eval pero antes del addEventListener.
+    if (D !== window.MOBILE_DATA) {
+      D = window.MOBILE_DATA;
+      setTick((t) => t + 1);
+    }
     window.addEventListener("mobile:data-ready", onReady);
-    return () => window.removeEventListener("mobile:data-ready", onReady);
+    // Defensivo extra: si por algún timing la cadena panel→mobile no llegó,
+    // escuchamos también el evento upstream (mobile-data.js corre rebuild
+    // que reemplaza MOBILE_DATA antes de dispatchar mobile:data-ready).
+    window.addEventListener("panel:data-ready", onReady);
+    return () => {
+      window.removeEventListener("mobile:data-ready", onReady);
+      window.removeEventListener("panel:data-ready", onReady);
+    };
   }, []);
 
   // Login gate
@@ -963,7 +1059,6 @@ function App() {
     <ModalCtx.Provider value={modalApi}>
       <div className="app">
         <Header session={session} onLogout={onLogout} />
-        <Tabs active={tab} onChange={setTab} />
 
         <main className="main">
           <Saludo />
