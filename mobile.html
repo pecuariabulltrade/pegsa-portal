@@ -32,5 +32,14 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 
-<!-- Datos REALES del portal (mismo módulo que usa el panel desktop) -->
-<!-- data.js define window.PEGSA_DATA y dispara 'panel:data-ready' al terminar de fetch-ear lo
+<!-- Datos REALES del portal: data.js define window.PEGSA_DATA y dispara 'panel:data-ready' al terminar de fetch-ear los JSONs -->
+<script src="data.js"></script>
+
+<!-- Adaptador: PEGSA_DATA -> MOBILE_DATA -->
+<script src="mobile-data.js"></script>
+
+<!-- App (JSX transformado por Babel standalone) -->
+<script type="text/babel" data-presets="env,react" src="mobile.jsx"></script>
+
+</body>
+</html>

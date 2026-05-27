@@ -1,16 +1,16 @@
-/* mobile.jsx — Panel ejecutivo PEGSA & Bulltrade — vista móvil
+/* mobile.jsx — Panel ejecutivo PEGSA & Bulltrade — vista mobile
    React 18 UMD + Babel standalone.
-   Datos: window.MOBILE_DATA (mobile-data.js)
+   Datos: window.MOBILE_DATA (mobile-data.js, adaptador de window.PEGSA_DATA)
    --------------------------------------------------------------- */
 
 const { useState, useRef, useEffect, useMemo } = React;
-// D es una referencia que se actualiza al recibir 'mobile:data-ready'.
-// Se usa como `D` dentro de componentes — esos componentes se re-renderizan
-// porque <App/> tiene un state `tick` que se incrementa con cada evento.
+
+// Referencia que se actualiza al recibir 'mobile:data-ready'. <App/> incrementa
+// un tick para forzar re-render cuando los datos reales llegan.
 let D = window.MOBILE_DATA;
 
 /* ============================================================
-   Iconos SVG inline (header + tab bar)
+   Iconos SVG inline
    ============================================================ */
 const Icon = {
   Menu: () => (
@@ -40,12 +40,6 @@ const Icon = {
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
     </svg>
   ),
-  BellTab: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-      <path d="M10.3 21a2 2 0 0 0 3.4 0" />
-    </svg>
-  ),
   Grid: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
       <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -57,10 +51,10 @@ const Icon = {
 };
 
 const TabIcon = ({ name }) => {
-  if (name === "home") return <Icon.Home />;
+  if (name === "home")  return <Icon.Home />;
   if (name === "chart") return <Icon.Chart />;
-  if (name === "bell") return <Icon.BellTab />;
-  if (name === "grid") return <Icon.Grid />;
+  if (name === "bell")  return <Icon.Bell />;
+  if (name === "grid")  return <Icon.Grid />;
   return null;
 };
 
@@ -77,7 +71,7 @@ function Header() {
           <div className="hdr-brand-name">{brand}</div>
           <div className="hdr-brand-sub">{sub}</div>
         </div>
-        <button className="hdr-btn" aria-label="Menú"><Icon.Menu /></button>
+        <button className="hdr-btn" aria-label="Menu"><Icon.Menu /></button>
         <button className="hdr-btn" aria-label="Notificaciones">
           <Icon.Bell />
           {notifications > 0 && (
@@ -181,7 +175,7 @@ function StockHero() {
             <span className="sh-big-unit">cab</span>
           </div>
           <div className="sh-meta">
-            <b>{fmt(h.pegsa.t)}</b> t · <b>{h.pegsa.kgCab}</b> kg/cab · <b>{h.pegsa.est}</b> est.
+            <b>{fmt(h.pegsa.t)}</b> t · <b>{h.pegsa.kgCab}</b> kg/cab{h.pegsa.est != null ? <> · <b>{h.pegsa.est}</b> est.</> : null}
           </div>
         </div>
 
@@ -204,7 +198,7 @@ function StockHero() {
       <div className="sh-foot">
         <div className="sh-foot-row">
           <span>Variación cabezas 12m</span>
-          <span className="sh-foot-val pos">{fmtPct(h.var12m)}</span>
+          <span className={"sh-foot-val " + (h.var12m >= 0 ? "pos" : "")}>{h.var12m != null ? fmtPct(h.var12m) : "—"}</span>
         </div>
         <div className="sh-foot-row">
           <span>Hoteleros · terceros</span>
@@ -216,7 +210,7 @@ function StockHero() {
 }
 
 /* ============================================================
-   Mercado · cotizaciones (grid 2×3)
+   Mercado · cotizaciones
    ============================================================ */
 function Cotizaciones() {
   const c = D.COTIZACIONES;
@@ -296,7 +290,7 @@ function Insumos() {
 function FlujoSemanal() {
   const f = D.FLUJO_SEMANAL;
   const { fmtMoney } = D;
-  const maxAbs = Math.max(...f.bars.map((b) => Math.abs(b.v)));
+  const maxAbs = Math.max(1, ...f.bars.map((b) => Math.abs(b.v)));
   return (
     <article className="card flujo">
       <div className="card-head">
@@ -324,27 +318,29 @@ function FlujoSemanal() {
         <div className="flujo-panel-val">{fmtMoney(f.proxima.value, "M")}</div>
       </div>
 
-      <div className="flujo-bars">
-        {f.bars.map((b, i) => {
-          const h = (Math.abs(b.v) / maxAbs) * 30; // % de 60px → 30 cada lado
-          const pct = h.toFixed(1) + "%";
-          const fillStyle = b.v >= 0
-            ? { bottom: "50%", height: pct }
-            : { top: "50%", height: pct };
-          return (
-            <div key={i} className={"flujo-bar-cell " + b.kind}>
-              <div className="flujo-bar-track">
-                <div className="flujo-bar-axis" />
-                <div
-                  className={"flujo-bar-fill " + (b.v >= 0 ? "pos" : "neg")}
-                  style={fillStyle}
-                />
+      {f.bars.length > 0 && (
+        <div className="flujo-bars">
+          {f.bars.map((b, i) => {
+            const h = (Math.abs(b.v) / maxAbs) * 30;
+            const pct = h.toFixed(1) + "%";
+            const fillStyle = b.v >= 0
+              ? { bottom: "50%", height: pct }
+              : { top: "50%", height: pct };
+            return (
+              <div key={i} className={"flujo-bar-cell " + b.kind}>
+                <div className="flujo-bar-track">
+                  <div className="flujo-bar-axis" />
+                  <div
+                    className={"flujo-bar-fill " + (b.v >= 0 ? "pos" : "neg")}
+                    style={fillStyle}
+                  />
+                </div>
+                <div className="flujo-bar-label">{b.label}</div>
               </div>
-              <div className="flujo-bar-label">{b.label}</div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flujo-acum">
         <div>
@@ -358,15 +354,13 @@ function FlujoSemanal() {
 }
 
 /* ============================================================
-   Line chart SVG (Patrimonio USD + Stock kilos)
+   Line chart SVG (Patrimonio + Stock kilos)
    ============================================================ */
 function LineChart({ data }) {
   const wrapRef = useRef(null);
   const [hover, setHover] = useState(null);
 
-  // Geometría
-  const W = 320;       // viewBox
-  const H = 120;
+  const W = 320, H = 120;
   const padL = 28, padR = 8, padT = 8, padB = 18;
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
@@ -375,12 +369,10 @@ function LineChart({ data }) {
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
   const range = maxY - minY || 1;
-  const padYTop = range * 0.12;
-  const padYBot = range * 0.12;
-  const yMin = minY - padYBot;
-  const yMax = maxY + padYTop;
+  const yMin = minY - range * 0.12;
+  const yMax = maxY + range * 0.12;
 
-  const xScale = (i) => padL + (i / (data.points.length - 1)) * innerW;
+  const xScale = (i) => padL + (i / Math.max(1, data.points.length - 1)) * innerW;
   const yScale = (v) => padT + (1 - (v - yMin) / (yMax - yMin)) * innerH;
 
   const pathD = data.points
@@ -393,35 +385,36 @@ function LineChart({ data }) {
     " L" + padL.toFixed(2) + "," + (padT + innerH).toFixed(2) +
     " Z";
 
-  // 3 gridlines horizontales basadas en data.yLabels (de mayor a menor)
-  const gridLines = data.yLabels.map((yl, i) => {
-    const v = typeof yl === "string"
-      ? parseFloat(yl.replace(",", ".").replace("k", "")) * (yl.includes("k") ? 1000 : 1)
-      : yl;
-    return { v, label: typeof yl === "string" ? yl : String(yl) };
+  // Gridlines y labels (yLabels puede ser array de strings o numbers)
+  const gridLines = data.yLabels.map((yl) => {
+    let v;
+    if (typeof yl === "string") {
+      const m = yl.match(/([\d,\.]+)/);
+      v = m ? parseFloat(m[1].replace(",", ".")) : 0;
+    } else {
+      v = yl;
+    }
+    return { v, label: String(yl) };
   });
 
   const stroke = data.color === "pos" ? "var(--pos)" : "var(--primary)";
   const fillId = "fill-" + (data.color || "primary");
 
-  // Touch/hover handler
   const onMove = (e) => {
     const rect = wrapRef.current.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const xPx = clientX - rect.left;
     const xPct = xPx / rect.width;
     const xView = xPct * W;
-    if (xView < padL || xView > W - padR) {
-      setHover(null); return;
-    }
+    if (xView < padL || xView > W - padR) { setHover(null); return; }
     const t = (xView - padL) / innerW;
-    const idx = Math.round(t * (data.points.length - 1));
+    const idx = Math.max(0, Math.min(data.points.length - 1, Math.round(t * (data.points.length - 1))));
     const p = data.points[idx];
     setHover({
       idx,
       xPct: ((xScale(idx) / W) * 100),
       yPct: ((yScale(p.v) / H) * 100),
-      label: p.x || ("d " + (idx + 1)),
+      label: p.x || ("p " + (idx + 1)),
       v: p.v,
     });
   };
@@ -446,76 +439,44 @@ function LineChart({ data }) {
             </linearGradient>
           </defs>
 
-          {/* Gridlines + Y labels */}
           {gridLines.map((gl, i) => {
             const y = yScale(gl.v);
             if (isNaN(y) || y < padT - 1 || y > padT + innerH + 1) return null;
             return (
               <g key={i}>
-                <line
-                  x1={padL} x2={W - padR}
-                  y1={y} y2={y}
-                  stroke="var(--border)"
-                  strokeWidth="1"
-                  strokeDasharray="2 3"
-                />
-                <text
-                  x={padL - 6}
-                  y={y + 3.5}
-                  fontSize="9"
-                  fontFamily="JetBrains Mono, monospace"
-                  fill="var(--ink-faint)"
-                  textAnchor="end"
-                >
+                <line x1={padL} x2={W - padR} y1={y} y2={y}
+                      stroke="var(--border)" strokeWidth="1" strokeDasharray="2 3" />
+                <text x={padL - 6} y={y + 3.5} fontSize="9"
+                      fontFamily="JetBrains Mono, monospace"
+                      fill="var(--ink-faint)" textAnchor="end">
                   {gl.label}
                 </text>
               </g>
             );
           })}
 
-          {/* Área */}
           <path d={areaD} fill={"url(#" + fillId + ")"} />
 
-          {/* Línea */}
-          <path
-            d={pathD}
-            fill="none"
-            stroke={stroke}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <path d={pathD} fill="none" stroke={stroke} strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
 
-          {/* Hover guide */}
           {hover && (
             <g>
-              <line
-                x1={xScale(hover.idx)} x2={xScale(hover.idx)}
-                y1={padT} y2={padT + innerH}
-                stroke="var(--ink)"
-                strokeWidth="1"
-                strokeDasharray="2 3"
-                opacity="0.4"
-              />
-              <circle
-                cx={xScale(hover.idx)}
-                cy={yScale(data.points[hover.idx].v)}
-                r="4.5"
-                fill={stroke}
-                stroke="#fff"
-                strokeWidth="2"
-              />
+              <line x1={xScale(hover.idx)} x2={xScale(hover.idx)}
+                    y1={padT} y2={padT + innerH}
+                    stroke="var(--ink)" strokeWidth="1"
+                    strokeDasharray="2 3" opacity="0.4" />
+              <circle cx={xScale(hover.idx)} cy={yScale(data.points[hover.idx].v)}
+                      r="4.5" fill={stroke} stroke="#fff" strokeWidth="2" />
             </g>
           )}
         </svg>
 
         {hover && (
-          <div
-            className="chart-tip on"
-            style={{ left: hover.xPct + "%", top: hover.yPct + "%" }}
-          >
+          <div className="chart-tip on"
+               style={{ left: hover.xPct + "%", top: hover.yPct + "%" }}>
             <div>
-              {data.unit} {Number(hover.v).toLocaleString("es-AR", { maximumFractionDigits: 1 }).replace(".", ",")}
+              {data.unit} {Number(hover.v).toLocaleString("es-AR", { maximumFractionDigits: 2 }).replace(".", ",")}
             </div>
             <span className="chart-tip-sub">{hover.label}</span>
           </div>
@@ -530,10 +491,8 @@ function LineChart({ data }) {
 }
 
 function ChartCard({ data }) {
-  const valFormatted = data.title.includes("USD")
-    ? "U$S " + data.points[data.points.length - 1].v.toFixed(1).replace(".", ",") + " M"
-    : (data.points[data.points.length - 1].v / 1000).toFixed(1).replace(".", ",") + "k " + data.unit;
-
+  const isPos = data.delta != null && data.delta >= 0;
+  const sufijo = data.title.toLowerCase().includes("usd") ? "YoY" : "12 m";
   return (
     <article className="card chart-card">
       <div className="card-head">
@@ -541,9 +500,11 @@ function ChartCard({ data }) {
           <h3>{data.title}</h3>
           <div className="chart-head-kpi">
             <span className="chart-head-val">{data.sub}</span>
-            <span className={"chart-head-delta " + (data.delta >= 0 ? "pos" : "neg")}>
-              {D.fmtPct(data.delta)} {data.title.includes("USD") ? "YoY" : "en 90 d"}
-            </span>
+            {data.delta != null && (
+              <span className={"chart-head-delta " + (isPos ? "pos" : "neg")}>
+                {D.fmtPct(data.delta)} {sufijo}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -559,7 +520,8 @@ function Modulos() {
   return (
     <div className="modulos">
       {D.MODULOS.map((m) => (
-        <button key={m.n} className="mod" onClick={() => alert("Abrir módulo: " + m.title)}>
+        <button key={m.n} className="mod"
+                onClick={() => alert("Abrir módulo: " + m.title)}>
           <div className="mod-top">
             <span>{m.n}</span>
             <span className={"mod-led " + m.state} />
@@ -581,7 +543,7 @@ function Modulos() {
    ============================================================ */
 function Footer() {
   return (
-    <div className="foot">PEGSA & BULLTRADE · Uso interno · Feb 2026</div>
+    <div className="foot">PEGSA & BULLTRADE · Uso interno · {new Date().toLocaleDateString("es-AR", { month: "short", year: "numeric" })}</div>
   );
 }
 
@@ -592,11 +554,9 @@ function TabBar({ active, onChange }) {
   return (
     <nav className="tabbar">
       {D.BOTTOM_TABS.map((t) => (
-        <button
-          key={t.id}
-          className={"tabbar-item " + (active === t.id ? "on" : "")}
-          onClick={() => onChange(t.id)}
-        >
+        <button key={t.id}
+                className={"tabbar-item " + (active === t.id ? "on" : "")}
+                onClick={() => onChange(t.id)}>
           <TabIcon name={t.icon} />
           <span className="tabbar-item-label">{t.label}</span>
         </button>
@@ -611,8 +571,8 @@ function TabBar({ active, onChange }) {
 function App() {
   const [tab, setTab] = useState(0);
   const [bottomTab, setBottomTab] = useState("panel");
-  // tick fuerza re-render cuando llegan los datos reales (mobile:data-ready)
   const [, setTick] = useState(0);
+
   useEffect(() => {
     const onReady = () => {
       D = window.MOBILE_DATA;
@@ -631,7 +591,6 @@ function App() {
         <Saludo />
         <Alertas />
 
-        {/* Sección 1 */}
         <div className="sec-head">
           <h2><span className="ico">🔔</span>Lo más importante</h2>
         </div>
@@ -640,7 +599,6 @@ function App() {
 
         <hr className="sec-div" />
 
-        {/* Sección 2 */}
         <div className="sec-head">
           <h2><span className="ico">🌾</span>Insumos críticos</h2>
         </div>
@@ -648,8 +606,29 @@ function App() {
 
         <hr className="sec-div" />
 
-        {/* Sección 3 */}
         <div className="sec-head">
           <h2><span className="ico">📋</span>Sub-datos</h2>
         </div>
-        <FlujoS
+        <FlujoSemanal />
+        <ChartCard data={D.PATRIMONIO_USD} />
+        <ChartCard data={D.STOCK_KILOS} />
+
+        <hr className="sec-div" />
+
+        <div className="sec-head">
+          <h2><span className="ico">📂</span>Módulos</h2>
+          <span className="sec-head-sub">{D.MODULOS.length} módulos · tocar para abrir</span>
+        </div>
+        <Modulos />
+
+        <Footer />
+      </main>
+
+      <TabBar active={bottomTab} onChange={setBottomTab} />
+    </div>
+  );
+}
+
+/* Mount */
+const root = ReactDOM.createRoot(document.getElementById("mobileRoot"));
+root.render(<App />);
