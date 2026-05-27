@@ -2596,5 +2596,47 @@
   });
 </script>
 
+<!-- ============================================================
+     v3 mobile bridge: querystring ?mod=<id> abre módulo post-login
+     Cuando el user toca un módulo en mobile.html, navega a
+     index.html?mod=<portalId>. Acá leemos el param y, en cuanto
+     el user se loguea (currentUser != null) y openModule está
+     disponible, abrimos directo ese módulo.
+     ============================================================ -->
+<script>
+(function () {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var requestedMod = params.get('mod');
+    if (!requestedMod) return;
+
+    var tries = 0;
+    function tryOpenWhenReady() {
+      tries++;
+      if (typeof currentUser !== 'undefined' && currentUser &&
+          typeof openModule === 'function') {
+        openModule(requestedMod);
+        // Limpiar la URL para que un reload no re-navegue
+        try {
+          var url = new URL(window.location.href);
+          url.searchParams.delete('mod');
+          window.history.replaceState({}, '', url.pathname + url.hash);
+        } catch (e) {}
+        return;
+      }
+      if (tries < 300) setTimeout(tryOpenWhenReady, 200); // ~60s máx
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(tryOpenWhenReady, 100);
+    } else {
+      document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(tryOpenWhenReady, 100);
+      });
+    }
+  } catch (e) { console.error('[mobile-bridge] error', e); }
+})();
+</script>
+
 </body>
 </html>
