@@ -1552,12 +1552,16 @@ button.ins-all-row:active { background: var(--surface-alt); }
   margin-top: 2px;
 }
 .prod-big-num {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 36px;
-  font-weight: 500;
+  /* v7.1: JetBrains Mono bold para unificar con la card Financiero
+     y los KPIs de cotizaciones. La mono ocupa más ancho que la serif
+     del mismo tamaño — bajar 36→28 para no desbordar a 420px. */
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.02em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .prod-big-unit {
   font-size: 13px;
@@ -1637,7 +1641,7 @@ button.ins-all-row:active { background: var(--surface-alt); }
   .prod-grid {
     grid-template-columns: 1fr;
   }
-  .prod-big-num { font-size: 32px; }
+  .prod-big-num { font-size: 24px; }
 }
 
 /* ============================================================

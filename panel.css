@@ -1835,12 +1835,14 @@ html, body {
   margin-top: 4px;
 }
 .prod-big-num {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 42px;
-  font-weight: 500;
+  /* v7.1: JetBrains Mono bold para unificar con el resto del portal. */
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 34px;
+  font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.02em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .prod-big-unit {
   font-size: 14px;

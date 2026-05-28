@@ -30,6 +30,9 @@
          |Δ| < 10%       → NEUTRO: todo gris
        cruzado con tone (good/bad/neutral) según mejorEs + signo del Δ.
        KPI grande en Playfair Display. mejorEs='rango' = siempre neutral.
+   v7.1 (2026-05-28): KPI grande de Productivos en JetBrains Mono bold
+       (no Playfair), unificado con la estética de la card Financiero
+       y los KPIs de las cotizaciones. Cambio sólo de tipografía.
    ============================================================ */
 (function (root) {
   "use strict";
