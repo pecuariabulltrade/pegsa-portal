@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generado": "2026-05-28T16:03:08.024426",
+    "generado": "2026-05-28T17:02:52.719103",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 40469,
-    "registros_filtrados": 14501,
+    "registros_totales": 40689,
+    "registros_filtrados": 14645,
     "excluidos": {
       "motivo": 429,
-      "rfid": 3959,
-      "estadia": 237,
-      "adp": 366,
+      "rfid": 4024,
+      "estadia": 246,
+      "adp": 368,
       "fecha": 20977
     },
     "col_adp": "AdpSinDebaste",
@@ -19,30 +19,30 @@
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 14501,
-    "adp_promedio": 1.506,
+    "cabezas": 14645,
+    "adp_promedio": 1.502,
     "adp_min": 0.01,
     "adp_max": 5.0,
-    "estadia_promedio": 136.5,
+    "estadia_promedio": 137.3,
     "estadia_min": 3,
     "estadia_max": 450
   },
   "por_categoria": {
     "NOVILLITO": {
-      "cabezas": 785,
-      "adp_promedio": 1.251,
+      "cabezas": 800,
+      "adp_promedio": 1.247,
       "adp_min": 0.08,
       "adp_max": 2.92,
-      "estadia_promedio": 180.3,
+      "estadia_promedio": 181.3,
       "estadia_min": 32,
       "estadia_max": 348
     },
     "NOVILLO": {
-      "cabezas": 732,
-      "adp_promedio": 1.643,
+      "cabezas": 766,
+      "adp_promedio": 1.616,
       "adp_min": 0.27,
       "adp_max": 4.54,
-      "estadia_promedio": 98.7,
+      "estadia_promedio": 99.5,
       "estadia_min": 30,
       "estadia_max": 329
     },
@@ -94,31 +94,31 @@
   },
   "por_categoria_90d": {
     "NOVILLITO": {
-      "cabezas": 72,
-      "adp_promedio": 1.018,
+      "cabezas": 87,
+      "adp_promedio": 1.024,
       "adp_min": 0.08,
       "adp_max": 1.6,
-      "estadia_promedio": 148.9,
+      "estadia_promedio": 163.3,
       "estadia_min": 74,
-      "estadia_max": 303,
+      "estadia_max": 323,
       "adp_teorico": 1.489,
       "adp_calibrado": 1.2657,
-      "variacion_pct": -31.63,
+      "variacion_pct": -31.23,
       "ajustado": true,
       "adp_min_range": 1.2657,
       "adp_max_range": 1.7124
     },
     "NOVILLO": {
-      "cabezas": 124,
-      "adp_promedio": 0.922,
+      "cabezas": 158,
+      "adp_promedio": 0.946,
       "adp_min": 0.3,
       "adp_max": 2.32,
-      "estadia_promedio": 128.4,
+      "estadia_promedio": 126.1,
       "estadia_min": 35,
       "estadia_max": 314,
       "adp_teorico": 1.231,
       "adp_calibrado": 1.0464,
-      "variacion_pct": -25.1,
+      "variacion_pct": -23.15,
       "ajustado": true,
       "adp_min_range": 1.0464,
       "adp_max_range": 1.4157
@@ -309,13 +309,13 @@
       "estadia_max": 448
     },
     "2026-05": {
-      "cabezas": 739,
-      "adp_promedio": 1.009,
+      "cabezas": 883,
+      "adp_promedio": 1.022,
       "adp_min": 0.02,
       "adp_max": 4.57,
-      "estadia_promedio": 170.9,
+      "estadia_promedio": 177.1,
       "estadia_min": 3,
-      "estadia_max": 410
+      "estadia_max": 439
     }
   }
 }
