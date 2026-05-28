@@ -1073,43 +1073,16 @@ function ChartCard({ data }) {
 }
 
 /* ============================================================
-   v7 · Productivos · grid 2×3 con semáforo escalonado.
-   Las clases que controlan el color de la tarjeta son:
-     .lvl-{severo|moderado|neutro} (severidad por |delta|)
-     .tone-{good|bad|neutral}      (signo + mejorEs)
-     .card-tone-{...}              (sólo coloreado si severo+!rango)
-   El chip usa su propio modificador .chip-tone-{good|bad|neutral}.
+   v9 · Productivos · grid 2×3 con semáforo escalonado + TOGGLE
+   INLINE (no más modal). Tap en la card → expand con CTA al
+   módulo Stock de Masa (donde vive la tab "📈 Productivo").
+   Acordeón: una sola card abierta por sección. KPI_BETTER_WHEN
+   reemplaza el legacy mejorEs (up/down/flat con misma semántica).
    ============================================================ */
 function ProductivosGrid() {
-  const modal = useModal();
   const list = D.PRODUCTIVOS || [];
+  const [openK, setOpenK] = useState(null);
   if (!list.length) return null;
-
-  const openCard = (p) => {
-    modal.open({
-      title: p.title,
-      sub: p.descripcion || "",
-      body: (
-        <>
-          <div className="modal-section">
-            {kvList([
-              { k: p.actualLabel ? "Actual · " + p.actualLabel : "Actual",
-                v: p.kpi + (p.unit ? " " + p.unit : ""),
-                cls: p.cardTone === "bad" ? "neg" : (p.cardTone === "good" ? "pos" : "") },
-              { k: "Histórico " + (p.subLabel || "").replace(/^vs\s*/, ""),
-                v: p.subVal },
-              { k: "Variación",
-                v: p.deltaFmt || "—",
-                cls: p.tone === "bad" ? "neg" : (p.tone === "good" ? "pos" : "") }
-            ])}
-          </div>
-          {p.descripcion && (
-            <div className="modal-note">{p.descripcion}</div>
-          )}
-        </>
-      )
-    });
-  };
 
   const arrow = (p) => {
     if (p.delta == null) return "·";
@@ -1118,107 +1091,146 @@ function ProductivosGrid() {
 
   return (
     <div className="prod-grid">
-      {list.map((p) => (
-        <button
-          key={p.id}
-          className={
-            "prod-card drill" +
-            " lvl-" + (p.severity || "neutro") +
-            " card-tone-" + (p.cardTone || "neutral")
-          }
-          onClick={() => openCard(p)}
-          aria-label={p.title + ": " + p.kpi + " " + (p.unit || "") + (p.deltaFmt ? " (" + p.deltaFmt + ")" : "")}
-        >
-          <div className="prod-eyebrow">{p.title}</div>
-          <div className="prod-big">
-            <span className="prod-big-num">{p.kpi}</span>
-            {p.unit ? <span className="prod-big-unit">{p.unit}</span> : null}
+      {list.map((p) => {
+        const isOpen = openK === p.id;
+        return (
+          <div
+            key={p.id}
+            className={
+              "prod-card" +
+              " lvl-" + (p.severity || "neutro") +
+              " card-tone-" + (p.cardTone || "neutral") +
+              (isOpen ? " is-open" : "")
+            }
+            role="button"
+            tabIndex={0}
+            aria-expanded={isOpen}
+            aria-label={p.title + ": " + p.kpi + " " + (p.unit || "") + (p.deltaFmt ? " (" + p.deltaFmt + ")" : "")}
+            onClick={() => setOpenK(isOpen ? null : p.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenK(isOpen ? null : p.id); } }}
+          >
+            <div className="prod-eyebrow">{p.title}</div>
+            <div className="prod-big">
+              <span className="prod-big-num">{p.kpi}</span>
+              {p.unit ? <span className="prod-big-unit">{p.unit}</span> : null}
+            </div>
+            <div className="prod-divider" />
+            <div className="prod-foot">
+              <span className="prod-foot-lab">{p.subLabel}</span>
+              <span className="prod-foot-val">{p.subVal}</span>
+            </div>
+            {p.deltaFmt && (
+              <span className={"prod-chip chip-tone-" + (p.chipTone || "neutral")}>
+                <span className="prod-chip-arr">{arrow(p)}</span>
+                {p.deltaFmt}
+              </span>
+            )}
+            {isOpen && (
+              <div className="prod-expand">
+                <button
+                  className="btn-pill-outline"
+                  onClick={(e) => { e.stopPropagation(); navigateToModule("stock"); }}
+                >
+                  Ver módulo Producción →
+                </button>
+              </div>
+            )}
           </div>
-          <div className="prod-divider" />
-          <div className="prod-foot">
-            <span className="prod-foot-lab">{p.subLabel}</span>
-            <span className="prod-foot-val">{p.subVal}</span>
-          </div>
-          {p.deltaFmt && (
-            <span className={"prod-chip chip-tone-" + (p.chipTone || "neutral")}>
-              <span className="prod-chip-arr">{arrow(p)}</span>
-              {p.deltaFmt}
-            </span>
-          )}
-        </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 /* ============================================================
-   v8 · Precios de inferencia · grid 2×2 con KPI por categoría.
-   Cada card muestra el "precio compra" calculado en el simulador
-   (Excel actualizado semanalmente). Tap abre modal con los
-   parámetros usados para llegar al precio.
+   v9 · Precios de inferencia · grid 2×2 MINIMAL + TOGGLE INLINE.
+   Card minimal: categoría grande / sub + precio en mono.
+   Tap → expand con grid de 6 parámetros, caja MARGEN ESTIMADO/CAB
+   y botón solid "Ver en Mercado →" que navega al módulo Mercado
+   (idealmente activando la tab "📊 Inferencia" agregada en v8).
+   Acordeón: una sola card abierta por sección.
    ============================================================ */
 function PreciosInferenciaGrid() {
-  const modal = useModal();
   const list = D.PRECIOS_INFERENCIA || [];
-  const meta = D.PRECIOS_INFERENCIA_META || {};
+  const [openK, setOpenK] = useState(null);
   if (!list.length) return null;
-
-  const openCard = (it) => {
-    modal.open({
-      title: it.nombre,
-      sub: "Calculado · " + (meta.fechaLabel || "—"),
-      body: (
-        <>
-          <div className="modal-section">
-            <h4>Parámetros de cálculo</h4>
-            {kvList([
-              { k: "Kg compra",      v: it.kgCompra != null ? Math.round(it.kgCompra) + " kg" : "—" },
-              { k: "Kg venta",       v: it.kgVenta  != null ? Math.round(it.kgVenta)  + " kg" : "—" },
-              { k: "Precio venta",   v: it.precioVenta != null ? it.precioVentaFmt + " /kg" : "—" },
-              { k: "Rinde",          v: it.rindeFmt },
-              { k: "Costo kg prod.", v: it.costoKgProdFmt },
-              { k: "Días feedlot",   v: it.diasFeedFmt }
-            ])}
-          </div>
-          <div className="modal-section">
-            <h4>Resultado</h4>
-            <div className="modal-big pos">
-              {it.precioCompFmt}
-              <span className="modal-big-unit"> /kg vivo</span>
-            </div>
-            <div className="modal-section-sub">Precio compra de inferencia</div>
-          </div>
-          <div className="modal-note">
-            Fuente: planilla simulador, actualizada cada semana.
-          </div>
-        </>
-      )
-    });
-  };
 
   return (
     <div className="prinf-grid">
-      {list.map((it) => (
-        <button key={it.id} className="prinf-card drill" onClick={() => openCard(it)}>
-          <div className="prinf-eyebrow">{it.nombre}</div>
-          <div className="prinf-big">
-            <span className="prinf-big-num">{it.precioCompFmt}</span>
+      {list.map((it) => {
+        const isOpen = openK === it.id;
+        return (
+          <div
+            key={it.id}
+            className={"prinf-card" + (isOpen ? " is-open" : "")}
+            role="button"
+            tabIndex={0}
+            aria-expanded={isOpen}
+            aria-label={it.nombre + ": " + it.precioCompFmt + " por kg vivo"}
+            onClick={() => setOpenK(isOpen ? null : it.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenK(isOpen ? null : it.id); } }}
+          >
+            <div className="prinf-head">
+              <div className="prinf-titles">
+                <div className="prinf-cat">{it.nombreBase}</div>
+                {it.nombreSub ? <div className="prinf-sub-cat">{it.nombreSub}</div> : null}
+              </div>
+              <span className="prinf-chev" aria-hidden="true">{isOpen ? "▴" : "▾"}</span>
+            </div>
+            <div className="prinf-big">
+              <span className="prinf-big-sym">$</span>
+              <span className="prinf-big-num">{it.precioCompNum}</span>
+              <span className="prinf-big-unit">/kg</span>
+            </div>
+            {isOpen && (
+              <div className="prinf-expand">
+                <div className="prinf-divider" />
+                <div className="prinf-params-grid">
+                  <div><span>Compra</span><strong>{it.kgCompraFmt}</strong></div>
+                  <div><span>Días feedlot</span><strong>{it.diasFeedFmt}</strong></div>
+                  <div><span>Venta</span><strong>{it.kgVentaFmt}</strong></div>
+                  <div><span>Rinde</span><strong>{it.rindeFmt}</strong></div>
+                  <div><span>Precio venta</span><strong>{it.precioVentaFmt}</strong></div>
+                  <div><span>Costo prod</span><strong>{it.costoKgProdFmt}</strong></div>
+                </div>
+                {it.margen != null && (
+                  <div className="prinf-margen">
+                    <div className="prinf-margen-lab">Margen estimado / cab</div>
+                    <div className="prinf-margen-row">
+                      <span className="prinf-margen-val">{it.margenFmt}</span>
+                      {it.margenPctFmt && (
+                        <span className={"prinf-margen-chip chip-tone-" + (it.margenTone || "neutral")}>
+                          {it.margenPctFmt}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <button
+                  className="btn-solid-primary"
+                  onClick={(e) => { e.stopPropagation(); navigateToModule("mercado", "inferencia"); }}
+                >
+                  Ver en Mercado →
+                </button>
+              </div>
+            )}
           </div>
-          <div className="prinf-sub">$/kg vivo</div>
-          <div className="prinf-divider" />
-          <div className="prinf-foot">{it.footerCorto}</div>
-        </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 /* ============================================================
    Módulos grid — navegación real a index.html?mod=<id>
+   v9: opcionalmente acepta una tab interna (?tab=inferencia) para
+   que el bridge del index.html active la pestaña correspondiente
+   después de openModule().
    ============================================================ */
-function navigateToModule(portalId) {
-  // querystring para evitar ambigüedad con anchors
-  window.location.href = "index.html?mod=" + encodeURIComponent(portalId);
+function navigateToModule(portalId, tab) {
+  var qs = "?mod=" + encodeURIComponent(portalId);
+  if (tab) qs += "&tab=" + encodeURIComponent(tab);
+  window.location.href = "index.html" + qs;
 }
 
 function Modulos() {

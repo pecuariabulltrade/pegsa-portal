@@ -52,6 +52,21 @@
        por fecha). Workflow: usuario sobrescribe Excel cada semana,
        script detecta nueva fecha y appendea. Desktop suma pestaña
        "Inferencia" en módulo Mercado con tabla + line chart histórico.
+   v9 (2026-05-28): Productivos + Precios unificados en patrón
+       MINIMAL → tap toggle → EXPAND INLINE → botón al módulo. Se
+       eliminan los modales (openCard/setModalContent) de esas dos
+       secciones; quedan en mobile.jsx solo para Stock hero,
+       Cotizaciones, Insumos, ChartCard. El semáforo de Productivos
+       sigue vigente y se calcula con KPI_BETTER_WHEN (up/down/flat)
+       en lugar del legacy mejorEs (mismos resultados). En Precios
+       el expand suma un cálculo de MARGEN ESTIMADO / CAB:
+         ingreso       = kg_venta × rinde × precio_venta
+         costo_compra  = kg_compra × precio_comp
+         costo_engorde = (kg_venta − kg_compra) × cost_kg_prod
+         margen        = ingreso − costo_compra − costo_engorde
+         margen_pct    = margen / ingreso × 100
+       con chip semaforizada (>15% good, >5% warn, ≤5% bad).
+       Validado contra el spec: vaca_100 → $ 290k / +14%.
    ============================================================ */
 (function (root) {
   "use strict";
@@ -586,26 +601,36 @@
       else n = Number(v).toFixed(2).replace(".", ",");
       return { n: n, u: unit || "" };
     }
-    // v7: severidad escalonada según el mockup del usuario.
-    //   |delta| > 20% → 'severo'  (tarjeta coloreada + KPI coloreado)
-    //   10% ≤ |delta| ≤ 20% → 'moderado' (tarjeta blanca + chip coloreado)
-    //   |delta| < 10% → 'neutro' (todo gris)
-    // tone: 'good' / 'bad' / 'neutral' según mejorEs + signo del delta.
-    function classifyProd(p, delta) {
-      var tone = "neutral";
-      if (p.mejorEs === "rango") tone = "neutral";
-      else if (delta == null) tone = "neutral";
-      else if (p.mejorEs === "menor") tone = delta < 0 ? "good" : (delta > 0 ? "bad" : "neutral");
-      else /* mayor (default) */ tone = delta > 0 ? "good" : (delta < 0 ? "bad" : "neutral");
-
+    // v9: KPI_DEF.betterWhen reemplaza el legacy `mejorEs` ('mayor'/
+    // 'menor'/'rango'). La semántica es la misma con nombres más claros:
+    //   up   → más alto es mejor (engorde, pctPV)
+    //   down → más bajo es mejor (estadía, conversión)
+    //   flat → métrica info / rango, siempre neutral
+    var KPI_BETTER_WHEN = {
+      engordeDiario:    "up",
+      estadia:          "down",
+      pctPV:            "up",
+      consumoPorCabeza: "flat",
+      conversion:       "down",
+      kgRepartidos:     "flat"
+    };
+    // Severidad escalonada (idéntica a v7):
+    //   |delta| > 20% → 'severo'   (tarjeta coloreada + KPI coloreado)
+    //   10% ≤ |Δ| ≤ 20% → 'moderado' (tarjeta blanca + chip coloreado)
+    //   |Δ| < 10%      → 'neutro'  (chip gris)
+    function intentForDelta(betterWhen, delta) {
+      if (betterWhen === "flat" || delta == null || delta === 0) return "neutral";
+      if (betterWhen === "down") return delta < 0 ? "good" : "bad";
+      /* up */ return delta > 0 ? "good" : "bad";
+    }
+    function classifyProd(id, p, delta) {
+      var betterWhen = KPI_BETTER_WHEN[id] || (p.mejorEs === "menor" ? "down" : p.mejorEs === "rango" ? "flat" : "up");
+      var intent = intentForDelta(betterWhen, delta);
       var abs = delta == null ? 0 : Math.abs(delta);
       var severity = abs > 20 ? "severo" : (abs >= 10 ? "moderado" : "neutro");
-
-      // chipTone: en severity neutro o rango, el chip es siempre gris.
-      var chipTone = (severity === "neutro" || p.mejorEs === "rango") ? "neutral" : tone;
-      // cardTone: la tarjeta sólo se colorea cuando es severa (sino blanca).
-      var cardTone = (severity === "severo" && p.mejorEs !== "rango") ? tone : "neutral";
-      return { tone: tone, severity: severity, chipTone: chipTone, cardTone: cardTone, deltaAbs: abs };
+      var chipTone = (severity === "neutro" || intent === "neutral") ? "neutral" : intent;
+      var cardTone = (severity === "severo" && intent !== "neutral") ? intent : "neutral";
+      return { tone: intent, intent: intent, betterWhen: betterWhen, severity: severity, chipTone: chipTone, cardTone: cardTone, deltaAbs: abs };
     }
     function mkProd(id, titulo) {
       var p = prod[id];
@@ -621,7 +646,7 @@
       if (a.v != null && h.v != null && h.v !== 0) {
         delta = ((a.v - h.v) / Math.abs(h.v)) * 100;
       }
-      var c = classifyProd(p, delta);
+      var c = classifyProd(id, p, delta);
       return {
         id: id,
         title: titulo,
@@ -661,6 +686,26 @@
     var PRECIOS_INFERENCIA_META = { fecha: null, fechaLabel: "—" };
     var pInf = Array.isArray(D.preciosInferencia) ? D.preciosInferencia : [];
     var pInfMeta = D.preciosInferenciaMeta || {};
+    // v9: split del nombre en "categoría base + sub" para layout de
+    // dos líneas del card minimal ("Vaca" / "· 100 días").
+    function splitNombre(n) {
+      if (!n) return { base: "—", sub: "" };
+      var m = String(n).match(/^(.*?)\s+(\d+\s*d[ií]as?)$/i);
+      if (m) return { base: m[1], sub: "· " + m[2].toLowerCase() };
+      return { base: n, sub: "" };
+    }
+    // v9: compactar valores como "$ 7k/kg" o "$ 3,4k" cuando no caben.
+    function fmtCompactMoney(n) {
+      if (n == null || isNaN(n)) return "—";
+      var a = Math.abs(n);
+      var sign = n < 0 ? "-" : "";
+      if (a >= 1e6) return sign + "$ " + (a / 1e6).toFixed(1).replace(".", ",") + " M";
+      if (a >= 1e3) {
+        if (a >= 1e4) return sign + "$ " + Math.round(a / 1e3) + "k";
+        return sign + "$ " + (a / 1e3).toFixed(1).replace(".", ",") + "k";
+      }
+      return sign + "$ " + Math.round(a);
+    }
     if (pInf.length) {
       PRECIOS_INFERENCIA = pInf.map(function (it) {
         var pc = it.precio_comp;
@@ -668,27 +713,67 @@
         var ck = it.cost_kg_prod;
         var ri = it.rinde;
         var df = it.dias_feed;
+        var kc = it.kg_compra;
+        var kv = it.kg_venta;
+        var nom = splitNombre(it.nombre);
+
+        // v9: Cálculo de margen estimado por cabeza (espejo del simulador).
+        //   ingreso       = kg_venta × rinde × precio_venta
+        //   costo_compra  = kg_compra × precio_comp
+        //   kg_ganados    = kg_venta − kg_compra
+        //   costo_engorde = kg_ganados × cost_kg_prod
+        //   margen        = ingreso − costo_compra − costo_engorde
+        //   margen_pct    = margen / ingreso × 100
+        // Validado contra el ejemplo del spec: vaca_100 → $ 290k / +14%.
+        var margen = null, margenPct = null;
+        if (pc != null && pv != null && ck != null && ri != null && kc != null && kv != null) {
+          var ingreso       = kv * ri * pv;
+          var costoCompra   = kc * pc;
+          var costoEngorde  = (kv - kc) * ck;
+          margen = ingreso - costoCompra - costoEngorde;
+          if (ingreso > 0) margenPct = margen / ingreso * 100;
+        }
+        var margenTone = "neutral";
+        if (margenPct != null) {
+          if (margenPct > 15)      margenTone = "good";
+          else if (margenPct > 5)  margenTone = "warn";
+          else                     margenTone = "bad";
+        }
+        var margenFmt = margen != null
+          ? (margen < 0 ? "−" : "") + fmtCompactMoney(Math.abs(margen))
+          : "—";
+        var margenPctFmt = margenPct != null
+          ? (margenPct >= 0 ? "+" : "−") + Math.abs(margenPct).toFixed(0) + "%"
+          : null;
+
         return {
           id:           it.id,
           nombre:       it.nombre,
-          // KPI principal: precio compra inferencia
+          nombreBase:   nom.base,
+          nombreSub:    nom.sub,
+          // KPI principal: precio compra inferencia (split $ + número)
           precioComp:       pc,
           precioCompFmt:    pc != null ? "$ " + Math.round(pc).toLocaleString("es-AR") : "—",
-          // Parámetros de cálculo (para el modal)
-          kgCompra:       it.kg_compra,
-          kgVenta:        it.kg_venta,
+          precioCompNum:    pc != null ? Math.round(pc).toLocaleString("es-AR") : "—",
+          // Parámetros (formato corto para el expand grid 2×3)
+          kgCompra:       kc,
+          kgCompraFmt:    kc != null ? Math.round(kc) + " kg" : "—",
+          kgVenta:        kv,
+          kgVentaFmt:     kv != null ? Math.round(kv) + " kg" : "—",
           precioVenta:    pv,
-          precioVentaFmt: pv != null ? "$ " + Math.round(pv).toLocaleString("es-AR") : "—",
+          precioVentaFmt: pv != null ? fmtCompactMoney(pv) + "/kg" : "—",
           rinde:          ri,
           rindeFmt:       ri != null ? Math.round(ri * 100) + " %" : "—",
           costoKgProd:    ck,
-          costoKgProdFmt: ck != null ? "$ " + Math.round(ck).toLocaleString("es-AR") : "—",
+          costoKgProdFmt: ck != null ? fmtCompactMoney(ck) : "—",
           diasFeed:       df,
           diasFeedFmt:    df != null ? Math.round(df) + " d" : "—",
-          // Footer compacto en la card del panel: "kgC → kgV · días d"
-          footerCorto:    (it.kg_compra != null && it.kg_venta != null && df != null)
-                        ? Math.round(it.kg_compra) + " → " + Math.round(it.kg_venta) + " kg · " + Math.round(df) + " d"
-                        : "—"
+          // Margen calculado
+          margen:         margen,
+          margenFmt:      margenFmt,
+          margenPct:      margenPct,
+          margenPctFmt:   margenPctFmt,
+          margenTone:     margenTone
         };
       });
       if (pInfMeta.fecha) {

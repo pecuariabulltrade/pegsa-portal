@@ -1520,8 +1520,14 @@ button.ins-all-row:active { background: var(--surface-alt); }
   color: var(--ink);
   min-height: 130px;
   overflow: hidden;
-  transition: background 0.2s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, transform 0.08s ease;
 }
+.prod-card:active { transform: scale(0.995); }
+/* v9: cuando se expande, las cards en otra columna mantienen su altura;
+   sólo la card abierta crece. */
+.prod-card.is-open { background: var(--surface); }
 /* v7: el coloreado de la tarjeta sólo aplica cuando es .lvl-severo.
    Para .lvl-moderado / .lvl-neutro la tarjeta queda en blanco aunque
    tenga card-tone-bad/good (chequeo por especificidad doble class). */
@@ -1579,10 +1585,24 @@ button.ins-all-row:active { background: var(--surface-alt); }
 }
 
 .prod-divider {
+  /* v9: solid (no dashed). El expand inline tiene su propio separator. */
   height: 1px;
-  border-top: 1px dashed var(--border);
+  border-top: 1px solid var(--border);
   margin-top: auto;
 }
+
+/* v9: zona expandible dentro de la card de Productivos.
+   Sólo CTA al módulo (no necesita más datos). */
+.prod-expand {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  animation: prodExpandFadeIn 0.15s ease forwards;
+}
+@keyframes prodExpandFadeIn { to { opacity: 1; } }
 
 .prod-foot {
   display: flex;
@@ -1645,22 +1665,23 @@ button.ins-all-row:active { background: var(--surface-alt); }
 }
 
 /* ============================================================
-   v8 · Precios de inferencia · grid 2×2 con 4 cards informativas.
-   Mismo lenguaje visual que .prod-card pero SIN semáforo: estas
-   tarjetas son puramente informativas (precio compra calculado
-   en el simulador semanal), no comparativas.
+   v9 · Precios de inferencia · grid 2×2 MINIMAL + EXPAND INLINE.
+   Card por default es minimalista (categoría + precio + chevron).
+   Tap → expand con grid 2×3 de params, caja MARGEN ESTIMADO y
+   botón solid "Ver en Mercado →".
    ============================================================ */
 .prinf-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 4px;
+  align-items: start;  /* cards crecen independientemente al expandir */
 }
 .prinf-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px 14px 12px;
+  gap: 10px;
+  padding: 14px 14px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
@@ -1670,51 +1691,208 @@ button.ins-all-row:active { background: var(--surface-alt); }
   color: var(--ink);
   min-height: 120px;
   overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease;
 }
-.prinf-eyebrow {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.prinf-card:active { transform: scale(0.995); }
+
+.prinf-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.prinf-titles { min-width: 0; flex: 1; }
+.prinf-cat {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.prinf-sub-cat {
+  font-size: 12px;
   color: var(--ink-mute);
-  line-height: 1.2;
+  margin-top: 2px;
 }
+.prinf-chev {
+  width: 22px; height: 22px;
+  flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: var(--surface-alt);
+  color: var(--ink-mute);
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .prinf-big {
-  margin-top: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+.prinf-big-sym {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-mute);
 }
 .prinf-big-num {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.02em;
-  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.prinf-sub {
-  font-size: 10.5px;
+.prinf-big-unit {
+  font-size: 14px;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+
+/* Zona expandible — solo visible cuando .is-open. */
+.prinf-expand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  animation: prinfExpandFadeIn 0.15s ease forwards;
+}
+@keyframes prinfExpandFadeIn { to { opacity: 1; } }
+.prinf-divider {
+  height: 1px;
+  border-top: 1px solid var(--border);
+}
+.prinf-params-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+.prinf-params-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.prinf-params-grid span {
+  font-size: 11px;
   color: var(--ink-mute);
   letter-spacing: 0.01em;
 }
-.prinf-divider {
-  height: 1px;
-  border-top: 1px dashed var(--border);
-  margin-top: auto;
-}
-.prinf-foot {
+.prinf-params-grid strong {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 10.5px;
-  color: var(--ink-soft);
+  font-size: 12px;
   font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* Caja MARGEN ESTIMADO / CAB · primary-soft con chip semaforizada. */
+.prinf-margen {
+  background: var(--primary-soft, oklch(0.94 0.025 256));
+  border: 1px solid var(--primary-soft, oklch(0.88 0.04 256));
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prinf-margen-lab {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.prinf-margen-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.prinf-margen-val {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.prinf-margen-chip {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: oklch(0.94 0.005 256);
+  color: var(--ink-mute);
+}
+.prinf-margen-chip.chip-tone-good {
+  background: oklch(0.93 0.07 155);
+  color: oklch(0.34 0.13 155);
+}
+.prinf-margen-chip.chip-tone-warn {
+  background: oklch(0.95 0.08 75);
+  color: oklch(0.42 0.13 75);
+}
+.prinf-margen-chip.chip-tone-bad {
+  background: var(--neg-soft);
+  color: oklch(0.42 0.14 25);
 }
 
 @media (max-width: 340px) {
   .prinf-grid { grid-template-columns: 1fr; }
-  .prinf-big-num { font-size: 22px; }
+  .prinf-big-num { font-size: 26px; }
+  .prinf-margen-val { font-size: 20px; }
 }
 
-/* Resultado destacado dentro del modal de Productivos / Inferencia */
+/* ============================================================
+   v9 · Botones reutilizables para los expand de Productivos
+   (outline) y Precios (solid).
+   ============================================================ */
+.btn-pill-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary-soft, oklch(0.88 0.04 256));
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+}
+.btn-pill-outline:active,
+.btn-pill-outline:hover {
+  background: var(--primary-soft, oklch(0.94 0.025 256));
+}
+
+.btn-solid-primary {
+  background: var(--primary-deep);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.08s ease;
+}
+.btn-solid-primary:active { transform: scale(0.99); }
+.btn-solid-primary:hover { background: var(--primary); }
+
+/* Resultado destacado dentro de cualquier modal genérico
+   (Cotizaciones, Insumos, etc.). NO se usa en Productivos/Precios v9. */
 .modal-big-unit {
   font-size: 14px;
   font-weight: 500;

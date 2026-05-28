@@ -2624,6 +2624,7 @@
   try {
     var params = new URLSearchParams(window.location.search);
     var requestedMod = params.get('mod');
+    var requestedTab = params.get('tab'); // v9: tab interna opcional
     if (!requestedMod) return;
 
     var tries = 0;
@@ -2632,10 +2633,24 @@
       if (typeof currentUser !== 'undefined' && currentUser &&
           typeof openModule === 'function') {
         openModule(requestedMod);
+        // v9: si vino ?tab=..., intentar activar la tab interna del módulo.
+        // Ej: ?mod=mercado&tab=inferencia → openModule('mercado') +
+        // mercadoTab('inferencia', tabEl). Cada módulo expone fn <id>Tab.
+        if (requestedTab) {
+          setTimeout(function () {
+            try {
+              var tabFn = window[requestedMod + 'Tab'];
+              var tabEl = document.getElementById(requestedMod + 'Tab' +
+                requestedTab.charAt(0).toUpperCase() + requestedTab.slice(1));
+              if (typeof tabFn === 'function') tabFn(requestedTab, tabEl);
+            } catch (e) { console.warn('[mobile-bridge] tab switch falló', e); }
+          }, 250);
+        }
         // Limpiar la URL para que un reload no re-navegue
         try {
           var url = new URL(window.location.href);
           url.searchParams.delete('mod');
+          url.searchParams.delete('tab');
           window.history.replaceState({}, '', url.pathname + url.hash);
         } catch (e) {}
         return;

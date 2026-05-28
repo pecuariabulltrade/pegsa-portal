@@ -28,12 +28,23 @@ const _PANEL_TO_PORTAL_ID = {
   "historico": "historico",
   "parametros-base": "baseparams"
 };
-function goToPortalModule(panelId) {
+function goToPortalModule(panelId, tab) {
   var portalId = _PANEL_TO_PORTAL_ID[panelId] || panelId;
   if (typeof window.openModule === "function") {
     window.openModule(portalId);
   } else if (typeof window.showScreen === "function") {
     window.showScreen("screen" + portalId.charAt(0).toUpperCase() + portalId.slice(1));
+  }
+  // v9: activar tab interna opcional (ej. mercado → "inferencia").
+  if (tab) {
+    setTimeout(function () {
+      try {
+        var tabFn = window[portalId + "Tab"];
+        var tabEl = document.getElementById(portalId + "Tab" +
+          tab.charAt(0).toUpperCase() + tab.slice(1));
+        if (typeof tabFn === "function") tabFn(tab, tabEl);
+      } catch (e) { console.warn("[panel] tab switch falló", e); }
+    }, 200);
   }
 }
 
@@ -193,6 +204,272 @@ function LastUpdate({ iso }) {
   else label = `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')} ${String(fecha.getHours()).padStart(2,'0')}:${String(fecha.getMinutes()).padStart(2,'0')}`;
 
   return <span style={style}>Actualizado · {label}</span>;
+}
+
+/* ============================================================
+   v9 · ProductivosSection — espejo del mobile.
+   Card minimal → tap toggle → expand inline con CTA al módulo
+   Stock de Masa (donde vive la tab "📈 Productivo").
+   ============================================================ */
+const _PROD_BETTER_WHEN = {
+  engordeDiario:    "up",
+  estadia:          "down",
+  pctPV:            "up",
+  consumoPorCabeza: "flat",
+  conversion:       "down",
+  kgRepartidos:     "flat"
+};
+function _classifyProd(id, p, delta) {
+  var bw = _PROD_BETTER_WHEN[id] || (p && p.mejorEs === "menor" ? "down" : p && p.mejorEs === "rango" ? "flat" : "up");
+  var intent = "neutral";
+  if (bw === "flat" || delta == null || delta === 0) intent = "neutral";
+  else if (bw === "down") intent = delta < 0 ? "good" : "bad";
+  else intent = delta > 0 ? "good" : "bad";
+  var abs = delta == null ? 0 : Math.abs(delta);
+  var severity = abs > 20 ? "severo" : (abs >= 10 ? "moderado" : "neutro");
+  var chipTone = (severity === "neutro" || intent === "neutral") ? "neutral" : intent;
+  var cardTone = (severity === "severo" && intent !== "neutral") ? intent : "neutral";
+  return { intent: intent, severity: severity, chipTone: chipTone, cardTone: cardTone };
+}
+function _fmtV(v, dec) {
+  if (v == null || isNaN(v)) return "—";
+  if (dec != null) return Number(v).toFixed(dec).replace(".", ",");
+  if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString("es-AR");
+  if (Math.abs(v) >= 100)  return Math.round(v).toString();
+  if (Math.abs(v) >= 10)   return Number(v).toFixed(1).replace(".", ",");
+  return Number(v).toFixed(2).replace(".", ",");
+}
+function ProductivosSection({ D }) {
+  const [openK, setOpenK] = useState(null);
+  const prod = D.productivos || {};
+  const CARDS = [
+    { id: "engordeDiario",    title: "Engorde diario" },
+    { id: "estadia",          title: "Estadía" },
+    { id: "pctPV",            title: "Eficiencia (% PV)" },
+    { id: "consumoPorCabeza", title: "Consumo / cabeza" },
+    { id: "conversion",       title: "Conversión" },
+    { id: "kgRepartidos",     title: "Kg repartidos · últ. día" },
+  ];
+  const cards = CARDS.map(c => {
+    const p = prod[c.id];
+    if (!p) return { ...c, missing: true };
+    const a = p.actual || {}, h = p.historico || {};
+    const aN = _fmtV(a.v, a.decimals);
+    const hN = _fmtV(h.v, h.decimals);
+    let delta = null;
+    if (a.v != null && h.v != null && h.v !== 0) {
+      delta = ((a.v - h.v) / Math.abs(h.v)) * 100;
+    }
+    const klass = _classifyProd(c.id, p, delta);
+    const deltaFmt = delta != null
+      ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace(".", ",") + "%"
+      : null;
+    const arrow = delta == null ? "·" : (delta > 0 ? "↑" : (delta < 0 ? "↓" : "·"));
+    return { ...c, p, a, h, aN, hN, delta, deltaFmt, arrow, ...klass };
+  });
+  return (
+    <div className="prod-section">
+      <div className="prod-section-head">
+        <h2>Productivos</h2>
+        <span className="prod-section-sub">
+          Último mes · variación vs histórico · semáforo &gt;20% / 10–20% / &lt;10%
+        </span>
+      </div>
+      <div className="prod-grid prod-grid-desktop">
+        {cards.map(c => {
+          const isOpen = openK === c.id;
+          return (
+            <div
+              key={c.id}
+              className={
+                "prod-card" +
+                (c.missing ? " is-missing" : "") +
+                " lvl-" + (c.severity || "neutro") +
+                " card-tone-" + (c.cardTone || "neutral") +
+                (isOpen ? " is-open" : "")
+              }
+              role="button"
+              tabIndex={0}
+              aria-expanded={isOpen}
+              onClick={() => !c.missing && setOpenK(isOpen ? null : c.id)}
+              onKeyDown={(e) => {
+                if (!c.missing && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault(); setOpenK(isOpen ? null : c.id);
+                }
+              }}
+              title={c.p && c.p.descripcion ? c.p.descripcion : c.title}
+            >
+              <div className="prod-eyebrow">{c.title}</div>
+              {c.missing ? (
+                <>
+                  <div className="prod-big"><span className="prod-big-num">—</span></div>
+                  <div className="prod-divider" />
+                  <div className="prod-foot">
+                    <span className="prod-foot-lab">sin datos</span>
+                    <span className="prod-foot-val">N/D</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="prod-big">
+                    <span className="prod-big-num">{c.aN}</span>
+                    {c.a.unit ? <span className="prod-big-unit">{c.a.unit}</span> : null}
+                  </div>
+                  <div className="prod-divider" />
+                  <div className="prod-foot">
+                    <span className="prod-foot-lab">vs {c.h.label || "histórico"}</span>
+                    <span className="prod-foot-val">{c.hN}{c.h.unit ? " " + c.h.unit : ""}</span>
+                  </div>
+                  {c.deltaFmt && (
+                    <span className={"prod-chip chip-tone-" + (c.chipTone || "neutral")}>
+                      <span className="prod-chip-arr">{c.arrow}</span>
+                      {c.deltaFmt}
+                    </span>
+                  )}
+                  {isOpen && (
+                    <div className="prod-expand">
+                      <button
+                        className="btn-pill-outline"
+                        onClick={(e) => { e.stopPropagation(); goToPortalModule("stock-masa"); }}
+                      >
+                        Ver módulo Producción →
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   v9 · PreciosInferenciaSection — espejo del mobile.
+   Card minimal → tap toggle → expand con grid de params,
+   caja MARGEN ESTIMADO/CAB con chip semaforizada y botón solid
+   "Ver en Mercado →" (módulo "mercado", tab interna "inferencia"
+   agregada en v8).
+   ============================================================ */
+function PreciosInferenciaSection({ D }) {
+  const [openK, setOpenK] = useState(null);
+  const items = Array.isArray(D.preciosInferencia) ? D.preciosInferencia : [];
+  const meta  = D.preciosInferenciaMeta || {};
+  if (!items.length) return null;
+
+  const fechaLabel = meta.fecha ? meta.fecha.split("-").reverse().join("/") : "—";
+  const fmtMoney = (n) => n != null ? "$ " + Math.round(n).toLocaleString("es-AR") : "—";
+  const fmtCompact = (n) => {
+    if (n == null || isNaN(n)) return "—";
+    const a = Math.abs(n); const s = n < 0 ? "−" : "";
+    if (a >= 1e6) return s + "$ " + (a / 1e6).toFixed(1).replace(".", ",") + " M";
+    if (a >= 1e4) return s + "$ " + Math.round(a / 1e3) + "k";
+    if (a >= 1e3) return s + "$ " + (a / 1e3).toFixed(1).replace(".", ",") + "k";
+    return s + "$ " + Math.round(a);
+  };
+  const fmtPct = (n) => n != null ? Math.round(n * 100) + " %" : "—";
+  const splitNombre = (n) => {
+    if (!n) return { base: "—", sub: "" };
+    const m = String(n).match(/^(.*?)\s+(\d+\s*d[ií]as?)$/i);
+    if (m) return { base: m[1], sub: "· " + m[2].toLowerCase() };
+    return { base: n, sub: "" };
+  };
+
+  return (
+    <div className="prinf-section">
+      <div className="prinf-section-head">
+        <h2>Precios de inferencia</h2>
+        <span className="prinf-section-sub">
+          Precio compra calculado · simulador semanal · {fechaLabel}
+        </span>
+      </div>
+      <div className="prinf-grid prinf-grid-desktop">
+        {items.map(it => {
+          const nom = splitNombre(it.nombre);
+          const isOpen = openK === it.id;
+          // Margen
+          let margen = null, margenPct = null, margenTone = "neutral";
+          if (it.precio_comp != null && it.precio_venta != null && it.cost_kg_prod != null
+              && it.rinde != null && it.kg_compra != null && it.kg_venta != null) {
+            const ingreso = it.kg_venta * it.rinde * it.precio_venta;
+            const costoC  = it.kg_compra * it.precio_comp;
+            const costoE  = (it.kg_venta - it.kg_compra) * it.cost_kg_prod;
+            margen = ingreso - costoC - costoE;
+            if (ingreso > 0) margenPct = margen / ingreso * 100;
+            if (margenPct != null) {
+              margenTone = margenPct > 15 ? "good" : (margenPct > 5 ? "warn" : "bad");
+            }
+          }
+          const margenPctFmt = margenPct != null
+            ? (margenPct >= 0 ? "+" : "−") + Math.abs(margenPct).toFixed(0) + "%"
+            : null;
+          return (
+            <div
+              key={it.id}
+              className={"prinf-card" + (isOpen ? " is-open" : "")}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isOpen}
+              onClick={() => setOpenK(isOpen ? null : it.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault(); setOpenK(isOpen ? null : it.id);
+                }
+              }}
+              title={"Calculado el " + fechaLabel}
+            >
+              <div className="prinf-head">
+                <div className="prinf-titles">
+                  <div className="prinf-cat">{nom.base}</div>
+                  {nom.sub ? <div className="prinf-sub-cat">{nom.sub}</div> : null}
+                </div>
+                <span className="prinf-chev" aria-hidden="true">{isOpen ? "▴" : "▾"}</span>
+              </div>
+              <div className="prinf-big">
+                <span className="prinf-big-sym">$</span>
+                <span className="prinf-big-num">{it.precio_comp != null ? Math.round(it.precio_comp).toLocaleString("es-AR") : "—"}</span>
+                <span className="prinf-big-unit">/kg</span>
+              </div>
+              {isOpen && (
+                <div className="prinf-expand">
+                  <div className="prinf-divider" />
+                  <div className="prinf-params-grid">
+                    <div><span>Compra</span><strong>{it.kg_compra != null ? Math.round(it.kg_compra) + " kg" : "—"}</strong></div>
+                    <div><span>Días feedlot</span><strong>{it.dias_feed != null ? Math.round(it.dias_feed) + " d" : "—"}</strong></div>
+                    <div><span>Venta</span><strong>{it.kg_venta != null ? Math.round(it.kg_venta) + " kg" : "—"}</strong></div>
+                    <div><span>Rinde</span><strong>{fmtPct(it.rinde)}</strong></div>
+                    <div><span>Precio venta</span><strong>{fmtCompact(it.precio_venta)}/kg</strong></div>
+                    <div><span>Costo prod</span><strong>{fmtCompact(it.cost_kg_prod)}</strong></div>
+                  </div>
+                  {margen != null && (
+                    <div className="prinf-margen">
+                      <div className="prinf-margen-lab">Margen estimado / cab</div>
+                      <div className="prinf-margen-row">
+                        <span className="prinf-margen-val">{(margen < 0 ? "−" : "") + fmtCompact(Math.abs(margen))}</span>
+                        {margenPctFmt && (
+                          <span className={"prinf-margen-chip chip-tone-" + margenTone}>
+                            {margenPctFmt}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    className="btn-solid-primary"
+                    onClick={(e) => { e.stopPropagation(); goToPortalModule("mercado", "inferencia"); }}
+                  >
+                    Ver en Mercado →
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function Panel() {
@@ -627,160 +904,16 @@ function Panel() {
           );
         })()}
 
-        {/* === PRODUCTIVOS (v7) === Espejo del mobile con semáforo
-            escalonado. Lee D.productivos (data.js). Las clases .prod-*
-            viven en panel.css y son idénticas al mobile.css excepto el
-            grid (3 columnas vs 2). */}
-        {(() => {
-          const prod = D.productivos || {};
-          const CARDS = [
-            { id: "engordeDiario",    title: "Engorde diario" },
-            { id: "estadia",          title: "Estadía" },
-            { id: "pctPV",            title: "Eficiencia (% PV)" },
-            { id: "consumoPorCabeza", title: "Consumo / cabeza" },
-            { id: "conversion",       title: "Conversión" },
-            { id: "kgRepartidos",     title: "Kg repartidos · últ. día" },
-          ];
-          const fmtV = (v, dec) => {
-            if (v == null || isNaN(v)) return "—";
-            if (dec != null) return Number(v).toFixed(dec).replace(".", ",");
-            if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString("es-AR");
-            if (Math.abs(v) >= 100)  return Math.round(v).toString();
-            if (Math.abs(v) >= 10)   return Number(v).toFixed(1).replace(".", ",");
-            return Number(v).toFixed(2).replace(".", ",");
-          };
-          // Misma clasificación que mobile-data.js. Una sola fórmula.
-          const classify = (p, delta) => {
-            let tone = "neutral";
-            if (p.mejorEs === "rango" || delta == null) tone = "neutral";
-            else if (p.mejorEs === "menor") tone = delta < 0 ? "good" : (delta > 0 ? "bad" : "neutral");
-            else tone = delta > 0 ? "good" : (delta < 0 ? "bad" : "neutral");
-            const abs = delta == null ? 0 : Math.abs(delta);
-            const severity = abs > 20 ? "severo" : (abs >= 10 ? "moderado" : "neutro");
-            const chipTone = (severity === "neutro" || p.mejorEs === "rango") ? "neutral" : tone;
-            const cardTone = (severity === "severo" && p.mejorEs !== "rango") ? tone : "neutral";
-            return { tone, severity, chipTone, cardTone };
-          };
-          const cards = CARDS.map(c => {
-            const p = prod[c.id];
-            if (!p) return { ...c, missing: true };
-            const a = p.actual || {}, h = p.historico || {};
-            const aN = fmtV(a.v, a.decimals);
-            const hN = fmtV(h.v, h.decimals);
-            let delta = null;
-            if (a.v != null && h.v != null && h.v !== 0) {
-              delta = ((a.v - h.v) / Math.abs(h.v)) * 100;
-            }
-            const klass = classify(p, delta);
-            const deltaFmt = delta != null
-              ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace(".", ",") + "%"
-              : null;
-            const arrow = delta == null ? "·" : (delta > 0 ? "↑" : (delta < 0 ? "↓" : "·"));
-            return { ...c, p, a, h, aN, hN, delta, deltaFmt, arrow, ...klass };
-          });
-          return (
-            <div className="prod-section">
-              <div className="prod-section-head">
-                <h2>Productivos</h2>
-                <span className="prod-section-sub">
-                  Último mes · variación vs histórico · semáforo &gt;20% / 10–20% / &lt;10%
-                </span>
-              </div>
-              <div className="prod-grid prod-grid-desktop">
-                {cards.map(c => (
-                  <div
-                    key={c.id}
-                    className={
-                      "prod-card" +
-                      (c.missing ? " is-missing" : "") +
-                      " lvl-" + (c.severity || "neutro") +
-                      " card-tone-" + (c.cardTone || "neutral")
-                    }
-                    title={c.p && c.p.descripcion ? c.p.descripcion : c.title}
-                  >
-                    <div className="prod-eyebrow">{c.title}</div>
-                    {c.missing ? (
-                      <>
-                        <div className="prod-big"><span className="prod-big-num">—</span></div>
-                        <div className="prod-divider" />
-                        <div className="prod-foot">
-                          <span className="prod-foot-lab">sin datos</span>
-                          <span className="prod-foot-val">N/D</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="prod-big">
-                          <span className="prod-big-num">{c.aN}</span>
-                          {c.a.unit ? <span className="prod-big-unit">{c.a.unit}</span> : null}
-                        </div>
-                        <div className="prod-divider" />
-                        <div className="prod-foot">
-                          <span className="prod-foot-lab">vs {c.h.label || "histórico"}</span>
-                          <span className="prod-foot-val">{c.hN}{c.h.unit ? " " + c.h.unit : ""}</span>
-                        </div>
-                        {c.deltaFmt && (
-                          <span className={"prod-chip chip-tone-" + (c.chipTone || "neutral")}>
-                            <span className="prod-chip-arr">{c.arrow}</span>
-                            {c.deltaFmt}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
+        {/* === PRODUCTIVOS (v9) === Espejo del mobile. Toggle inline:
+            tap → expand con CTA "Ver módulo Producción →" que navega
+            a Stock de Masa (módulo "stock", tab interna "Productivo").
+            KPI_BETTER_WHEN reemplaza el legacy mejorEs en el clasificador. */}
+        <ProductivosSection D={D} />
 
-        {/* === PRECIOS DE INFERENCIA (v8) ===
-            4 cards informativas — espejo del mobile. Lee D.preciosInferencia
-            poblado por data.js desde precios_inferencia.json (snapshot
-            actual del Excel del simulador). */}
-        {Array.isArray(D.preciosInferencia) && D.preciosInferencia.length > 0 && (() => {
-          const items = D.preciosInferencia;
-          const meta  = D.preciosInferenciaMeta || {};
-          const fechaLabel = meta.fecha
-            ? meta.fecha.split("-").reverse().join("/")
-            : "—";
-          const fmtMoney = (n) => n != null ? "$ " + Math.round(n).toLocaleString("es-AR") : "—";
-          const fmtPct   = (n) => n != null ? Math.round(n * 100) + " %" : "—";
-          return (
-            <div className="prinf-section">
-              <div className="prinf-section-head">
-                <h2>Precios de inferencia</h2>
-                <span className="prinf-section-sub">
-                  Precio compra calculado · simulador semanal · {fechaLabel}
-                </span>
-              </div>
-              <div className="prinf-grid prinf-grid-desktop">
-                {items.map(it => (
-                  <div
-                    key={it.id}
-                    className="prinf-card"
-                    title={"Calculado el " + fechaLabel}
-                  >
-                    <div className="prinf-eyebrow">{it.nombre}</div>
-                    <div className="prinf-big">
-                      <span className="prinf-big-num">{fmtMoney(it.precio_comp)}</span>
-                    </div>
-                    <div className="prinf-sub">$/kg vivo</div>
-                    <div className="prinf-divider" />
-                    <div className="prinf-params">
-                      <div><span>Kg compra</span><strong>{it.kg_compra != null ? Math.round(it.kg_compra) + " kg" : "—"}</strong></div>
-                      <div><span>Kg venta</span><strong>{it.kg_venta != null ? Math.round(it.kg_venta) + " kg" : "—"}</strong></div>
-                      <div><span>Precio venta</span><strong>{fmtMoney(it.precio_venta)}</strong></div>
-                      <div><span>Rinde</span><strong>{fmtPct(it.rinde)}</strong></div>
-                      <div><span>Costo kg prod.</span><strong>{fmtMoney(it.cost_kg_prod)}</strong></div>
-                      <div><span>Días feedlot</span><strong>{it.dias_feed != null ? Math.round(it.dias_feed) + " d" : "—"}</strong></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
+        {/* === PRECIOS DE INFERENCIA (v9) === Espejo del mobile.
+            Toggle inline + caja MARGEN ESTIMADO + CTA "Ver en Mercado →"
+            que navega a Mercado activando la tab "Inferencia" (v8). */}
+        <PreciosInferenciaSection D={D} />
 
         {/* === MÓDULOS === */}
         <div className="modules-section">
