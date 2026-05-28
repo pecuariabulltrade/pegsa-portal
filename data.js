@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist, stockEstHaras] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -126,6 +126,7 @@ window.PEGSA_DATA = {
     fetchJson('precios_inferencia_historico.json'),
     fetchJson('tesoreria_darwash.json'),
     fetchJson('tesoreria_darwash_historico.json'),
+    fetchJson('stock_est_El_Haras_2025.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -194,6 +195,25 @@ window.PEGSA_DATA = {
         .sort((a, b) => b.kg - a.kg);
       if (catsPeg.length > 0) D.stockCategoriasPegsa = catsPeg;
     }
+  }
+
+  // v12.0: Stock por categoría · El Haras (un establecimiento de PEGSA).
+  // Lee stock_est_El_Haras_2025.json.kpis.por_categoria_final.
+  // Necesario para el PDF de mobile: la tabla "Stock terminados" expone
+  // 3 columnas — PEGSA propio (D.stockCategoriasPegsa), El Haras (esto)
+  // y Grupo completo (D.stockCategorias). Mismo shape que las otras dos.
+  if (stockEstHaras?.kpis?.por_categoria_final && typeof stockEstHaras.kpis.por_categoria_final === 'object') {
+    const catsHaras = Object.entries(stockEstHaras.kpis.por_categoria_final)
+      .map(([n, d]) => ({ categoria: n.charAt(0).toUpperCase() + n.slice(1), cabezas: d?.cabezas || 0, kg: Math.round(d?.kg_estimado || 0) }))
+      .filter(c => c.cabezas > 0)
+      .sort((a, b) => b.kg - a.kg);
+    if (catsHaras.length > 0) D.stockCategoriasHaras = catsHaras;
+    // También exponemos el KPI total del establecimiento para usarlo
+    // como sub-header en el PDF.
+    D.haciendaHarasTotal = {
+      cabezas: stockEstHaras.kpis.total_cabezas || 0,
+      kg: stockEstHaras.kpis.total_kg_estimado_hoy || 0
+    };
   }
 
   // Mercado real

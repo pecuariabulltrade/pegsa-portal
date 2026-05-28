@@ -4,6 +4,24 @@
    Re-construye al recibir 'panel:data-ready' (JSONs reales).
 
    Versiones:
+   v12.0 (2026-05-28): exportar PDF desde el celu. Nuevo bloque
+       PDF_PAYLOAD con los 6 grupos de datos que pide el informe:
+         1. Stock terminados (Novillo>550 y Vaca>650) con desglose
+            PEGSA propio / El Haras / Grupo completo. Lee 3 fuentes:
+            D.stockCategoriasPegsa (propietario), D.stockCategoriasHaras
+            (establecimiento — nuevo en v12.0) y D.stockCategorias
+            (grupo total).
+         2. Insumos críticos Maíz + Silo: stock kg, consumo/día, días
+            restantes (D.insumosCriticos).
+         3. Financiero PEG-BULL: cierre primera + saldo proyectado +
+            saldo inicial + 6 barras semanales (D.flujoSemanal via
+            FLUJO_SEMANAL).
+         4. Financiero DW: idem (FLUJO_SEMANAL_DW, puede ser null).
+         5. Productivos 6 KPIs (PRODUCTIVOS, ya armado).
+         6. Precios de indiferencia 4 cards (PRECIOS_INFERENCIA).
+       Botón en el header del mobile genera PDF multipágina con
+       jsPDF, ofrece Web Share API y cae a descarga. mobile.jsx
+       agrega icono Icon.Share y handlers handleSharePdf().
    v3 (2026-05-27): auditoría aplicada — todos los datos vienen de
        PEGSA_DATA real, etiquetas dinámicas según frecuencia de serie,
        sanitización de fechas ISO en alertas, var12m / flujo semanal reales.
@@ -852,6 +870,42 @@
       }
     }
 
+    // ---------- v12.0 · Stock terminados (PDF) ----------
+    // Tabla de 2 filas × 3 columnas para el informe PDF:
+    //   filas:   "Novillo mayor a 550 kg" / "Vaca mayor a 650 kg"
+    //   cols:    PEGSA propio / El Haras / Grupo completo
+    // Lee 3 fuentes ya cargadas en D:
+    //   D.stockCategoriasPegsa  → propietario PEGSA (suma de todos los
+    //                              establecimientos donde PEGSA es propietario)
+    //   D.stockCategoriasHaras  → establecimiento El Haras (todos los
+    //                              propietarios que tienen hacienda ahí —
+    //                              PEGSA, DARWASH, etc.)
+    //   D.stockCategorias       → grupo completo (todos los propietarios,
+    //                              todos los establecimientos)
+    // Si alguna fuente falta, la celda queda con cabezas/kg = null y el
+    // PDF muestra "—".
+    function findCat(arr, key) {
+      if (!Array.isArray(arr)) return { cabezas: null, kg: null };
+      var needle = String(key).toLowerCase();
+      var hit = arr.find(function (c) {
+        return String(c.categoria || "").toLowerCase().includes(needle);
+      });
+      return hit ? { cabezas: hit.cabezas, kg: hit.kg } : { cabezas: null, kg: null };
+    }
+    var CATS_TERMINADOS = [
+      { id: "nov550", label: "Novillo > 550 kg", key: "novillo mayor a 550" },
+      { id: "vac650", label: "Vaca > 650 kg",    key: "vaca mayor a 650"    }
+    ];
+    var STOCK_TERMINADOS = CATS_TERMINADOS.map(function (cat) {
+      return {
+        id: cat.id,
+        label: cat.label,
+        pegsa: findCat(D.stockCategoriasPegsa, cat.key),
+        haras: findCat(D.stockCategoriasHaras, cat.key),
+        grupo: findCat(D.stockCategorias,      cat.key)
+      };
+    });
+
     // ---------- Módulos ----------
     var ledMap = { vivo: "vivo", acumulando: "acumulando", disponible: "disponible" };
     function kindByModulo(m) {
@@ -903,6 +957,7 @@
       PRODUCTIVOS: PRODUCTIVOS,
       PRECIOS_INFERENCIA: PRECIOS_INFERENCIA,
       PRECIOS_INFERENCIA_META: PRECIOS_INFERENCIA_META,
+      STOCK_TERMINADOS: STOCK_TERMINADOS,
       MODULOS: MODULOS,
       TABS: TABS,
       BOTTOM_TABS: BOTTOM_TABS,

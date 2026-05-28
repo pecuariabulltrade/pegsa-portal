@@ -1933,6 +1933,30 @@ button.ins-all-row:active { background: var(--surface-alt); }
 }
 
 /* ============================================================
+   v12.0: PDF share button en header — destacado en dorado
+   para invitar a usarlo, y con loading state cuando se genera.
+   ============================================================ */
+.hdr-btn-pdf {
+  color: var(--accent, #C19A6B);
+  border-color: color-mix(in oklch, var(--accent, #C19A6B) 35%, var(--border));
+}
+.hdr-btn-pdf:active {
+  background: color-mix(in oklch, var(--accent, #C19A6B) 12%, transparent);
+}
+.hdr-btn-pdf[disabled],
+.hdr-btn-pdf.is-loading {
+  opacity: 0.55;
+  cursor: progress;
+}
+.hdr-btn-pdf.is-loading svg {
+  animation: hdr-pdf-spin 0.8s linear infinite;
+}
+@keyframes hdr-pdf-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ============================================================
    v3: Cards drill (clickable) — cursor + hover sutil
    v4 fix: NO usar color:inherit acá. .stock-hero setea color:#fff
    y .drill lo sobreescribía rompiendo los blancos del hero.

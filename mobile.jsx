@@ -102,6 +102,16 @@ const Icon = {
       <path d="M6 6l12 12M18 6L6 18" />
     </svg>
   ),
+  // v12.0: icono de "compartir PDF" (un documento con flecha hacia arriba).
+  // Estilo lineal igual al resto, sin relleno.
+  Share: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+      <path d="M14 3h-7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9" />
+      <path d="M14 3v6h6" />
+      <path d="M12 18v-6" />
+      <path d="M9 15l3-3 3 3" />
+    </svg>
+  ),
 };
 
 const TabIcon = ({ name }) => {
@@ -224,10 +234,610 @@ function LoginScreen({ onLogin }) {
 }
 
 /* ============================================================
+   v12.0 · PDF export — Informe ejecutivo
+   --------------------------------------------------------------
+   Arma un PDF A4 multipágina con jsPDF (cargado en mobile.html
+   como UMD) usando los datos de window.MOBILE_DATA. Las secciones
+   son fijas y coinciden con lo que pidió el usuario:
+     1. Stock terminados (Novillo>550, Vaca>650) con desglose
+        PEGSA propio / El Haras / Grupo completo.
+     2. Insumos críticos (Maíz + Silo) con stock kg, consumo/día y
+        días restantes.
+     3. Financiero PEG-BULL — cierre + saldo proyectado + tabla
+        de 6 semanas.
+     4. Financiero DW — idem (si hay datos; si no, se omite).
+     5. Productivos — 6 KPIs del rodeo con actual + referencia.
+     6. Precios de indiferencia de compra — 4 categorías.
+   Después se ofrece compartir via Web Share API (con file),
+   y si el navegador no soporta `canShare({files})`, se cae a
+   descarga directa con doc.save(filename).
+   ============================================================ */
+
+const PDF_COLORS = {
+  navy:    [14, 30, 58],      // PEGSA primary
+  ink:     [25, 28, 35],
+  ink2:    [80, 88, 100],
+  muted:   [140, 148, 160],
+  rule:    [220, 220, 220],
+  zebra:   [247, 247, 248],
+  gold:    [193, 154, 107],
+  pos:     [16, 122, 88],
+  neg:     [196, 64, 60],
+  warn:    [194, 132, 33]
+};
+
+function pdfFmtInt(n) {
+  if (n == null || isNaN(n)) return "—";
+  return Math.round(n).toLocaleString("es-AR");
+}
+function pdfFmtKg(n) {
+  if (n == null || isNaN(n)) return "—";
+  return Math.round(n).toLocaleString("es-AR") + " kg";
+}
+function pdfFmtMoney(n) {
+  if (n == null || isNaN(n)) return "—";
+  var a = Math.abs(n);
+  var sign = n < 0 ? "-" : "";
+  if (a >= 1e9) return sign + "$ " + (a/1e9).toFixed(2).replace(".", ",") + " MM";
+  if (a >= 1e6) return sign + "$ " + Math.round(a/1e6).toLocaleString("es-AR") + " M";
+  if (a >= 1e3) return sign + "$ " + Math.round(a/1e3).toLocaleString("es-AR") + " k";
+  return sign + "$ " + Math.round(a).toLocaleString("es-AR");
+}
+
+// Header de cada página — banda azul con marca + fecha + paginador
+function pdfDrawPageHeader(doc, title, subtitle, pageNum, pageTotal) {
+  var W = doc.internal.pageSize.getWidth();
+  doc.setFillColor.apply(doc, PDF_COLORS.navy);
+  doc.rect(0, 0, W, 22, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("PEGSA & BULLTRADE", 15, 10);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(193, 154, 107); // gold
+  doc.text("INFORME EJECUTIVO · " + new Date().toLocaleDateString("es-AR"), 15, 16);
+  // Pagina N/Total a la derecha
+  doc.setTextColor(220, 220, 220);
+  doc.setFontSize(8);
+  doc.text("PÁG " + pageNum + " / " + pageTotal, W - 15, 16, { align: "right" });
+
+  // Sección title
+  doc.setTextColor.apply(doc, PDF_COLORS.ink);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text(title, 15, 34);
+  if (subtitle) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+    doc.text(subtitle, 15, 40);
+  }
+  // Línea divisoria
+  doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+  doc.setLineWidth(0.3);
+  doc.line(15, 44, W - 15, 44);
+  return 50; // Y inicial para el contenido
+}
+
+function pdfDrawFooter(doc) {
+  var W = doc.internal.pageSize.getWidth();
+  var H = doc.internal.pageSize.getHeight();
+  doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+  doc.line(15, H - 12, W - 15, H - 12);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(7);
+  doc.setTextColor.apply(doc, PDF_COLORS.muted);
+  doc.text("Documento autogenerado · datos del panel PEGSA-Bulltrade", 15, H - 7);
+  doc.text("Uso interno · Dirección", W - 15, H - 7, { align: "right" });
+}
+
+// Tabla simple: dibujá rect + text. cols = [{key,label,align,w}]
+function pdfDrawTable(doc, x, y, cols, rows, opts) {
+  opts = opts || {};
+  var rowH = opts.rowH || 8;
+  var headerH = opts.headerH || 9;
+  var totalW = cols.reduce(function (s, c) { return s + (c.w || 30); }, 0);
+  // Header bg
+  doc.setFillColor.apply(doc, opts.headerBg || PDF_COLORS.navy);
+  doc.rect(x, y, totalW, headerH, 'F');
+  doc.setTextColor.apply(doc, opts.headerFg || [255, 255, 255]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(opts.headerFs || 9);
+  var cx = x;
+  cols.forEach(function (c) {
+    var align = c.align || "left";
+    var tx = cx + (align === "right" ? (c.w - 2) : (align === "center" ? c.w / 2 : 2));
+    doc.text(c.label, tx, y + 6, { align: align });
+    cx += c.w;
+  });
+  // Rows
+  var cy = y + headerH;
+  doc.setTextColor.apply(doc, PDF_COLORS.ink);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(opts.rowFs || 9);
+  rows.forEach(function (row, ri) {
+    if (ri % 2 === 0) {
+      doc.setFillColor.apply(doc, PDF_COLORS.zebra);
+      doc.rect(x, cy, totalW, rowH, 'F');
+    }
+    var cxr = x;
+    cols.forEach(function (c) {
+      var v = row[c.key];
+      var text = (v == null || v === "") ? "—" : String(v);
+      var align = c.align || "left";
+      var tx = cxr + (align === "right" ? (c.w - 2) : (align === "center" ? c.w / 2 : 2));
+      // Si la celda tiene un color custom (row[c.key + "_color"]), usarlo
+      var colorKey = c.key + "_color";
+      if (row[colorKey]) doc.setTextColor.apply(doc, row[colorKey]);
+      else doc.setTextColor.apply(doc, PDF_COLORS.ink);
+      // Negrita opcional
+      if (c.bold || row[c.key + "_bold"]) doc.setFont("helvetica", "bold");
+      else doc.setFont("helvetica", "normal");
+      doc.text(text, tx, cy + 5.5, { align: align });
+      cxr += c.w;
+    });
+    cy += rowH;
+  });
+  doc.setTextColor.apply(doc, PDF_COLORS.ink);
+  doc.setFont("helvetica", "normal");
+  return cy;
+}
+
+// Mini gráfico de barras horizontales — usado para las 6 semanas del
+// flujo financiero. Cada barra muestra su valor a la derecha.
+function pdfDrawFlujoBars(doc, x, y, w, bars, fmtFn) {
+  var rowH = 6, gap = 2;
+  var maxAbs = bars.reduce(function (m, b) { return Math.max(m, Math.abs(b.v || 0)); }, 1);
+  // Eje cero: dividimos la barra en 60% para "magnitud" y 40% para etiqueta
+  var barMaxW = w * 0.62;
+  var zeroX = x + barMaxW * 0.50; // eje central
+  var labelX = x + barMaxW + 4;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  bars.forEach(function (b, i) {
+    var by = y + i * (rowH + gap);
+    // Label izquierda
+    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+    doc.text(String(b.label || ("Sem " + (i+1))), x, by + 4.2);
+    // Barra
+    var v = b.v || 0;
+    var len = (Math.abs(v) / maxAbs) * (barMaxW / 2);
+    var color = v >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg;
+    doc.setFillColor.apply(doc, color);
+    if (v >= 0) doc.rect(zeroX, by, len, rowH, 'F');
+    else doc.rect(zeroX - len, by, len, rowH, 'F');
+    // Eje cero (línea fina)
+    doc.setDrawColor.apply(doc, PDF_COLORS.muted);
+    doc.setLineWidth(0.2);
+    doc.line(zeroX, by - 1, zeroX, by + rowH + 1);
+    // Valor a la derecha
+    doc.setTextColor.apply(doc, color);
+    doc.setFont("helvetica", "bold");
+    doc.text(fmtFn(v), labelX + w * 0.18, by + 4.2, { align: "right" });
+    doc.setFont("helvetica", "normal");
+  });
+  return y + bars.length * (rowH + gap);
+}
+
+// Mini-card (caja con border + título arriba + KPI grande + sub-label).
+// Usada para Productivos (6 KPIs en grid 2×3) y Precios (4 cards en 2×2).
+function pdfDrawKpiCard(doc, x, y, w, h, opts) {
+  doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+  doc.setLineWidth(0.3);
+  if (opts.bgColor) {
+    doc.setFillColor.apply(doc, opts.bgColor);
+    doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+  } else {
+    doc.roundedRect(x, y, w, h, 2, 2, 'S');
+  }
+  // Title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+  doc.text(opts.title || "", x + 3, y + 5);
+  // KPI grande
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(opts.kpiFs || 18);
+  doc.setTextColor.apply(doc, opts.kpiColor || PDF_COLORS.navy);
+  var kpiY = y + 5 + (opts.kpiOffset || 9);
+  doc.text(opts.kpi || "—", x + 3, kpiY);
+  // Unit (al lado del kpi, más chico)
+  if (opts.unit) {
+    var kpiW = doc.getStringUnitWidth(opts.kpi || "—") * (opts.kpiFs || 18) / doc.internal.scaleFactor;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+    doc.text(opts.unit, x + 3 + kpiW + 1.5, kpiY);
+  }
+  // Sub
+  if (opts.sub) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text(opts.sub, x + 3, y + h - 3);
+  }
+  // Chip de delta (esquina superior derecha)
+  if (opts.chip) {
+    var chipColor = opts.chipColor || PDF_COLORS.muted;
+    doc.setFillColor.apply(doc, chipColor);
+    var cw = doc.getStringUnitWidth(opts.chip) * 7.5 / doc.internal.scaleFactor + 3;
+    doc.roundedRect(x + w - cw - 3, y + 2.5, cw, 4.5, 1, 1, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text(opts.chip, x + w - cw / 2 - 3, y + 5.8, { align: "center" });
+  }
+}
+
+function buildPdfDoc() {
+  var jspdfNS = window.jspdf || {};
+  var JsPdfCtor = jspdfNS.jsPDF || window.jsPDF;
+  if (!JsPdfCtor) throw new Error("jsPDF no está cargado");
+
+  var doc = new JsPdfCtor({ unit: "mm", format: "a4", orientation: "portrait" });
+  var W = doc.internal.pageSize.getWidth();
+  var margin = 15;
+  var contentW = W - 2 * margin;
+
+  // Calcular # páginas: 1 Stock + 1 Insumos + 1 Financiero PEG + (DW?1:0) + 1 Productivos + 1 Precios
+  var hasDw = !!(D.FLUJO_SEMANAL_DW && D.FLUJO_SEMANAL_DW.bars && D.FLUJO_SEMANAL_DW.bars.length);
+  var pageTotal = 5 + (hasDw ? 1 : 0);
+  var pageNum = 0;
+
+  function newSection(title, subtitle) {
+    if (pageNum > 0) doc.addPage();
+    pageNum++;
+    return pdfDrawPageHeader(doc, title, subtitle, pageNum, pageTotal);
+  }
+
+  // ============== PÁGINA 1: STOCK TERMINADOS ==============
+  (function () {
+    var y = newSection("Stock terminados", "Cabezas y kilos por categoría — desglose PEGSA / El Haras / Grupo");
+    var st = D.STOCK_TERMINADOS || [];
+    // Una sub-tabla por categoría (Novillo>550, Vaca>650).
+    st.forEach(function (cat, idx) {
+      // Título de categoría
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor.apply(doc, PDF_COLORS.navy);
+      doc.text(cat.label, margin, y);
+      y += 4;
+      doc.setDrawColor.apply(doc, PDF_COLORS.gold);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, margin + 35, y);
+      y += 4;
+      // Tabla 4 columnas: Origen | Cabezas | Kilos | Kg/cab
+      var cols = [
+        { key: "origen",  label: "Origen",       w: contentW * 0.38, align: "left",  bold: true },
+        { key: "cabezas", label: "Cabezas",      w: contentW * 0.20, align: "right" },
+        { key: "kg",      label: "Kilos",        w: contentW * 0.27, align: "right" },
+        { key: "kgcab",   label: "Kg / cab.",    w: contentW * 0.15, align: "right" }
+      ];
+      function row(origen, src) {
+        var cb = src ? src.cabezas : null;
+        var kg = src ? src.kg : null;
+        var kc = (cb && kg) ? Math.round(kg / cb) : null;
+        return {
+          origen:  origen,
+          cabezas: cb != null ? pdfFmtInt(cb) : "—",
+          kg:      kg != null ? pdfFmtInt(kg) + " kg" : "—",
+          kgcab:   kc != null ? pdfFmtInt(kc) + " kg" : "—"
+        };
+      }
+      var rows = [
+        row("PEGSA propio", cat.pegsa),
+        row("El Haras (estab.)", cat.haras),
+        row("GRUPO COMPLETO", cat.grupo)
+      ];
+      // La última fila (Grupo) la marcamos en negrita
+      rows[2].origen_bold = true;
+      rows[2].cabezas_bold = true;
+      rows[2].kg_bold = true;
+      rows[2].kgcab_bold = true;
+      y = pdfDrawTable(doc, margin, y, cols, rows);
+      y += 8;
+    });
+
+    // Nota al pie
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text("PEGSA propio = hacienda PEGSA en todos los establecimientos. El Haras = todos los propietarios en ese establecimiento.", margin, y + 4, { maxWidth: contentW });
+
+    pdfDrawFooter(doc);
+  })();
+
+  // ============== PÁGINA 2: INSUMOS CRÍTICOS ==============
+  (function () {
+    var y = newSection("Insumos críticos", "Stock disponible y autonomía estimada — Maíz y Silo");
+    var ins = D.INSUMOS || [];
+    var cols = [
+      { key: "nombre",   label: "Insumo",          w: contentW * 0.28, align: "left",  bold: true },
+      { key: "stock",    label: "Stock",           w: contentW * 0.22, align: "right" },
+      { key: "consumo",  label: "Consumo / día",   w: contentW * 0.22, align: "right" },
+      { key: "dias",     label: "Días restantes",  w: contentW * 0.18, align: "right" },
+      { key: "estado",   label: "Estado",          w: contentW * 0.10, align: "center" }
+    ];
+    var stateColor = { bad: PDF_COLORS.neg, warn: PDF_COLORS.warn, ok: PDF_COLORS.pos };
+    var rows = ins.slice(0, 2).map(function (it) {
+      var col = stateColor[it.state] || PDF_COLORS.muted;
+      var stockKg = it.stockKg != null ? pdfFmtInt(it.stockKg) + " kg" : "—";
+      var consumoKg = it.consumoKgDia != null ? pdfFmtInt(it.consumoKgDia) + " kg" : "—";
+      var diasStr = it.diasRaw != null ? Math.round(it.diasRaw) + " días" : (it.dias != null && it.dias !== "—" ? it.dias + " días" : "—");
+      return {
+        nombre:   it.title,
+        stock:    stockKg,
+        consumo:  consumoKg,
+        dias:     diasStr,
+        dias_color: col,
+        dias_bold: true,
+        estado:   it.stateLabel || "—",
+        estado_color: col,
+        estado_bold: true
+      };
+    });
+    y = pdfDrawTable(doc, margin, y, cols, rows, { rowH: 10 });
+
+    // Cajitas separadas con detalle visual de cada insumo (más grandes)
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor.apply(doc, PDF_COLORS.navy);
+    doc.text("Resumen por insumo", margin, y);
+    y += 6;
+
+    var cardW = (contentW - 8) / 2;
+    var cardH = 38;
+    ins.slice(0, 2).forEach(function (it, i) {
+      var cx = margin + i * (cardW + 8);
+      var col = stateColor[it.state] || PDF_COLORS.muted;
+      pdfDrawKpiCard(doc, cx, y, cardW, cardH, {
+        title: it.title.toUpperCase(),
+        kpi: it.diasRaw != null ? String(Math.round(it.diasRaw)) : "—",
+        unit: "días",
+        sub: "Stock " + (it.stockKg != null ? pdfFmtInt(it.stockKg) + " kg" : "—") +
+             " · Consumo " + (it.consumoKgDia != null ? pdfFmtInt(it.consumoKgDia) + " kg/día" : "—"),
+        kpiColor: col,
+        kpiFs: 24,
+        kpiOffset: 12,
+        chip: it.stateLabel,
+        chipColor: col
+      });
+    });
+
+    pdfDrawFooter(doc);
+  })();
+
+  // ============== PÁGINAS 3-4: FINANCIERO PEG-BULL + DW ==============
+  function pdfDrawFinanciero(flujo, titulo, subtit) {
+    var y = newSection(titulo, subtit);
+    if (!flujo) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      doc.text("Sin datos disponibles para este flujo.", margin, y + 10);
+      pdfDrawFooter(doc);
+      return;
+    }
+    // Dos cards arriba: cierre + saldo proyectado
+    var cardW = (contentW - 8) / 2;
+    var cardH = 30;
+    pdfDrawKpiCard(doc, margin, y, cardW, cardH, {
+      title: flujo.cerrada.label,
+      kpi:   pdfFmtMoney(flujo.cerrada.value),
+      sub:   flujo.cerrada.range || "",
+      kpiColor: flujo.cerrada.value >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg,
+      kpiFs: 16
+    });
+    pdfDrawKpiCard(doc, margin + cardW + 8, y, cardW, cardH, {
+      title: flujo.proxima.label,
+      kpi:   pdfFmtMoney(flujo.proxima.value),
+      sub:   flujo.proxima.range || "",
+      kpiColor: flujo.proxima.value >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg,
+      kpiFs: 16
+    });
+    y += cardH + 8;
+    // Saldo de partida
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+    doc.text((flujo.acumulado.label || "Saldo de partida").toUpperCase() + " · " + (flujo.acumulado.sub || ""), margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor.apply(doc, flujo.acumulado.value >= 0 ? PDF_COLORS.navy : PDF_COLORS.neg);
+    doc.text(pdfFmtMoney(flujo.acumulado.value), margin + contentW, y, { align: "right" });
+    y += 6;
+    // Tabla detalle de las 6 semanas
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor.apply(doc, PDF_COLORS.navy);
+    doc.text("Saldo acumulado proyectado · 6 semanas", margin, y);
+    y += 4;
+    // Bars
+    y = pdfDrawFlujoBars(doc, margin, y, contentW, flujo.bars, pdfFmtMoney);
+    y += 8;
+    // Tabla de detalle
+    var cols = [
+      { key: "label",   label: "Semana",        w: contentW * 0.30, align: "left",  bold: true },
+      { key: "estado",  label: "Estado",        w: contentW * 0.25, align: "left" },
+      { key: "saldo",   label: "Saldo acum.",   w: contentW * 0.45, align: "right" }
+    ];
+    var estadoMap = { past: "Cerrada", next: "Actual", proj: "Proyectada" };
+    var rows = flujo.bars.map(function (b) {
+      return {
+        label:  String(b.label || ""),
+        estado: estadoMap[b.kind] || "—",
+        saldo:  pdfFmtMoney(b.v),
+        saldo_color: b.v >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg,
+        saldo_bold: true
+      };
+    });
+    y = pdfDrawTable(doc, margin, y, cols, rows);
+
+    pdfDrawFooter(doc);
+  }
+
+  pdfDrawFinanciero(D.FLUJO_SEMANAL, "Financiero · PEG-BULL", "Saldo proyectado semanal — Pecuaria El Garabí + Bulltrade");
+  if (hasDw) {
+    pdfDrawFinanciero(D.FLUJO_SEMANAL_DW, "Financiero · DW (Darwash)", "Saldo proyectado semanal — Darwash SA, análisis independiente");
+  }
+
+  // ============== PÁGINA: PRODUCTIVOS ==============
+  (function () {
+    var y = newSection("Productivos", "Eficiencia del rodeo — actual vs referencia anual");
+    var prod = D.PRODUCTIVOS || [];
+    // Grid 2 cols × 3 rows
+    var cardW = (contentW - 8) / 2;
+    var cardH = 30;
+    prod.forEach(function (p, i) {
+      var col = i % 2;
+      var row = Math.floor(i / 2);
+      var cx = margin + col * (cardW + 8);
+      var cy = y + row * (cardH + 6);
+      // Colores según severity + tone
+      var kpiColor = PDF_COLORS.navy;
+      if (p.severity === "severo" && p.tone === "bad") kpiColor = PDF_COLORS.neg;
+      else if (p.severity === "severo" && p.tone === "good") kpiColor = PDF_COLORS.pos;
+      var chipColor = null;
+      if (p.chipTone === "bad")  chipColor = PDF_COLORS.neg;
+      if (p.chipTone === "good") chipColor = PDF_COLORS.pos;
+      if (p.chipTone === "warn") chipColor = PDF_COLORS.warn;
+      pdfDrawKpiCard(doc, cx, cy, cardW, cardH, {
+        title: p.title,
+        kpi:   p.kpi,
+        unit:  p.unit,
+        sub:   p.subVal + "  " + p.subLabel,
+        kpiColor: kpiColor,
+        kpiFs: 18,
+        chip:  p.deltaFmt,
+        chipColor: chipColor
+      });
+    });
+    pdfDrawFooter(doc);
+  })();
+
+  // ============== PÁGINA: PRECIOS DE INDIFERENCIA ==============
+  (function () {
+    var meta = D.PRECIOS_INFERENCIA_META || {};
+    var y = newSection("Precios de indiferencia de compra",
+                       "Tope de compra para no perder plata — actualizado " + (meta.fechaLabelLargo || meta.fechaLabel || "—"));
+    var pinf = D.PRECIOS_INFERENCIA || [];
+    // 4 cards grandes (2×2)
+    var cardW = (contentW - 8) / 2;
+    var cardH = 50;
+    pinf.slice(0, 4).forEach(function (p, i) {
+      var col = i % 2;
+      var row = Math.floor(i / 2);
+      var cx = margin + col * (cardW + 8);
+      var cy = y + row * (cardH + 6);
+      // Card grande con KPI + tabla de parámetros interna
+      doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(cx, cy, cardW, cardH, 2, 2, 'S');
+      // Header de la card
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor.apply(doc, PDF_COLORS.navy);
+      doc.text(p.nombreBase + " " + (p.nombreSub || ""), cx + 3, cy + 6);
+      // KPI grande
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.setTextColor.apply(doc, PDF_COLORS.navy);
+      doc.text(p.precioCompFmt, cx + 3, cy + 17);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      doc.text("$/kg compra", cx + 3, cy + 22);
+      // Margen estimado en chip
+      if (p.margenPctFmt) {
+        var mc = p.margenTone === "good" ? PDF_COLORS.pos :
+                 p.margenTone === "bad"  ? PDF_COLORS.neg :
+                 p.margenTone === "warn" ? PDF_COLORS.warn : PDF_COLORS.muted;
+        doc.setFillColor.apply(doc, mc);
+        var chipText = "Margen " + p.margenPctFmt;
+        var cw = doc.getStringUnitWidth(chipText) * 8 / doc.internal.scaleFactor + 4;
+        doc.roundedRect(cx + cardW - cw - 3, cy + 3, cw, 5, 1, 1, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.text(chipText, cx + cardW - cw / 2 - 3, cy + 6.5, { align: "center" });
+      }
+      // Parámetros (mini-tabla 2×3)
+      var paramY = cy + 28;
+      var paramRowH = 5;
+      var halfW = (cardW - 6) / 2;
+      function param(idx, label, val) {
+        var col = idx % 2;
+        var row = Math.floor(idx / 2);
+        var px = cx + 3 + col * halfW;
+        var py = paramY + row * paramRowH;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor.apply(doc, PDF_COLORS.muted);
+        doc.text(label, px, py + 3);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor.apply(doc, PDF_COLORS.ink);
+        doc.text(val || "—", px + halfW - 2, py + 3, { align: "right" });
+      }
+      param(0, "Kg compra",    p.kgCompraFmt);
+      param(1, "Kg venta",     p.kgVentaFmt);
+      param(2, "Precio venta", p.precioVentaFmt);
+      param(3, "Rinde",        p.rindeFmt);
+      param(4, "Costo prod.",  p.costoKgProdFmt);
+      param(5, "Días feed",    p.diasFeedFmt);
+    });
+    pdfDrawFooter(doc);
+  })();
+
+  return doc;
+}
+
+// Genera el PDF y lo comparte via Web Share API; si no está disponible,
+// cae a descarga directa.
+async function handleSharePdf() {
+  try {
+    var doc = buildPdfDoc();
+    var blob = doc.output("blob");
+    var ts = new Date().toISOString().slice(0, 10);
+    var filename = "PEGSA-Informe-" + ts + ".pdf";
+    var file = new File([blob], filename, { type: "application/pdf" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "PEGSA · Informe Ejecutivo " + ts,
+          text: "Resumen ejecutivo PEGSA-Bulltrade · " + new Date().toLocaleDateString("es-AR")
+        });
+        return;
+      } catch (e) {
+        // Si el usuario cancela el share, no caer a descarga
+        if (e && e.name === "AbortError") return;
+      }
+    }
+    // Fallback: descarga directa
+    doc.save(filename);
+  } catch (e) {
+    console.error("PDF export error:", e);
+    alert("No se pudo generar el PDF: " + ((e && e.message) || e));
+  }
+}
+
+/* ============================================================
    Header
    ============================================================ */
 function Header({ session, onLogout }) {
   const { brand, sub, notifications } = D.HEADER;
+  const [generating, setGenerating] = useState(false);
+  const onPdf = async () => {
+    if (generating) return;
+    setGenerating(true);
+    try { await handleSharePdf(); }
+    finally { setTimeout(() => setGenerating(false), 600); }
+  };
   return (
     <header className="hdr">
       <div className="hdr-row">
@@ -236,6 +846,15 @@ function Header({ session, onLogout }) {
           <div className="hdr-brand-name">{brand}</div>
           <div className="hdr-brand-sub">{sub}</div>
         </div>
+        <button
+          className={"hdr-btn hdr-btn-pdf" + (generating ? " is-loading" : "")}
+          aria-label="Compartir informe en PDF"
+          onClick={onPdf}
+          disabled={generating}
+          title="Generar y compartir informe PDF"
+        >
+          <Icon.Share />
+        </button>
         <button className="hdr-btn" aria-label="Notificaciones">
           <Icon.Bell />
           {notifications > 0 && (
