@@ -1555,6 +1555,13 @@ html, body {
 
 /* ════════════════════════════════════════════════════════════════
    Sección 3 · Sub-datos de referencia
+   v11.2: layout condicional según cantidad de cards renderizadas.
+     - 3 cards (DW vacío)  → 1.35fr 1fr 1fr  (layout histórico)
+     - 4 cards (DW activo) → 1fr 1fr en 2×2 — los 2 Financieros
+       hermanos en fila 1, los 2 charts hermanos en fila 2.
+   Implementado con :has() para no tocar el JSX. React no renderiza
+   el null del FinancieroCard DW vacío, así que el DOM real tiene 3
+   o 4 hijos y el grid se autoadapta.
    ════════════════════════════════════════════════════════════════ */
 .section-3-grid {
   display: grid;
@@ -1562,13 +1569,26 @@ html, body {
   gap: 18px;
   margin-bottom: 32px;
 }
+/* v11.2: con 4 cards (DW presente) → 2×2 con columnas iguales. */
+.section-3-grid:has(> :nth-child(4)) {
+  grid-template-columns: 1fr 1fr;
+}
+.section-3-grid:has(> :nth-child(4)) > :first-child {
+  /* Anular cualquier "first-child span" que viene del breakpoint
+     tablet — con 4 cards la primera ocupa una sola columna. */
+  grid-column: auto;
+}
+
 @media (max-width: 1180px) {
   .section-3-grid { grid-template-columns: 1fr 1fr; }
   .section-3-grid > :first-child { grid-column: 1 / -1; }
+  /* Con 4 cards en tablet: 2×2 (anular el span de la primera). */
+  .section-3-grid:has(> :nth-child(4)) > :first-child { grid-column: auto; }
 }
 @media (max-width: 720px) {
   .section-3-grid { grid-template-columns: 1fr; }
   .section-3-grid > :first-child { grid-column: auto; }
+  .section-3-grid:has(> :nth-child(4)) { grid-template-columns: 1fr; }
 }
 
 /* Card común para Sección 3 */

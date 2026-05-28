@@ -61,6 +61,14 @@
        último mes / hoy (referencia de tendencia reciente). El delta
        queda como (anual − reciente)/reciente: anual mejor que reciente
        → good. Sólo cambio en data.js; el adapter y el UI no se tocan.
+   v11.2 (2026-05-28): reorganización de la sección Sub-datos del
+       panel desktop. Con 4 cards (DW activo) el grid pasa a 2×2
+       (Financiero PEG-BULL + Financiero DW arriba; Patrimonio USD
+       + Stock kilos abajo). Si DW está vacío (3 cards), mantiene
+       el layout histórico 1,35fr/1fr/1fr. Implementado con
+       `:has(> :nth-child(4))` en panel.css — cero cambios en JSX,
+       el grid se autoadapta según React renderice 3 o 4 hijos.
+       Mobile sin cambios (siempre 1 columna stacked).
    v11.1 (2026-05-28): 3 fixes post-validación de v11.
        (1) Análisis DW · Histórico Semanal pasa de bloque al final del
            screenTesoreria a TAB propia. Sistema de tabs nuevo en el
