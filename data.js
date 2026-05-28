@@ -494,27 +494,33 @@ window.PEGSA_DATA = {
   // ============================================================
   D.productivos = {};
 
-  // 1. Engorde diario (ADP × 1000 → g/día/cab)
+  // v9.1: Engorde diario (ADP × 1000 → g/día/cab)
+  // El KPI grande debe coincidir con lo que muestra la pestaña Productivo
+  // del módulo Stock de Masa del desktop ("ADP Promedio" = anual ponderado
+  // = productivo.general.adp_promedio). Por eso el `actual` ahora es el
+  // valor ANUAL y el `historico` es el último mes (referencia de
+  // tendencia reciente). El delta queda como (anual − mes)/mes:
+  // anual mejor que mes → good (verde); anual peor que mes → bad (rosa).
   if (productivo?.general?.adp_promedio != null && productivo?.por_mes) {
     const mesesKeys = Object.keys(productivo.por_mes).sort();
     const ultKey = mesesKeys[mesesKeys.length - 1];
     const ult = productivo.por_mes[ultKey];
     const MESES_LAB = { '01':'ene','02':'feb','03':'mar','04':'abr','05':'may','06':'jun','07':'jul','08':'ago','09':'sep','10':'oct','11':'nov','12':'dic' };
-    const ultLabel = ultKey ? (MESES_LAB[ultKey.slice(5,7)] || '') + " " + ultKey.slice(2,4) : 'último mes';
+    const ultLabel = ultKey ? (MESES_LAB[ultKey.slice(5,7)] || '') + " " + ultKey.slice(2,4) : 'últ. mes';
     D.productivos.engordeDiario = {
-      actual:    { v: ult?.adp_promedio != null ? ult.adp_promedio * 1000 : null,
+      actual:    { v: productivo.general.adp_promedio * 1000,
+                   unit: 'g/día', label: 'anual', decimals: 0 },
+      historico: { v: ult?.adp_promedio != null ? ult.adp_promedio * 1000 : null,
                    unit: 'g/día', label: ultLabel, decimals: 0 },
-      historico: { v: productivo.general.adp_promedio * 1000,
-                   unit: 'g/día', label: '12 m', decimals: 0 },
       mejorEs: 'mayor',
-      descripcion: 'Kg ganados por cabeza por día (ADP). El último mes vs el promedio de los últimos 12 m. Fuente: productivo_2025.json.'
+      descripcion: 'Kg ganados por cabeza por día (ADP). Promedio ponderado anual (último año de ventas) vs el último mes. Fuente: productivo_2025.json.'
     };
     // 2. Estadía
     D.productivos.estadia = {
-      actual:    { v: ult?.estadia_promedio, unit: 'días', label: ultLabel, decimals: 0 },
-      historico: { v: productivo.general.estadia_promedio, unit: 'días', label: '12 m', decimals: 0 },
+      actual:    { v: productivo.general.estadia_promedio, unit: 'días', label: 'anual', decimals: 0 },
+      historico: { v: ult?.estadia_promedio, unit: 'días', label: ultLabel, decimals: 0 },
       mejorEs: 'menor',
-      descripcion: 'Días promedio entre entrada del animal y su venta. Menos días = más rotación.'
+      descripcion: 'Días promedio entre entrada del animal y su venta. Promedio anual vs el último mes. Menos días = más rotación.'
     };
   }
 
@@ -572,37 +578,37 @@ window.PEGSA_DATA = {
     };
   })();
 
+  // v9.1 · Eficiencia / Consumo / Conversión: el KPI grande es el
+  // VALOR ANUAL real del módulo Stock Insumos del desktop (los 2,57 /
+  // 17,8 / 7,9 que el user vio en la captura). El `historico` pasa a
+  // ser el dato instantáneo del día (indicadores_2025.json) — actúa
+  // como referencia de "cómo está hoy vs el promedio anual del feedlot".
+
   // 3. Eficiencia % PV (consumo MS como % del peso vivo · El Haras)
-  //    actual: indicador instantáneo del día (indicadores_2025.json)
-  //    historico: VALOR ANUAL del módulo Insumos del desktop (no
-  //               promedio de eficiencia_historico — eso daba sesgo
-  //               con los registros recientes).
-  if (indicadores?.indicadores?.pct_peso_vivo?.valor != null) {
+  if (anuales.pctPV != null) {
     D.productivos.pctPV = {
-      actual:    { v: indicadores.indicadores.pct_peso_vivo.valor, unit: '%', label: 'hoy',   decimals: 1 },
-      historico: { v: anuales.pctPV,                                unit: '%', label: 'anual', decimals: 2 },
-      mejorEs: 'mayor', // rango óptimo 2-3%, viniendo de 1,9 → ir hacia 2,57 es bueno
+      actual:    { v: anuales.pctPV,                                            unit: '%', label: 'anual', decimals: 2 },
+      historico: { v: indicadores?.indicadores?.pct_peso_vivo?.valor ?? null,    unit: '%', label: 'hoy',   decimals: 1 },
+      mejorEs: 'mayor', // rango óptimo 2-3%
       descripcion: 'Consumo MS como % del peso vivo (El Haras). Anual = MS anual ÷ 365 ÷ kg PV prom. anual × 100. Rango óptimo 2-3%.'
     };
   }
 
   // 4. Consumo por cabeza (kg TC/cab/día)
-  //    historico: TC anual ÷ 365 ÷ cab. promedio anuales (= 17,8).
-  if (indicadores?.indicadores?.consumo_por_cabeza?.valor_tc != null) {
+  if (anuales.consumoPorCabeza != null) {
     D.productivos.consumoPorCabeza = {
-      actual:    { v: indicadores.indicadores.consumo_por_cabeza.valor_tc, unit: 'kg/cab', label: 'hoy',   decimals: 1 },
-      historico: { v: anuales.consumoPorCabeza,                            unit: 'kg/cab', label: 'anual', decimals: 1 },
-      mejorEs: 'rango', // óptimo 12.5-15.5, ni "mayor" ni "menor"
+      actual:    { v: anuales.consumoPorCabeza,                                       unit: 'kg/cab', label: 'anual', decimals: 1 },
+      historico: { v: indicadores?.indicadores?.consumo_por_cabeza?.valor_tc ?? null, unit: 'kg/cab', label: 'hoy',   decimals: 1 },
+      mejorEs: 'rango',
       descripcion: 'Alimento TC por animal por día (El Haras). Anual = TC anual ÷ 365 ÷ cab. promedio anuales. Rango óptimo 12,5-15,5 kg.'
     };
   }
 
   // 5. Conversión alimenticia (kg MS : kg ganancia)
-  //    historico: kg MS/cab/día anual ÷ ADP anual ponderado (= 7,9).
-  if (indicadores?.indicadores?.conversion_alimenticia?.valor != null) {
+  if (anuales.conversion != null) {
     D.productivos.conversion = {
-      actual:    { v: indicadores.indicadores.conversion_alimenticia.valor, unit: '', label: 'hoy',   decimals: 1 },
-      historico: { v: anuales.conversion,                                   unit: '', label: 'anual', decimals: 1 },
+      actual:    { v: anuales.conversion,                                                unit: '', label: 'anual', decimals: 1 },
+      historico: { v: indicadores?.indicadores?.conversion_alimenticia?.valor ?? null,   unit: '', label: 'hoy',   decimals: 1 },
       mejorEs: 'menor', // menos kg consumo por kg ganado = mejor
       descripcion: 'Kg de MS consumidos por kg de carne ganada. Anual = kg MS/cab/día ÷ ADP anual ponderado. Menos = mejor (ref. 5-8).'
     };

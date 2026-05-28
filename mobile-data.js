@@ -52,6 +52,15 @@
        por fecha). Workflow: usuario sobrescribe Excel cada semana,
        script detecta nueva fecha y appendea. Desktop suma pestaña
        "Inferencia" en módulo Mercado con tabla + line chart histórico.
+   v9.1 (2026-05-28): el KPI grande de los 5 KPIs anuales (engorde,
+       estadía, eficiencia %PV, consumo/cab, conversión) ahora muestra
+       el VALOR ANUAL que coincide con el módulo Stock de Masa →
+       pestaña Productivo del desktop (ej: engorde 1.506 g/día = ADP
+       Promedio anual del desktop, estadía 136 días = Estadía Promedio).
+       Se swap entre actual/historico — el `historico` pasa a ser el
+       último mes / hoy (referencia de tendencia reciente). El delta
+       queda como (anual − reciente)/reciente: anual mejor que reciente
+       → good. Sólo cambio en data.js; el adapter y el UI no se tocan.
    v9 (2026-05-28): Productivos + Precios unificados en patrón
        MINIMAL → tap toggle → EXPAND INLINE → botón al módulo. Se
        eliminan los modales (openCard/setModalContent) de esas dos
