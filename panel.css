@@ -1737,3 +1737,172 @@ html, body {
 }
 .saldo-partida-val.neg { color: var(--neg); }
 .saldo-partida-val.pos { color: var(--ink); }
+
+/* ============================================================
+   v7 · Productivos · sección desktop (espejo de mobile.css).
+   Mismo lenguaje visual, mismas clases base. Cambio único: el
+   grid es de 3 columnas en desktop (1280+), 2 en tablet (768+),
+   1 en mobile. El font Playfair Display ya está cargado por
+   index.html.
+   ============================================================ */
+.prod-section {
+  margin: 40px 0 36px;
+}
+.prod-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.prod-section-head h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.02em;
+  border-left: 3px solid var(--primary);
+  padding-left: 12px;
+  line-height: 1;
+}
+.prod-section-sub {
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+  text-align: right;
+}
+
+.prod-grid {
+  display: grid;
+  gap: 14px;
+}
+.prod-grid-desktop {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 1100px) {
+  .prod-grid-desktop { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .prod-grid-desktop { grid-template-columns: 1fr; }
+}
+
+.prod-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 18px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  min-height: 150px;
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+.prod-card.is-missing { opacity: 0.55; }
+
+/* v7: coloreado de tarjeta sólo cuando es severa. */
+.prod-card.lvl-severo.card-tone-bad {
+  background: oklch(0.97 0.025 25 / 0.7);
+  border-color: oklch(0.88 0.06 25 / 0.6);
+}
+.prod-card.lvl-severo.card-tone-good {
+  background: oklch(0.97 0.04 155 / 0.6);
+  border-color: oklch(0.86 0.07 155 / 0.55);
+}
+
+.prod-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  line-height: 1.2;
+  padding-right: 70px;
+}
+
+.prod-big {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1;
+  margin-top: 4px;
+}
+.prod-big-num {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 42px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.prod-big-unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-mute);
+}
+.prod-card.lvl-severo.card-tone-bad .prod-big-num {
+  color: oklch(0.50 0.18 25);
+}
+.prod-card.lvl-severo.card-tone-good .prod-big-num {
+  color: oklch(0.43 0.14 155);
+}
+
+.prod-divider {
+  height: 1px;
+  border-top: 1px dashed var(--border);
+  margin-top: auto;
+}
+.prod-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.prod-foot-lab {
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+.prod-foot-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.prod-chip {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 99px;
+  line-height: 1;
+  background: oklch(0.94 0.005 256);
+  color: var(--ink-mute);
+}
+.prod-chip.chip-tone-good {
+  background: oklch(0.93 0.07 155);
+  color: oklch(0.34 0.13 155);
+}
+.prod-chip.chip-tone-bad {
+  background: var(--neg-soft);
+  color: oklch(0.42 0.14 25);
+}
+.prod-chip-arr {
+  font-size: 10px;
+  font-weight: 700;
+}

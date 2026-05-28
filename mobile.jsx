@@ -1073,10 +1073,12 @@ function ChartCard({ data }) {
 }
 
 /* ============================================================
-   v6 · Productivos · grid 2×3 de tarjetas con KPI grande + KPI
-   comparativo + chip ↑/↓ coloreado por mejorEs (mayor/menor/rango).
-   Datos vienen de D.PRODUCTIVOS armado por mobile-data.js leyendo
-   D.productivos de data.js (espejo del desktop — misma fuente).
+   v7 · Productivos · grid 2×3 con semáforo escalonado.
+   Las clases que controlan el color de la tarjeta son:
+     .lvl-{severo|moderado|neutro} (severidad por |delta|)
+     .tone-{good|bad|neutral}      (signo + mejorEs)
+     .card-tone-{...}              (sólo coloreado si severo+!rango)
+   El chip usa su propio modificador .chip-tone-{good|bad|neutral}.
    ============================================================ */
 function ProductivosGrid() {
   const modal = useModal();
@@ -1093,12 +1095,12 @@ function ProductivosGrid() {
             {kvList([
               { k: p.actualLabel ? "Actual · " + p.actualLabel : "Actual",
                 v: p.kpi + (p.unit ? " " + p.unit : ""),
-                cls: p.deltaCls === "pos" ? "pos" : (p.deltaCls === "neg" ? "neg" : "") },
+                cls: p.cardTone === "bad" ? "neg" : (p.cardTone === "good" ? "pos" : "") },
               { k: "Histórico " + (p.subLabel || "").replace(/^vs\s*/, ""),
                 v: p.subVal },
               { k: "Variación",
                 v: p.deltaFmt || "—",
-                cls: p.deltaCls }
+                cls: p.tone === "bad" ? "neg" : (p.tone === "good" ? "pos" : "") }
             ])}
           </div>
           {p.descripcion && (
@@ -1109,25 +1111,37 @@ function ProductivosGrid() {
     });
   };
 
+  const arrow = (p) => {
+    if (p.delta == null) return "·";
+    return p.delta > 0 ? "↑" : (p.delta < 0 ? "↓" : "·");
+  };
+
   return (
     <div className="prod-grid">
       {list.map((p) => (
-        <button key={p.id} className={"prod-card drill " + p.deltaCls}
-                onClick={() => openCard(p)}>
+        <button
+          key={p.id}
+          className={
+            "prod-card drill" +
+            " lvl-" + (p.severity || "neutro") +
+            " card-tone-" + (p.cardTone || "neutral")
+          }
+          onClick={() => openCard(p)}
+          aria-label={p.title + ": " + p.kpi + " " + (p.unit || "") + (p.deltaFmt ? " (" + p.deltaFmt + ")" : "")}
+        >
           <div className="prod-eyebrow">{p.title}</div>
           <div className="prod-big">
             <span className="prod-big-num">{p.kpi}</span>
             {p.unit ? <span className="prod-big-unit">{p.unit}</span> : null}
           </div>
+          <div className="prod-divider" />
           <div className="prod-foot">
-            <span className="prod-foot-val">{p.subVal}</span>
             <span className="prod-foot-lab">{p.subLabel}</span>
+            <span className="prod-foot-val">{p.subVal}</span>
           </div>
           {p.deltaFmt && (
-            <span className={"prod-chip " + p.deltaCls}>
-              <span className="prod-chip-arr">
-                {p.deltaCls === "pos" ? "↑" : (p.deltaCls === "neg" ? "↓" : "·")}
-              </span>
+            <span className={"prod-chip chip-tone-" + (p.chipTone || "neutral")}>
+              <span className="prod-chip-arr">{arrow(p)}</span>
               {p.deltaFmt}
             </span>
           )}
@@ -1283,10 +1297,13 @@ function App() {
 
           {/* v6: sección nueva — 6 KPIs productivos del feedlot
               (ADP, estadía, eficiencia, consumo/cab, conversión,
-              kg repartidos), espejo del desktop. */}
+              kg repartidos), espejo del desktop.
+              v7: header con la regla del semáforo escalonado. */}
           <div className="sec-head">
             <h2><span className="ico">📈</span>Productivos</h2>
-            <span className="sec-head-sub">último mes · vs histórico</span>
+            <span className="sec-head-sub">
+              último mes · variación vs histórico · semáforo &gt;20% / 10–20% / &lt;10%
+            </span>
           </div>
           <ProductivosGrid />
 

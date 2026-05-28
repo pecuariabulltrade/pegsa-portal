@@ -23,6 +23,13 @@
        feedlot: engorde diario, estadía, eficiencia % PV, consumo/cab,
        conversión y kg repartidos del último día de mixer. Datos
        calculados en data.js (D.productivos) — una sola fuente de verdad.
+   v7 (2026-05-28): rediseño visual de Productivos según mockup del
+       usuario. Las cards ahora tienen semáforo escalonado:
+         |Δ| > 20%       → SEVERO: fondo coloreado + KPI coloreado
+         10% ≤ |Δ| ≤ 20% → MODERADO: tarjeta blanca, chip coloreado
+         |Δ| < 10%       → NEUTRO: todo gris
+       cruzado con tone (good/bad/neutral) según mejorEs + signo del Δ.
+       KPI grande en Playfair Display. mejorEs='rango' = siempre neutral.
    ============================================================ */
 (function (root) {
   "use strict";
@@ -557,25 +564,42 @@
       else n = Number(v).toFixed(2).replace(".", ",");
       return { n: n, u: unit || "" };
     }
+    // v7: severidad escalonada según el mockup del usuario.
+    //   |delta| > 20% → 'severo'  (tarjeta coloreada + KPI coloreado)
+    //   10% ≤ |delta| ≤ 20% → 'moderado' (tarjeta blanca + chip coloreado)
+    //   |delta| < 10% → 'neutro' (todo gris)
+    // tone: 'good' / 'bad' / 'neutral' según mejorEs + signo del delta.
+    function classifyProd(p, delta) {
+      var tone = "neutral";
+      if (p.mejorEs === "rango") tone = "neutral";
+      else if (delta == null) tone = "neutral";
+      else if (p.mejorEs === "menor") tone = delta < 0 ? "good" : (delta > 0 ? "bad" : "neutral");
+      else /* mayor (default) */ tone = delta > 0 ? "good" : (delta < 0 ? "bad" : "neutral");
+
+      var abs = delta == null ? 0 : Math.abs(delta);
+      var severity = abs > 20 ? "severo" : (abs >= 10 ? "moderado" : "neutro");
+
+      // chipTone: en severity neutro o rango, el chip es siempre gris.
+      var chipTone = (severity === "neutro" || p.mejorEs === "rango") ? "neutral" : tone;
+      // cardTone: la tarjeta sólo se colorea cuando es severa (sino blanca).
+      var cardTone = (severity === "severo" && p.mejorEs !== "rango") ? tone : "neutral";
+      return { tone: tone, severity: severity, chipTone: chipTone, cardTone: cardTone, deltaAbs: abs };
+    }
     function mkProd(id, titulo) {
       var p = prod[id];
       if (!p || p.actual == null) {
         return { id: id, title: titulo, kpi: "—", unit: "", subVal: "N/D",
-                 subLabel: "", delta: null, deltaCls: "" };
+                 subLabel: "", delta: null, severity: "neutro",
+                 tone: "neutral", chipTone: "neutral", cardTone: "neutral" };
       }
       var a = p.actual || {}, h = p.historico || {};
       var aFmt = fmtProd(a.v, a.unit, a.decimals);
       var hFmt = fmtProd(h.v, h.unit, h.decimals);
-      var delta = null, deltaCls = "";
+      var delta = null;
       if (a.v != null && h.v != null && h.v !== 0) {
         delta = ((a.v - h.v) / Math.abs(h.v)) * 100;
-        // Mejor=mayor → actual>historico es positivo (verde)
-        // Mejor=menor → actual<historico es positivo (verde)
-        // rango → siempre neutro
-        if (p.mejorEs === "rango") deltaCls = "neu";
-        else if (p.mejorEs === "menor") deltaCls = delta < 0 ? "pos" : (delta > 0 ? "neg" : "neu");
-        else deltaCls = delta > 0 ? "pos" : (delta < 0 ? "neg" : "neu");
       }
+      var c = classifyProd(p, delta);
       return {
         id: id,
         title: titulo,
@@ -585,10 +609,16 @@
         subLabel: "vs " + (h.label || "histórico"),
         actualLabel: a.label || "",
         delta: delta,
+        deltaAbs: c.deltaAbs,
         deltaFmt: delta != null
-          ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(delta < 10 && delta > -10 ? 1 : 0).replace(".", ",") + "%"
+          ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace(".", ",") + "%"
           : null,
-        deltaCls: deltaCls,
+        // v7: clases nuevas para el rediseño escalonado.
+        tone:      c.tone,         // good|bad|neutral según mejorEs + signo
+        severity:  c.severity,     // severo|moderado|neutro según |delta|
+        chipTone:  c.chipTone,     // qué color usa el chip
+        cardTone:  c.cardTone,     // qué color usa el fondo de la tarjeta
+        mejorEs:   p.mejorEs || "mayor",
         descripcion: p.descripcion || ""
       };
     }
