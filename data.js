@@ -439,6 +439,40 @@ window.PEGSA_DATA = {
       .filter(Boolean);
 
     if (criticos.length > 0) D.insumosCriticos = criticos;
+
+    // Lista completa (mobile v5 — sección "Todos los insumos" del panel
+    // mobile, espejo del módulo Stock Insumos del desktop). Misma
+    // semaforización que las cards desktop (<7 bad / 7-15 warn / ≥15 ok).
+    const totalKgAbs = stockInsumos.insumos.reduce((s, i) => s + Math.max(0, i.stock_kg || 0), 0) || 1;
+    D.stockInsumosTodos = {
+      meta: {
+        total_kg: stockInsumos.total_kg || null,
+        count:    stockInsumos.insumos.length,
+        generado: (stockInsumos.meta && stockInsumos.meta.generado) || null,
+      },
+      items: stockInsumos.insumos.map(i => {
+        const stock = i.stock_kg;
+        const dias  = i.dias_restantes;
+        const isInconsistente = (stock != null && stock < 0) || (dias != null && dias < 0);
+        const semaforo = dias == null ? null : (dias < 7 ? 'bad' : (dias < 15 ? 'warn' : 'ok'));
+        const estado = isInconsistente
+          ? 'inconsistente'
+          : (dias == null ? 'ok' : (dias < 10 ? 'bad' : (dias < 30 ? 'warn' : 'ok')));
+        const pctTotal = stock != null ? (stock / totalKgAbs) * 100 : null;
+        return {
+          nombre: INSUMO_DISPLAY_NAMES[i.nombre] || toTitle(i.nombre),
+          nombre_raw: i.nombre,
+          descripcion: INSUMO_DESCRIPCIONES[i.nombre] || null,
+          stock_kg: stock,
+          consumo_kg_dia: i.consumo_diario_tc,
+          dias: dias,
+          semaforo: semaforo,
+          estado: estado,
+          inconsistente: isInconsistente,
+          pct_total: pctTotal,
+        };
+      }),
+    };
   }
 
   // Módulos · KPIs dinámicos

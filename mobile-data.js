@@ -3,9 +3,19 @@
    Lee window.PEGSA_DATA (data.js) y arma window.MOBILE_DATA.
    Re-construye al recibir 'panel:data-ready' (JSONs reales).
 
+   Versiones:
    v3 (2026-05-27): auditoría aplicada — todos los datos vienen de
-   PEGSA_DATA real, etiquetas dinámicas según frecuencia de serie,
-   sanitización de fechas ISO en alertas, var12m / flujo semanal reales.
+       PEGSA_DATA real, etiquetas dinámicas según frecuencia de serie,
+       sanitización de fechas ISO en alertas, var12m / flujo semanal reales.
+   v4 (2026-05-27): drill modal Stock con barras+donut SVG, sacar tabs
+       superior, KPIs de módulos directos de m.kpi/m.kpiLabel (sin
+       kpiOverrides ni recompactación de valor), fix defensivo del
+       race var12m N/D.
+   v5 (2026-05-27): drill Stock muestra PEGSA propio primero y Grupo
+       después (categoriasPegsa nuevo). Sección nueva "Todos los insumos"
+       con lista completa de stockInsumos (espejo del módulo Stock
+       Insumos del desktop), incluye semaforización por días restantes
+       y mini-bar del % del total.
    ============================================================ */
 (function (root) {
   "use strict";
@@ -334,6 +344,52 @@
       });
     }
 
+    // ---------- v5 · Insumos · lista completa ----------
+    // D.stockInsumosTodos viene de data.js poblado desde
+    // stock_insumos_2025.json (todos los items + total + meta).
+    // Se muestra en una sección nueva "Todos los insumos" en el panel
+    // mobile, espejo del módulo Stock Insumos del desktop. Si no está
+    // disponible (data.js viejo), INSUMOS_ALL queda vacío y la sección
+    // no se renderiza.
+    var INSUMOS_ALL = [];
+    var INSUMOS_TOTAL = { totalKg: 0, count: 0, fecha: null };
+    var stk = D.stockInsumosTodos;
+    if (stk && Array.isArray(stk.items) && stk.items.length) {
+      INSUMOS_TOTAL = {
+        totalKg: (stk.meta && stk.meta.total_kg) || 0,
+        count:   (stk.meta && stk.meta.count) || stk.items.length,
+        fecha:   (stk.meta && stk.meta.generado) ? fmtFechaCorta(stk.meta.generado) : null
+      };
+      // Orden: críticos (bad) primero, luego warn, luego ok, luego sin dato.
+      var ORD = { bad: 0, warn: 1, ok: 2, null: 3 };
+      INSUMOS_ALL = stk.items
+        .slice()
+        .sort(function (a, b) {
+          var oa = ORD[a.semaforo == null ? "null" : a.semaforo];
+          var ob = ORD[b.semaforo == null ? "null" : b.semaforo];
+          if (oa !== ob) return oa - ob;
+          // dentro del mismo semáforo: menos días primero
+          var da = a.dias == null ?  1e9 : a.dias;
+          var db = b.dias == null ?  1e9 : b.dias;
+          return da - db;
+        })
+        .map(function (it) {
+          return {
+            id:           it.nombre_raw || it.nombre,
+            nombre:       it.nombre,
+            descripcion:  it.descripcion,
+            stockKg:      it.stock_kg,
+            consumoKgDia: it.consumo_kg_dia,
+            dias:         it.dias,
+            diasFmt:      it.dias == null ? "—" : Number(it.dias).toFixed(1).replace(".", ","),
+            semaforo:     it.semaforo,
+            estado:       it.estado,
+            inconsistente: it.inconsistente,
+            pctTotal:     it.pct_total
+          };
+        });
+    }
+
     // ---------- Financiero · saldo proyectado (Sprint 2C real) ----------
     var fs = D.flujoSemanal || null;
     var FLUJO_SEMANAL;
@@ -517,6 +573,8 @@
       STOCK_HERO: STOCK_HERO,
       COTIZACIONES: COTIZACIONES,
       INSUMOS: INSUMOS,
+      INSUMOS_ALL: INSUMOS_ALL,
+      INSUMOS_TOTAL: INSUMOS_TOTAL,
       FLUJO_SEMANAL: FLUJO_SEMANAL,
       PATRIMONIO_USD: PATRIMONIO_USD,
       STOCK_KILOS: STOCK_KILOS,
