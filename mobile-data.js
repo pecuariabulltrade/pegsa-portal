@@ -61,6 +61,19 @@
        último mes / hoy (referencia de tendencia reciente). El delta
        queda como (anual − reciente)/reciente: anual mejor que reciente
        → good. Sólo cambio en data.js; el adapter y el UI no se tocan.
+   v11.1 (2026-05-28): 3 fixes post-validación de v11.
+       (1) Análisis DW · Histórico Semanal pasa de bloque al final del
+           screenTesoreria a TAB propia. Sistema de tabs nuevo en el
+           módulo Tesorería: [Resumen | DW]. Función `tesoreriaTab(tab,el)`
+           — compatible con el bridge mobile→desktop ?tab=dw.
+       (2) Barras del card "Financiero · saldo proyectado" del panel
+           ahora respetan el SIGNO: positivos suben del eje cero (verdes),
+           negativos bajan (rojos). Label numérico flotante por barra
+           ($2.964M / −$120M). Mobile JSX ya tenía la lógica; bug era en
+           panel.css desktop (.saldo-bar-fill tenía `background: var(--neg)`
+           hardcoded, todas las barras se veían rojas/rosas).
+       (3) Verificación: cierrePrimera/cierreFinal usan el signo real
+           del saldoAcumulado de su semana (sin cambios — ya estaba OK).
    v11 (2026-05-28): nueva sección "Financiero DW" — análisis
        financiero independiente de Darwash, paralelo al Financiero
        PEGSA-BULL existente. Pipeline Python lee

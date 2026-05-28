@@ -504,13 +504,28 @@ function FinancieroCard({ flujo, title, sub, onClick, onKeyDown }) {
       <div className="saldo-bars">
         {(() => {
           const maxAbs = Math.max(1, ...flujo.semanas.map(s => Math.abs(s.saldoAcumulado)));
+          // v11.1: eje cero al 50%, label numérico flotante, pos/neg con color.
           return flujo.semanas.map((s, i) => {
-            const heightPct = Math.abs(s.saldoAcumulado) / maxAbs * 100;
+            const v = s.saldoAcumulado;
+            const isPos = v >= 0;
+            const heightPct = (Math.abs(v) / maxAbs) * 48;  // 48% del track → bandas claras
+            const fillStyle = isPos
+              ? { bottom: "50%", height: `${heightPct}%` }
+              : { top:    "50%", height: `${heightPct}%` };
+            const numStyle = isPos
+              ? { bottom: `calc(50% + ${heightPct}% + 2px)` }
+              : { top:    `calc(50% + ${heightPct}% + 2px)` };
             return (
               <div key={i} className={`saldo-bar-cell ${s.estado}`}
-                   title={`${s.label}: ${fmtMontoM(s.saldoAcumulado)}`}>
+                   title={`${s.label}: ${fmtMontoM(v)}`}>
                 <div className="saldo-bar-track">
-                  <div className="saldo-bar-fill" style={{ height: `${heightPct}%` }} />
+                  <div className="saldo-bar-axis" />
+                  <div className={`saldo-bar-fill ${isPos ? "pos" : "neg"}`}
+                       style={fillStyle} />
+                  <div className={`saldo-bar-num ${isPos ? "pos" : "neg"}`}
+                       style={numStyle}>
+                    {fmtMontoM(v)}
+                  </div>
                 </div>
                 <div className="saldo-bar-label">{s.label}</div>
               </div>

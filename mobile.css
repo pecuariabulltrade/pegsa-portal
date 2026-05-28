@@ -645,7 +645,9 @@ img, svg { display: block; max-width: 100%; }
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 6px;
-  padding: 14px 0 8px;
+  /* v11.1: más padding arriba/abajo para que los labels numéricos
+     flotantes encima/debajo de cada barra no queden cortados. */
+  padding: 20px 0 18px;
 }
 .flujo-bar-cell {
   display: flex;
@@ -679,6 +681,25 @@ img, svg { display: block; max-width: 100%; }
   outline: 2px solid var(--ink);
   outline-offset: 1px;
 }
+
+/* v11.1: label numérico flotante por encima (pos) o debajo (neg) de
+   la barra. White-space:nowrap evita quiebres en mobile chico. */
+.flujo-bar-num {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1;
+}
+.flujo-bar-num.pos { color: oklch(0.40 0.14 155); }
+.flujo-bar-num.neg { color: oklch(0.45 0.16 25); }
+.flujo-bar-cell.next .flujo-bar-num { font-weight: 700; color: var(--ink); }
 .flujo-bar-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9.5px;

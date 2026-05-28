@@ -416,10 +416,31 @@ var _tesAcumChart = null;     // instancia Chart.js del gráfico acumulado
 function initTesoreria() {
   if (_tesData) { _renderTesUI(_tesData); return; }
   cargarTesoreria();
-  // v11: la sección DW vive en #panelTesoreriaDw y lee
-  // D.tesoreriaDW + D.tesoreriaDWHist directamente desde PEGSA_DATA
-  // (ya cargados por data.js). Renderizamos en paralelo.
+  // v11.1: pre-render del panel DW para que el chart esté listo al
+  // hacer click en su tab. Los datos vienen de D.tesoreriaDW(Hist)
+  // ya cargados por data.js.
   try { renderTesoreriaDw(); } catch (e) { console.warn('[dw] render falló', e); }
+}
+
+/* ============================================================
+   v11.1 · Sistema de tabs del módulo Tesorería.
+     - resumen → panelTesoreriaResumen (contenido existente)
+     - dw      → panelTesoreriaDw (análisis Darwash)
+   Compatible con el bridge mobile→desktop (?mod=tesoreria&tab=dw)
+   y con goToPortalModule('tesoreria','dw') del panel principal.
+   ============================================================ */
+function tesoreriaTab(tab, el) {
+  var nav = document.querySelectorAll('#screenTesoreria .nav-tab');
+  nav.forEach(function(t){ t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  ['panelTesoreriaResumen','panelTesoreriaDw'].forEach(function(p){
+    var n = document.getElementById(p); if (n) n.style.display = 'none';
+  });
+  var map = { resumen: 'panelTesoreriaResumen', dw: 'panelTesoreriaDw' };
+  if (map[tab]) {
+    document.getElementById(map[tab]).style.display = 'block';
+    if (tab === 'dw') { try { renderTesoreriaDw(); } catch (e) {} }
+  }
 }
 
 function recargarTesoreria() {

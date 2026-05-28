@@ -1672,38 +1672,66 @@ html, body {
 .saldo-cierre-box.pos .saldo-cierre-val { color: var(--pos); }
 .saldo-cierre-box.neg .saldo-cierre-val { color: var(--neg); }
 
-/* Mini bar-chart de saldo acumulado por semana (Sprint 5 fix: barras en vez de sparkline) */
+/* v11.1 · Mini bar-chart de saldo acumulado por semana
+   - Eje cero al 50% del track. Positivos suben, negativos bajan.
+   - Color verde (.pos) / rojo (.neg) según signo del saldo acumulado.
+   - Label numérico flotante encima (pos) o debajo (neg) de la barra. */
 .saldo-bars {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
-  padding: 4px 0;
+  padding: 22px 0 22px;  /* espacio para los labels numéricos flotantes */
 }
 .saldo-bar-cell {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
 }
 .saldo-bar-track {
   width: 100%;
-  height: 56px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  height: 64px;
+  position: relative;
+}
+.saldo-bar-axis {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border);
 }
 .saldo-bar-fill {
-  width: 70%;
+  position: absolute;
+  left: 18%; right: 18%;
   min-height: 2px;
-  background: var(--neg);
-  border-radius: 2px 2px 0 0;
-  opacity: 0.85;
+  border-radius: 2px;
+  opacity: 0.92;
 }
+.saldo-bar-fill.pos { background: var(--pos); }
+.saldo-bar-fill.neg { background: var(--neg); }
 .saldo-bar-cell.next .saldo-bar-fill {
   outline: 2px solid oklch(0.32 0.13 256);
   outline-offset: 1px;
   opacity: 1;
 }
+.saldo-bar-cell.proj .saldo-bar-fill { opacity: 0.55; }
+/* Label numérico flotante (positivo: encima de la barra; negativo: debajo) */
+.saldo-bar-num {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.saldo-bar-num.pos { color: oklch(0.40 0.14 155); }
+.saldo-bar-num.neg { color: oklch(0.45 0.16 25); }
+.saldo-bar-cell.next .saldo-bar-num { font-weight: 700; color: var(--ink); }
+
 .saldo-bar-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;

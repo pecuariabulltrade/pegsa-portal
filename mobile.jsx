@@ -855,19 +855,32 @@ function FlujoSemanal({ source }) {
       {f.bars.length > 0 && (
         <div className="flujo-bars">
           {f.bars.map((b, i) => {
-            const h = (Math.abs(b.v) / maxAbs) * 30;
+            // v11.1: agregamos label numérico flotante encima/debajo de
+            // cada barra ("$2.964M" / "−$120M"). La altura sube de 30%
+            // a 40% del track para que se distingan mejor las diferencias.
+            const h = (Math.abs(b.v) / maxAbs) * 40;
             const pct = h.toFixed(1) + "%";
-            const fillStyle = b.v >= 0
+            const isPos = b.v >= 0;
+            const fillStyle = isPos
               ? { bottom: "50%", height: pct }
               : { top: "50%", height: pct };
+            const numStyle = isPos
+              ? { bottom: `calc(50% + ${pct} + 2px)` }
+              : { top:    `calc(50% + ${pct} + 2px)` };
             return (
               <div key={i} className={"flujo-bar-cell " + b.kind}>
                 <div className="flujo-bar-track">
                   <div className="flujo-bar-axis" />
                   <div
-                    className={"flujo-bar-fill " + (b.v >= 0 ? "pos" : "neg")}
+                    className={"flujo-bar-fill " + (isPos ? "pos" : "neg")}
                     style={fillStyle}
                   />
+                  <div
+                    className={"flujo-bar-num " + (isPos ? "pos" : "neg")}
+                    style={numStyle}
+                  >
+                    {fmtMoneyCompact(b.v)}
+                  </div>
                 </div>
                 <div className="flujo-bar-label">{b.label}</div>
               </div>

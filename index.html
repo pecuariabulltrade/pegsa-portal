@@ -1872,22 +1872,31 @@
     </div>
   </div>
 
+  <!-- v11.1 · Nav-tabs del módulo Tesorería (Resumen / DW) -->
+  <div class="nav-tabs">
+    <div class="nav-tab active" id="tesoreriaTabResumen" onclick="tesoreriaTab('resumen',this)">📊 Resumen</div>
+    <div class="nav-tab"        id="tesoreriaTabDw"      onclick="tesoreriaTab('dw',this)">💵 DW</div>
+  </div>
+
   <!-- Contenido dinámico -->
   <div style="padding:40px 48px">
-    <div id="tesLoading" style="text-align:center;padding:80px 0">
-      <div style="font-size:32px;animation:spin 1.2s linear infinite;display:inline-block">&#8635;</div>
-      <div style="font-family:'Playfair Display',serif;font-size:20px;margin-top:16px">Conectando con OneDrive...</div>
-      <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(26,22,18,.4);margin-top:8px">Leyendo tesoreria_ultimo.json</div>
+    <!-- Panel Resumen (= todo el contenido existente del módulo) -->
+    <div id="panelTesoreriaResumen">
+      <div id="tesLoading" style="text-align:center;padding:80px 0">
+        <div style="font-size:32px;animation:spin 1.2s linear infinite;display:inline-block">&#8635;</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;margin-top:16px">Conectando con OneDrive...</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(26,22,18,.4);margin-top:8px">Leyendo tesoreria_ultimo.json</div>
+      </div>
+      <div id="tesError" style="display:none;text-align:center;padding:60px 0">
+        <div style="font-size:32px">&#9888;</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;margin-top:12px">No se encontró tesoreria_ultimo.json</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(26,22,18,.5);margin-top:8px">Colocá un YYYY-MM-DD_financiero.xlsx en la carpeta OneDrive y ejecutá el bat</div>
+      </div>
+      <div id="tesData" style="display:none"></div>
     </div>
-    <div id="tesError" style="display:none;text-align:center;padding:60px 0">
-      <div style="font-size:32px">&#9888;</div>
-      <div style="font-family:'Playfair Display',serif;font-size:20px;margin-top:12px">No se encontró tesoreria_ultimo.json</div>
-      <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(26,22,18,.5);margin-top:8px">Colocá un YYYY-MM-DD_financiero.xlsx en la carpeta OneDrive y ejecutá el bat</div>
-    </div>
-    <div id="tesData" style="display:none"></div>
 
-    <!-- v11 · Análisis DW (Darwash) · histórico semanal -->
-    <div id="panelTesoreriaDw" style="padding:32px 48px 60px;background:#fafafa;border-top:1px solid var(--border)">
+    <!-- v11.1 · Panel DW (Darwash) · histórico semanal -->
+    <div id="panelTesoreriaDw" style="display:none">
       <div class="section-header" style="margin-bottom:8px">
         <span class="section-title">Análisis DW · Histórico Semanal</span>
         <span class="section-sub" id="dwMetaSub">Darwash · análisis financiero independiente</span>
