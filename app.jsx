@@ -472,6 +472,75 @@ function PreciosInferenciaSection({ D }) {
   );
 }
 
+/* ============================================================
+   v11 · FinancieroCard — espejo desktop de la card "Financiero ·
+   saldo proyectado". Acepta `flujo` (D.flujoSemanal o D.flujoSemanalDW),
+   `title`, `sub` y `onClick` para reusarse en PEG-BULL y DW. Early
+   return cuando no hay datos.
+   ============================================================ */
+function FinancieroCard({ flujo, title, sub, onClick, onKeyDown }) {
+  if (!flujo) return null;
+  const fmtMontoM = (n) => {
+    if (n == null) return "—";
+    const abs = Math.abs(n); const sign = n < 0 ? "−" : "";
+    return sign + "$" + Math.round(abs / 1e6).toLocaleString("es-AR") + " M";
+  };
+  return (
+    <div className="flujo-semanal-card" role="button" tabIndex={0}
+         onClick={onClick} onKeyDown={onKeyDown}>
+      <div className="chart-card-head">
+        <div>
+          <h3>{title}</h3>
+          <p>{sub}</p>
+        </div>
+        <span className="chart-card-chip">Sem {flujo.semanaNumActual} · {flujo.anioActual}</span>
+      </div>
+      {flujo.cierrePrimera && (
+        <div className={`saldo-cierre-box ${flujo.cierrePrimera.signo}`}>
+          <div className="saldo-cierre-label">Cierre · {flujo.cierrePrimera.rangoLabel}</div>
+          <div className="saldo-cierre-val">{fmtMontoM(flujo.cierrePrimera.valor)}</div>
+        </div>
+      )}
+      <div className="saldo-bars">
+        {(() => {
+          const maxAbs = Math.max(1, ...flujo.semanas.map(s => Math.abs(s.saldoAcumulado)));
+          return flujo.semanas.map((s, i) => {
+            const heightPct = Math.abs(s.saldoAcumulado) / maxAbs * 100;
+            return (
+              <div key={i} className={`saldo-bar-cell ${s.estado}`}
+                   title={`${s.label}: ${fmtMontoM(s.saldoAcumulado)}`}>
+                <div className="saldo-bar-track">
+                  <div className="saldo-bar-fill" style={{ height: `${heightPct}%` }} />
+                </div>
+                <div className="saldo-bar-label">{s.label}</div>
+              </div>
+            );
+          });
+        })()}
+      </div>
+      {flujo.saldoInicial != null && (
+        <div className="saldo-partida-row">
+          <span className="saldo-partida-label">Saldo de partida</span>
+          <span className={`saldo-partida-val ${flujo.saldoInicial < 0 ? "neg" : "pos"}`}>
+            {fmtMontoM(flujo.saldoInicial)}
+          </span>
+        </div>
+      )}
+      {flujo.cierreFinal && (
+        <div className={`cover-row ${flujo.cierreFinal.signo}`}>
+          <div>
+            <div className="cover-label">Saldo proyectado</div>
+            <div className="cover-sub">Cierre semana {flujo.cierreFinal.label}</div>
+          </div>
+          <div className={`cover-val ${flujo.cierreFinal.signo}`}>
+            {fmtMontoM(flujo.cierreFinal.valor)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Panel() {
   const D = window.PEGSA_DATA;
   const [drillModulo, setDrillModulo] = useState(null);
@@ -795,77 +864,24 @@ function Panel() {
 
           return (
             <div className="section-3-grid">
-              {/* --- Card 1: Financiero · saldo proyectado (Sprint 2C-fix-2: cambio de delta semanal a saldo acumulado) --- */}
-              {D.flujoSemanal && (() => {
-                // Formateador local: SIEMPRE en M (no abreviar a B). Coherente con módulo Tesorería.
-                const fmtMontoM = (n) => {
-                  if (n == null) return '—';
-                  const abs = Math.abs(n);
-                  const sign = n < 0 ? '−' : '';
-                  return sign + '$' + Math.round(abs / 1e6).toLocaleString("es-AR") + ' M';
-                };
-                return (
-                  <div className="flujo-semanal-card" role="button" tabIndex={0}
-                       onClick={openDrill("tesoreria")} onKeyDown={onKey("tesoreria")}>
-                    <div className="chart-card-head">
-                      <div>
-                        <h3>Financiero · saldo proyectado</h3>
-                        <p>Saldo bancario proyectado al cierre de cada semana</p>
-                      </div>
-                      <span className="chart-card-chip">Sem {D.flujoSemanal.semanaNumActual} · {D.flujoSemanal.anioActual}</span>
-                    </div>
-
-                    {/* Caja arriba: cierre primera semana */}
-                    {D.flujoSemanal.cierrePrimera && (
-                      <div className={`saldo-cierre-box ${D.flujoSemanal.cierrePrimera.signo}`}>
-                        <div className="saldo-cierre-label">Cierre · {D.flujoSemanal.cierrePrimera.rangoLabel}</div>
-                        <div className="saldo-cierre-val">{fmtMontoM(D.flujoSemanal.cierrePrimera.valor)}</div>
-                      </div>
-                    )}
-
-                    {/* Mini bar-chart con saldo acumulado de las 6 semanas (Sprint 5 fix: barras en vez de sparkline) */}
-                    <div className="saldo-bars">
-                      {(() => {
-                        const maxAbs = Math.max(1, ...D.flujoSemanal.semanas.map(s => Math.abs(s.saldoAcumulado)));
-                        return D.flujoSemanal.semanas.map((s, i) => {
-                          const heightPct = Math.abs(s.saldoAcumulado) / maxAbs * 100;
-                          return (
-                            <div key={i} className={`saldo-bar-cell ${s.estado}`} title={`${s.label}: ${fmtMontoM(s.saldoAcumulado)}`}>
-                              <div className="saldo-bar-track">
-                                <div className="saldo-bar-fill" style={{ height: `${heightPct}%` }} />
-                              </div>
-                              <div className="saldo-bar-label">{s.label}</div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-
-                    {/* Línea saldo de partida (arranque de la curva = "Hoy") */}
-                    {D.flujoSemanal.saldoInicial != null && (
-                      <div className="saldo-partida-row">
-                        <span className="saldo-partida-label">Saldo de partida</span>
-                        <span className={`saldo-partida-val ${D.flujoSemanal.saldoInicial < 0 ? 'neg' : 'pos'}`}>
-                          {fmtMontoM(D.flujoSemanal.saldoInicial)}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Caja abajo: saldo proyectado al cierre del horizonte (última semana visible) */}
-                    {D.flujoSemanal.cierreFinal && (
-                      <div className={`cover-row ${D.flujoSemanal.cierreFinal.signo}`}>
-                        <div>
-                          <div className="cover-label">Saldo proyectado</div>
-                          <div className="cover-sub">Cierre semana {D.flujoSemanal.cierreFinal.label}</div>
-                        </div>
-                        <div className={`cover-val ${D.flujoSemanal.cierreFinal.signo}`}>
-                          {fmtMontoM(D.flujoSemanal.cierreFinal.valor)}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              {/* v11: Financiero PEG-BULL (existente) + Financiero DW
+                  (Darwash, análisis independiente). Misma card reusable
+                  componente <FinancieroCard />. Si DW no tiene datos
+                  cargados, su card hace early return. */}
+              <FinancieroCard
+                flujo={D.flujoSemanal}
+                title="Financiero · saldo proyectado"
+                sub="Saldo bancario proyectado al cierre de cada semana"
+                onClick={openDrill("tesoreria")}
+                onKeyDown={onKey("tesoreria")}
+              />
+              <FinancieroCard
+                flujo={D.flujoSemanalDW}
+                title="Financiero DW · saldo proyectado"
+                sub="Análisis financiero independiente · Darwash"
+                onClick={openDrill("tesoreria")}
+                onKeyDown={onKey("tesoreria")}
+              />
 
               {/* --- Card 2: Patrimonio USD --- */}
               {pUsd.length > 0 && (

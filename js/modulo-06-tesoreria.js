@@ -416,6 +416,10 @@ var _tesAcumChart = null;     // instancia Chart.js del gráfico acumulado
 function initTesoreria() {
   if (_tesData) { _renderTesUI(_tesData); return; }
   cargarTesoreria();
+  // v11: la sección DW vive en #panelTesoreriaDw y lee
+  // D.tesoreriaDW + D.tesoreriaDWHist directamente desde PEGSA_DATA
+  // (ya cargados por data.js). Renderizamos en paralelo.
+  try { renderTesoreriaDw(); } catch (e) { console.warn('[dw] render falló', e); }
 }
 
 function recargarTesoreria() {
@@ -1047,4 +1051,140 @@ function _renderTesVariaciones(histFin, currentTes) {
   sec7.style.cssText = 'margin-bottom:36px';
   sec7.innerHTML = html;
   el.appendChild(sec7);
+}
+
+/* ============================================================
+   v11 · Análisis DW (Darwash) · histórico semanal.
+   Lee D.tesoreriaDW (snapshot actual) + D.tesoreriaDWHist (lista
+   de snapshots semanales). Renderiza:
+     - Sub-header con fecha de última actualización + N snapshots
+     - Line chart con la serie de saldo_acumulado por semana
+       (cada snapshot pinta una línea distinta)
+     - Tabla cronológica DESC (fecha_corte | posición | saldo
+       inicial | última semana proyectada)
+   ============================================================ */
+var _tesDwChart = null;
+function renderTesoreriaDw() {
+  var D = window.PEGSA_DATA || {};
+  var snap = D.tesoreriaDW || null;
+  var hist = Array.isArray(D.tesoreriaDWHist) ? D.tesoreriaDWHist.slice() : [];
+  var noData = document.getElementById('dwNoData');
+  var subEl  = document.getElementById('dwMetaSub');
+  var chartWrap = document.getElementById('dwChartWrap');
+  var tablaWrap = document.getElementById('dwTablaWrap');
+
+  if (!snap || !hist.length) {
+    if (noData) noData.style.display = 'block';
+    if (chartWrap) chartWrap.style.display = 'none';
+    if (tablaWrap) tablaWrap.innerHTML = '';
+    return;
+  }
+  if (noData) noData.style.display = 'none';
+  if (chartWrap) chartWrap.style.display = 'block';
+
+  if (subEl) {
+    var f = snap.fecha_corte || '';
+    var fechaLbl = f ? f.split('-').reverse().join('/') : '—';
+    subEl.textContent = 'Darwash · ' + hist.length + ' snapshot' +
+      (hist.length === 1 ? '' : 's') + ' · último corte ' + fechaLbl;
+  }
+
+  // Chart: línea por snapshot, X = semana, Y = saldo acumulado
+  hist.sort(function(a,b){ return String(a.fecha_corte).localeCompare(String(b.fecha_corte)); });
+  // Labels = unión de todas las semanas (las semanas pueden variar entre snapshots)
+  var maxSemanas = Math.max.apply(null, hist.map(function(s){
+    return (s.semanas || []).length;
+  }));
+  // Tomamos las semanas del snapshot más reciente como eje X canónico
+  var ultimoSnap = hist[hist.length - 1];
+  var labels = ultimoSnap.semanas || [];
+  var palette = ['#1a5276', '#b8922a', '#7b3f2a', '#27613d', '#5b4fcf', '#c0392b'];
+
+  var datasets = hist.slice(-6).map(function(snap, idx){
+    var color = palette[idx % palette.length];
+    var f = snap.fecha_corte || '';
+    var lbl = f ? f.split('-').reverse().join('/') : 'snap';
+    return {
+      label: 'Corte ' + lbl,
+      data: snap.saldo_acumulado || [],
+      borderColor: color,
+      backgroundColor: color + '22',
+      borderWidth: idx === hist.slice(-6).length - 1 ? 2.5 : 1.5,
+      tension: 0.25,
+      pointRadius: idx === hist.slice(-6).length - 1 ? 4 : 2,
+      pointHoverRadius: 5,
+      spanGaps: true,
+    };
+  });
+
+  if (_tesDwChart) { try { _tesDwChart.destroy(); } catch(e) {} _tesDwChart = null; }
+  var ctx = document.getElementById('chartTesoreriaDw');
+  if (ctx && typeof Chart !== 'undefined') {
+    _tesDwChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: "'DM Mono', monospace", size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: function(ctx){
+                var v = ctx.parsed.y;
+                var s = v < 0 ? '−' : '';
+                return ctx.dataset.label + ': ' + s + '$' + Math.abs(Math.round(v/1e6)).toLocaleString('es-AR') + ' M';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: function(v){
+                var s = v < 0 ? '−' : '';
+                return s + '$' + Math.abs(Math.round(v/1e6)).toLocaleString('es-AR') + ' M';
+              },
+              font: { family: "'DM Mono', monospace", size: 11 }
+            },
+            grid: { color: 'rgba(26,22,18,.06)' }
+          },
+          x: {
+            ticks: { font: { family: "'DM Mono', monospace", size: 11 } },
+            grid: { color: 'rgba(26,22,18,.04)' }
+          }
+        }
+      }
+    });
+  }
+
+  // Tabla: cronológica DESC
+  var fmtM = function(n){
+    if (n == null) return '—';
+    var s = n < 0 ? '−' : '';
+    return s + '$' + Math.abs(Math.round(n/1e6)).toLocaleString('es-AR') + ' M';
+  };
+  var histDesc = hist.slice().reverse();
+  var html = '<table class="data-table">'
+    + '<thead><tr>'
+    + '<th>Fecha corte</th>'
+    + '<th class="right">Posición final</th>'
+    + '<th class="right">Saldo inicial</th>'
+    + '<th class="right">Última semana proyectada</th>'
+    + '<th class="right">N semanas</th>'
+    + '</tr></thead><tbody>';
+  histDesc.forEach(function(s){
+    var f = s.fecha_corte || '';
+    var fL = f ? (f.split('-').reverse().slice(0,2).join('/') + '/' + f.split('-')[0].slice(2)) : '—';
+    var ultSemana = (s.saldo_acumulado && s.saldo_acumulado.length)
+      ? s.saldo_acumulado[s.saldo_acumulado.length - 1] : null;
+    html += '<tr>'
+      + '<td><strong>' + fL + '</strong></td>'
+      + '<td class="right mono">' + fmtM(s.posicion) + '</td>'
+      + '<td class="right mono">' + fmtM(s.saldo_inicial) + '</td>'
+      + '<td class="right mono">' + fmtM(ultSemana) + '</td>'
+      + '<td class="right mono">' + (s.semanas ? s.semanas.length : 0) + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  if (tablaWrap) tablaWrap.innerHTML = html;
 }

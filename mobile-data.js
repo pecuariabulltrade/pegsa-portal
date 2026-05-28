@@ -61,6 +61,21 @@
        último mes / hoy (referencia de tendencia reciente). El delta
        queda como (anual − reciente)/reciente: anual mejor que reciente
        → good. Sólo cambio en data.js; el adapter y el UI no se tocan.
+   v11 (2026-05-28): nueva sección "Financiero DW" — análisis
+       financiero independiente de Darwash, paralelo al Financiero
+       PEGSA-BULL existente. Pipeline Python lee
+       `datos/financiero DW/` (XLSX semanal del usuario) y vuelca
+       tesoreria_darwash.json + tesoreria_darwash_historico.json.
+       Panel principal: 2 cards en Sub-datos (PEG-BULL arriba, DW
+       abajo, MISMO componente <FlujoSemanal source="dw" />).
+       Módulo Tesorería: nueva sección "Análisis DW · Histórico
+       Semanal" al final con tabla cronológica + line chart Chart.js
+       del saldo acumulado. NO toca tesoreria.darwash de
+       tesoreria_ultimo.json (eso sigue siendo parte del flujo PEG-BULL).
+       data.js: helper `armarFlujoSemanal()` extraída, llamada 2 veces.
+       mobile-data.js: helper `adaptFlujoSemanal()` similar. Si la
+       carpeta DW está vacía → FLUJO_SEMANAL_DW=null y la card no
+       renderiza (early return).
    v10 (2026-05-28): REVERT del swap de v9.1. El módulo Stock·Producción
        "Eficiencia del Rodeo" muestra el ACTUAL como KPI grande (no
        el anual). El panel ahora coincide al decimal:
@@ -466,16 +481,16 @@
     }
 
     // ---------- Financiero · saldo proyectado (Sprint 2C real) ----------
-    var fs = D.flujoSemanal || null;
-    var FLUJO_SEMANAL;
-    if (fs) {
-      // Datos REALES desde tesoreria_ultimo.json.flujo (Sprint 2C-fix-2)
+    // v11: helper local que adapta un objeto de flujo armado por
+    // data.js (D.flujoSemanal o D.flujoSemanalDW) al shape que el
+    // componente <FlujoSemanal /> de mobile.jsx consume.
+    function adaptFlujoSemanal(fs, title) {
+      if (!fs) return null;
       var primera = fs.cierrePrimera || {};
       var ultima  = fs.cierreFinal || {};
       var sems = Array.isArray(fs.semanas) ? fs.semanas : [];
-
-      FLUJO_SEMANAL = {
-        title: "Financiero · saldo proyectado",
+      return {
+        title: title,
         sub: "Sem " + (fs.semanaNumActual || "—") + " · " + (fs.anioActual || ""),
         cerrada: {
           label: "CIERRE",
@@ -487,7 +502,7 @@
           range: "Cierre semana " + (ultima.label || "—"),
           value: ultima.valor != null ? ultima.valor : null
         },
-        bars: sems.map(function (s, i) {
+        bars: sems.map(function (s) {
           return {
             label: s.label,
             v: s.saldoAcumulado != null ? s.saldoAcumulado : 0,
@@ -501,8 +516,11 @@
         },
         fechaCorte: fs.fechaCorte
       };
-    } else {
-      // Fallback si no hay datos de flujo (improbable, pero no inventar)
+    }
+
+    var FLUJO_SEMANAL = adaptFlujoSemanal(D.flujoSemanal, "Financiero · saldo proyectado");
+    if (!FLUJO_SEMANAL) {
+      // Fallback si no hay datos de flujo PEG-BULL
       var tes = D.tesoreria || {};
       FLUJO_SEMANAL = {
         title: "Financiero · saldo proyectado",
@@ -513,6 +531,9 @@
         acumulado: { label: "Posición USD", sub: "Inversiones + caja", value: tes.usd_pos != null ? tes.usd_pos : null }
       };
     }
+    // FLUJO_SEMANAL_DW queda null si la carpeta DW está vacía — la
+    // card de mobile.jsx hace early return cuando ve null.
+    var FLUJO_SEMANAL_DW = adaptFlujoSemanal(D.flujoSemanalDW, "Financiero DW · saldo proyectado");
 
     // ---------- Patrimonio USD (line chart) ----------
     // Sparks vienen de D.sparks.patrimonioUsd (rebuildeado en data.js desde
@@ -855,6 +876,7 @@
       INSUMOS_ALL: INSUMOS_ALL,
       INSUMOS_TOTAL: INSUMOS_TOTAL,
       FLUJO_SEMANAL: FLUJO_SEMANAL,
+      FLUJO_SEMANAL_DW: FLUJO_SEMANAL_DW,
       PATRIMONIO_USD: PATRIMONIO_USD,
       STOCK_KILOS: STOCK_KILOS,
       PRODUCTIVOS: PRODUCTIVOS,

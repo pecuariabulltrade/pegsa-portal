@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -124,6 +124,8 @@ window.PEGSA_DATA = {
     fetchJson('comportamiento_historico.json'),
     fetchJson('precios_inferencia.json'),
     fetchJson('precios_inferencia_historico.json'),
+    fetchJson('tesoreria_darwash.json'),
+    fetchJson('tesoreria_darwash_historico.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -230,13 +232,19 @@ window.PEGSA_DATA = {
     if (pos.usd_ars && pos.usd_cant) D.hero.patrimonio.mep = Math.round(pos.usd_ars / pos.usd_cant);
   }
 
-  // Flujo semanal (Sprint 2C) — 1 cerrada + 1 next + 4 proyectadas desde tesoreria_ultimo.json.flujo
-  if (tesoreria?.flujo && Array.isArray(tesoreria.flujo.semanas)) {
-    const fl = tesoreria.flujo;
-    const fechaCorte = tesoreria.fecha_corte || new Date().toISOString().slice(0, 10);
+  // v11: helper extraída de la lógica original de flujo semanal (Sprint
+  // 2C). Recibe el snapshot completo (igual shape que tesoreria_ultimo.json
+  // → fecha_corte + flujo {saldo_inicial, semanas, series.saldo_semanal,
+  //   series.saldo_acumulado}) y devuelve el objeto que el panel/módulo
+  // consumen para mostrar 6 barras (1 cerrada + 1 next + 4 proyectadas)
+  // con sus cierres. Reusada por PEG-BULL (D.flujoSemanal) y DW
+  // (D.flujoSemanalDW) — una sola fórmula.
+  function armarFlujoSemanal(snap) {
+    if (!snap || !snap.flujo || !Array.isArray(snap.flujo.semanas)) return null;
+    const fl = snap.flujo;
+    const fechaCorte = snap.fecha_corte || new Date().toISOString().slice(0, 10);
     const [anioCorte] = fechaCorte.split('-').map(Number);
-    const hoy0 = new Date();
-    hoy0.setHours(0, 0, 0, 0);
+    const hoy0 = new Date(); hoy0.setHours(0, 0, 0, 0);
 
     const parseLabel = (lbl) => {
       const [d, m] = lbl.split('/').map(Number);
@@ -250,7 +258,6 @@ window.PEGSA_DATA = {
         ? `${ini.getDate()} al ${fin.getDate()} ${MESES[ini.getMonth()]}`
         : `${ini.getDate()} ${MESES[ini.getMonth()]} al ${fin.getDate()} ${MESES[fin.getMonth()]}`;
     };
-    const fmtDDMM = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
     const semNumIso = (d) => {
       const tmp = new Date(d.getTime());
       tmp.setHours(0, 0, 0, 0);
@@ -265,56 +272,65 @@ window.PEGSA_DATA = {
       return 'proj';
     };
 
-    const saldos = (fl.series && fl.series.saldo_semanal) || [];
+    const saldos     = (fl.series && fl.series.saldo_semanal)   || [];
     const saldosAcum = (fl.series && fl.series.saldo_acumulado) || [];
-    const todasSemanas = fl.semanas.map((lbl, i) => {
-      const fechaIni = parseLabel(lbl);
+    const todas = fl.semanas.map((lbl, i) => {
+      const ini = parseLabel(lbl);
       return {
         label: lbl,
-        fechaIni: fechaIni,
-        rangoLabel: fmtRango(fechaIni),
+        fechaIni: ini,
+        rangoLabel: fmtRango(ini),
         saldoSemanal: saldos[i] || 0,
         saldoAcumulado: saldosAcum[i] || 0,
-        estado: detectarEstado(fechaIni),
+        estado: detectarEstado(ini),
       };
     });
 
-    let nextIdx = todasSemanas.findIndex(s => s.estado === 'next');
-    if (nextIdx < 0) nextIdx = todasSemanas.findIndex(s => s.estado === 'proj');
-    if (nextIdx < 0) nextIdx = todasSemanas.length - 1;
-
+    let nextIdx = todas.findIndex(s => s.estado === 'next');
+    if (nextIdx < 0) nextIdx = todas.findIndex(s => s.estado === 'proj');
+    if (nextIdx < 0) nextIdx = todas.length - 1;
     const doneIdx = Math.max(0, nextIdx - 1);
-    const seis = todasSemanas.slice(doneIdx, doneIdx + 6);
+    const seis = todas.slice(doneIdx, doneIdx + 6);
 
     const signo = (v) => v >= 0 ? 'pos' : 'neg';
-    const primeraVisible = seis[0] || null;
-    const ultimaVisible  = seis[seis.length - 1] || null;
+    const primera = seis[0] || null;
+    const ultima  = seis[seis.length - 1] || null;
 
-    D.flujoSemanal = {
+    return {
       fechaCorte: fechaCorte,
       semanaNumActual: semNumIso(hoy0),
       anioActual: hoy0.getFullYear(),
       saldoInicial: fl.saldo_inicial || 0,
       semanas: seis.map(s => ({
-        label: s.label,
-        estado: s.estado,
-        saldoSemanal: s.saldoSemanal,
-        saldoAcumulado: s.saldoAcumulado,
+        label: s.label, estado: s.estado,
+        saldoSemanal: s.saldoSemanal, saldoAcumulado: s.saldoAcumulado,
       })),
-      cierrePrimera: primeraVisible ? {
-        label: primeraVisible.label,
-        rangoLabel: primeraVisible.rangoLabel,
-        valor: primeraVisible.saldoAcumulado,
-        signo: signo(primeraVisible.saldoAcumulado),
+      cierrePrimera: primera ? {
+        label: primera.label, rangoLabel: primera.rangoLabel,
+        valor: primera.saldoAcumulado, signo: signo(primera.saldoAcumulado),
       } : null,
-      cierreFinal: ultimaVisible ? {
-        label: ultimaVisible.label,
-        rangoLabel: ultimaVisible.rangoLabel,
-        valor: ultimaVisible.saldoAcumulado,
-        signo: signo(ultimaVisible.saldoAcumulado),
+      cierreFinal: ultima ? {
+        label: ultima.label, rangoLabel: ultima.rangoLabel,
+        valor: ultima.saldoAcumulado, signo: signo(ultima.saldoAcumulado),
       } : null,
-      // Eliminado en Sprint 2C-fix-2: cerrada, proxima, acumulado4w (modelo de delta semanal reemplazado por saldo acumulado)
     };
+  }
+
+  // PEG-BULL · flujo semanal desde tesoreria_ultimo.json
+  if (tesoreria?.flujo && Array.isArray(tesoreria.flujo.semanas)) {
+    D.flujoSemanal = armarFlujoSemanal(tesoreria);
+  }
+
+  // v11 · Darwash · análisis financiero independiente.
+  // tesoreria_darwash.json viene del pipeline Python que parsea el
+  // XLSX semanal de `datos/financiero DW/`. Misma helper, misma forma
+  // de derivar D.flujoSemanalDW — espejo automático mobile + desktop.
+  if (tesoreriaDW?.flujo && Array.isArray(tesoreriaDW.flujo.semanas)) {
+    D.tesoreriaDW     = tesoreriaDW;
+    D.flujoSemanalDW  = armarFlujoSemanal(tesoreriaDW);
+  }
+  if (tesoreriaDWHist?.snapshots && Array.isArray(tesoreriaDWHist.snapshots)) {
+    D.tesoreriaDWHist = tesoreriaDWHist.snapshots;
   }
 
   // Patrimonio histórico — usa valuacion_historica.json (patrimonio total mensual:

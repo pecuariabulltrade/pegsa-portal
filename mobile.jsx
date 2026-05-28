@@ -769,9 +769,15 @@ function InsumosAllList({ items, total, clickable, highlight }) {
 
 /* ============================================================
    Financiero · saldo proyectado (clickable → modal)
+   v11: acepta prop `source` ("pegbull" default | "dw"). La misma
+   card y modal se reusan para Financiero PEG-BULL y Financiero DW
+   — ambas leen el mismo shape de mobile-data.js (FLUJO_SEMANAL /
+   FLUJO_SEMANAL_DW). Si no hay datos para una fuente → null (early
+   return), no se renderiza esa card.
    ============================================================ */
-function FlujoSemanal() {
-  const f = D.FLUJO_SEMANAL;
+function FlujoSemanal({ source }) {
+  const f = source === "dw" ? D.FLUJO_SEMANAL_DW : D.FLUJO_SEMANAL;
+  if (!f) return null;  // early return cuando la fuente no tiene datos
   const { fmtMoneyCompact, fmtMoney } = D;
   const modal = useModal();
   const cerradaIsPos = (f.cerrada.value ?? 0) >= 0;
@@ -1364,6 +1370,10 @@ function App() {
             <h2><span className="ico">📋</span>Sub-datos</h2>
           </div>
           <FlujoSemanal />
+          {/* v11: segunda card de Financiero DW (Darwash) — análisis
+              independiente, abajo del PEG-BULL. Si la carpeta DW está
+              vacía → null (early return). */}
+          <FlujoSemanal source="dw" />
           <ChartCard data={D.PATRIMONIO_USD} />
           <ChartCard data={D.STOCK_KILOS} />
 
