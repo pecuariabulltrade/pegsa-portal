@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -122,6 +122,8 @@ window.PEGSA_DATA = {
     fetchJson('indicadores_2025.json'),
     fetchJson('eficiencia_historico.json'),
     fetchJson('comportamiento_historico.json'),
+    fetchJson('precios_inferencia.json'),
+    fetchJson('precios_inferencia_historico.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -604,6 +606,15 @@ window.PEGSA_DATA = {
       mejorEs: 'menor', // menos kg consumo por kg ganado = mejor
       descripcion: 'Kg de MS consumidos por kg de carne ganada. Anual = kg MS/cab/día ÷ ADP anual ponderado. Menos = mejor (ref. 5-8).'
     };
+  }
+
+  // v8 · Precios de inferencia (4 cards + módulo Mercado tab)
+  if (preciosInf && Array.isArray(preciosInf.items)) {
+    D.preciosInferencia     = preciosInf.items;
+    D.preciosInferenciaMeta = preciosInf.meta || {};
+  }
+  if (preciosInfHist && Array.isArray(preciosInfHist.semanas)) {
+    D.preciosInferenciaHist = preciosInfHist.semanas;
   }
 
   // 6. Kg repartidos · último día de mixer

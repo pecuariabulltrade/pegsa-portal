@@ -18,7 +18,7 @@ var PRECIOS_COMMODITIES = [
 function mercadoTab(tab, el){
   document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoAnalisis','panelMercadoIndiferencia'].forEach(function(p){
+  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoAnalisis','panelMercadoIndiferencia','panelMercadoInferencia'].forEach(function(p){
     var n=document.getElementById(p); if(n) n.style.display='none';
   });
   var map = {
@@ -28,6 +28,7 @@ function mercadoTab(tab, el){
     seguimiento:   'panelMercadoSeguimiento',
     analisis:      'panelMercadoAnalisis',
     indiferencia:  'panelMercadoIndiferencia',
+    inferencia:    'panelMercadoInferencia',
   };
   if(map[tab]){
     document.getElementById(map[tab]).style.display='block';
@@ -36,7 +37,124 @@ function mercadoTab(tab, el){
     if(tab==='seguimiento')  _segRun(MERCADO_DATA_CACHE);
     if(tab==='analisis')     renderAnalisis();
     if(tab==='indiferencia') renderIndiferencia();
+    if(tab==='inferencia')   renderInferencia();
   }
+}
+
+/* ============================================================
+   v8 · Pestaña "Inferencia" del módulo Mercado.
+   Tabla cronológica + line chart por categoría, leyendo
+   D.preciosInferenciaHist (semanas[].items[]).
+   ============================================================ */
+var _inferenciaChart = null;
+function renderInferencia(){
+  var D = window.PEGSA_DATA || {};
+  var semanas = Array.isArray(D.preciosInferenciaHist) ? D.preciosInferenciaHist.slice() : [];
+  var noData = document.getElementById('inferenciaNoData');
+  var subEl  = document.getElementById('inferenciaMetaSub');
+  var wrapCh = document.getElementById('inferenciaChartWrap');
+  var wrapTb = document.getElementById('inferenciaTablaWrap');
+  if (!semanas.length) {
+    if (noData) noData.style.display = 'block';
+    if (wrapCh) wrapCh.style.display = 'none';
+    if (wrapTb) wrapTb.innerHTML = '';
+    return;
+  }
+  if (noData) noData.style.display = 'none';
+  if (wrapCh) wrapCh.style.display = 'block';
+
+  // Orden cronológico ascendente para el chart.
+  semanas.sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)); });
+
+  var meta = D.preciosInferenciaMeta || {};
+  var ultima = meta.fecha || semanas[semanas.length-1].fecha;
+  if (subEl) subEl.textContent = 'Calculado en planilla del simulador · ' +
+    semanas.length + ' semana' + (semanas.length === 1 ? '' : 's') +
+    ' · última ' + String(ultima).split('-').reverse().join('/');
+
+  // Series por categoría (mismas 4 categorías por convención del Excel).
+  var CATS = [
+    { id: 'vaca_100',   nombre: 'Vaca 100 días', color: '#1a5276' },
+    { id: 'vaca_60',    nombre: 'Vaca 60 días',  color: '#7b3f2a' },
+    { id: 'novillo',    nombre: 'Novillo',       color: '#27613d' },
+    { id: 'vaquillona', nombre: 'Vaquillona',    color: '#b8922a' },
+  ];
+  var labels = semanas.map(function(s){
+    var p = String(s.fecha).split('-');
+    return p[2] + '/' + p[1];
+  });
+  function serie(catId){
+    return semanas.map(function(s){
+      var it = (s.items || []).find(function(i){ return i.id === catId; });
+      return it && it.precio_comp != null ? Math.round(it.precio_comp) : null;
+    });
+  }
+  var datasets = CATS.map(function(c){
+    return {
+      label: c.nombre,
+      data: serie(c.id),
+      borderColor: c.color,
+      backgroundColor: c.color + '22',
+      borderWidth: 2,
+      tension: 0.25,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      spanGaps: true,
+    };
+  });
+
+  if (_inferenciaChart) { try { _inferenciaChart.destroy(); } catch(e) {} _inferenciaChart = null; }
+  var ctx = document.getElementById('chartInferencia');
+  if (ctx && typeof Chart !== 'undefined') {
+    _inferenciaChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: "'DM Mono', monospace", size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: function(ctx){
+                return ctx.dataset.label + ': $ ' + Number(ctx.parsed.y).toLocaleString('es-AR') + ' /kg';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: { callback: function(v){ return '$ ' + Number(v).toLocaleString('es-AR'); },
+                     font: { family: "'DM Mono', monospace", size: 11 } },
+            grid: { color: 'rgba(26,22,18,.06)' }
+          },
+          x: {
+            ticks: { font: { family: "'DM Mono', monospace", size: 11 } },
+            grid: { color: 'rgba(26,22,18,.04)' }
+          }
+        }
+      }
+    });
+  }
+
+  // Tabla: orden DESC (más reciente arriba).
+  var semDesc = semanas.slice().reverse();
+  var html = '<table class="data-table">'
+    + '<thead><tr><th>Fecha</th>'
+    + CATS.map(function(c){ return '<th class="right">' + c.nombre + '</th>'; }).join('')
+    + '</tr></thead><tbody>';
+  semDesc.forEach(function(s){
+    var pd = String(s.fecha).split('-');
+    html += '<tr><td><strong>' + pd[2] + '/' + pd[1] + '/' + pd[0].slice(2) + '</strong></td>';
+    CATS.forEach(function(c){
+      var it = (s.items || []).find(function(i){ return i.id === c.id; });
+      var v = it && it.precio_comp != null ? '$ ' + Math.round(it.precio_comp).toLocaleString('es-AR') : '—';
+      html += '<td class="right mono">' + v + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  if (wrapTb) wrapTb.innerHTML = html;
 }
 
 function fmtPrecio(v){ return v!=null ? '$'+Number(v).toLocaleString('es-AR') : '<span style="color:rgba(26,22,18,.3)">—</span>'; }

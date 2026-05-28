@@ -734,6 +734,54 @@ function Panel() {
           );
         })()}
 
+        {/* === PRECIOS DE INFERENCIA (v8) ===
+            4 cards informativas — espejo del mobile. Lee D.preciosInferencia
+            poblado por data.js desde precios_inferencia.json (snapshot
+            actual del Excel del simulador). */}
+        {Array.isArray(D.preciosInferencia) && D.preciosInferencia.length > 0 && (() => {
+          const items = D.preciosInferencia;
+          const meta  = D.preciosInferenciaMeta || {};
+          const fechaLabel = meta.fecha
+            ? meta.fecha.split("-").reverse().join("/")
+            : "—";
+          const fmtMoney = (n) => n != null ? "$ " + Math.round(n).toLocaleString("es-AR") : "—";
+          const fmtPct   = (n) => n != null ? Math.round(n * 100) + " %" : "—";
+          return (
+            <div className="prinf-section">
+              <div className="prinf-section-head">
+                <h2>Precios de inferencia</h2>
+                <span className="prinf-section-sub">
+                  Precio compra calculado · simulador semanal · {fechaLabel}
+                </span>
+              </div>
+              <div className="prinf-grid prinf-grid-desktop">
+                {items.map(it => (
+                  <div
+                    key={it.id}
+                    className="prinf-card"
+                    title={"Calculado el " + fechaLabel}
+                  >
+                    <div className="prinf-eyebrow">{it.nombre}</div>
+                    <div className="prinf-big">
+                      <span className="prinf-big-num">{fmtMoney(it.precio_comp)}</span>
+                    </div>
+                    <div className="prinf-sub">$/kg vivo</div>
+                    <div className="prinf-divider" />
+                    <div className="prinf-params">
+                      <div><span>Kg compra</span><strong>{it.kg_compra != null ? Math.round(it.kg_compra) + " kg" : "—"}</strong></div>
+                      <div><span>Kg venta</span><strong>{it.kg_venta != null ? Math.round(it.kg_venta) + " kg" : "—"}</strong></div>
+                      <div><span>Precio venta</span><strong>{fmtMoney(it.precio_venta)}</strong></div>
+                      <div><span>Rinde</span><strong>{fmtPct(it.rinde)}</strong></div>
+                      <div><span>Costo kg prod.</span><strong>{fmtMoney(it.cost_kg_prod)}</strong></div>
+                      <div><span>Días feedlot</span><strong>{it.dias_feed != null ? Math.round(it.dias_feed) + " d" : "—"}</strong></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* === MÓDULOS === */}
         <div className="modules-section">
           <div className="modules-head">

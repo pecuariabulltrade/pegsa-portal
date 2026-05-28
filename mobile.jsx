@@ -1152,6 +1152,68 @@ function ProductivosGrid() {
 }
 
 /* ============================================================
+   v8 · Precios de inferencia · grid 2×2 con KPI por categoría.
+   Cada card muestra el "precio compra" calculado en el simulador
+   (Excel actualizado semanalmente). Tap abre modal con los
+   parámetros usados para llegar al precio.
+   ============================================================ */
+function PreciosInferenciaGrid() {
+  const modal = useModal();
+  const list = D.PRECIOS_INFERENCIA || [];
+  const meta = D.PRECIOS_INFERENCIA_META || {};
+  if (!list.length) return null;
+
+  const openCard = (it) => {
+    modal.open({
+      title: it.nombre,
+      sub: "Calculado · " + (meta.fechaLabel || "—"),
+      body: (
+        <>
+          <div className="modal-section">
+            <h4>Parámetros de cálculo</h4>
+            {kvList([
+              { k: "Kg compra",      v: it.kgCompra != null ? Math.round(it.kgCompra) + " kg" : "—" },
+              { k: "Kg venta",       v: it.kgVenta  != null ? Math.round(it.kgVenta)  + " kg" : "—" },
+              { k: "Precio venta",   v: it.precioVenta != null ? it.precioVentaFmt + " /kg" : "—" },
+              { k: "Rinde",          v: it.rindeFmt },
+              { k: "Costo kg prod.", v: it.costoKgProdFmt },
+              { k: "Días feedlot",   v: it.diasFeedFmt }
+            ])}
+          </div>
+          <div className="modal-section">
+            <h4>Resultado</h4>
+            <div className="modal-big pos">
+              {it.precioCompFmt}
+              <span className="modal-big-unit"> /kg vivo</span>
+            </div>
+            <div className="modal-section-sub">Precio compra de inferencia</div>
+          </div>
+          <div className="modal-note">
+            Fuente: planilla simulador, actualizada cada semana.
+          </div>
+        </>
+      )
+    });
+  };
+
+  return (
+    <div className="prinf-grid">
+      {list.map((it) => (
+        <button key={it.id} className="prinf-card drill" onClick={() => openCard(it)}>
+          <div className="prinf-eyebrow">{it.nombre}</div>
+          <div className="prinf-big">
+            <span className="prinf-big-num">{it.precioCompFmt}</span>
+          </div>
+          <div className="prinf-sub">$/kg vivo</div>
+          <div className="prinf-divider" />
+          <div className="prinf-foot">{it.footerCorto}</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
    Módulos grid — navegación real a index.html?mod=<id>
    ============================================================ */
 function navigateToModule(portalId) {
@@ -1308,6 +1370,21 @@ function App() {
           <ProductivosGrid />
 
           <hr className="sec-div" />
+
+          {/* v8: precios de inferencia (4 cards) — simulador semanal. */}
+          {D.PRECIOS_INFERENCIA && D.PRECIOS_INFERENCIA.length > 0 && (
+            <>
+              <div className="sec-head">
+                <h2><span className="ico">📊</span>Precios de inferencia</h2>
+                <span className="sec-head-sub">
+                  compra · sem {(D.PRECIOS_INFERENCIA_META && D.PRECIOS_INFERENCIA_META.fechaLabel) || "—"}
+                </span>
+              </div>
+              <PreciosInferenciaGrid />
+
+              <hr className="sec-div" />
+            </>
+          )}
 
           <div className="sec-head">
             <h2><span className="ico">📂</span>Módulos</h2>

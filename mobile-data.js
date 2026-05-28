@@ -42,6 +42,16 @@
        Re-clasificación esperada: Eficiencia severa+bad (1,9 vs 2,57 =
        −26%), Consumo neutral por rango, Conversión moderada+bad
        (9,3 vs 7,9 = +18%).
+   v8 (2026-05-28): nueva sección "Precios de inferencia" — 4 cards
+       (Vaca 100/60 días, Novillo, Vaquillona) con el precio comp y
+       drill que desglosa todos los parámetros del cálculo (kg compra,
+       kg venta, precio venta, rinde, costo prod, días feed). Pipeline
+       Python lee el Excel /simulador/simulador/referencia precios de
+       mercado simulador.xlsx y vuelca a precios_inferencia.json +
+       acumulado semanal a precios_inferencia_historico.json (upsert
+       por fecha). Workflow: usuario sobrescribe Excel cada semana,
+       script detecta nueva fecha y appendea. Desktop suma pestaña
+       "Inferencia" en módulo Mercado con tabla + line chart histórico.
    ============================================================ */
 (function (root) {
   "use strict";
@@ -643,6 +653,54 @@
       mkProd("kgRepartidos",     "Kg repartidos · últ. día")
     ];
 
+    // ---------- v8 · Precios de inferencia ----------
+    // Lee D.preciosInferencia (items) y D.preciosInferenciaMeta (fecha).
+    // Cada item se formatea para que el componente PreciosInferenciaGrid
+    // de mobile.jsx pueda renderizar las 4 cards sin lógica adicional.
+    var PRECIOS_INFERENCIA = [];
+    var PRECIOS_INFERENCIA_META = { fecha: null, fechaLabel: "—" };
+    var pInf = Array.isArray(D.preciosInferencia) ? D.preciosInferencia : [];
+    var pInfMeta = D.preciosInferenciaMeta || {};
+    if (pInf.length) {
+      PRECIOS_INFERENCIA = pInf.map(function (it) {
+        var pc = it.precio_comp;
+        var pv = it.precio_venta;
+        var ck = it.cost_kg_prod;
+        var ri = it.rinde;
+        var df = it.dias_feed;
+        return {
+          id:           it.id,
+          nombre:       it.nombre,
+          // KPI principal: precio compra inferencia
+          precioComp:       pc,
+          precioCompFmt:    pc != null ? "$ " + Math.round(pc).toLocaleString("es-AR") : "—",
+          // Parámetros de cálculo (para el modal)
+          kgCompra:       it.kg_compra,
+          kgVenta:        it.kg_venta,
+          precioVenta:    pv,
+          precioVentaFmt: pv != null ? "$ " + Math.round(pv).toLocaleString("es-AR") : "—",
+          rinde:          ri,
+          rindeFmt:       ri != null ? Math.round(ri * 100) + " %" : "—",
+          costoKgProd:    ck,
+          costoKgProdFmt: ck != null ? "$ " + Math.round(ck).toLocaleString("es-AR") : "—",
+          diasFeed:       df,
+          diasFeedFmt:    df != null ? Math.round(df) + " d" : "—",
+          // Footer compacto en la card del panel: "kgC → kgV · días d"
+          footerCorto:    (it.kg_compra != null && it.kg_venta != null && df != null)
+                        ? Math.round(it.kg_compra) + " → " + Math.round(it.kg_venta) + " kg · " + Math.round(df) + " d"
+                        : "—"
+        };
+      });
+      if (pInfMeta.fecha) {
+        var f = String(pInfMeta.fecha);
+        PRECIOS_INFERENCIA_META = {
+          fecha: pInfMeta.fecha,
+          fechaLabel: fmtFechaCorta(f),
+          fechaLabelLargo: f.split("-").reverse().join("/")
+        };
+      }
+    }
+
     // ---------- Módulos ----------
     var ledMap = { vivo: "vivo", acumulando: "acumulando", disponible: "disponible" };
     function kindByModulo(m) {
@@ -691,6 +749,8 @@
       PATRIMONIO_USD: PATRIMONIO_USD,
       STOCK_KILOS: STOCK_KILOS,
       PRODUCTIVOS: PRODUCTIVOS,
+      PRECIOS_INFERENCIA: PRECIOS_INFERENCIA,
+      PRECIOS_INFERENCIA_META: PRECIOS_INFERENCIA_META,
       MODULOS: MODULOS,
       TABS: TABS,
       BOTTOM_TABS: BOTTOM_TABS,

@@ -1645,6 +1645,84 @@ button.ins-all-row:active { background: var(--surface-alt); }
 }
 
 /* ============================================================
+   v8 · Precios de inferencia · grid 2×2 con 4 cards informativas.
+   Mismo lenguaje visual que .prod-card pero SIN semáforo: estas
+   tarjetas son puramente informativas (precio compra calculado
+   en el simulador semanal), no comparativas.
+   ============================================================ */
+.prinf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+.prinf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  min-height: 120px;
+  overflow: hidden;
+}
+.prinf-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  line-height: 1.2;
+}
+.prinf-big {
+  margin-top: 4px;
+}
+.prinf-big-num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.prinf-sub {
+  font-size: 10.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.01em;
+}
+.prinf-divider {
+  height: 1px;
+  border-top: 1px dashed var(--border);
+  margin-top: auto;
+}
+.prinf-foot {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+@media (max-width: 340px) {
+  .prinf-grid { grid-template-columns: 1fr; }
+  .prinf-big-num { font-size: 22px; }
+}
+
+/* Resultado destacado dentro del modal de Productivos / Inferencia */
+.modal-big-unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  margin-left: 4px;
+}
+
+/* ============================================================
    v3: Logout button en header (variant del .hdr-btn)
    ============================================================ */
 .hdr-btn-logout {
