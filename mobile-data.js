@@ -33,6 +33,15 @@
    v7.1 (2026-05-28): KPI grande de Productivos en JetBrains Mono bold
        (no Playfair), unificado con la estética de la card Financiero
        y los KPIs de las cotizaciones. Cambio sólo de tipografía.
+   v7.2 (2026-05-28): histórico de Eficiencia %PV, Consumo/cabeza y
+       Conversión ahora usa el VALOR ANUAL REAL del módulo Stock
+       Insumos del desktop (MS_anual÷365÷kg_PV_prom, TC_anual÷365÷cab,
+       kg_MS_dia÷ADP_anual_ponderado) en lugar del promedio simple
+       de la serie eficiencia_historico. Cambio sólo en data.js
+       (D.productivos.{pctPV,consumoPorCabeza,conversion}.historico).
+       Re-clasificación esperada: Eficiencia severa+bad (1,9 vs 2,57 =
+       −26%), Consumo neutral por rango, Conversión moderada+bad
+       (9,3 vs 7,9 = +18%).
    ============================================================ */
 (function (root) {
   "use strict";

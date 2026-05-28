@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -121,6 +121,7 @@ window.PEGSA_DATA = {
     fetchJson('productivo_2025.json'),
     fetchJson('indicadores_2025.json'),
     fetchJson('eficiencia_historico.json'),
+    fetchJson('comportamiento_historico.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -515,45 +516,93 @@ window.PEGSA_DATA = {
     };
   }
 
+  // v7.2: Referencia anual real (la misma que muestra el desktop en el
+  // bloque "REFERENCIA ANUAL · últimos 12 meses · PEGSA en El Haras ·
+  // valores ponderados" del módulo Stock Insumos). Misma fórmula que
+  // js/modulo-03-stock.js, líneas 833-863. Fuentes:
+  //   - consumo_2025.json   → total kg MS y TC anuales (÷ 365 = por día)
+  //   - comportamiento_historico.json → snapshots últimos 12 meses con
+  //     hacienda_masa.pegsa.por_campo['El Haras'] (kg_proyectado y
+  //     cabezas). Promedio simple de los 12 puntos.
+  //   - productivo_2025.json → ADP por mes ponderado por cabezas.
+  const anuales = (() => {
+    const consAn = (consumo && consumo.anual) || {};
+    const snaps  = (comportamientoHist && comportamientoHist.snapshots) || [];
+    const prodMes = (productivo && productivo.por_mes) || {};
+
+    const ult12 = snaps.slice(-12);
+    let sumKg = 0, nKg = 0, sumCab = 0, nCab = 0;
+    ult12.forEach(r => {
+      const haras = r && r.hacienda_masa && r.hacienda_masa.pegsa
+                 && r.hacienda_masa.pegsa.por_campo
+                 && r.hacienda_masa.pegsa.por_campo['El Haras'];
+      if (haras && haras.kg_proyectado) { sumKg  += haras.kg_proyectado; nKg++;  }
+      if (haras && haras.cabezas)       { sumCab += haras.cabezas;       nCab++; }
+    });
+    const kgPVAnual = nKg  > 0 ? sumKg  / nKg  : 0;
+    const cabAnual  = nCab > 0 ? sumCab / nCab : 0;
+
+    let adpNum = 0, adpDen = 0;
+    Object.keys(prodMes).sort().slice(-12).forEach(m => {
+      const d = prodMes[m] || {};
+      const c = d.cabezas || 0;
+      const a = d.adp_promedio || 0;
+      if (c > 0 && a > 0) { adpNum += a * c; adpDen += c; }
+    });
+    const adpAnual = adpDen > 0 ? adpNum / adpDen : 0;
+
+    const msAnualDia  = (consAn.total_kg_ms || 0) / 365;
+    const tcAnualDia  = (consAn.total_kg    || 0) / 365;
+    const pctPV       = kgPVAnual > 0 ? (msAnualDia / kgPVAnual * 100) : null;
+    const cabAnualDia = cabAnual  > 0 ? (tcAnualDia / cabAnual) : null;
+    const msPorCabDia = cabAnual  > 0 ? (msAnualDia / cabAnual)  : null;
+    const conversion  = (msPorCabDia != null && adpAnual > 0)
+                      ? (msPorCabDia / adpAnual) : null;
+    return {
+      pctPV:            pctPV,                     // p.ej. 2.57
+      consumoPorCabeza: cabAnualDia,               // p.ej. 17.8
+      conversion:       conversion,                // p.ej. 7.9
+      _detalle: {
+        msAnualTotal: consAn.total_kg_ms, tcAnualTotal: consAn.total_kg,
+        kgPVAnual: kgPVAnual, cabAnual: cabAnual,
+        adpAnual: adpAnual, msPorCabDia: msPorCabDia
+      }
+    };
+  })();
+
   // 3. Eficiencia % PV (consumo MS como % del peso vivo · El Haras)
+  //    actual: indicador instantáneo del día (indicadores_2025.json)
+  //    historico: VALOR ANUAL del módulo Insumos del desktop (no
+  //               promedio de eficiencia_historico — eso daba sesgo
+  //               con los registros recientes).
   if (indicadores?.indicadores?.pct_peso_vivo?.valor != null) {
-    const histPctPv = (eficienciaHist?.registros || [])
-      .map(r => r.pct_pv).filter(v => v != null);
-    const avgPctPv = histPctPv.length
-      ? histPctPv.reduce((s, v) => s + v, 0) / histPctPv.length : null;
     D.productivos.pctPV = {
-      actual:    { v: indicadores.indicadores.pct_peso_vivo.valor, unit: '%', label: 'hoy', decimals: 1 },
-      historico: { v: avgPctPv, unit: '%', label: 'prom serie', decimals: 1 },
-      mejorEs: 'mayor', // rango óptimo 2.0-3.0%, mayor=más cerca del óptimo viniendo de 1.9
-      descripcion: 'Consumo MS como % del peso vivo (El Haras). Rango óptimo 2-3%. Fuente: indicadores_2025.json + eficiencia_historico.json.'
+      actual:    { v: indicadores.indicadores.pct_peso_vivo.valor, unit: '%', label: 'hoy',   decimals: 1 },
+      historico: { v: anuales.pctPV,                                unit: '%', label: 'anual', decimals: 2 },
+      mejorEs: 'mayor', // rango óptimo 2-3%, viniendo de 1,9 → ir hacia 2,57 es bueno
+      descripcion: 'Consumo MS como % del peso vivo (El Haras). Anual = MS anual ÷ 365 ÷ kg PV prom. anual × 100. Rango óptimo 2-3%.'
     };
   }
 
   // 4. Consumo por cabeza (kg TC/cab/día)
+  //    historico: TC anual ÷ 365 ÷ cab. promedio anuales (= 17,8).
   if (indicadores?.indicadores?.consumo_por_cabeza?.valor_tc != null) {
-    const histTC = (eficienciaHist?.registros || [])
-      .map(r => r.consumo_tc_cab).filter(v => v != null);
-    const avgTC = histTC.length
-      ? histTC.reduce((s, v) => s + v, 0) / histTC.length : null;
     D.productivos.consumoPorCabeza = {
-      actual:    { v: indicadores.indicadores.consumo_por_cabeza.valor_tc, unit: 'kg/cab', label: 'hoy', decimals: 1 },
-      historico: { v: avgTC, unit: 'kg/cab', label: 'prom serie', decimals: 1 },
-      mejorEs: 'rango', // óptimo 12.5-15.5, no aplica mayor/menor
-      descripcion: 'Alimento TC por animal por día (El Haras). Rango óptimo 12,5-15,5 kg.'
+      actual:    { v: indicadores.indicadores.consumo_por_cabeza.valor_tc, unit: 'kg/cab', label: 'hoy',   decimals: 1 },
+      historico: { v: anuales.consumoPorCabeza,                            unit: 'kg/cab', label: 'anual', decimals: 1 },
+      mejorEs: 'rango', // óptimo 12.5-15.5, ni "mayor" ni "menor"
+      descripcion: 'Alimento TC por animal por día (El Haras). Anual = TC anual ÷ 365 ÷ cab. promedio anuales. Rango óptimo 12,5-15,5 kg.'
     };
   }
 
   // 5. Conversión alimenticia (kg MS : kg ganancia)
+  //    historico: kg MS/cab/día anual ÷ ADP anual ponderado (= 7,9).
   if (indicadores?.indicadores?.conversion_alimenticia?.valor != null) {
-    const histConv = (eficienciaHist?.registros || [])
-      .map(r => r.conversion).filter(v => v != null);
-    const avgConv = histConv.length
-      ? histConv.reduce((s, v) => s + v, 0) / histConv.length : null;
     D.productivos.conversion = {
-      actual:    { v: indicadores.indicadores.conversion_alimenticia.valor, unit: '', label: 'hoy', decimals: 1 },
-      historico: { v: avgConv, unit: '', label: 'prom serie', decimals: 1 },
+      actual:    { v: indicadores.indicadores.conversion_alimenticia.valor, unit: '', label: 'hoy',   decimals: 1 },
+      historico: { v: anuales.conversion,                                   unit: '', label: 'anual', decimals: 1 },
       mejorEs: 'menor', // menos kg consumo por kg ganado = mejor
-      descripcion: 'Kg de MS consumidos por kg de carne ganada. Menos = mejor (ref. 5-8).'
+      descripcion: 'Kg de MS consumidos por kg de carne ganada. Anual = kg MS/cab/día ÷ ADP anual ponderado. Menos = mejor (ref. 5-8).'
     };
   }
 
