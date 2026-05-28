@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -118,6 +118,9 @@ window.PEGSA_DATA = {
     fetchJson('consumo_2025.json'),
     fetchJson('stock_historico.json'),
     fetchJson('ultima_actualizacion.json'),
+    fetchJson('productivo_2025.json'),
+    fetchJson('indicadores_2025.json'),
+    fetchJson('eficiencia_historico.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -473,6 +476,103 @@ window.PEGSA_DATA = {
         };
       }),
     };
+  }
+
+  // ============================================================
+  // v6 · Productivos · 6 KPIs del feedlot (mobile + desktop)
+  // Cada KPI: actual (último mes / hoy) vs histórico (anual / 60d).
+  // Fuentes: productivo_2025.json (ADP, estadía), indicadores_2025.json
+  // (% PV, consumo/cab, conversión instantáneos), eficiencia_historico.json
+  // (promedios de los últimos N días), consumo_2025.json (último mixer).
+  // El user pidió ESTAS métricas y los valores se exponen en D.productivos.
+  // El componente desktop (ProductivosGrid en app.jsx) y el mobile
+  // (mobile-data.js + mobile.jsx) leen el mismo objeto — una sola
+  // fuente de verdad.
+  // ============================================================
+  D.productivos = {};
+
+  // 1. Engorde diario (ADP × 1000 → g/día/cab)
+  if (productivo?.general?.adp_promedio != null && productivo?.por_mes) {
+    const mesesKeys = Object.keys(productivo.por_mes).sort();
+    const ultKey = mesesKeys[mesesKeys.length - 1];
+    const ult = productivo.por_mes[ultKey];
+    const MESES_LAB = { '01':'ene','02':'feb','03':'mar','04':'abr','05':'may','06':'jun','07':'jul','08':'ago','09':'sep','10':'oct','11':'nov','12':'dic' };
+    const ultLabel = ultKey ? (MESES_LAB[ultKey.slice(5,7)] || '') + " " + ultKey.slice(2,4) : 'último mes';
+    D.productivos.engordeDiario = {
+      actual:    { v: ult?.adp_promedio != null ? ult.adp_promedio * 1000 : null,
+                   unit: 'g/día', label: ultLabel, decimals: 0 },
+      historico: { v: productivo.general.adp_promedio * 1000,
+                   unit: 'g/día', label: '12 m', decimals: 0 },
+      mejorEs: 'mayor',
+      descripcion: 'Kg ganados por cabeza por día (ADP). El último mes vs el promedio de los últimos 12 m. Fuente: productivo_2025.json.'
+    };
+    // 2. Estadía
+    D.productivos.estadia = {
+      actual:    { v: ult?.estadia_promedio, unit: 'días', label: ultLabel, decimals: 0 },
+      historico: { v: productivo.general.estadia_promedio, unit: 'días', label: '12 m', decimals: 0 },
+      mejorEs: 'menor',
+      descripcion: 'Días promedio entre entrada del animal y su venta. Menos días = más rotación.'
+    };
+  }
+
+  // 3. Eficiencia % PV (consumo MS como % del peso vivo · El Haras)
+  if (indicadores?.indicadores?.pct_peso_vivo?.valor != null) {
+    const histPctPv = (eficienciaHist?.registros || [])
+      .map(r => r.pct_pv).filter(v => v != null);
+    const avgPctPv = histPctPv.length
+      ? histPctPv.reduce((s, v) => s + v, 0) / histPctPv.length : null;
+    D.productivos.pctPV = {
+      actual:    { v: indicadores.indicadores.pct_peso_vivo.valor, unit: '%', label: 'hoy', decimals: 1 },
+      historico: { v: avgPctPv, unit: '%', label: 'prom serie', decimals: 1 },
+      mejorEs: 'mayor', // rango óptimo 2.0-3.0%, mayor=más cerca del óptimo viniendo de 1.9
+      descripcion: 'Consumo MS como % del peso vivo (El Haras). Rango óptimo 2-3%. Fuente: indicadores_2025.json + eficiencia_historico.json.'
+    };
+  }
+
+  // 4. Consumo por cabeza (kg TC/cab/día)
+  if (indicadores?.indicadores?.consumo_por_cabeza?.valor_tc != null) {
+    const histTC = (eficienciaHist?.registros || [])
+      .map(r => r.consumo_tc_cab).filter(v => v != null);
+    const avgTC = histTC.length
+      ? histTC.reduce((s, v) => s + v, 0) / histTC.length : null;
+    D.productivos.consumoPorCabeza = {
+      actual:    { v: indicadores.indicadores.consumo_por_cabeza.valor_tc, unit: 'kg/cab', label: 'hoy', decimals: 1 },
+      historico: { v: avgTC, unit: 'kg/cab', label: 'prom serie', decimals: 1 },
+      mejorEs: 'rango', // óptimo 12.5-15.5, no aplica mayor/menor
+      descripcion: 'Alimento TC por animal por día (El Haras). Rango óptimo 12,5-15,5 kg.'
+    };
+  }
+
+  // 5. Conversión alimenticia (kg MS : kg ganancia)
+  if (indicadores?.indicadores?.conversion_alimenticia?.valor != null) {
+    const histConv = (eficienciaHist?.registros || [])
+      .map(r => r.conversion).filter(v => v != null);
+    const avgConv = histConv.length
+      ? histConv.reduce((s, v) => s + v, 0) / histConv.length : null;
+    D.productivos.conversion = {
+      actual:    { v: indicadores.indicadores.conversion_alimenticia.valor, unit: '', label: 'hoy', decimals: 1 },
+      historico: { v: avgConv, unit: '', label: 'prom serie', decimals: 1 },
+      mejorEs: 'menor', // menos kg consumo por kg ganado = mejor
+      descripcion: 'Kg de MS consumidos por kg de carne ganada. Menos = mejor (ref. 5-8).'
+    };
+  }
+
+  // 6. Kg repartidos · último día de mixer
+  if (Array.isArray(consumo?.diario?.dias) && consumo.diario.dias.length) {
+    // Último día NO descartado
+    const dias = consumo.diario.dias.slice().reverse();
+    const ultimoOk = dias.find(d => !d.descartado);
+    const avg3d = consumo.semanal?.promedio_diario_kg || null;
+    if (ultimoOk) {
+      const f = ultimoOk.fecha || '';
+      const labFecha = f ? f.slice(8,10) + "/" + f.slice(5,7) : 'últ. día';
+      D.productivos.kgRepartidos = {
+        actual:    { v: ultimoOk.kg_total, unit: 'kg', label: labFecha },
+        historico: { v: avg3d, unit: 'kg/día', label: 'prom 3 d' },
+        mejorEs: 'rango',
+        descripcion: 'Kg de alimento repartidos por el mixer el último día con registro completo, vs el promedio de los últimos 3 días.'
+      };
+    }
   }
 
   // Módulos · KPIs dinámicos

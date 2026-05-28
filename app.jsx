@@ -627,6 +627,137 @@ function Panel() {
           );
         })()}
 
+        {/* === PRODUCTIVOS (v6) === Espejo del mobile. Lee D.productivos
+            poblado por data.js desde productivo_2025.json + indicadores_
+            2025.json + eficiencia_historico.json + consumo_2025.json.
+            6 tarjetas: ADP, estadía, % PV, consumo/cab, conversión, kg
+            repartidos del último día. Para no crear archivos CSS nuevos
+            uso estilos inline alineados al lenguaje visual del panel. */}
+        {(() => {
+          const prod = D.productivos || {};
+          // Misma estructura que mobile-data.js → PRODUCTIVOS para que
+          // mobile y desktop muestren los mismos valores con misma
+          // semántica de "mejor=mayor/menor/rango".
+          const CARDS = [
+            { id: "engordeDiario",    title: "Engorde diario" },
+            { id: "estadia",          title: "Estadía" },
+            { id: "pctPV",            title: "Eficiencia (% PV)" },
+            { id: "consumoPorCabeza", title: "Consumo / cabeza" },
+            { id: "conversion",       title: "Conversión" },
+            { id: "kgRepartidos",     title: "Kg repartidos · últ. día" },
+          ];
+          const fmtV = (v, dec) => {
+            if (v == null || isNaN(v)) return "—";
+            if (dec != null) return Number(v).toFixed(dec).replace(".", ",");
+            if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString("es-AR");
+            if (Math.abs(v) >= 100)  return Math.round(v).toString();
+            if (Math.abs(v) >= 10)   return Number(v).toFixed(1).replace(".", ",");
+            return Number(v).toFixed(2).replace(".", ",");
+          };
+          const cardsRendered = CARDS.map(c => {
+            const p = prod[c.id];
+            if (!p) return { ...c, missing: true };
+            const a = p.actual || {}, h = p.historico || {};
+            const aN = fmtV(a.v, a.decimals);
+            const hN = fmtV(h.v, h.decimals);
+            let delta = null, cls = "neu";
+            if (a.v != null && h.v != null && h.v !== 0) {
+              delta = ((a.v - h.v) / Math.abs(h.v)) * 100;
+              if (p.mejorEs === "rango") cls = "neu";
+              else if (p.mejorEs === "menor") cls = delta < 0 ? "pos" : (delta > 0 ? "neg" : "neu");
+              else cls = delta > 0 ? "pos" : (delta < 0 ? "neg" : "neu");
+            }
+            const deltaFmt = delta != null
+              ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace(".", ",") + "%"
+              : null;
+            return { ...c, p, a, h, aN, hN, delta, deltaFmt, cls };
+          });
+          const COL_BAR = { pos: "var(--good, #10b981)", neg: "var(--bad, #ef4444)", neu: "var(--brand, #3b82f6)" };
+          const COL_CHIP_BG = { pos: "rgba(16,185,129,.12)", neg: "rgba(239,68,68,.12)", neu: "rgba(59,130,246,.10)" };
+          const COL_CHIP_TX = { pos: "#047857", neg: "#b91c1c", neu: "#1e40af" };
+          return (
+            <div className="modules-section" style={{ marginBottom: 36 }}>
+              <div className="modules-head">
+                <h2>Productivos</h2>
+                <span className="hint">Último mes · vs histórico — click para detalle</span>
+              </div>
+              <div className="modules-grid">
+                {cardsRendered.map(c => (
+                  <div
+                    key={c.id}
+                    className="module-card"
+                    style={{
+                      cursor: c.missing ? "default" : "default",
+                      position: "relative",
+                      paddingTop: 14,
+                      borderTop: "3px solid " + (c.missing ? "var(--border, #e5e7eb)" : COL_BAR[c.cls]),
+                      opacity: c.missing ? 0.5 : 1
+                    }}
+                    title={c.p && c.p.descripcion ? c.p.descripcion : c.title}
+                  >
+                    <div className="module-head" style={{ marginBottom: 6 }}>
+                      <span className="module-num" style={{ letterSpacing: ".14em" }}>{c.title.toUpperCase()}</span>
+                      {c.deltaFmt && (
+                        <span style={{
+                          fontFamily: "JetBrains Mono, monospace",
+                          fontSize: 11, fontWeight: 700,
+                          padding: "3px 8px", borderRadius: 999,
+                          background: COL_CHIP_BG[c.cls], color: COL_CHIP_TX[c.cls],
+                          letterSpacing: ".02em"
+                        }}>
+                          {c.cls === "pos" ? "↑ " : c.cls === "neg" ? "↓ " : "· "}{c.deltaFmt}
+                        </span>
+                      )}
+                    </div>
+                    {c.missing ? (
+                      <>
+                        <div className="module-title" style={{ marginTop: 6 }}>{c.title}</div>
+                        <div className="module-desc">Sin datos disponibles</div>
+                        <div className="module-kpi"><div><div className="module-kpi-value">—</div><div className="module-kpi-label">N/D</div></div></div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="module-kpi" style={{ alignItems: "baseline", marginTop: 10 }}>
+                          <div>
+                            <div className="module-kpi-value" style={{ fontSize: 32, lineHeight: 1 }}>
+                              {c.aN}
+                              {c.a.unit && (
+                                <span style={{ fontSize: 14, color: "var(--ink-mute)", fontWeight: 500, marginLeft: 4 }}>
+                                  {c.a.unit}
+                                </span>
+                              )}
+                            </div>
+                            <div className="module-kpi-label" style={{ marginTop: 2 }}>
+                              {c.a.label || "actual"}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          marginTop: 12, paddingTop: 10,
+                          borderTop: "1px dashed var(--border, #e5e7eb)",
+                          display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                          fontSize: 13
+                        }}>
+                          <span style={{ color: "var(--ink-mute, #6b7280)" }}>
+                            vs {c.h.label || "histórico"}
+                          </span>
+                          <span style={{
+                            fontFamily: "JetBrains Mono, monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            fontWeight: 600, color: "var(--ink-soft, #4b5563)"
+                          }}>
+                            {c.hN}{c.h.unit ? " " + c.h.unit : ""}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* === MÓDULOS === */}
         <div className="modules-section">
           <div className="modules-head">

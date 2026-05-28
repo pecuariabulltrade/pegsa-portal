@@ -16,6 +16,13 @@
        con lista completa de stockInsumos (espejo del módulo Stock
        Insumos del desktop), incluye semaforización por días restantes
        y mini-bar del % del total.
+   v6 (2026-05-28): "Todos los insumos" deja de ser card en el panel y
+       pasa a vivir DENTRO del modal de Silo / Maíz (un tap desde el
+       insumo crítico muestra detalle + resumen, sin ocupar lugar).
+       Nueva sección "Productivos" (mobile + desktop) con 6 KPIs del
+       feedlot: engorde diario, estadía, eficiencia % PV, consumo/cab,
+       conversión y kg repartidos del último día de mixer. Datos
+       calculados en data.js (D.productivos) — una sola fuente de verdad.
    ============================================================ */
 (function (root) {
   "use strict";
