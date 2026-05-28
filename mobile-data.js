@@ -61,6 +61,21 @@
        último mes / hoy (referencia de tendencia reciente). El delta
        queda como (anual − reciente)/reciente: anual mejor que reciente
        → good. Sólo cambio en data.js; el adapter y el UI no se tocan.
+   v10 (2026-05-28): REVERT del swap de v9.1. El módulo Stock·Producción
+       "Eficiencia del Rodeo" muestra el ACTUAL como KPI grande (no
+       el anual). El panel ahora coincide al decimal:
+         - Eficiencia %PV  → 2,17 % (ajuste /0,92 del módulo)   BAJO
+         - Consumo/cab     → 14,6 kg/cab                        ÓPTIMO
+         - Conversión      → 12,3 : 1 (sobreescritura pvAnual × kgCabHaras
+                              ÷ adpUltMes — no usa indicadores.conversion_
+                              alimenticia.valor del JSON crudo)  MUY ALTO
+         - Engorde diario  → 1030 g/día (indicadores.fuentes.adp_promedio
+                              × 1000, no productivo.por_mes[ult])
+       El `historico` vuelve al valor anual ponderado (2,57 / 17,8 / 8,0
+       / 1498). El delta queda con la semántica original:
+       reciente vs anual → bad si reciente está peor.
+       Se agregan `umbrales` por KPI (ref_min/ref_opt/ref_max) para
+       posibles banners BAJO/ÓPTIMO/MUY ALTO en el UI. Sólo data.js.
    v9 (2026-05-28): Productivos + Precios unificados en patrón
        MINIMAL → tap toggle → EXPAND INLINE → botón al módulo. Se
        eliminan los modales (openCard/setModalContent) de esas dos

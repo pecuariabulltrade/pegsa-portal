@@ -494,33 +494,49 @@ window.PEGSA_DATA = {
   // ============================================================
   D.productivos = {};
 
-  // v9.1: Engorde diario (ADP × 1000 → g/día/cab)
-  // El KPI grande debe coincidir con lo que muestra la pestaña Productivo
-  // del módulo Stock de Masa del desktop ("ADP Promedio" = anual ponderado
-  // = productivo.general.adp_promedio). Por eso el `actual` ahora es el
-  // valor ANUAL y el `historico` es el último mes (referencia de
-  // tendencia reciente). El delta queda como (anual − mes)/mes:
-  // anual mejor que mes → good (verde); anual peor que mes → bad (rosa).
+  // v10: Engorde diario (ADP × 1000 → g/día/cab)
+  // El KPI grande es el ACTUAL (último mes cerrado), espejo del header
+  // del módulo Stock·Producción "Eficiencia del Rodeo" que muestra
+  // `fuentes.adp_promedio` = 1,03 kg/día (= 1030 g/día). El histórico
+  // pasa a ser el promedio anual ponderado (productivo.general.adp_promedio,
+  // = 1498 g/día), que el desktop muestra en la pestaña "Producción"
+  // como "ADP Promedio". Revierte el swap incorrecto de v9.1.
   if (productivo?.general?.adp_promedio != null && productivo?.por_mes) {
     const mesesKeys = Object.keys(productivo.por_mes).sort();
     const ultKey = mesesKeys[mesesKeys.length - 1];
     const ult = productivo.por_mes[ultKey];
     const MESES_LAB = { '01':'ene','02':'feb','03':'mar','04':'abr','05':'may','06':'jun','07':'jul','08':'ago','09':'sep','10':'oct','11':'nov','12':'dic' };
     const ultLabel = ultKey ? (MESES_LAB[ultKey.slice(5,7)] || '') + " " + ultKey.slice(2,4) : 'últ. mes';
+
+    // ADP del último mes — preferir fuentes.adp_promedio del módulo
+    // (es el mismo que el header de "Eficiencia del Rodeo" muestra,
+    // 1,03 kg/día → 1030 g/día). Cae a por_mes[ult].adp_promedio si no.
+    const indFuen = (indicadores && indicadores.fuentes) || {};
+    const adpActualKgDia = indFuen.adp_promedio != null
+      ? indFuen.adp_promedio
+      : (ult?.adp_promedio != null ? ult.adp_promedio : null);
+    const adpActualMes = indFuen.adp_mes || ultKey || null;
+    const adpActualLabel = adpActualMes
+      ? (MESES_LAB[String(adpActualMes).slice(5,7)] || '') + " " + String(adpActualMes).slice(2,4)
+      : ultLabel;
+
     D.productivos.engordeDiario = {
-      actual:    { v: productivo.general.adp_promedio * 1000,
+      actual:    { v: adpActualKgDia != null ? adpActualKgDia * 1000 : null,
+                   unit: 'g/día', label: adpActualLabel, decimals: 0 },
+      historico: { v: productivo.general.adp_promedio * 1000,
                    unit: 'g/día', label: 'anual', decimals: 0 },
-      historico: { v: ult?.adp_promedio != null ? ult.adp_promedio * 1000 : null,
-                   unit: 'g/día', label: ultLabel, decimals: 0 },
       mejorEs: 'mayor',
-      descripcion: 'Kg ganados por cabeza por día (ADP). Promedio ponderado anual (último año de ventas) vs el último mes. Fuente: productivo_2025.json.'
+      descripcion: 'ADP (engorde diario por cabeza). Último mes cerrado vs promedio anual ponderado. Espejo del header "Eficiencia del Rodeo" del módulo Stock·Producción.'
     };
     // 2. Estadía
+    // El módulo no tiene una card de Estadía en "Eficiencia del Rodeo"
+    // (sólo en la tab Producción anual). Mantenemos la convención:
+    // actual = último mes, histórico = anual.
     D.productivos.estadia = {
-      actual:    { v: productivo.general.estadia_promedio, unit: 'días', label: 'anual', decimals: 0 },
-      historico: { v: ult?.estadia_promedio, unit: 'días', label: ultLabel, decimals: 0 },
+      actual:    { v: ult?.estadia_promedio, unit: 'días', label: ultLabel, decimals: 0 },
+      historico: { v: productivo.general.estadia_promedio, unit: 'días', label: 'anual', decimals: 0 },
       mejorEs: 'menor',
-      descripcion: 'Días promedio entre entrada del animal y su venta. Promedio anual vs el último mes. Menos días = más rotación.'
+      descripcion: 'Días promedio entre entrada del animal y su venta. Último mes vs promedio anual. Menos días = más rotación.'
     };
   }
 
@@ -578,39 +594,60 @@ window.PEGSA_DATA = {
     };
   })();
 
-  // v9.1 · Eficiencia / Consumo / Conversión: el KPI grande es el
-  // VALOR ANUAL real del módulo Stock Insumos del desktop (los 2,57 /
-  // 17,8 / 7,9 que el user vio en la captura). El `historico` pasa a
-  // ser el dato instantáneo del día (indicadores_2025.json) — actúa
-  // como referencia de "cómo está hoy vs el promedio anual del feedlot".
+  // v10 · Eficiencia / Consumo / Conversión:
+  // El KPI grande es el ACTUAL que muestra el módulo Stock·Producción
+  // "Eficiencia del Rodeo" con TODAS sus transformaciones (no es el
+  // valor crudo del JSON):
+  //   - %PV actual = indicadores.pct_peso_vivo.valor / 0.92 (ajuste
+  //     del módulo, lo lleva de ~2.0 a ~2.17)
+  //   - Consumo/cab actual = indicadores.consumo_por_cabeza.valor_tc directo
+  //   - Conversión actual = (pvAnual / 100) × kgCabHaras / adpUltMes
+  //     (sobreescritura del módulo: NO usa indicadores.conversion_alimenticia.valor)
+  // El histórico vuelve a ser el valor anual ponderado (la "REFERENCIA
+  // ANUAL" del módulo Stock Insumos = 2,57 / 17,8 / 7,9).
 
   // 3. Eficiencia % PV (consumo MS como % del peso vivo · El Haras)
-  if (anuales.pctPV != null) {
+  if (indicadores?.indicadores?.pct_peso_vivo?.valor != null) {
+    const pvActualAj = indicadores.indicadores.pct_peso_vivo.valor / 0.92;
     D.productivos.pctPV = {
-      actual:    { v: anuales.pctPV,                                            unit: '%', label: 'anual', decimals: 2 },
-      historico: { v: indicadores?.indicadores?.pct_peso_vivo?.valor ?? null,    unit: '%', label: 'hoy',   decimals: 1 },
-      mejorEs: 'mayor', // rango óptimo 2-3%
-      descripcion: 'Consumo MS como % del peso vivo (El Haras). Anual = MS anual ÷ 365 ÷ kg PV prom. anual × 100. Rango óptimo 2-3%.'
+      actual:    { v: pvActualAj,   unit: '%', label: 'hoy',   decimals: 2 },
+      historico: { v: anuales.pctPV, unit: '%', label: 'anual', decimals: 2 },
+      mejorEs: 'mayor',
+      umbrales: { ref_min: 2.2, ref_opt: 2.4, ref_max: 2.7 },
+      descripcion: 'Consumo MS como % del peso vivo (El Haras). Hoy = (kg MS/día ÷ kg PV El Haras × 100) ÷ 0,92 — ajuste del módulo. Rango óptimo 2,4-2,6.'
     };
   }
 
-  // 4. Consumo por cabeza (kg TC/cab/día)
-  if (anuales.consumoPorCabeza != null) {
+  // 4. Consumo por cabeza (kg TC/cab/día) — valor directo del JSON
+  if (indicadores?.indicadores?.consumo_por_cabeza?.valor_tc != null) {
     D.productivos.consumoPorCabeza = {
-      actual:    { v: anuales.consumoPorCabeza,                                       unit: 'kg/cab', label: 'anual', decimals: 1 },
-      historico: { v: indicadores?.indicadores?.consumo_por_cabeza?.valor_tc ?? null, unit: 'kg/cab', label: 'hoy',   decimals: 1 },
+      actual:    { v: indicadores.indicadores.consumo_por_cabeza.valor_tc, unit: 'kg/cab', label: 'hoy',   decimals: 1 },
+      historico: { v: anuales.consumoPorCabeza,                            unit: 'kg/cab', label: 'anual', decimals: 1 },
       mejorEs: 'rango',
-      descripcion: 'Alimento TC por animal por día (El Haras). Anual = TC anual ÷ 365 ÷ cab. promedio anuales. Rango óptimo 12,5-15,5 kg.'
+      umbrales: { ref_opt_min: 13, ref_opt_max: 15 },
+      descripcion: 'Alimento TC por animal por día (El Haras). Hoy = kg TC/día ÷ cabezas El Haras. Rango óptimo 13-15 kg.'
     };
   }
 
   // 5. Conversión alimenticia (kg MS : kg ganancia)
-  if (anuales.conversion != null) {
+  // SOBREESCRITA igual que el módulo: usa el %PV anual como factor
+  // semi-fijo × peso por cab Haras actual ÷ ADP último mes cerrado.
+  // NO se usa indicadores.conversion_alimenticia.valor.
+  if (anuales.pctPV != null && indicadores?.fuentes) {
+    const f = indicadores.fuentes;
+    const kgCabHaras = (f.kg_stock_haras > 0 && f.cab_haras > 0)
+      ? f.kg_stock_haras / f.cab_haras : 0;
+    const adpUltMes = f.adp_promedio || 0;
+    let convActual = null;
+    if (kgCabHaras > 0 && adpUltMes > 0) {
+      convActual = (anuales.pctPV / 100) * kgCabHaras / adpUltMes;
+    }
     D.productivos.conversion = {
-      actual:    { v: anuales.conversion,                                                unit: '', label: 'anual', decimals: 1 },
-      historico: { v: indicadores?.indicadores?.conversion_alimenticia?.valor ?? null,   unit: '', label: 'hoy',   decimals: 1 },
+      actual:    { v: convActual,         unit: '', label: 'hoy',   decimals: 1 },
+      historico: { v: anuales.conversion, unit: '', label: 'anual', decimals: 1 },
       mejorEs: 'menor', // menos kg consumo por kg ganado = mejor
-      descripcion: 'Kg de MS consumidos por kg de carne ganada. Anual = kg MS/cab/día ÷ ADP anual ponderado. Menos = mejor (ref. 5-8).'
+      umbrales: { ref_opt_min: 5, ref_opt_max: 8 },
+      descripcion: 'Hoy = (%PV anual × kg/cab Haras) ÷ ADP último mes (sobreescritura del módulo). Anual = MS/cab/día ÷ ADP anual ponderado. Menos = mejor (ref. 5-8).'
     };
   }
 
