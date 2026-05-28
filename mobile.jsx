@@ -589,7 +589,19 @@ function Cotizaciones() {
 function InsumoCard({ insumo }) {
   const modal = useModal();
   const open = () => {
-    modal.open({
+    // v6: el modal de Silo/Maíz ahora suma "📋 Todos los insumos" debajo
+    // del detalle individual — la card del panel quedó eliminada y este
+    // resumen se accede a 1 tap desde cualquier insumo crítico.
+    // Matching contra INSUMOS_ALL via display name (la "title" de la
+    // card crítica viene de data.js INSUMO_DISPLAY_NAMES, el "nombre_raw"
+    // del item ALL viene del JSON: usamos la propiedad raw como id).
+    const allList = D.INSUMOS_ALL || [];
+    const allTot  = D.INSUMOS_TOTAL || null;
+    // El insumo "raw" id del crítico es el nombre upper-case del JSON
+    // (ej. "SILO DE MAIZ"). El ID en el item ALL es nombre_raw.
+    // insumo.id en INSUMOS críticos = it.nombre del JSON (uppercase original)
+    const highlightId = insumo.id;
+    return modal.open({
       title: insumo.title,
       sub: insumo.sub,
       body: (
@@ -607,6 +619,19 @@ function InsumoCard({ insumo }) {
           {insumo.inconsistente && (
             <div className="modal-note neg">
               ⚠ Datos contables inconsistentes — revisar en módulo Stock Insumos
+            </div>
+          )}
+          {allList.length > 0 && (
+            <div className="modal-section">
+              <h4>
+                Todos los insumos
+                {allTot && allTot.count ? (
+                  <span className="modal-section-sub">
+                    {" · "}{allTot.count} ítems · {D.fmt(Math.round(allTot.totalKg || 0))} kg
+                  </span>
+                ) : null}
+              </h4>
+              <InsumosAllList items={allList} total={allTot} clickable={false} highlight={highlightId} />
             </div>
           )}
         </>
@@ -654,21 +679,30 @@ function Insumos() {
 }
 
 /* ============================================================
-   v5 · "Todos los insumos" — espejo del módulo Stock Insumos del
-   desktop. Lista compacta con todos los insumos (no solo los 2
-   críticos voluminosos), con semáforo de días (< 7 rojo / 7-15
-   ámbar / ≥15 verde) y mini-bar del % del total. Cada item abre
-   un modal con el mismo detalle.
-   ============================================================ */
-function InsumosTodos() {
-  const modal = useModal();
-  const list  = (D.INSUMOS_ALL || []);
-  const tot   = D.INSUMOS_TOTAL || { totalKg: 0, count: 0, fecha: null };
-  const { fmt } = D;
+   v6 · <InsumosAllList /> — lista compacta de TODOS los insumos.
+   Espejo del módulo Stock Insumos del desktop, reutilizable:
+   en v5 estaba en una card en el panel, en v6 se embebe DENTRO
+   del modal de cada insumo crítico (Silo / Maíz) — un toque de
+   cualquier insumo crítico muestra su detalle + el resumen de
+   todos los insumos, sin ocupar lugar en el panel.
 
+   Props:
+     items     — array enriquecido de D.INSUMOS_ALL
+     total     — { totalKg, count, fecha } de D.INSUMOS_TOTAL
+     clickable — bool (default false). Cuando está dentro de un
+                 modal NO debe ser clickable (evita modales anidados).
+     highlight — id opcional del insumo a resaltar (ej: el insumo
+                 cuyo modal estamos viendo).
+   ============================================================ */
+function InsumosAllList({ items, total, clickable, highlight }) {
+  const modal = useModal();
+  const { fmt } = D;
+  const list = items || [];
+  const tot  = total || { totalKg: 0, count: list.length };
   if (!list.length) return null;
 
   const openItem = (it) => {
+    if (!clickable) return;
     const semClass = it.semaforo || (it.dias != null ? (it.dias < 7 ? "bad" : (it.dias < 15 ? "warn" : "ok")) : "");
     modal.open({
       title: it.nombre,
@@ -677,18 +711,11 @@ function InsumosTodos() {
         <>
           <div className="modal-section">
             {kvList([
-              { k: "Días restantes",
-                v: it.dias != null ? it.diasFmt + " d" : "N/D",
-                cls: semClass },
-              { k: "Stock",
-                v: it.stockKg != null
-                  ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg"
-                  : "N/D",
+              { k: "Días restantes",  v: it.dias != null ? it.diasFmt + " d" : "N/D", cls: semClass },
+              { k: "Stock",           v: it.stockKg != null ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg" : "N/D",
                 cls: (it.stockKg != null && it.stockKg < 0) ? "neg" : "" },
-              { k: "Consumo / día",
-                v: it.consumoKgDia != null ? fmt(Math.round(it.consumoKgDia)) + " kg" : "—" },
-              { k: "% del stock total",
-                v: it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—" }
+              { k: "Consumo / día",   v: it.consumoKgDia != null ? fmt(Math.round(it.consumoKgDia)) + " kg" : "—" },
+              { k: "% del stock total", v: it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—" }
             ])}
           </div>
           {it.inconsistente && (
@@ -702,46 +729,41 @@ function InsumosTodos() {
   };
 
   return (
-    <div className="card ins-all">
-      <div className="card-head">
-        <div>
-          <h3>Todos los insumos</h3>
-          <div className="card-head-sub">
-            {tot.count} ítems · {fmt(Math.round(tot.totalKg || 0))} kg total
-          </div>
-        </div>
-      </div>
-      <ul className="ins-all-list">
-        {list.map((it) => {
-          const sem = it.semaforo || (it.dias != null ? (it.dias < 7 ? "bad" : (it.dias < 15 ? "warn" : "ok")) : "");
-          const pct = Math.max(0, Math.min(100, it.pctTotal != null ? Math.abs(it.pctTotal) : 0));
-          return (
-            <li key={it.id}>
-              <button className="ins-all-row drill" onClick={() => openItem(it)}>
-                <div className="ins-all-row-top">
-                  <span className="ins-all-name">{it.nombre}</span>
-                  <span className={"ins-all-days " + sem}>
-                    {it.dias != null ? it.diasFmt : "—"}
-                    <span className="ins-all-days-u">d</span>
-                  </span>
-                </div>
-                <div className="ins-all-row-mid">
-                  <span className="ins-all-stock">
-                    {it.stockKg != null
-                      ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg"
-                      : "N/D"}
-                  </span>
-                  <span className="ins-all-pct">{it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—"}</span>
-                </div>
-                <div className="ins-all-bar">
-                  <div className={"ins-all-bar-fill " + sem} style={{ width: pct + "%" }} />
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+    <ul className={"ins-all-list " + (clickable ? "" : "ro")}>
+      {list.map((it) => {
+        const sem = it.semaforo || (it.dias != null ? (it.dias < 7 ? "bad" : (it.dias < 15 ? "warn" : "ok")) : "");
+        const pct = Math.max(0, Math.min(100, it.pctTotal != null ? Math.abs(it.pctTotal) : 0));
+        const isHi = highlight && it.id === highlight;
+        const RowTag = clickable ? "button" : "div";
+        const rowProps = clickable
+          ? { className: "ins-all-row drill" + (isHi ? " hi" : ""), onClick: () => openItem(it) }
+          : { className: "ins-all-row" + (isHi ? " hi" : "") };
+        return (
+          <li key={it.id}>
+            <RowTag {...rowProps}>
+              <div className="ins-all-row-top">
+                <span className="ins-all-name">{it.nombre}</span>
+                <span className={"ins-all-days " + sem}>
+                  {it.dias != null ? it.diasFmt : "—"}
+                  <span className="ins-all-days-u">d</span>
+                </span>
+              </div>
+              <div className="ins-all-row-mid">
+                <span className="ins-all-stock">
+                  {it.stockKg != null
+                    ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg"
+                    : "N/D"}
+                </span>
+                <span className="ins-all-pct">{it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—"}</span>
+              </div>
+              <div className="ins-all-bar">
+                <div className={"ins-all-bar-fill " + sem} style={{ width: pct + "%" }} />
+              </div>
+            </RowTag>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -1051,6 +1073,71 @@ function ChartCard({ data }) {
 }
 
 /* ============================================================
+   v6 · Productivos · grid 2×3 de tarjetas con KPI grande + KPI
+   comparativo + chip ↑/↓ coloreado por mejorEs (mayor/menor/rango).
+   Datos vienen de D.PRODUCTIVOS armado por mobile-data.js leyendo
+   D.productivos de data.js (espejo del desktop — misma fuente).
+   ============================================================ */
+function ProductivosGrid() {
+  const modal = useModal();
+  const list = D.PRODUCTIVOS || [];
+  if (!list.length) return null;
+
+  const openCard = (p) => {
+    modal.open({
+      title: p.title,
+      sub: p.descripcion || "",
+      body: (
+        <>
+          <div className="modal-section">
+            {kvList([
+              { k: p.actualLabel ? "Actual · " + p.actualLabel : "Actual",
+                v: p.kpi + (p.unit ? " " + p.unit : ""),
+                cls: p.deltaCls === "pos" ? "pos" : (p.deltaCls === "neg" ? "neg" : "") },
+              { k: "Histórico " + (p.subLabel || "").replace(/^vs\s*/, ""),
+                v: p.subVal },
+              { k: "Variación",
+                v: p.deltaFmt || "—",
+                cls: p.deltaCls }
+            ])}
+          </div>
+          {p.descripcion && (
+            <div className="modal-note">{p.descripcion}</div>
+          )}
+        </>
+      )
+    });
+  };
+
+  return (
+    <div className="prod-grid">
+      {list.map((p) => (
+        <button key={p.id} className={"prod-card drill " + p.deltaCls}
+                onClick={() => openCard(p)}>
+          <div className="prod-eyebrow">{p.title}</div>
+          <div className="prod-big">
+            <span className="prod-big-num">{p.kpi}</span>
+            {p.unit ? <span className="prod-big-unit">{p.unit}</span> : null}
+          </div>
+          <div className="prod-foot">
+            <span className="prod-foot-val">{p.subVal}</span>
+            <span className="prod-foot-lab">{p.subLabel}</span>
+          </div>
+          {p.deltaFmt && (
+            <span className={"prod-chip " + p.deltaCls}>
+              <span className="prod-chip-arr">
+                {p.deltaCls === "pos" ? "↑" : (p.deltaCls === "neg" ? "↓" : "·")}
+              </span>
+              {p.deltaFmt}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
    Módulos grid — navegación real a index.html?mod=<id>
    ============================================================ */
 function navigateToModule(portalId) {
@@ -1178,8 +1265,10 @@ function App() {
           <div className="sec-head">
             <h2><span className="ico">🌾</span>Insumos críticos</h2>
           </div>
+          {/* v6: la lista "Todos los insumos" vivía acá como card
+              independiente, ahora vive dentro del modal de cada
+              insumo crítico (Silo / Maíz) para no saturar el panel. */}
           <Insumos />
-          <InsumosTodos />
 
           <hr className="sec-div" />
 
@@ -1189,6 +1278,17 @@ function App() {
           <FlujoSemanal />
           <ChartCard data={D.PATRIMONIO_USD} />
           <ChartCard data={D.STOCK_KILOS} />
+
+          <hr className="sec-div" />
+
+          {/* v6: sección nueva — 6 KPIs productivos del feedlot
+              (ADP, estadía, eficiencia, consumo/cab, conversión,
+              kg repartidos), espejo del desktop. */}
+          <div className="sec-head">
+            <h2><span className="ico">📈</span>Productivos</h2>
+            <span className="sec-head-sub">último mes · vs histórico</span>
+          </div>
+          <ProductivosGrid />
 
           <hr className="sec-div" />
 

@@ -531,6 +531,69 @@
       nPuntos: stockSpark.length
     };
 
+    // ---------- v6 · Productivos · 6 tarjetas ----------
+    // Lee D.productivos poblado por data.js desde productivo_2025.json
+    // + indicadores_2025.json + eficiencia_historico.json + consumo_2025.json.
+    // Shape: { id: { actual:{v,unit,label}, historico:{v,unit,label},
+    //          mejorEs:'mayor'|'menor'|'rango', descripcion } }
+    // El componente <ProductivosGrid /> de mobile.jsx consume esto y lo
+    // renderiza como 6 tarjetas con KPI grande + KPI comparativo + chip
+    // ↑/↓ con el % de diferencia coloreado según `mejorEs`.
+    var prod = D.productivos || {};
+    function fmtProd(v, unit, decimals) {
+      if (v == null || isNaN(v)) return { n: "—", u: unit || "" };
+      var n;
+      if (decimals != null) n = Number(v).toFixed(decimals).replace(".", ",");
+      else if (Math.abs(v) >= 1000) n = Math.round(v).toLocaleString("es-AR");
+      else if (Math.abs(v) >= 100) n = Math.round(v).toString();
+      else if (Math.abs(v) >= 10) n = Number(v).toFixed(1).replace(".", ",");
+      else n = Number(v).toFixed(2).replace(".", ",");
+      return { n: n, u: unit || "" };
+    }
+    function mkProd(id, titulo) {
+      var p = prod[id];
+      if (!p || p.actual == null) {
+        return { id: id, title: titulo, kpi: "—", unit: "", subVal: "N/D",
+                 subLabel: "", delta: null, deltaCls: "" };
+      }
+      var a = p.actual || {}, h = p.historico || {};
+      var aFmt = fmtProd(a.v, a.unit, a.decimals);
+      var hFmt = fmtProd(h.v, h.unit, h.decimals);
+      var delta = null, deltaCls = "";
+      if (a.v != null && h.v != null && h.v !== 0) {
+        delta = ((a.v - h.v) / Math.abs(h.v)) * 100;
+        // Mejor=mayor → actual>historico es positivo (verde)
+        // Mejor=menor → actual<historico es positivo (verde)
+        // rango → siempre neutro
+        if (p.mejorEs === "rango") deltaCls = "neu";
+        else if (p.mejorEs === "menor") deltaCls = delta < 0 ? "pos" : (delta > 0 ? "neg" : "neu");
+        else deltaCls = delta > 0 ? "pos" : (delta < 0 ? "neg" : "neu");
+      }
+      return {
+        id: id,
+        title: titulo,
+        kpi: aFmt.n,
+        unit: aFmt.u,
+        subVal: hFmt.n + (hFmt.u ? " " + hFmt.u : ""),
+        subLabel: "vs " + (h.label || "histórico"),
+        actualLabel: a.label || "",
+        delta: delta,
+        deltaFmt: delta != null
+          ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(delta < 10 && delta > -10 ? 1 : 0).replace(".", ",") + "%"
+          : null,
+        deltaCls: deltaCls,
+        descripcion: p.descripcion || ""
+      };
+    }
+    var PRODUCTIVOS = [
+      mkProd("engordeDiario",    "Engorde diario"),
+      mkProd("estadia",          "Estadía"),
+      mkProd("pctPV",            "Eficiencia"),
+      mkProd("consumoPorCabeza", "Consumo / cabeza"),
+      mkProd("conversion",       "Conversión"),
+      mkProd("kgRepartidos",     "Kg repartidos · últ. día")
+    ];
+
     // ---------- Módulos ----------
     var ledMap = { vivo: "vivo", acumulando: "acumulando", disponible: "disponible" };
     function kindByModulo(m) {
@@ -578,6 +641,7 @@
       FLUJO_SEMANAL: FLUJO_SEMANAL,
       PATRIMONIO_USD: PATRIMONIO_USD,
       STOCK_KILOS: STOCK_KILOS,
+      PRODUCTIVOS: PRODUCTIVOS,
       MODULOS: MODULOS,
       TABS: TABS,
       BOTTOM_TABS: BOTTOM_TABS,

@@ -1389,7 +1389,20 @@ img, svg { display: block; max-width: 100%; }
   border-bottom: 1px solid var(--border);
 }
 .ins-all-list li:last-child .ins-all-row { border-bottom: 0; }
-.ins-all-row:active { background: var(--surface-alt); }
+button.ins-all-row:active { background: var(--surface-alt); }
+
+/* v6: variante read-only para cuando InsumosAllList vive dentro de
+   un modal. No hay cursor pointer, no hay tap highlight, y el item
+   "highlight" (el insumo que se está mirando en el modal) tiene
+   una capa sutil + barra lateral azul a la izquierda. */
+.ins-all-list.ro .ins-all-row { cursor: default; }
+.ins-all-list.ro .ins-all-row.hi {
+  background: oklch(0.95 0.05 256 / 0.5);
+  border-radius: var(--r-sm);
+  padding-left: 12px;
+  margin-left: -4px;
+  border-left: 3px solid var(--primary);
+}
 
 .ins-all-row-top {
   display: flex;
