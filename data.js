@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist, stockEstHaras, stockEstCucuca, stockEstDescanso, stockEstPanchita] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -126,11 +126,6 @@ window.PEGSA_DATA = {
     fetchJson('precios_inferencia_historico.json'),
     fetchJson('tesoreria_darwash.json'),
     fetchJson('tesoreria_darwash_historico.json'),
-    // v12.0 + v12.2: JSONs por establecimiento para el PDF (PEGSA / Grupo / Haras / Otros)
-    fetchJson('stock_est_El_Haras_2025.json'),
-    fetchJson('stock_est_La_Cucuca_2025.json'),
-    fetchJson('stock_est_El_Descanso_2025.json'),
-    fetchJson('stock_est_La_Panchita_2025.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -198,42 +193,6 @@ window.PEGSA_DATA = {
         .filter(c => c.cabezas > 0)
         .sort((a, b) => b.kg - a.kg);
       if (catsPeg.length > 0) D.stockCategoriasPegsa = catsPeg;
-    }
-  }
-
-  // v12.0 + v12.2: stock por categoría desglosado por ESTABLECIMIENTO.
-  // El PDF lo necesita para mostrar las 4 filas: PEGSA / Grupo / Haras / Otros.
-  const extractCats = (snap) => {
-    const cats = snap?.kpis?.por_categoria_final;
-    if (!cats || typeof cats !== 'object') return [];
-    return Object.entries(cats)
-      .map(([n, d]) => ({ categoria: n.charAt(0).toUpperCase() + n.slice(1), cabezas: d?.cabezas || 0, kg: Math.round(d?.kg_estimado || 0) }))
-      .filter(c => c.cabezas > 0);
-  };
-  if (stockEstHaras) {
-    const catsHaras = extractCats(stockEstHaras).sort((a, b) => b.kg - a.kg);
-    if (catsHaras.length > 0) D.stockCategoriasHaras = catsHaras;
-    D.haciendaHarasTotal = {
-      cabezas: stockEstHaras.kpis?.total_cabezas || 0,
-      kg: stockEstHaras.kpis?.total_kg_estimado_hoy || 0
-    };
-  }
-  // Otros = La Cucuca + El Descanso + La Panchita (suma por categoría)
-  {
-    const otros = [stockEstCucuca, stockEstDescanso, stockEstPanchita].filter(Boolean);
-    if (otros.length) {
-      const acc = {};
-      otros.forEach(snap => extractCats(snap).forEach(c => {
-        if (!acc[c.categoria]) acc[c.categoria] = { categoria: c.categoria, cabezas: 0, kg: 0 };
-        acc[c.categoria].cabezas += c.cabezas;
-        acc[c.categoria].kg += c.kg;
-      }));
-      const catsOtros = Object.values(acc).filter(c => c.cabezas > 0).sort((a, b) => b.kg - a.kg);
-      if (catsOtros.length > 0) D.stockCategoriasOtros = catsOtros;
-      D.haciendaOtrosTotal = {
-        cabezas: otros.reduce((s, snap) => s + (snap.kpis?.total_cabezas || 0), 0),
-        kg: otros.reduce((s, snap) => s + (snap.kpis?.total_kg_estimado_hoy || 0), 0)
-      };
     }
   }
 
