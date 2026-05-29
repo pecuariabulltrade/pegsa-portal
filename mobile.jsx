@@ -523,6 +523,42 @@ function buildPdfDoc() {
     return y + 7;
   }
 
+  // v12.4: mini-card horizontal de un origen (PEGSA/HARAS/OTROS/GRUPO)
+  // con label arriba, KPI cabezas grande, y kg en formato compacto debajo.
+  // Se usa en la fila "Totales del rodeo" de la P1.
+  function drawTotalCard(x, y, w, h, item) {
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
+    // Label
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+    doc.text(pdfSafe(item.label), x + 3, y + 5);
+    // KPI cabezas (grande, navy)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor.apply(doc, PDF_COLORS.navy);
+    var cab = item.cabezas != null ? pdfFmtInt(item.cabezas) : "—";
+    doc.text(pdfSafe(cab), x + 3, y + 13);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text("cabezas", x + w - 3, y + 13, { align: "right" });
+    // Kg compacto (formato XX.XXX kg / X,X M kg / etc.)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink);
+    var kgVal = item.kg;
+    var kgFmt = "—";
+    if (kgVal != null) {
+      if (kgVal >= 1e6)      kgFmt = (kgVal / 1e6).toFixed(2).replace(".", ",") + " M kg";
+      else if (kgVal >= 1e3) kgFmt = Math.round(kgVal / 1e3).toLocaleString("es-AR") + " k kg";
+      else                   kgFmt = pdfFmtInt(kgVal) + " kg";
+    }
+    doc.text(pdfSafe(kgFmt), x + 3, y + h - 2);
+  }
+
   // Card de Stock terminados: title bar + 4 rows (PEGSA, GRUPO, HARAS, OTROS) + footer Kg/cab.
   function drawStockCard(x, y, w, cat) {
     var h = 38;
@@ -837,6 +873,17 @@ function buildPdfDoc() {
   // ====================== PÁGINA 1 ======================
   (function () {
     var y = newPage();
+
+    // v12.4: TOTALES DEL RODEO — 4 mini-cards horizontales con
+    // cabezas + kg por origen (PEGSA / HARAS / OTROS / GRUPO).
+    y = drawSectionTitle(y, "Totales del rodeo", "cabezas · kilos por origen");
+    var totales = D.STOCK_TOTALES || [];
+    var tCardW = (contentW - 3 * 3) / 4;  // 4 cards con gap 3mm
+    var tCardH = 20;
+    totales.slice(0, 4).forEach(function (it, i) {
+      drawTotalCard(margin + i * (tCardW + 3), y, tCardW, tCardH, it);
+    });
+    y += tCardH + 5;
 
     // STOCK TERMINADOS — 2 cards lado a lado (Novillo>550 + Vaca>650)
     y = drawSectionTitle(y, "Stock terminados", "cabezas · kilos");

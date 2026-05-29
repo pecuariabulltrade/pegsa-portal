@@ -243,6 +243,27 @@ window.PEGSA_DATA = {
     }
   }
 
+  // v12.4: totales del rodeo POR ORIGEN (no por categoría) para la
+  // fila de mini-cards "Totales del rodeo" que el PDF dibuja en P1
+  // arriba de Stock terminados. PEGSA viene de haciendaPegsaTotal (ya
+  // armado más arriba). GRUPO viene de hero.stock.total. Falta exponer
+  // El Haras (un solo establecimiento) y la suma de los 3 otros.
+  if (stockEstHaras?.kpis) {
+    D.haciendaHarasTotal = {
+      cabezas: stockEstHaras.kpis.total_cabezas || 0,
+      kg:      stockEstHaras.kpis.total_kg_estimado_hoy || 0,
+    };
+  }
+  {
+    const ests = [stockEstCucuca, stockEstDescanso, stockEstPanchita].filter(Boolean);
+    if (ests.length) {
+      D.haciendaOtrosTotal = {
+        cabezas: ests.reduce((s, e) => s + (e.kpis?.total_cabezas || 0), 0),
+        kg:      ests.reduce((s, e) => s + (e.kpis?.total_kg_estimado_hoy || 0), 0),
+      };
+    }
+  }
+
   // Mercado real
   if (mercado) {
     const novillo = find(mercado.hacienda, '461/490') || find(mercado.hacienda, 'novillo');

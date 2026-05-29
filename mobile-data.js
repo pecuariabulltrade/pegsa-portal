@@ -924,6 +924,23 @@
       };
     });
 
+    // v12.4: 4 fuentes con cabezas + kg agregados (no por categoría)
+    // para la fila de mini-cards "Totales del rodeo" en el PDF.
+    var STOCK_TOTALES = [
+      { id: "pegsa", label: "PEGSA",
+        cabezas: (D.haciendaPegsaTotal && D.haciendaPegsaTotal.cabezas) || null,
+        kg:      (D.haciendaPegsaTotal && D.haciendaPegsaTotal.kg)      || null },
+      { id: "haras", label: "HARAS",
+        cabezas: (D.haciendaHarasTotal && D.haciendaHarasTotal.cabezas) || null,
+        kg:      (D.haciendaHarasTotal && D.haciendaHarasTotal.kg)      || null },
+      { id: "otros", label: "OTROS",
+        cabezas: (D.haciendaOtrosTotal && D.haciendaOtrosTotal.cabezas) || null,
+        kg:      (D.haciendaOtrosTotal && D.haciendaOtrosTotal.kg)      || null },
+      { id: "grupo", label: "GRUPO",
+        cabezas: (D.hero && D.hero.stock && D.hero.stock.total && D.hero.stock.total.cabezas) || null,
+        kg:      (D.hero && D.hero.stock && D.hero.stock.total && D.hero.stock.total.kg)      || null }
+    ];
+
     // ---------- Módulos ----------
     var ledMap = { vivo: "vivo", acumulando: "acumulando", disponible: "disponible" };
     function kindByModulo(m) {
@@ -976,6 +993,7 @@
       PRECIOS_INFERENCIA: PRECIOS_INFERENCIA,
       PRECIOS_INFERENCIA_META: PRECIOS_INFERENCIA_META,
       STOCK_TERMINADOS: STOCK_TERMINADOS,
+      STOCK_TOTALES: STOCK_TOTALES,
       MODULOS: MODULOS,
       TABS: TABS,
       BOTTOM_TABS: BOTTOM_TABS,
