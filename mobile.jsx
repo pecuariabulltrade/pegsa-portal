@@ -267,8 +267,11 @@ const PDF_COLORS = {
   neg:     [196, 64, 60],
   warn:    [194, 132, 33],
   // v12.2: variantes "soft" para bg de cards (Productivos severo) y mini-barras
-  posSoft: [200, 230, 218],
-  negSoft: [248, 215, 210],
+  // v12.5: posSoft/negSoft más vívidos para las barras del Financiero — la
+  // versión anterior era casi blanca y las barras parecían invisibles.
+  // badSoft/warnSoft/goodSoft siguen claros (los usa Productivos para bg).
+  posSoft: [144, 198, 178],
+  negSoft: [232, 158, 152],
   warnSoft:[252, 247, 230],
   badSoft: [253, 232, 232],
   goodSoft:[232, 246, 240]
@@ -508,10 +511,10 @@ function buildPdfDoc() {
     return pdfDrawPageHeader(doc, null, null, pageNum, pageTotal);
   }
 
-  // Title de sección: bold grande a la izq + sub muted a la derecha
+  // Title de sección: v12.5 serif bolditalic (emulación Playfair) + sub muted
   function drawSectionTitle(y, label, sub) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
+    doc.setFont("times", "bolditalic");
+    doc.setFontSize(13);
     doc.setTextColor.apply(doc, PDF_COLORS.ink);
     doc.text(pdfSafe(label), margin, y + 4);
     if (sub) {
@@ -559,9 +562,11 @@ function buildPdfDoc() {
     doc.text(pdfSafe(kgFmt), x + 3, y + h - 2);
   }
 
-  // Card de Stock terminados: title bar + 4 rows (PEGSA, GRUPO, HARAS, OTROS) + footer Kg/cab.
+  // Card de Stock terminados: v12.5 — 2 rows (PEGSA, GRUPO) en lugar de 4.
+  // HARAS y OTROS ya viven arriba en la fila "Totales del rodeo", no se
+  // duplican acá. Card baja de 38mm → 28mm.
   function drawStockCard(x, y, w, cat) {
-    var h = 38;
+    var h = 28;
     doc.setDrawColor.apply(doc, PDF_COLORS.rule);
     doc.setLineWidth(0.3);
     doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
@@ -573,12 +578,10 @@ function buildPdfDoc() {
     doc.setTextColor.apply(doc, PDF_COLORS.navy);
     doc.text(pdfSafe((cat.label || "").toUpperCase()), x + 2.5, y + 4.3);
 
-    // 4 rows
+    // v12.5: solo 2 rows (PEGSA + GRUPO)
     var rows = [
       { lbl: "PEGSA", src: cat.pegsa },
-      { lbl: "GRUPO", src: cat.grupo },
-      { lbl: "HARAS", src: cat.haras },
-      { lbl: "OTROS", src: cat.otros }
+      { lbl: "GRUPO", src: cat.grupo }
     ];
     var rowH = 5.5;
     var ry = y + 8;
@@ -724,6 +727,15 @@ function buildPdfDoc() {
       doc.setDrawColor.apply(doc, PDF_COLORS.rule);
       doc.setLineWidth(0.2);
       doc.line(x + 3, zeroY, x + w - 3, zeroY);
+      // v12.5: format compacto para los labels numéricos arriba de cada barra
+      function fmtBarShort(v) {
+        if (v == null) return "";
+        var abs = Math.abs(v);
+        var sign = v < 0 ? "-" : "+";
+        if (abs >= 1e6) return sign + (abs / 1e6).toFixed(2).replace(".", ",");
+        if (abs >= 1e3) return sign + Math.round(abs / 1e3);
+        return sign + Math.round(abs);
+      }
       bars.forEach(function (b, i) {
         var v = b.v || 0;
         var bx = x + 3 + i * slotW + slotW * 0.18;
@@ -733,6 +745,23 @@ function buildPdfDoc() {
         doc.setFillColor.apply(doc, color);
         if (v >= 0) doc.rect(bx, zeroY - bh, bw, bh, 'F');
         else doc.rect(bx, zeroY, bw, bh, 'F');
+        // v12.5: label numérico encima/debajo del borde exterior de la barra.
+        // Para barras muy chicas (< 1.5mm) lo ponemos cerca del eje para que
+        // no quede pegado al label de semana.
+        var labelV = fmtBarShort(v);
+        if (labelV) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(6);
+          if (v >= 0) {
+            doc.setTextColor.apply(doc, PDF_COLORS.pos);
+            var topY = Math.min(zeroY - 1.5, zeroY - bh - 1);
+            doc.text(pdfSafe(labelV), bx + bw / 2, topY, { align: "center" });
+          } else {
+            doc.setTextColor.apply(doc, PDF_COLORS.neg);
+            var botY = Math.max(zeroY + bh + 2.5, zeroY + 2.5);
+            doc.text(pdfSafe(labelV), bx + bw / 2, botY, { align: "center" });
+          }
+        }
       });
       // Labels de semana
       doc.setFont("helvetica", "normal");
@@ -768,20 +797,38 @@ function buildPdfDoc() {
     doc.setFontSize(7);
     doc.setTextColor.apply(doc, PDF_COLORS.ink2);
     doc.text(pdfSafe((p.title || "").toUpperCase()), x + 3, y + 4.5);
-    // Chip delta
+    // Chip delta · v12.5: triángulo vectorial (Win-1252 no soporta U+2191/2193)
     if (p.deltaFmt) {
       var chipColor = (p.chipTone === "bad") ? PDF_COLORS.neg :
                       (p.chipTone === "good") ? PDF_COLORS.pos :
                       (p.chipTone === "warn") ? PDF_COLORS.warn : PDF_COLORS.muted;
-      var arrow = p.tone === "good" ? " ↑ " : p.tone === "bad" ? " ↓ " : " · ";
-      var chipText = pdfSafe(arrow.trim() + " " + p.deltaFmt.replace(/^[+-]/, ''));
+      var pctOnly = p.deltaFmt.replace(/^[+-]/, '');  // "31%"
       doc.setFontSize(7);
-      var cw = doc.getStringUnitWidth(chipText) * 7 / doc.internal.scaleFactor + 2.5;
+      var pctW = doc.getStringUnitWidth(pctOnly) * 7 / doc.internal.scaleFactor;
+      var hasArrow = (p.tone === "good" || p.tone === "bad");
+      var triW = 1.8;
+      var pad  = hasArrow ? 1.5 : 0;
+      var cw   = (hasArrow ? triW + pad : 0) + pctW + 3.5;
+      var chipX = x + w - cw - 2;
+      var chipY = y + 1.5;
       doc.setFillColor.apply(doc, chipColor);
-      doc.roundedRect(x + w - cw - 2, y + 2, cw, 4, 0.7, 0.7, 'F');
+      doc.roundedRect(chipX, chipY, cw, 4, 0.7, 0.7, 'F');
+      if (hasArrow) {
+        var tx = chipX + 1.8;
+        var ty = chipY + 2;
+        doc.setFillColor(255, 255, 255);
+        if (p.tone === "good") {
+          // Triángulo apuntando arriba ▲
+          doc.triangle(tx, ty + 1, tx + triW, ty + 1, tx + triW / 2, ty - 1, 'F');
+        } else {
+          // Triángulo apuntando abajo ▼
+          doc.triangle(tx, ty - 1, tx + triW, ty - 1, tx + triW / 2, ty + 1, 'F');
+        }
+      }
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
       doc.setTextColor(255, 255, 255);
-      doc.text(chipText, x + w - cw / 2 - 2, y + 4.8, { align: "center" });
+      doc.text(pctOnly, chipX + (hasArrow ? triW + pad : 0) + 1.5, y + 4.7);
     }
     // KPI
     doc.setFont("helvetica", "bold");
@@ -796,11 +843,17 @@ function buildPdfDoc() {
       doc.setTextColor.apply(doc, PDF_COLORS.ink2);
       doc.text(pdfSafe(p.unit), x + 3 + kpiW + 1.2, y + 12);
     }
-    // Sub
+    // Sub · v12.5: override del subLabel según id del KPI.
+    var subOverride = {
+      engordeDiario: "vs 12 m",
+      estadia:       "vs 12 m",
+      kgRepartidos:  "prom 3 d"
+    };
+    var subLabelFinal = subOverride[p.id] || (p.subLabel || "vs anual");
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor.apply(doc, PDF_COLORS.muted);
-    doc.text(pdfSafe(p.subLabel || "vs anual"), x + 3, y + h - 2);
+    doc.text(pdfSafe(subLabelFinal), x + 3, y + h - 2);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
     doc.setTextColor.apply(doc, PDF_COLORS.ink2);
@@ -820,12 +873,16 @@ function buildPdfDoc() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor.apply(doc, PDF_COLORS.muted);
-    doc.text(pdfSafe(p.nombreSub || ""), x + 3, y + 9);
-    // Chip margen
+    // v12.5: si nombreSub viene vacío (el regex no detectó "X días" en el
+    // nombre crudo), fallback construido con p.diasFeed.
+    var nombreSubFinal = p.nombreSub ||
+      (p.diasFeed != null ? "· " + Math.round(p.diasFeed) + " días" : "");
+    doc.text(pdfSafe(nombreSubFinal), x + 3, y + 9);
+    // Chip margen · v12.5: default neutral pasa de gold a pos (verde).
     if (p.margenPctFmt) {
       var mc = p.margenTone === "good" ? PDF_COLORS.pos :
                p.margenTone === "bad"  ? PDF_COLORS.neg :
-               p.margenTone === "warn" ? PDF_COLORS.warn : PDF_COLORS.gold;
+               p.margenTone === "warn" ? PDF_COLORS.warn : PDF_COLORS.pos;
       var chipText = pdfSafe(p.margenPctFmt);
       doc.setFontSize(7);
       var cw = doc.getStringUnitWidth(chipText) * 7 / doc.internal.scaleFactor + 2.5;
@@ -846,7 +903,8 @@ function buildPdfDoc() {
     doc.text("/kg compra", x + 3, y + 22);
     // 6 params en grid 2×3
     var paramY = y + 27;
-    var paramH = 5;
+    // v12.5: paramH 5 → 5.5 y label 7 → 6.5 para que las 3 filas respiren
+    var paramH = 5.5;
     var halfW = (w - 6) / 2;
     function param(idx, lbl, val) {
       var col = idx % 2;
@@ -854,7 +912,7 @@ function buildPdfDoc() {
       var px = x + 3 + col * halfW;
       var py = paramY + row * paramH;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor.apply(doc, PDF_COLORS.muted);
       doc.text(pdfSafe(lbl), px, py + 3);
       doc.setFont("helvetica", "bold");
@@ -892,7 +950,7 @@ function buildPdfDoc() {
     var sBaseY = y;
     drawStockCard(margin, sBaseY, sCardW, st[0] || {});
     drawStockCard(margin + sCardW + 4, sBaseY, sCardW, st[1] || {});
-    y = sBaseY + 38 + 5;
+    y = sBaseY + 28 + 5;  // v12.5: Stock card pasó de 38mm a 28mm
 
     // INSUMOS CRITICOS — 2 rows full-width
     y = drawSectionTitle(y, "Insumos críticos", "autonomía estimada");
