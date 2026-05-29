@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist, stockEstHaras, stockEstCucuca, stockEstDescanso, stockEstPanchita] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -126,6 +126,11 @@ window.PEGSA_DATA = {
     fetchJson('precios_inferencia_historico.json'),
     fetchJson('tesoreria_darwash.json'),
     fetchJson('tesoreria_darwash_historico.json'),
+    // v12.2: 4 establecimientos para desglose Stock terminados del PDF
+    fetchJson('stock_est_El_Haras_2025.json'),
+    fetchJson('stock_est_La_Cucuca_2025.json'),
+    fetchJson('stock_est_El_Descanso_2025.json'),
+    fetchJson('stock_est_La_Panchita_2025.json'),
   ]);
 
   // Última actualización del pipeline (Sprint 5 — B.2)
@@ -193,6 +198,48 @@ window.PEGSA_DATA = {
         .filter(c => c.cabezas > 0)
         .sort((a, b) => b.kg - a.kg);
       if (catsPeg.length > 0) D.stockCategoriasPegsa = catsPeg;
+    }
+  }
+
+  // v12.2 · Stock por categoría · por establecimiento (para el PDF):
+  //   - D.stockCategoriasHaras = directo del Haras (subset del Grupo)
+  //   - D.stockCategoriasOtros = suma de Cucuca + Descanso + Panchita
+  // El Haras suele concentrar la terminación pesada (Novillo>550 / Vaca>650).
+  // "Otros" es residual: ad-hoc para distinguir lo que NO está en El Haras.
+  function _extractCats(stockEst) {
+    const pcf = stockEst?.kpis?.por_categoria_final;
+    if (!pcf || typeof pcf !== 'object') return null;
+    return Object.entries(pcf)
+      .map(([n, d]) => ({
+        categoria: n.charAt(0).toUpperCase() + n.slice(1),
+        cabezas: Math.round(d?.cabezas || 0),
+        kg: Math.round(d?.kg_estimado || 0),
+      }))
+      .filter(c => c.cabezas > 0)
+      .sort((a, b) => b.kg - a.kg);
+  }
+  const catsHaras = _extractCats(stockEstHaras);
+  if (catsHaras && catsHaras.length > 0) D.stockCategoriasHaras = catsHaras;
+
+  // Suma Cucuca + Descanso + Panchita en un solo array. Acumula por
+  // categoría (Map → array) para que el PDF muestre "OTROS" agregado.
+  {
+    const agg = new Map();
+    [stockEstCucuca, stockEstDescanso, stockEstPanchita].forEach(est => {
+      const cats = _extractCats(est);
+      if (!cats) return;
+      cats.forEach(c => {
+        const key = c.categoria;
+        const cur = agg.get(key) || { categoria: key, cabezas: 0, kg: 0 };
+        cur.cabezas += c.cabezas;
+        cur.kg      += c.kg;
+        agg.set(key, cur);
+      });
+    });
+    if (agg.size > 0) {
+      D.stockCategoriasOtros = Array.from(agg.values())
+        .filter(c => c.cabezas > 0)
+        .sort((a, b) => b.kg - a.kg);
     }
   }
 
