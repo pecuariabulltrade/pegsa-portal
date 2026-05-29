@@ -354,7 +354,10 @@ function ProductivosSection({ D }) {
    agregada en v8).
    ============================================================ */
 function PreciosInferenciaSection({ D }) {
-  const [openK, setOpenK] = useState(null);
+  // v12.3: multi-open en lugar de acordeón exclusivo. Cada card abre/cierra
+  // independiente y el usuario puede dejar las 4 expandidas a la vez.
+  const [openMap, setOpenMap] = useState({});
+  const toggleOpen = (id) => setOpenMap(m => ({ ...m, [id]: !m[id] }));
   const items = Array.isArray(D.preciosInferencia) ? D.preciosInferencia : [];
   const meta  = D.preciosInferenciaMeta || {};
   if (!items.length) return null;
@@ -388,23 +391,10 @@ function PreciosInferenciaSection({ D }) {
       <div className="prinf-grid prinf-grid-desktop">
         {items.map(it => {
           const nom = splitNombre(it.nombre);
-          const isOpen = openK === it.id;
-          // Margen
-          let margen = null, margenPct = null, margenTone = "neutral";
-          if (it.precio_comp != null && it.precio_venta != null && it.cost_kg_prod != null
-              && it.rinde != null && it.kg_compra != null && it.kg_venta != null) {
-            const ingreso = it.kg_venta * it.rinde * it.precio_venta;
-            const costoC  = it.kg_compra * it.precio_comp;
-            const costoE  = (it.kg_venta - it.kg_compra) * it.cost_kg_prod;
-            margen = ingreso - costoC - costoE;
-            if (ingreso > 0) margenPct = margen / ingreso * 100;
-            if (margenPct != null) {
-              margenTone = margenPct > 15 ? "good" : (margenPct > 5 ? "warn" : "bad");
-            }
-          }
-          const margenPctFmt = margenPct != null
-            ? (margenPct >= 0 ? "+" : "−") + Math.abs(margenPct).toFixed(0) + "%"
-            : null;
+          const isOpen = !!openMap[it.id];
+          // v12.3: el cálculo de margen se eliminó del panel — el bloque
+          // .prinf-margen se borró del expand. El margen sigue calculado
+          // en mobile-data.js porque el PDF v12.2+ lo muestra como chip.
           return (
             <div
               key={it.id}
@@ -412,10 +402,10 @@ function PreciosInferenciaSection({ D }) {
               role="button"
               tabIndex={0}
               aria-expanded={isOpen}
-              onClick={() => setOpenK(isOpen ? null : it.id)}
+              onClick={() => toggleOpen(it.id)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault(); setOpenK(isOpen ? null : it.id);
+                  e.preventDefault(); toggleOpen(it.id);
                 }
               }}
               title={"Calculado el " + fechaLabel}
@@ -443,19 +433,7 @@ function PreciosInferenciaSection({ D }) {
                     <div><span>Precio venta</span><strong>{fmtCompact(it.precio_venta)}/kg</strong></div>
                     <div><span>Costo prod</span><strong>{fmtCompact(it.cost_kg_prod)}</strong></div>
                   </div>
-                  {margen != null && (
-                    <div className="prinf-margen">
-                      <div className="prinf-margen-lab">Margen estimado / cab</div>
-                      <div className="prinf-margen-row">
-                        <span className="prinf-margen-val">{(margen < 0 ? "−" : "") + fmtCompact(Math.abs(margen))}</span>
-                        {margenPctFmt && (
-                          <span className={"prinf-margen-chip chip-tone-" + margenTone}>
-                            {margenPctFmt}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  {/* v12.3: bloque .prinf-margen eliminado del panel. */}
                   <button
                     className="btn-solid-primary"
                     onClick={(e) => { e.stopPropagation(); goToPortalModule("mercado", "inferencia"); }}

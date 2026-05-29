@@ -1906,13 +1906,15 @@ function ProductivosGrid() {
    ============================================================ */
 function PreciosInferenciaGrid() {
   const list = D.PRECIOS_INFERENCIA || [];
-  const [openK, setOpenK] = useState(null);
+  // v12.3: multi-open (mapa id→bool) en lugar de acordeón exclusivo.
+  const [openMap, setOpenMap] = useState({});
+  const toggleOpen = (id) => setOpenMap(m => ({ ...m, [id]: !m[id] }));
   if (!list.length) return null;
 
   return (
     <div className="prinf-grid">
       {list.map((it) => {
-        const isOpen = openK === it.id;
+        const isOpen = !!openMap[it.id];
         return (
           <div
             key={it.id}
@@ -1921,8 +1923,8 @@ function PreciosInferenciaGrid() {
             tabIndex={0}
             aria-expanded={isOpen}
             aria-label={it.nombre + ": " + it.precioCompFmt + " por kg vivo"}
-            onClick={() => setOpenK(isOpen ? null : it.id)}
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenK(isOpen ? null : it.id); } }}
+            onClick={() => toggleOpen(it.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleOpen(it.id); } }}
           >
             <div className="prinf-head">
               <div className="prinf-titles">
@@ -1947,19 +1949,9 @@ function PreciosInferenciaGrid() {
                   <div><span>Precio venta</span><strong>{it.precioVentaFmt}</strong></div>
                   <div><span>Costo prod</span><strong>{it.costoKgProdFmt}</strong></div>
                 </div>
-                {it.margen != null && (
-                  <div className="prinf-margen">
-                    <div className="prinf-margen-lab">Margen estimado / cab</div>
-                    <div className="prinf-margen-row">
-                      <span className="prinf-margen-val">{it.margenFmt}</span>
-                      {it.margenPctFmt && (
-                        <span className={"prinf-margen-chip chip-tone-" + (it.margenTone || "neutral")}>
-                          {it.margenPctFmt}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
+                {/* v12.3: bloque .prinf-margen eliminado del panel.
+                    El cálculo de margen sigue en mobile-data.js porque
+                    el PDF v12.2+ lo muestra como chip dorado. */}
                 <button
                   className="btn-solid-primary"
                   onClick={(e) => { e.stopPropagation(); navigateToModule("mercado", "inferencia"); }}
