@@ -9,17 +9,17 @@
     "total_establecimientos": 1,
     "total_propietarios": 4,
     "por_categoria": {
-      "TM": {
-        "cabezas": 1480.0,
-        "kg_estimado": 709393,
-        "ton_estimado": 709.39,
-        "kg_promedio": 479.3
-      },
       "NT": {
         "cabezas": 1729.0,
         "kg_estimado": 740859,
         "ton_estimado": 740.86,
         "kg_promedio": 428.5
+      },
+      "TM": {
+        "cabezas": 1480.0,
+        "kg_estimado": 709393,
+        "ton_estimado": 709.39,
+        "kg_promedio": 479.3
       },
       "TH": {
         "cabezas": 935.0,
@@ -53,17 +53,17 @@
       }
     },
     "por_propietario": {
-      "LAS TAPERAS": {
-        "cabezas": 194.0,
-        "kg_estimado": 99549,
-        "ton_estimado": 99.55,
-        "kg_promedio": 513.1
-      },
       "PEGSA": {
         "cabezas": 7468.0,
         "kg_estimado": 3663740,
         "ton_estimado": 3663.74,
         "kg_promedio": 490.6
+      },
+      "LAS TAPERAS": {
+        "cabezas": 194.0,
+        "kg_estimado": 99549,
+        "ton_estimado": 99.55,
+        "kg_promedio": 513.1
       },
       "DARWASH SA": {
         "cabezas": 71.0,
@@ -113,6 +113,18 @@
       }
     },
     "por_categoria_final": {
+      "novillo": {
+        "cabezas": 2591.0,
+        "kg_estimado": 1154060,
+        "ton_estimado": 1154.06,
+        "kg_promedio": 445.4
+      },
+      "novillito": {
+        "cabezas": 407.0,
+        "kg_estimado": 127490,
+        "ton_estimado": 127.49,
+        "kg_promedio": 313.2
+      },
       "novillo mayor a 550 kg": {
         "cabezas": 890.0,
         "kg_estimado": 545886,
@@ -143,18 +155,6 @@
         "ton_estimado": 959.03,
         "kg_promedio": 534.9
       },
-      "novillo": {
-        "cabezas": 2591.0,
-        "kg_estimado": 1154060,
-        "ton_estimado": 1154.06,
-        "kg_promedio": 445.4
-      },
-      "novillito": {
-        "cabezas": 407.0,
-        "kg_estimado": 127490,
-        "ton_estimado": 127.49,
-        "kg_promedio": 313.2
-      },
       "ternera": {
         "cabezas": 37.0,
         "kg_estimado": 7988,
@@ -170,6 +170,18 @@
     },
     "por_establecimiento_categoria": {
       "El Haras": {
+        "novillo": {
+          "cabezas": 2591.0,
+          "kg_estimado": 1154060.4999999874,
+          "ton_estimado": 1154.06,
+          "kg_promedio": 445.4
+        },
+        "novillito": {
+          "cabezas": 407.0,
+          "kg_estimado": 127490.4000000002,
+          "ton_estimado": 127.49,
+          "kg_promedio": 313.2
+        },
         "novillo mayor a 550 kg": {
           "cabezas": 890.0,
           "kg_estimado": 545885.900000002,
@@ -200,18 +212,6 @@
           "ton_estimado": 959.03,
           "kg_promedio": 534.9
         },
-        "novillo": {
-          "cabezas": 2591.0,
-          "kg_estimado": 1154060.4999999865,
-          "ton_estimado": 1154.06,
-          "kg_promedio": 445.4
-        },
-        "novillito": {
-          "cabezas": 407.0,
-          "kg_estimado": 127490.4000000002,
-          "ton_estimado": 127.49,
-          "kg_promedio": 313.2
-        },
         "ternera": {
           "cabezas": 37.0,
           "kg_estimado": 7987.999999999996,
@@ -227,6 +227,66 @@
       }
     },
     "por_categoria_desglose": {
+      "novillo": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 2591.0,
+            "kg_estimado": 1154060.4999999874,
+            "ton_estimado": 1154.06,
+            "kg_promedio": 445.4
+          }
+        },
+        "por_propietario": {
+          "PEGSA": {
+            "cabezas": 2379.0,
+            "kg_estimado": 1056941.3999999864,
+            "ton_estimado": 1056.94,
+            "kg_promedio": 444.3
+          },
+          "LAS TAPERAS": {
+            "cabezas": 93.0,
+            "kg_estimado": 41747.09999999997,
+            "ton_estimado": 41.75,
+            "kg_promedio": 448.9
+          },
+          "RICARDO BAILO": {
+            "cabezas": 119.0,
+            "kg_estimado": 55371.999999999985,
+            "ton_estimado": 55.37,
+            "kg_promedio": 465.3
+          }
+        }
+      },
+      "novillito": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 407.0,
+            "kg_estimado": 127490.4000000002,
+            "ton_estimado": 127.49,
+            "kg_promedio": 313.2
+          }
+        },
+        "por_propietario": {
+          "PEGSA": {
+            "cabezas": 356.0,
+            "kg_estimado": 110467.60000000006,
+            "ton_estimado": 110.47,
+            "kg_promedio": 310.3
+          },
+          "LAS TAPERAS": {
+            "cabezas": 7.0,
+            "kg_estimado": 2218.6,
+            "ton_estimado": 2.22,
+            "kg_promedio": 316.9
+          },
+          "RICARDO BAILO": {
+            "cabezas": 44.0,
+            "kg_estimado": 14804.199999999988,
+            "ton_estimado": 14.8,
+            "kg_promedio": 336.5
+          }
+        }
+      },
       "novillo mayor a 550 kg": {
         "por_establecimiento": {
           "El Haras": {
@@ -350,66 +410,6 @@
             "kg_estimado": 2536.6,
             "ton_estimado": 2.54,
             "kg_promedio": 634.1
-          }
-        }
-      },
-      "novillo": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 2591.0,
-            "kg_estimado": 1154060.4999999865,
-            "ton_estimado": 1154.06,
-            "kg_promedio": 445.4
-          }
-        },
-        "por_propietario": {
-          "PEGSA": {
-            "cabezas": 2379.0,
-            "kg_estimado": 1056941.3999999864,
-            "ton_estimado": 1056.94,
-            "kg_promedio": 444.3
-          },
-          "LAS TAPERAS": {
-            "cabezas": 93.0,
-            "kg_estimado": 41747.09999999997,
-            "ton_estimado": 41.75,
-            "kg_promedio": 448.9
-          },
-          "RICARDO BAILO": {
-            "cabezas": 119.0,
-            "kg_estimado": 55371.999999999985,
-            "ton_estimado": 55.37,
-            "kg_promedio": 465.3
-          }
-        }
-      },
-      "novillito": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 407.0,
-            "kg_estimado": 127490.4000000002,
-            "ton_estimado": 127.49,
-            "kg_promedio": 313.2
-          }
-        },
-        "por_propietario": {
-          "LAS TAPERAS": {
-            "cabezas": 7.0,
-            "kg_estimado": 2218.6,
-            "ton_estimado": 2.22,
-            "kg_promedio": 316.9
-          },
-          "PEGSA": {
-            "cabezas": 356.0,
-            "kg_estimado": 110467.60000000006,
-            "ton_estimado": 110.47,
-            "kg_promedio": 310.3
-          },
-          "RICARDO BAILO": {
-            "cabezas": 44.0,
-            "kg_estimado": 14804.199999999988,
-            "ton_estimado": 14.8,
-            "kg_promedio": 336.5
           }
         }
       },
