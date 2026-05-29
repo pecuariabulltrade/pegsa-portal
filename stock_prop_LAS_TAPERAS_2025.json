@@ -9,12 +9,6 @@
     "total_establecimientos": 2,
     "total_propietarios": 1,
     "por_categoria": {
-      "NT": {
-        "cabezas": 14.0,
-        "kg_estimado": 4154,
-        "ton_estimado": 4.15,
-        "kg_promedio": 296.7
-      },
       "TM": {
         "cabezas": 191.0,
         "kg_estimado": 92063,
@@ -32,6 +26,12 @@
         "kg_estimado": 10323,
         "ton_estimado": 10.32,
         "kg_promedio": 286.7
+      },
+      "NT": {
+        "cabezas": 14.0,
+        "kg_estimado": 4154,
+        "ton_estimado": 4.15,
+        "kg_promedio": 296.7
       }
     },
     "por_propietario": {
@@ -71,6 +71,18 @@
       }
     },
     "por_categoria_final": {
+      "novillo mayor a 550 kg": {
+        "cabezas": 81.0,
+        "kg_estimado": 51541,
+        "ton_estimado": 51.54,
+        "kg_promedio": 636.3
+      },
+      "novillo": {
+        "cabezas": 93.0,
+        "kg_estimado": 41877,
+        "ton_estimado": 41.88,
+        "kg_promedio": 450.3
+      },
       "novillito": {
         "cabezas": 16.0,
         "kg_estimado": 4679,
@@ -82,18 +94,6 @@
         "kg_estimado": 6427,
         "ton_estimado": 6.43,
         "kg_promedio": 229.5
-      },
-      "novillo": {
-        "cabezas": 93.0,
-        "kg_estimado": 41877,
-        "ton_estimado": 41.88,
-        "kg_promedio": 450.3
-      },
-      "novillo mayor a 550 kg": {
-        "cabezas": 81.0,
-        "kg_estimado": 51542,
-        "ton_estimado": 51.54,
-        "kg_promedio": 636.3
       },
       "ternera": {
         "cabezas": 9.0,
@@ -110,6 +110,24 @@
     },
     "por_establecimiento_categoria": {
       "El Haras": {
+        "novillo mayor a 550 kg": {
+          "cabezas": 81.0,
+          "kg_estimado": 51541.499999999985,
+          "ton_estimado": 51.54,
+          "kg_promedio": 636.3
+        },
+        "novillo": {
+          "cabezas": 93.0,
+          "kg_estimado": 41876.59999999995,
+          "ton_estimado": 41.88,
+          "kg_promedio": 450.3
+        },
+        "vaquillona": {
+          "cabezas": 7.0,
+          "kg_estimado": 2835.3999999999996,
+          "ton_estimado": 2.84,
+          "kg_promedio": 405.1
+        },
         "novillito": {
           "cabezas": 7.0,
           "kg_estimado": 2228.7,
@@ -121,24 +139,6 @@
           "kg_estimado": 1252.4,
           "ton_estimado": 1.25,
           "kg_promedio": 208.7
-        },
-        "novillo": {
-          "cabezas": 93.0,
-          "kg_estimado": 41876.59999999997,
-          "ton_estimado": 41.88,
-          "kg_promedio": 450.3
-        },
-        "novillo mayor a 550 kg": {
-          "cabezas": 81.0,
-          "kg_estimado": 51541.50000000001,
-          "ton_estimado": 51.54,
-          "kg_promedio": 636.3
-        },
-        "vaquillona": {
-          "cabezas": 7.0,
-          "kg_estimado": 2835.3999999999996,
-          "ton_estimado": 2.84,
-          "kg_promedio": 405.1
         }
       },
       "El Descanso": {
@@ -169,19 +169,55 @@
       }
     },
     "por_categoria_desglose": {
-      "novillito": {
+      "novillo mayor a 550 kg": {
         "por_establecimiento": {
           "El Haras": {
-            "cabezas": 7.0,
-            "kg_estimado": 2228.7,
-            "ton_estimado": 2.23,
-            "kg_promedio": 318.4
-          },
+            "cabezas": 81.0,
+            "kg_estimado": 51541.499999999985,
+            "ton_estimado": 51.54,
+            "kg_promedio": 636.3
+          }
+        },
+        "por_propietario": {
+          "LAS TAPERAS": {
+            "cabezas": 81.0,
+            "kg_estimado": 51541.499999999985,
+            "ton_estimado": 51.54,
+            "kg_promedio": 636.3
+          }
+        }
+      },
+      "novillo": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 93.0,
+            "kg_estimado": 41876.59999999995,
+            "ton_estimado": 41.88,
+            "kg_promedio": 450.3
+          }
+        },
+        "por_propietario": {
+          "LAS TAPERAS": {
+            "cabezas": 93.0,
+            "kg_estimado": 41876.59999999995,
+            "ton_estimado": 41.88,
+            "kg_promedio": 450.3
+          }
+        }
+      },
+      "novillito": {
+        "por_establecimiento": {
           "El Descanso": {
             "cabezas": 9.0,
             "kg_estimado": 2450.5,
             "ton_estimado": 2.45,
             "kg_promedio": 272.3
+          },
+          "El Haras": {
+            "cabezas": 7.0,
+            "kg_estimado": 2228.7,
+            "ton_estimado": 2.23,
+            "kg_promedio": 318.4
           }
         },
         "por_propietario": {
@@ -195,61 +231,25 @@
       },
       "ternero": {
         "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 6.0,
-            "kg_estimado": 1252.4,
-            "ton_estimado": 1.25,
-            "kg_promedio": 208.7
-          },
           "El Descanso": {
             "cabezas": 22.0,
             "kg_estimado": 5174.5,
             "ton_estimado": 5.17,
             "kg_promedio": 235.2
+          },
+          "El Haras": {
+            "cabezas": 6.0,
+            "kg_estimado": 1252.4,
+            "ton_estimado": 1.25,
+            "kg_promedio": 208.7
           }
         },
         "por_propietario": {
           "LAS TAPERAS": {
             "cabezas": 28.0,
-            "kg_estimado": 6426.9,
+            "kg_estimado": 6426.899999999998,
             "ton_estimado": 6.43,
             "kg_promedio": 229.5
-          }
-        }
-      },
-      "novillo": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 93.0,
-            "kg_estimado": 41876.59999999997,
-            "ton_estimado": 41.88,
-            "kg_promedio": 450.3
-          }
-        },
-        "por_propietario": {
-          "LAS TAPERAS": {
-            "cabezas": 93.0,
-            "kg_estimado": 41876.59999999997,
-            "ton_estimado": 41.88,
-            "kg_promedio": 450.3
-          }
-        }
-      },
-      "novillo mayor a 550 kg": {
-        "por_establecimiento": {
-          "El Haras": {
-            "cabezas": 81.0,
-            "kg_estimado": 51541.50000000001,
-            "ton_estimado": 51.54,
-            "kg_promedio": 636.3
-          }
-        },
-        "por_propietario": {
-          "LAS TAPERAS": {
-            "cabezas": 81.0,
-            "kg_estimado": 51541.50000000001,
-            "ton_estimado": 51.54,
-            "kg_promedio": 636.3
           }
         }
       },
