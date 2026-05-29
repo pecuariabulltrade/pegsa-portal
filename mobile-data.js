@@ -4,6 +4,21 @@
    Re-construye al recibir 'panel:data-ready' (JSONs reales).
 
    Versiones:
+   v12.2 (2026-05-29): rediseño del PDF a layout COMPACTO 2 páginas
+       (mockup del usuario). Stock con 4 filas: PEGSA / Grupo / El Haras
+       / Otros (= Cucuca + Descanso + Panchita). data.js suma fetches
+       y agregados D.stockCategoriasHaras + D.stockCategoriasOtros.
+       mobile.jsx reescribe buildPdfDoc() con helpers nuevos
+       (drawStockCard, drawInsumoRow, drawFinCard, drawProdCard,
+       drawPrecioCard) y pdfDrawPageHeader compacto (banda 14mm).
+       PDF_COLORS suma variantes "soft" (posSoft, negSoft, warnSoft,
+       badSoft, goodSoft, bandSoft, navy2). El bot AUTO de OneDrive
+       revirtió v12.0 — copiar data.js a OneDrive además del mirror.
+   v12.1 (2026-05-29): fixes del PDF v12.0 — helper pdfSafe()
+       normaliza U+2212 (signo menos) a "-" ASCII (Helvetica Type-1
+       no lo soporta). pdfDrawFlujoBars con carriles fijos
+       (18mm label | bar | 30mm value) para evitar que las barras
+       largas pisen los labels. Cache-buster ?v=121 en mobile.html.
    v12.0 (2026-05-28): exportar PDF desde el celu. Nuevo bloque
        PDF_PAYLOAD con los 6 grupos de datos que pide el informe:
          1. Stock terminados (Novillo>550 y Vaca>650) con desglose
@@ -900,9 +915,12 @@
       return {
         id: cat.id,
         label: cat.label,
+        // v12.2: 4 fuentes. "otros" = Cucuca + Descanso + Panchita
+        // (suma calculada en data.js).
         pegsa: findCat(D.stockCategoriasPegsa, cat.key),
+        grupo: findCat(D.stockCategorias,      cat.key),
         haras: findCat(D.stockCategoriasHaras, cat.key),
-        grupo: findCat(D.stockCategorias,      cat.key)
+        otros: findCat(D.stockCategoriasOtros, cat.key)
       };
     });
 

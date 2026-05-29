@@ -255,16 +255,33 @@ function LoginScreen({ onLogin }) {
 
 const PDF_COLORS = {
   navy:    [14, 30, 58],      // PEGSA primary
+  navy2:   [20, 40, 75],      // pill / chip del logo en la banda
   ink:     [25, 28, 35],
   ink2:    [80, 88, 100],
   muted:   [140, 148, 160],
   rule:    [220, 220, 220],
   zebra:   [247, 247, 248],
+  bandSoft:[240, 244, 250],
   gold:    [193, 154, 107],
   pos:     [16, 122, 88],
   neg:     [196, 64, 60],
-  warn:    [194, 132, 33]
+  warn:    [194, 132, 33],
+  // v12.2: variantes "soft" para bg de cards (Productivos severo) y mini-barras
+  posSoft: [200, 230, 218],
+  negSoft: [248, 215, 210],
+  warnSoft:[252, 247, 230],
+  badSoft: [253, 232, 232],
+  goodSoft:[232, 246, 240]
 };
+
+// v12.1: jsPDF usa Helvetica Type-1 con WinAnsiEncoding (= Win-1252).
+// El "signo menos verdadero" U+2212 NO está en Win-1252; Helvetica lo
+// renderiza como `"`. Eso hacía que "−31%" del chip de Productivos
+// saliera `"31%`. Normalizamos a "-" ASCII antes de cada doc.text().
+function pdfSafe(s) {
+  if (s == null) return "";
+  return String(s).replace(/−/g, "-");
+}
 
 function pdfFmtInt(n) {
   if (n == null || isNaN(n)) return "—";
@@ -284,40 +301,39 @@ function pdfFmtMoney(n) {
   return sign + "$ " + Math.round(a).toLocaleString("es-AR");
 }
 
-// Header de cada página — banda azul con marca + fecha + paginador
-function pdfDrawPageHeader(doc, title, subtitle, pageNum, pageTotal) {
+// v12.2: Header compacto (banda 14mm). El layout del mockup mete
+// mucho contenido por página, asi que el header se achica al máximo:
+// pill P&B + marca + fecha · paginador, todo en una fila. El nuevo
+// buildPdfDoc() lo llama con (doc, null, null, pageNum, pageTotal) y
+// dibuja los titulos de seccion por dentro de cada pagina.
+function pdfDrawPageHeader(doc, _ignoredTitle, _ignoredSubtitle, pageNum, pageTotal) {
   var W = doc.internal.pageSize.getWidth();
   doc.setFillColor.apply(doc, PDF_COLORS.navy);
-  doc.rect(0, 0, W, 22, 'F');
+  doc.rect(0, 0, W, 14, 'F');
+  // Pill P&B (logo)
+  doc.setFillColor.apply(doc, PDF_COLORS.navy2);
+  doc.roundedRect(8, 3.5, 12, 7, 1.5, 1.5, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("PEGSA & BULLTRADE", 15, 10);
+  doc.setFontSize(7.5);
+  doc.text("P&B", 14, 8.4, { align: "center" });
+  // Brand + fecha
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(11);
+  doc.text("PEGSA & BULLTRADE", 24, 6.5);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(193, 154, 107); // gold
-  doc.text("INFORME EJECUTIVO · " + new Date().toLocaleDateString("es-AR"), 15, 16);
-  // Pagina N/Total a la derecha
-  doc.setTextColor(220, 220, 220);
-  doc.setFontSize(8);
-  doc.text("PÁG " + pageNum + " / " + pageTotal, W - 15, 16, { align: "right" });
-
-  // Sección title
-  doc.setTextColor.apply(doc, PDF_COLORS.ink);
+  doc.setFontSize(7);
+  doc.setTextColor.apply(doc, PDF_COLORS.gold);
+  doc.text("INFORME EJECUTIVO · " + new Date().toLocaleDateString("es-AR"), 24, 10.5);
+  // Pill paginador a la derecha
+  var pillW = 14;
+  doc.setFillColor.apply(doc, PDF_COLORS.navy2);
+  doc.roundedRect(W - pillW - 8, 3.5, pillW, 7, 1.5, 1.5, 'F');
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text(title, 15, 34);
-  if (subtitle) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
-    doc.text(subtitle, 15, 40);
-  }
-  // Línea divisoria
-  doc.setDrawColor.apply(doc, PDF_COLORS.rule);
-  doc.setLineWidth(0.3);
-  doc.line(15, 44, W - 15, 44);
-  return 50; // Y inicial para el contenido
+  doc.setFontSize(7);
+  doc.setTextColor(255, 255, 255);
+  doc.text(pageNum + " / " + pageTotal, W - pillW / 2 - 8, 8.4, { align: "center" });
+  return 18; // Y inicial (debajo de banda + breathing)
 }
 
 function pdfDrawFooter(doc) {
@@ -477,318 +493,418 @@ function buildPdfDoc() {
   if (!JsPdfCtor) throw new Error("jsPDF no está cargado");
 
   var doc = new JsPdfCtor({ unit: "mm", format: "a4", orientation: "portrait" });
-  var W = doc.internal.pageSize.getWidth();
-  var margin = 15;
-  var contentW = W - 2 * margin;
-
-  // Calcular # páginas: 1 Stock + 1 Insumos + 1 Financiero PEG + (DW?1:0) + 1 Productivos + 1 Precios
-  var hasDw = !!(D.FLUJO_SEMANAL_DW && D.FLUJO_SEMANAL_DW.bars && D.FLUJO_SEMANAL_DW.bars.length);
-  var pageTotal = 5 + (hasDw ? 1 : 0);
+  var W = doc.internal.pageSize.getWidth();   // 210
+  var H = doc.internal.pageSize.getHeight();  // 297
+  var margin = 10;
+  var contentW = W - 2 * margin;              // 190
+  var pageTotal = 2;
   var pageNum = 0;
 
-  function newSection(title, subtitle) {
+  // ----- Helpers locales del layout v12.2 -----
+
+  function newPage() {
     if (pageNum > 0) doc.addPage();
     pageNum++;
-    return pdfDrawPageHeader(doc, title, subtitle, pageNum, pageTotal);
+    return pdfDrawPageHeader(doc, null, null, pageNum, pageTotal);
   }
 
-  // ============== PÁGINA 1: STOCK TERMINADOS ==============
-  (function () {
-    var y = newSection("Stock terminados", "Cabezas y kilos por categoría — desglose PEGSA / El Haras / Grupo");
-    var st = D.STOCK_TERMINADOS || [];
-    // Una sub-tabla por categoría (Novillo>550, Vaca>650).
-    st.forEach(function (cat, idx) {
-      // Título de categoría
+  // Title de sección: bold grande a la izq + sub muted a la derecha
+  function drawSectionTitle(y, label, sub) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink);
+    doc.text(pdfSafe(label), margin, y + 4);
+    if (sub) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      doc.text(pdfSafe(sub), margin + contentW, y + 4, { align: "right" });
+    }
+    return y + 7;
+  }
+
+  // Card de Stock terminados: title bar + 4 rows (PEGSA, GRUPO, HARAS, OTROS) + footer Kg/cab.
+  function drawStockCard(x, y, w, cat) {
+    var h = 38;
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
+    // Title bar
+    doc.setFillColor.apply(doc, PDF_COLORS.bandSoft);
+    doc.rect(x + 0.3, y + 0.3, w - 0.6, 6, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor.apply(doc, PDF_COLORS.navy);
+    doc.text(pdfSafe((cat.label || "").toUpperCase()), x + 2.5, y + 4.3);
+
+    // 4 rows
+    var rows = [
+      { lbl: "PEGSA", src: cat.pegsa },
+      { lbl: "GRUPO", src: cat.grupo },
+      { lbl: "HARAS", src: cat.haras },
+      { lbl: "OTROS", src: cat.otros }
+    ];
+    var rowH = 5.5;
+    var ry = y + 8;
+    rows.forEach(function (r) {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
+      doc.setFontSize(7.5);
+      doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+      doc.text(r.lbl, x + 2.5, ry + 3.5);
+      // Cabezas
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
       doc.setTextColor.apply(doc, PDF_COLORS.navy);
-      doc.text(cat.label, margin, y);
-      y += 4;
-      doc.setDrawColor.apply(doc, PDF_COLORS.gold);
-      doc.setLineWidth(0.6);
-      doc.line(margin, y, margin + 35, y);
-      y += 4;
-      // Tabla 4 columnas: Origen | Cabezas | Kilos | Kg/cab
-      var cols = [
-        { key: "origen",  label: "Origen",       w: contentW * 0.38, align: "left",  bold: true },
-        { key: "cabezas", label: "Cabezas",      w: contentW * 0.20, align: "right" },
-        { key: "kg",      label: "Kilos",        w: contentW * 0.27, align: "right" },
-        { key: "kgcab",   label: "Kg / cab.",    w: contentW * 0.15, align: "right" }
-      ];
-      function row(origen, src) {
-        var cb = src ? src.cabezas : null;
-        var kg = src ? src.kg : null;
-        var kc = (cb && kg) ? Math.round(kg / cb) : null;
-        return {
-          origen:  origen,
-          cabezas: cb != null ? pdfFmtInt(cb) : "—",
-          kg:      kg != null ? pdfFmtInt(kg) + " kg" : "—",
-          kgcab:   kc != null ? pdfFmtInt(kc) + " kg" : "—"
-        };
-      }
-      var rows = [
-        row("PEGSA propio", cat.pegsa),
-        row("El Haras (estab.)", cat.haras),
-        row("GRUPO COMPLETO", cat.grupo)
-      ];
-      // La última fila (Grupo) la marcamos en negrita
-      rows[2].origen_bold = true;
-      rows[2].cabezas_bold = true;
-      rows[2].kg_bold = true;
-      rows[2].kgcab_bold = true;
-      y = pdfDrawTable(doc, margin, y, cols, rows);
-      y += 8;
+      var cab = (r.src && r.src.cabezas != null) ? pdfFmtInt(r.src.cabezas) : "—";
+      doc.text(pdfSafe(cab), x + w * 0.50, ry + 3.5, { align: "right" });
+      // Kg
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor.apply(doc, PDF_COLORS.ink);
+      var kg = (r.src && r.src.kg != null) ? (pdfFmtInt(r.src.kg) + " kg") : "—";
+      doc.text(pdfSafe(kg), x + w - 2.5, ry + 3.5, { align: "right" });
+      ry += rowH;
     });
 
-    // Nota al pie
-    doc.setFont("helvetica", "italic");
+    // Footer Kg/cab.
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.2);
+    doc.line(x + 2.5, y + h - 6, x + w - 2.5, y + h - 6);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text("Kg / cab.", x + 2.5, y + h - 1.8);
+    function kpc(src) {
+      if (!src || !src.cabezas || !src.kg) return null;
+      return Math.round(src.kg / src.cabezas);
+    }
+    var p = kpc(cat.pegsa), g = kpc(cat.grupo);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink);
+    doc.text(pdfSafe((p != null ? p : "—") + " / " + (g != null ? g : "—") + " kg"),
+             x + w - 2.5, y + h - 1.8, { align: "right" });
+
+    return y + h;
+  }
+
+  // Fila de Insumo crítico: name + stock/consumo (sub) + KPI días grande + chip estado
+  function drawInsumoRow(x, y, w, ins) {
+    var h = 14;
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
+    var stateColor = { bad: PDF_COLORS.neg, warn: PDF_COLORS.warn, ok: PDF_COLORS.pos };
+    var col = stateColor[ins.state] || PDF_COLORS.muted;
+    // Name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink);
+    doc.text(pdfSafe((ins.title || "").toUpperCase()), x + 3, y + 5.5);
+    // Sub
+    var stock = ins.stockKg != null ? pdfFmtInt(ins.stockKg) + " kg" : "—";
+    var cons  = ins.consumoKgDia != null ? pdfFmtInt(ins.consumoKgDia) + " kg/d" : "—";
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text(pdfSafe(stock + "  ·  " + cons), x + 3, y + 10.5);
+    // KPI días
+    var diasNum = ins.diasRaw != null ? String(Math.round(ins.diasRaw)) : "—";
+    var diasFs = 17;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(diasFs);
+    doc.setTextColor.apply(doc, col);
+    doc.text(pdfSafe(diasNum), x + w - 36, y + 11, { align: "right" });
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor.apply(doc, PDF_COLORS.muted);
-    doc.text("PEGSA propio = hacienda PEGSA en todos los establecimientos. El Haras = todos los propietarios en ese establecimiento.", margin, y + 4, { maxWidth: contentW });
-
-    pdfDrawFooter(doc);
-  })();
-
-  // ============== PÁGINA 2: INSUMOS CRÍTICOS ==============
-  (function () {
-    var y = newSection("Insumos críticos", "Stock disponible y autonomía estimada — Maíz y Silo");
-    var ins = D.INSUMOS || [];
-    var cols = [
-      { key: "nombre",   label: "Insumo",          w: contentW * 0.28, align: "left",  bold: true },
-      { key: "stock",    label: "Stock",           w: contentW * 0.22, align: "right" },
-      { key: "consumo",  label: "Consumo / día",   w: contentW * 0.22, align: "right" },
-      { key: "dias",     label: "Días restantes",  w: contentW * 0.18, align: "right" },
-      { key: "estado",   label: "Estado",          w: contentW * 0.10, align: "center" }
-    ];
-    var stateColor = { bad: PDF_COLORS.neg, warn: PDF_COLORS.warn, ok: PDF_COLORS.pos };
-    var rows = ins.slice(0, 2).map(function (it) {
-      var col = stateColor[it.state] || PDF_COLORS.muted;
-      var stockKg = it.stockKg != null ? pdfFmtInt(it.stockKg) + " kg" : "—";
-      var consumoKg = it.consumoKgDia != null ? pdfFmtInt(it.consumoKgDia) + " kg" : "—";
-      var diasStr = it.diasRaw != null ? Math.round(it.diasRaw) + " días" : (it.dias != null && it.dias !== "—" ? it.dias + " días" : "—");
-      return {
-        nombre:   it.title,
-        stock:    stockKg,
-        consumo:  consumoKg,
-        dias:     diasStr,
-        dias_color: col,
-        dias_bold: true,
-        estado:   it.stateLabel || "—",
-        estado_color: col,
-        estado_bold: true
-      };
-    });
-    y = pdfDrawTable(doc, margin, y, cols, rows, { rowH: 10 });
-
-    // Cajitas separadas con detalle visual de cada insumo (más grandes)
-    y += 8;
+    doc.text("días", x + w - 33, y + 11);
+    // Chip
+    var chipText = pdfSafe("• " + (ins.stateLabel || "—"));
+    doc.setFontSize(7);
+    var cw = doc.getStringUnitWidth(chipText) * 7 / doc.internal.scaleFactor + 3;
+    doc.setFillColor.apply(doc, col);
+    doc.roundedRect(x + w - cw - 3, y + h/2 - 2.5, cw, 5, 1, 1, 'F');
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor.apply(doc, PDF_COLORS.navy);
-    doc.text("Resumen por insumo", margin, y);
-    y += 6;
+    doc.setTextColor(255, 255, 255);
+    doc.text(chipText, x + w - cw / 2 - 3, y + h/2 + 0.4, { align: "center" });
 
-    var cardW = (contentW - 8) / 2;
-    var cardH = 38;
-    ins.slice(0, 2).forEach(function (it, i) {
-      var cx = margin + i * (cardW + 8);
-      var col = stateColor[it.state] || PDF_COLORS.muted;
-      pdfDrawKpiCard(doc, cx, y, cardW, cardH, {
-        title: it.title.toUpperCase(),
-        kpi: it.diasRaw != null ? String(Math.round(it.diasRaw)) : "—",
-        unit: "días",
-        sub: "Stock " + (it.stockKg != null ? pdfFmtInt(it.stockKg) + " kg" : "—") +
-             " · Consumo " + (it.consumoKgDia != null ? pdfFmtInt(it.consumoKgDia) + " kg/día" : "—"),
-        kpiColor: col,
-        kpiFs: 24,
-        kpiOffset: 12,
-        chip: it.stateLabel,
-        chipColor: col
-      });
-    });
+    return y + h;
+  }
 
-    pdfDrawFooter(doc);
-  })();
-
-  // ============== PÁGINAS 3-4: FINANCIERO PEG-BULL + DW ==============
-  function pdfDrawFinanciero(flujo, titulo, subtit) {
-    var y = newSection(titulo, subtit);
-    if (!flujo) {
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(10);
-      doc.setTextColor.apply(doc, PDF_COLORS.muted);
-      doc.text("Sin datos disponibles para este flujo.", margin, y + 10);
-      pdfDrawFooter(doc);
-      return;
-    }
-    // Dos cards arriba: cierre + saldo proyectado
-    var cardW = (contentW - 8) / 2;
-    var cardH = 30;
-    pdfDrawKpiCard(doc, margin, y, cardW, cardH, {
-      title: flujo.cerrada.label,
-      kpi:   pdfFmtMoney(flujo.cerrada.value),
-      sub:   flujo.cerrada.range || "",
-      kpiColor: flujo.cerrada.value >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg,
-      kpiFs: 16
-    });
-    pdfDrawKpiCard(doc, margin + cardW + 8, y, cardW, cardH, {
-      title: flujo.proxima.label,
-      kpi:   pdfFmtMoney(flujo.proxima.value),
-      sub:   flujo.proxima.range || "",
-      kpiColor: flujo.proxima.value >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg,
-      kpiFs: 16
-    });
-    y += cardH + 8;
-    // Saldo de partida
+  // Card Financiero (PEG-BULL o DW) — full-width, alto fijo, incluye
+  // título + Hoy (saldo de partida) en header, 2 KPIs cierre/proyectado
+  // en una fila, y 6 mini barras stylizadas con labels de semana.
+  function drawFinCard(x, y, w, flujo, title, sub) {
+    var h = 46;
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
+    // Header
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink);
+    doc.text(pdfSafe(title), x + 3, y + 5);
+    if (sub) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      doc.text(pdfSafe(sub), x + 3, y + 9);
+    }
+    // Hoy (saldo de partida)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text("Hoy", x + w - 3, y + 5, { align: "right" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    var hoyV = flujo.acumulado && flujo.acumulado.value;
+    doc.setTextColor.apply(doc, hoyV >= 0 ? PDF_COLORS.navy : PDF_COLORS.neg);
+    doc.text(pdfSafe(pdfFmtMoney(hoyV)), x + w - 3, y + 9, { align: "right" });
+    // 2 KPIs (Cierre + Proyectado)
+    var halfW = (w - 6) / 2;
+    function kpi(px, label, range, value) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      doc.text(pdfSafe(label + " · " + (range || "—")), px, y + 16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor.apply(doc, value >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg);
+      doc.text(pdfSafe(pdfFmtMoney(value)), px, y + 23);
+    }
+    kpi(x + 3, "CIERRE", flujo.cerrada && flujo.cerrada.range, flujo.cerrada && flujo.cerrada.value);
+    var projRange = (flujo.proxima && flujo.proxima.range || "").replace("Cierre semana ", "");
+    kpi(x + 3 + halfW, "PROYECTADO", projRange, flujo.proxima && flujo.proxima.value);
+    // Mini bars + labels (carriles repartidos uniformes)
+    var bars = flujo.bars || [];
+    if (bars.length > 0) {
+      var barsAreaY = y + 28;
+      var barsAreaH = 11;
+      var slotW = (w - 6) / bars.length;
+      var maxAbs = bars.reduce(function (m, b) { return Math.max(m, Math.abs(b.v || 0)); }, 1);
+      var zeroY = barsAreaY + barsAreaH * 0.55;
+      var halfH = barsAreaH * 0.45;
+      doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+      doc.setLineWidth(0.2);
+      doc.line(x + 3, zeroY, x + w - 3, zeroY);
+      bars.forEach(function (b, i) {
+        var v = b.v || 0;
+        var bx = x + 3 + i * slotW + slotW * 0.18;
+        var bw = slotW * 0.64;
+        var bh = (Math.abs(v) / maxAbs) * halfH;
+        var color = v >= 0 ? PDF_COLORS.posSoft : PDF_COLORS.negSoft;
+        doc.setFillColor.apply(doc, color);
+        if (v >= 0) doc.rect(bx, zeroY - bh, bw, bh, 'F');
+        else doc.rect(bx, zeroY, bw, bh, 'F');
+      });
+      // Labels de semana
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      bars.forEach(function (b, i) {
+        var lx = x + 3 + i * slotW + slotW * 0.5;
+        doc.text(pdfSafe(String(b.label || "")), lx, y + h - 2.5, { align: "center" });
+      });
+    }
+    return y + h;
+  }
+
+  // Card de Productivo (KPI con delta + bg coloreado según severity/tone)
+  function drawProdCard(x, y, w, h, p) {
+    var bg = null, kpiColor = PDF_COLORS.ink;
+    if (p.severity === "severo") {
+      if (p.tone === "bad") { bg = PDF_COLORS.badSoft; kpiColor = PDF_COLORS.neg; }
+      else if (p.tone === "good") { bg = PDF_COLORS.goodSoft; kpiColor = PDF_COLORS.pos; }
+    } else if (p.severity === "moderado") {
+      bg = PDF_COLORS.warnSoft;
+    }
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.3);
+    if (bg) {
+      doc.setFillColor.apply(doc, bg);
+      doc.roundedRect(x, y, w, h, 1.5, 1.5, 'FD');
+    } else {
+      doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
+    }
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
     doc.setTextColor.apply(doc, PDF_COLORS.ink2);
-    doc.text((flujo.acumulado.label || "Saldo de partida").toUpperCase() + " · " + (flujo.acumulado.sub || ""), margin, y);
+    doc.text(pdfSafe((p.title || "").toUpperCase()), x + 3, y + 4.5);
+    // Chip delta
+    if (p.deltaFmt) {
+      var chipColor = (p.chipTone === "bad") ? PDF_COLORS.neg :
+                      (p.chipTone === "good") ? PDF_COLORS.pos :
+                      (p.chipTone === "warn") ? PDF_COLORS.warn : PDF_COLORS.muted;
+      var arrow = p.tone === "good" ? " ↑ " : p.tone === "bad" ? " ↓ " : " · ";
+      var chipText = pdfSafe(arrow.trim() + " " + p.deltaFmt.replace(/^[+-]/, ''));
+      doc.setFontSize(7);
+      var cw = doc.getStringUnitWidth(chipText) * 7 / doc.internal.scaleFactor + 2.5;
+      doc.setFillColor.apply(doc, chipColor);
+      doc.roundedRect(x + w - cw - 2, y + 2, cw, 4, 0.7, 0.7, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(chipText, x + w - cw / 2 - 2, y + 4.8, { align: "center" });
+    }
+    // KPI
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor.apply(doc, flujo.acumulado.value >= 0 ? PDF_COLORS.navy : PDF_COLORS.neg);
-    doc.text(pdfFmtMoney(flujo.acumulado.value), margin + contentW, y, { align: "right" });
-    y += 6;
-    // Tabla detalle de las 6 semanas
+    doc.setFontSize(15);
+    doc.setTextColor.apply(doc, kpiColor);
+    var kpiText = pdfSafe(p.kpi);
+    doc.text(kpiText, x + 3, y + 12);
+    if (p.unit) {
+      var kpiW = doc.getStringUnitWidth(kpiText) * 15 / doc.internal.scaleFactor;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+      doc.text(pdfSafe(p.unit), x + 3 + kpiW + 1.2, y + 12);
+    }
+    // Sub
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text(pdfSafe(p.subLabel || "vs anual"), x + 3, y + h - 2);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(7);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink2);
+    doc.text(pdfSafe(p.subVal), x + w - 3, y + h - 2, { align: "right" });
+  }
+
+  // Card de Precio de indiferencia (KPI grande + 6 params en grid 2x3 + chip margen)
+  function drawPrecioCard(x, y, w, h, p) {
+    doc.setDrawColor.apply(doc, PDF_COLORS.rule);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, w, h, 1.5, 1.5, 'S');
+    // Header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor.apply(doc, PDF_COLORS.ink);
+    doc.text(pdfSafe(p.nombreBase || ""), x + 3, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text(pdfSafe(p.nombreSub || ""), x + 3, y + 9);
+    // Chip margen
+    if (p.margenPctFmt) {
+      var mc = p.margenTone === "good" ? PDF_COLORS.pos :
+               p.margenTone === "bad"  ? PDF_COLORS.neg :
+               p.margenTone === "warn" ? PDF_COLORS.warn : PDF_COLORS.gold;
+      var chipText = pdfSafe(p.margenPctFmt);
+      doc.setFontSize(7);
+      var cw = doc.getStringUnitWidth(chipText) * 7 / doc.internal.scaleFactor + 2.5;
+      doc.setFillColor.apply(doc, mc);
+      doc.roundedRect(x + w - cw - 2, y + 2.5, cw, 4.5, 1, 1, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text(chipText, x + w - cw / 2 - 2, y + 5.8, { align: "center" });
+    }
+    // KPI
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(17);
     doc.setTextColor.apply(doc, PDF_COLORS.navy);
-    doc.text("Saldo acumulado proyectado · 6 semanas", margin, y);
-    y += 4;
-    // Bars
-    y = pdfDrawFlujoBars(doc, margin, y, contentW, flujo.bars, pdfFmtMoney);
-    y += 8;
-    // Tabla de detalle
-    var cols = [
-      { key: "label",   label: "Semana",        w: contentW * 0.30, align: "left",  bold: true },
-      { key: "estado",  label: "Estado",        w: contentW * 0.25, align: "left" },
-      { key: "saldo",   label: "Saldo acum.",   w: contentW * 0.45, align: "right" }
-    ];
-    var estadoMap = { past: "Cerrada", next: "Actual", proj: "Proyectada" };
-    var rows = flujo.bars.map(function (b) {
-      return {
-        label:  String(b.label || ""),
-        estado: estadoMap[b.kind] || "—",
-        saldo:  pdfFmtMoney(b.v),
-        saldo_color: b.v >= 0 ? PDF_COLORS.pos : PDF_COLORS.neg,
-        saldo_bold: true
-      };
-    });
-    y = pdfDrawTable(doc, margin, y, cols, rows);
-
-    pdfDrawFooter(doc);
+    doc.text(pdfSafe(p.precioCompFmt || "—"), x + 3, y + 18);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor.apply(doc, PDF_COLORS.muted);
+    doc.text("/kg compra", x + 3, y + 22);
+    // 6 params en grid 2×3
+    var paramY = y + 27;
+    var paramH = 5;
+    var halfW = (w - 6) / 2;
+    function param(idx, lbl, val) {
+      var col = idx % 2;
+      var row = Math.floor(idx / 2);
+      var px = x + 3 + col * halfW;
+      var py = paramY + row * paramH;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor.apply(doc, PDF_COLORS.muted);
+      doc.text(pdfSafe(lbl), px, py + 3);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor.apply(doc, PDF_COLORS.ink);
+      doc.text(pdfSafe(val || "—"), px + halfW - 2, py + 3, { align: "right" });
+    }
+    param(0, "Compra",   p.kgCompraFmt);
+    param(1, "Venta",    p.kgVentaFmt);
+    param(2, "Rinde",    p.rindeFmt);
+    param(3, "Feed",     p.diasFeedFmt);
+    param(4, "P. venta", p.precioVentaFmt);
+    param(5, "Costo",    p.costoKgProdFmt);
   }
 
-  pdfDrawFinanciero(D.FLUJO_SEMANAL, "Financiero · PEG-BULL", "Saldo proyectado semanal — Pecuaria El Garabí + Bulltrade");
-  if (hasDw) {
-    pdfDrawFinanciero(D.FLUJO_SEMANAL_DW, "Financiero · DW (Darwash)", "Saldo proyectado semanal — Darwash SA, análisis independiente");
-  }
-
-  // ============== PÁGINA: PRODUCTIVOS ==============
+  // ====================== PÁGINA 1 ======================
   (function () {
-    var y = newSection("Productivos", "Eficiencia del rodeo — actual vs referencia anual");
+    var y = newPage();
+
+    // STOCK TERMINADOS — 2 cards lado a lado (Novillo>550 + Vaca>650)
+    y = drawSectionTitle(y, "Stock terminados", "cabezas · kilos");
+    var st = D.STOCK_TERMINADOS || [];
+    var sCardW = (contentW - 4) / 2;
+    var sBaseY = y;
+    drawStockCard(margin, sBaseY, sCardW, st[0] || {});
+    drawStockCard(margin + sCardW + 4, sBaseY, sCardW, st[1] || {});
+    y = sBaseY + 38 + 5;
+
+    // INSUMOS CRITICOS — 2 rows full-width
+    y = drawSectionTitle(y, "Insumos críticos", "autonomía estimada");
+    var ins = (D.INSUMOS || []).slice(0, 2);
+    ins.forEach(function (it) {
+      y = drawInsumoRow(margin, y, contentW, it);
+      y += 2;
+    });
+    y += 3;
+
+    // FINANCIERO — 2 cards stacked full-width (PEG-BULL arriba, DW abajo)
+    y = drawSectionTitle(y, "Financiero", "saldo proyectado · 6 semanas");
+    if (D.FLUJO_SEMANAL) {
+      y = drawFinCard(margin, y, contentW, D.FLUJO_SEMANAL,
+                      "PEG-BULL", "Pecuaria El Garabí + Bulltrade");
+      y += 3;
+    }
+    if (D.FLUJO_SEMANAL_DW) {
+      drawFinCard(margin, y, contentW, D.FLUJO_SEMANAL_DW,
+                  "DW · DARWASH", "análisis independiente");
+    }
+    pdfDrawFooter(doc);
+  })();
+
+  // ====================== PÁGINA 2 ======================
+  (function () {
+    var y = newPage();
+
+    // PRODUCTIVOS — grid 2 cols × 3 rows
+    y = drawSectionTitle(y, "Productivos", "actual vs anual");
     var prod = D.PRODUCTIVOS || [];
-    // Grid 2 cols × 3 rows
-    var cardW = (contentW - 8) / 2;
-    var cardH = 30;
+    var pCardW = (contentW - 4) / 2;
+    var pCardH = 22;
+    var pBaseY = y;
     prod.forEach(function (p, i) {
       var col = i % 2;
       var row = Math.floor(i / 2);
-      var cx = margin + col * (cardW + 8);
-      var cy = y + row * (cardH + 6);
-      // Colores según severity + tone
-      var kpiColor = PDF_COLORS.navy;
-      if (p.severity === "severo" && p.tone === "bad") kpiColor = PDF_COLORS.neg;
-      else if (p.severity === "severo" && p.tone === "good") kpiColor = PDF_COLORS.pos;
-      var chipColor = null;
-      if (p.chipTone === "bad")  chipColor = PDF_COLORS.neg;
-      if (p.chipTone === "good") chipColor = PDF_COLORS.pos;
-      if (p.chipTone === "warn") chipColor = PDF_COLORS.warn;
-      pdfDrawKpiCard(doc, cx, cy, cardW, cardH, {
-        title: p.title,
-        kpi:   p.kpi,
-        unit:  p.unit,
-        sub:   p.subVal + "  " + p.subLabel,
-        kpiColor: kpiColor,
-        kpiFs: 18,
-        chip:  p.deltaFmt,
-        chipColor: chipColor
-      });
+      drawProdCard(margin + col * (pCardW + 4),
+                   pBaseY + row * (pCardH + 3),
+                   pCardW, pCardH, p);
     });
-    pdfDrawFooter(doc);
-  })();
+    y = pBaseY + Math.ceil(prod.length / 2) * (pCardH + 3) + 4;
 
-  // ============== PÁGINA: PRECIOS DE INDIFERENCIA ==============
-  (function () {
+    // PRECIOS DE INDIFERENCIA — grid 2×2
     var meta = D.PRECIOS_INFERENCIA_META || {};
-    var y = newSection("Precios de indiferencia de compra",
-                       "Tope de compra para no perder plata — actualizado " + (meta.fechaLabelLargo || meta.fechaLabel || "—"));
-    var pinf = D.PRECIOS_INFERENCIA || [];
-    // 4 cards grandes (2×2)
-    var cardW = (contentW - 8) / 2;
-    var cardH = 50;
-    pinf.slice(0, 4).forEach(function (p, i) {
+    y = drawSectionTitle(y, "Precios de indiferencia",
+                         "tope de compra · " + (meta.fechaLabel || "—"));
+    var pin = (D.PRECIOS_INFERENCIA || []).slice(0, 4);
+    var prCardW = (contentW - 4) / 2;
+    var prCardH = 50;
+    var prBaseY = y;
+    pin.forEach(function (p, i) {
       var col = i % 2;
       var row = Math.floor(i / 2);
-      var cx = margin + col * (cardW + 8);
-      var cy = y + row * (cardH + 6);
-      // Card grande con KPI + tabla de parámetros interna
-      doc.setDrawColor.apply(doc, PDF_COLORS.rule);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(cx, cy, cardW, cardH, 2, 2, 'S');
-      // Header de la card
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor.apply(doc, PDF_COLORS.navy);
-      doc.text(p.nombreBase + " " + (p.nombreSub || ""), cx + 3, cy + 6);
-      // KPI grande
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(20);
-      doc.setTextColor.apply(doc, PDF_COLORS.navy);
-      doc.text(p.precioCompFmt, cx + 3, cy + 17);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor.apply(doc, PDF_COLORS.muted);
-      doc.text("$/kg compra", cx + 3, cy + 22);
-      // Margen estimado en chip
-      if (p.margenPctFmt) {
-        var mc = p.margenTone === "good" ? PDF_COLORS.pos :
-                 p.margenTone === "bad"  ? PDF_COLORS.neg :
-                 p.margenTone === "warn" ? PDF_COLORS.warn : PDF_COLORS.muted;
-        doc.setFillColor.apply(doc, mc);
-        var chipText = "Margen " + p.margenPctFmt;
-        var cw = doc.getStringUnitWidth(chipText) * 8 / doc.internal.scaleFactor + 4;
-        doc.roundedRect(cx + cardW - cw - 3, cy + 3, cw, 5, 1, 1, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(7.5);
-        doc.text(chipText, cx + cardW - cw / 2 - 3, cy + 6.5, { align: "center" });
-      }
-      // Parámetros (mini-tabla 2×3)
-      var paramY = cy + 28;
-      var paramRowH = 5;
-      var halfW = (cardW - 6) / 2;
-      function param(idx, label, val) {
-        var col = idx % 2;
-        var row = Math.floor(idx / 2);
-        var px = cx + 3 + col * halfW;
-        var py = paramY + row * paramRowH;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7.5);
-        doc.setTextColor.apply(doc, PDF_COLORS.muted);
-        doc.text(label, px, py + 3);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.setTextColor.apply(doc, PDF_COLORS.ink);
-        doc.text(val || "—", px + halfW - 2, py + 3, { align: "right" });
-      }
-      param(0, "Kg compra",    p.kgCompraFmt);
-      param(1, "Kg venta",     p.kgVentaFmt);
-      param(2, "Precio venta", p.precioVentaFmt);
-      param(3, "Rinde",        p.rindeFmt);
-      param(4, "Costo prod.",  p.costoKgProdFmt);
-      param(5, "Días feed",    p.diasFeedFmt);
+      drawPrecioCard(margin + col * (prCardW + 4),
+                     prBaseY + row * (prCardH + 3),
+                     prCardW, prCardH, p);
     });
+
     pdfDrawFooter(doc);
   })();
 

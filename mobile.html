@@ -21,7 +21,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Styles -->
-<link rel="stylesheet" href="mobile.css">
+<link rel="stylesheet" href="mobile.css?v=122">
 </head>
 <body>
 
@@ -35,14 +35,14 @@
 <!-- v12.0: jsPDF para exportar informe a PDF desde el celular -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
 
-<!-- Datos REALES del portal: data.js define window.PEGSA_DATA y dispara 'panel:data-ready' al terminar de fetch-ear los JSONs -->
-<script src="data.js"></script>
-
-<!-- Adaptador: PEGSA_DATA -> MOBILE_DATA -->
-<script src="mobile-data.js"></script>
-
-<!-- App (JSX transformado por Babel standalone) -->
-<script type="text/babel" data-presets="env,react" src="mobile.jsx"></script>
+<!-- v12.2: cache-buster ?v=122 en los scripts propios. Necesario porque
+     GitHub Pages cachea con max-age=600 y el bot AUTO regenera data.js
+     desde OneDrive sin tocar el HTML — sin buster, el celu sirve la
+     version vieja cuando lanzamos un fix. Los JSON quedan sin buster
+     para que el bot AUTO los siga refrescando. -->
+<script src="data.js?v=122"></script>
+<script src="mobile-data.js?v=122"></script>
+<script type="text/babel" data-presets="env,react" src="mobile.jsx?v=122"></script>
 
 </body>
 </html>
