@@ -235,18 +235,22 @@ function LoginScreen({ onLogin }) {
 
 
 /* ============================================================
-   v13.0 · PDF export — abre informe-print.html con datos reales
+   v13.1 · PDF export — html2canvas + jsPDF sobre el HTML hifi
    --------------------------------------------------------------
-   Estrategia: en lugar de generar el PDF con jsPDF (que no podía
-   replicar Playfair, JetBrains Mono, OKLCH y page 105×340mm fielmente),
-   pone un subset de MOBILE_DATA en sessionStorage y abre el HTML
-   print de alta fidelidad del usuario en una nueva ventana. El
-   HTML inyecta los datos en sus placeholders y dispara window.print()
-   automáticamente. El usuario elige 'Save as PDF · Margins None ·
-   Background graphics ON' en el dialog del browser.
-   Borradas ~600 líneas de helpers jsPDF v12.x.
+   El flujo de v13.0 (open + window.print) requería que el usuario
+   activara "Background graphics ON" y "Margins None" en el dialog
+   del browser. v13.1 captura el HTML programáticamente:
+     1. Guarda subset de MOBILE_DATA en sessionStorage.
+     2. Crea iframe oculto cargando informe-print.html?embed=1
+        (modo embed: skip auto-print, marca data-print-ready=1).
+     3. Espera a que las fuentes carguen y el script de inyección
+        marque data-print-ready (poll 100ms × 50 = ~5s máx).
+     4. Captura cada .sheet con html2canvas (scale 2x JPEG q92).
+     5. Arma PDF con jsPDF en tamaño 105×340mm (igual al @page).
+     6. doc.save() — descarga directa al storage del browser.
    ============================================================ */
 async function handleSharePdf() {
+  var iframe = null;
   try {
     var payload = {
       STOCK_TOTALES:           D.STOCK_TOTALES,
@@ -259,14 +263,73 @@ async function handleSharePdf() {
       PRECIOS_INFERENCIA_META: D.PRECIOS_INFERENCIA_META
     };
     sessionStorage.setItem('pegsa_pdf_payload', JSON.stringify(payload));
-    var url = 'informe-print.html?v=130&t=' + Date.now();
-    var win = window.open(url, '_blank');
-    if (!win) {
-      alert('Tu navegador bloqueó la ventana del informe. Habilitá popups para este dominio y volvé a intentar.');
+
+    // Iframe oculto cargando el HTML hifi en modo embed (sin auto-print).
+    // Ancho 420px = exactamente el .sheet del HTML; alto generoso para
+    // que el sheet entero quepa sin cortes (se ajusta tras el load).
+    iframe = document.createElement('iframe');
+    iframe.style.cssText =
+      'position:absolute;left:-9999px;top:-9999px;width:420px;height:1500px;' +
+      'border:0;visibility:hidden;';
+    iframe.src = 'informe-print.html?embed=1&v=131&t=' + Date.now();
+    document.body.appendChild(iframe);
+
+    // Esperar load + readiness flag puesto por el script auto-print
+    await new Promise((resolve, reject) => {
+      var timeout = setTimeout(() => reject(new Error('Timeout cargando informe')), 15000);
+      iframe.onload = async () => {
+        try {
+          var idoc = iframe.contentDocument;
+          for (var i = 0; i < 50; i++) {
+            if (idoc.body.getAttribute('data-print-ready') === '1') break;
+            await new Promise(r => setTimeout(r, 100));
+          }
+          // Pausa extra para que html2canvas vea el render final
+          await new Promise(r => setTimeout(r, 300));
+          clearTimeout(timeout);
+          resolve();
+        } catch (e) { clearTimeout(timeout); reject(e); }
+      };
+    });
+
+    var idoc = iframe.contentDocument;
+    var sheets = idoc.querySelectorAll('.sheet');
+    if (!sheets.length) throw new Error('No hay sheets para capturar');
+
+    // jsPDF en tamaño igual al @page CSS del HTML
+    var JsPdfCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPdfCtor) throw new Error('jsPDF no está cargado');
+    if (typeof html2canvas !== 'function') throw new Error('html2canvas no está cargado');
+
+    var doc = new JsPdfCtor({ unit: 'mm', format: [105, 340], orientation: 'portrait' });
+
+    for (var i = 0; i < sheets.length; i++) {
+      var sheet = sheets[i];
+      var canvas = await html2canvas(sheet, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        windowWidth: 420,
+        windowHeight: sheet.scrollHeight
+      });
+      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      if (i > 0) doc.addPage([105, 340], 'portrait');
+      doc.addImage(imgData, 'JPEG', 0, 0, 105, 340);
     }
+
+    document.body.removeChild(iframe);
+    iframe = null;
+
+    var ts = new Date().toISOString().slice(0, 10);
+    doc.save('PEGSA-Informe-' + ts + '.pdf');
   } catch (e) {
     console.error('PDF export error:', e);
-    alert('No se pudo abrir el informe: ' + ((e && e.message) || e));
+    alert('No se pudo generar el PDF: ' + ((e && e.message) || e));
+  } finally {
+    if (iframe && iframe.parentNode) {
+      try { iframe.parentNode.removeChild(iframe); } catch (_) {}
+    }
   }
 }
 
