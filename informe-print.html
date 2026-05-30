@@ -124,14 +124,18 @@ html, body {
   flex: 1; line-height: 1.15;
 }
 .sh-title b {
-  font-size: 13px;
+  /* v13.9: 13 -> 12.5px — el titulo larguito "PEGSA & BULLTRADE & DARWASH"
+     entra en una sola línea sin partirse al ancho de 140mm menos paginador. */
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: -0.005em;
+  letter-spacing: 0.02em;
   display: block;
 }
 .sh-title small {
   display: block;
-  font-size: 11px;
+  /* v13.9: 11 -> 10.5px — la fecha larga "30 / mayo / 2026" + uppercase
+     "INFORME EJECUTIVO" ocupa más ancho que la versión "29/5/2026". */
+  font-size: 10.5px;
   font-weight: 500;
   color: #b4d3e3bf;
   letter-spacing: 0.04em;
@@ -746,18 +750,38 @@ html, body {
 
 /* ===== SHEET FOOTER ===== */
 .sh-foot {
+  /* v13.9: pasamos de 1 fila a 2 filas (la fila original + link al portal).
+     El border-top del .sh-foot separa el footer del contenido; el border-top
+     de .foot-link separa los dos rows del footer entre sí. */
   margin-top: 12px;
   padding: 10px 18px 14px;
   border-top: 1px solid var(--border);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
   font-size: 9.5px;
   color: var(--ink-faint);
   letter-spacing: 0.04em;
 }
+.sh-foot .foot-row {
+  display: flex;
+  justify-content: space-between;
+}
 .sh-foot em {
   font-style: normal;
   color: var(--ink-mute);
+}
+.sh-foot .foot-link {
+  text-align: center;
+  padding-top: 4px;
+  border-top: 1px solid #dee2e7;
+}
+.sh-foot .foot-link a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  color: #104b92;
+  text-decoration: none;
+  letter-spacing: 0;
 }
 
 
@@ -969,6 +993,9 @@ html, body {
 .rodeo-card.pegsa::before { background: var(--b-pegsa); }
 .rodeo-card.haras::before { background: var(--b-dw); }
 .rodeo-card.otros::before { background: var(--b-gb); }
+/* v13.9: "OTROS CAMPOS" (2 palabras) necesita más letra que cabe — bajamos
+   1px y apretamos letter-spacing para que entre en una línea. */
+.rodeo-card.otros .o { font-size: 10px; letter-spacing: 0.04em; }
 .rodeo-card.grupo { background: var(--primary-soft); border-color: #c0d3ec; }
 .rodeo-card.grupo::before { background: var(--b-bull); }
 .rodeo-card .o {
@@ -1167,15 +1194,9 @@ html, body {
       </div>
 
       <header class="sh-head">
-        <div class="sh-brands">
-          <span class="bmark pegsa">P</span>
-          <span class="bmark bull">B</span>
-          <span class="bmark dw">D</span>
-          <span class="bmark gb">G</span>
-        </div>
         <div class="sh-title">
-          <b>PEGSA &amp; BULLTRADE</b>
-          <small>Informe ejecutivo · 29/5/2026</small>
+          <b>PEGSA &amp; BULLTRADE &amp; DARWASH</b>
+          <small>Informe ejecutivo · 30 / mayo / 2026</small>
         </div>
         <div class="sh-page mono">1 / 2</div>
       </header>
@@ -1198,7 +1219,7 @@ html, body {
             <div class="k">3,92 M kg</div>
           </div>
           <div class="rodeo-card otros">
-            <div class="o">Otros</div>
+            <div class="o">Otros campos</div>
             <div class="c">2.011<span>cab</span></div>
             <div class="k">469 k kg</div>
           </div>
@@ -1433,8 +1454,14 @@ html, body {
       </div>
 
       <footer class="sh-foot">
-        <span>Documento autogenerado · datos del panel</span>
-        <em>Uso interno · Dirección</em>
+        <div class="foot-row">
+          <span>Documento autogenerado · datos del panel</span>
+          <em>Uso interno · Dirección</em>
+        </div>
+        <div class="foot-link">
+          <a href="https://pecuariabulltrade.github.io/pegsa-portal/mobile.html"
+             target="_blank" rel="noopener">pecuariabulltrade.github.io/pegsa-portal/mobile.html</a>
+        </div>
       </footer>
     </section>
 
@@ -1457,15 +1484,9 @@ html, body {
       </div>
 
       <header class="sh-head">
-        <div class="sh-brands">
-          <span class="bmark pegsa">P</span>
-          <span class="bmark bull">B</span>
-          <span class="bmark dw">D</span>
-          <span class="bmark gb">G</span>
-        </div>
         <div class="sh-title">
-          <b>PEGSA &amp; BULLTRADE</b>
-          <small>Informe ejecutivo · 29/5/2026</small>
+          <b>PEGSA &amp; BULLTRADE &amp; DARWASH</b>
+          <small>Informe ejecutivo · 30 / mayo / 2026</small>
         </div>
         <div class="sh-page mono">2 / 2</div>
       </header>
@@ -1617,8 +1638,14 @@ html, body {
       </div>
 
       <footer class="sh-foot">
-        <span>Documento autogenerado · datos del panel</span>
-        <em>Uso interno · Dirección</em>
+        <div class="foot-row">
+          <span>Documento autogenerado · datos del panel</span>
+          <em>Uso interno · Dirección</em>
+        </div>
+        <div class="foot-link">
+          <a href="https://pecuariabulltrade.github.io/pegsa-portal/mobile.html"
+             target="_blank" rel="noopener">pecuariabulltrade.github.io/pegsa-portal/mobile.html</a>
+        </div>
       </footer>
     </section>
 
@@ -1679,9 +1706,15 @@ html, body {
   try {
     var now = new Date();
     var dd = pad(now.getDate()), mm = pad(now.getMonth() + 1), yy = now.getFullYear();
-    var fechaCorta = parseInt(dd, 10) + '/' + parseInt(mm, 10) + '/' + yy;
+    // v13.9: fecha larga "30 / mayo / 2026" (en lugar de "30/5/2026").
+    // Más legible en el header navy y combina con el texto largo
+    // "PEGSA & BULLTRADE & DARWASH". El uppercase del CSS de
+    // .sh-title small lo deja como "30 / MAYO / 2026".
+    var MESES = ['enero','febrero','marzo','abril','mayo','junio',
+                 'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var fechaLarga = parseInt(dd, 10) + ' / ' + MESES[now.getMonth()] + ' / ' + yy;
     document.querySelectorAll('.sh-title small').forEach(function (el) {
-      el.textContent = 'Informe ejecutivo · ' + fechaCorta;
+      el.textContent = 'Informe ejecutivo · ' + fechaLarga;
     });
   } catch (e) {}
 
@@ -1928,11 +1961,14 @@ html, body {
       var diasFeedLargo = (p.diasFeed != null)
         ? Math.round(p.diasFeed) + ' días'
         : '—';
+      // v13.9: prefijo '$ ' al entero para que la 3ra fila se lea
+      // "P. venta  $ 8.000" / "Costo  $ 2.556" sin que el label
+      // hardcoded del HTML deba indicarlo.
       var precioVentaEntero = (p.precioVenta != null)
-        ? Math.round(p.precioVenta).toLocaleString('es-AR')
+        ? '$ ' + Math.round(p.precioVenta).toLocaleString('es-AR')
         : '—';
       var costoKgEntero = (p.costoKgProd != null)
-        ? Math.round(p.costoKgProd).toLocaleString('es-AR')
+        ? '$ ' + Math.round(p.costoKgProd).toLocaleString('es-AR')
         : '—';
       var vals = [
         p.kgCompraFmt, p.kgVentaFmt, p.rindeFmt,
