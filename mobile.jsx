@@ -247,7 +247,9 @@ function LoginScreen({ onLogin }) {
         marque data-print-ready (poll 100ms × 50 = ~5s máx).
      4. Captura cada .sheet con html2canvas (scale 2x JPEG q92).
      5. Arma PDF con jsPDF en tamaño 105×340mm (igual al @page).
-     6. doc.save() — descarga directa al storage del browser.
+     6. v13.10: navigator.share({files:[pdf]}) abre el sheet nativo
+        del SO (WhatsApp/Telegram/Gmail) con el PDF adjunto. Fallback
+        a doc.save() si no hay Web Share API con files (desktop, etc).
    ============================================================ */
 async function handleSharePdf() {
   var iframe = null;
@@ -325,8 +327,43 @@ async function handleSharePdf() {
     document.body.removeChild(iframe);
     iframe = null;
 
+    // v13.10: Web Share API — antes hacíamos doc.save() directo y el PDF
+    // caía en Descargas, obligando al usuario a abrir WhatsApp, Adjuntar,
+    // buscar el archivo y mandarlo (4+ pasos). Ahora intentamos
+    // navigator.share({ files: [pdf] }) primero, que abre el sheet
+    // nativo del SO con WhatsApp / Telegram / Gmail / Drive listos para
+    // mandar el PDF con 1 sólo tap. Si el browser no soporta share-with-
+    // files (desktop, Firefox, viejos), caemos a doc.save() como antes.
     var ts = new Date().toISOString().slice(0, 10);
-    doc.save('PEGSA-Informe-' + ts + '.pdf');
+    var filename = 'PEGSA-Informe-' + ts + '.pdf';
+    var blob = doc.output('blob');
+    var file = new File([blob], filename, { type: 'application/pdf' });
+
+    var canShareFile = navigator.canShare && navigator.canShare({ files: [file] });
+    if (canShareFile && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'PEGSA & BULLTRADE · Informe Ejecutivo',
+          text: 'Informe ejecutivo del ' + new Date().toLocaleDateString('es-AR') +
+                ' — PEGSA & Bulltrade & Darwash.'
+        });
+        // Compartido OK (o el usuario eligió app). Cortar acá.
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') {
+          // Usuario cerró el sheet sin elegir nada — no descargar, no
+          // alertar. La intención era cancelar el flujo entero.
+          return;
+        }
+        // Otro error (NotAllowedError, etc.) → caer al fallback abajo.
+        console.warn('navigator.share falló, descargando:', e);
+      }
+    }
+
+    // Fallback: descarga directa al storage del browser (desktop,
+    // browsers sin Web Share API con files, o share fallido no-Abort).
+    doc.save(filename);
   } catch (e) {
     console.error('PDF export error:', e);
     alert('No se pudo generar el PDF: ' + ((e && e.message) || e));
