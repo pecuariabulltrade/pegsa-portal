@@ -214,6 +214,7 @@ html, body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-mute);
+  white-space: nowrap;  /* v13.3: "NOVILLO > 550 KG" en una sola línea */
 }
 .stock-card .cat b {
   color: var(--ink);
@@ -312,6 +313,7 @@ html, body {
   color: var(--ink);
   line-height: 1.2;
   margin-top: 12px;
+  white-space: nowrap;  /* v13.3: "SILO DE MAÍZ" en una sola línea */
 }
 .insumo .name small {
   display: block;
@@ -343,6 +345,7 @@ html, body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-mute);
+  white-space: nowrap;  /* v13.3: "DÍAS DE AUTONOMÍA" en una sola línea */
   margin-top: 4px;
   font-family: 'Inter', sans-serif;
 }
@@ -514,12 +517,26 @@ html, body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 10px 12px 11px;
+  padding: 10px 12px 11px 13px;  /* v13.3: +1px left para el accent ::before */
   position: relative;
+  overflow: hidden;
 }
-.prod-card.warn  { box-shadow: inset 3px 0 0 0 var(--warn); }
-.prod-card.bad   { box-shadow: inset 3px 0 0 0 var(--neg); background: linear-gradient(180deg, var(--neg-soft) 0%, var(--surface) 70%); }
-.prod-card.good  { box-shadow: inset 3px 0 0 0 var(--pos); }
+/* v13.3: accent left con pseudo-element (html2canvas no soporta
+   box-shadow inset correctamente — antes pintaba el inset como un
+   border completo de 3px envolviendo la card, tosco). */
+.prod-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--ink-faint);
+}
+.prod-card.bad {
+  background: linear-gradient(180deg, var(--neg-soft) 0%, var(--surface) 70%);
+}
+.prod-card.warn::before { background: var(--warn); }
+.prod-card.bad::before  { background: var(--neg); }
+.prod-card.good::before { background: var(--pos); }
 .prod-card .ph {
   display: flex;
   justify-content: space-between;

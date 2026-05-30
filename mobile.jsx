@@ -305,15 +305,18 @@ async function handleSharePdf() {
 
     for (var i = 0; i < sheets.length; i++) {
       var sheet = sheets[i];
+      // v13.3: scale 2 → 2.5 + JPEG q92 → q95 para preservar separadores
+      // de miles (los puntos de "1.030" se comían en 30px JetBrains Mono
+      // a q92 — eran sólo 1-2px de ancho). Peso del PDF sube ~30%.
       var canvas = await html2canvas(sheet, {
-        scale: 2,
+        scale: 2.5,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
         windowWidth: 420,
         windowHeight: sheet.scrollHeight
       });
-      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      var imgData = canvas.toDataURL('image/jpeg', 0.95);
       if (i > 0) doc.addPage([105, 340], 'portrait');
       doc.addImage(imgData, 'JPEG', 0, 0, 105, 340);
     }
