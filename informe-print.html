@@ -546,11 +546,16 @@ html, body {
 .prod-card.warn::before { background: var(--warn); }
 .prod-card.bad::before  { background: var(--neg); }
 .prod-card.good::before { background: var(--pos); }
+/* v13.6: .ph nowrap + min-height 32px. El chip nunca se cae a 2da línea
+   aunque el título sea largo (KG REPARTIDOS · ÚLT. DÍA). El min-height
+   fija el alto del header → todos los KPIs quedan alineados al mismo Y. */
 .prod-card .ph {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;  /* v13.5: 8 → 12 — separa el .lbl del .pill (chip delta) */
+  align-items: flex-start;  /* v13.6: baseline → flex-start (label puede wrap) */
+  gap: 8px;                  /* v13.6: 12 → 8 (más espacio útil para .lbl) */
+  flex-wrap: nowrap;         /* v13.6: chip NUNCA se baja */
+  min-height: 32px;          /* v13.6: alto fijo del header */
 }
 .prod-card .lbl {
   font-size: 12px;
@@ -558,14 +563,11 @@ html, body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-mute);
-  /* v13.5: 2 líneas mínimas — los títulos cortos (Engorde diario,
-     Estadía, Conversión) ocupan el mismo alto que los de 2 líneas
-     (Consumo / cab, Kg repartidos · últ. día), así los KPIs (.val)
-     quedan alineados a la misma altura en las 6 cards. */
-  min-height: 30px;  /* v13.5: 28 → 30 — un poco más de aire */
   line-height: 1.2;
-  display: flex;
-  align-items: flex-start;
+  /* v13.6: el label ocupa el ancho disponible y permite wrap en 2 líneas
+     dentro de su slot. min-width: 0 deja que se contraiga si hace falta. */
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .prod-card .pill {
   font-family: 'JetBrains Mono', monospace;
@@ -577,6 +579,11 @@ html, body {
   background: var(--surface-alt);
   color: var(--ink-mute);
   letter-spacing: -0.01em;
+  /* v13.6: chip con tamaño según contenido, no se contrae, alineado
+     al top del header — "↓ 31%" siempre entero y a la derecha del .lbl. */
+  flex: 0 0 auto;
+  white-space: nowrap;
+  align-self: flex-start;
 }
 .prod-card.warn .pill { background: var(--warn-soft); color: #834300; }
 .prod-card.bad  .pill { background: var(--neg-soft); color: var(--neg); }
@@ -589,7 +596,9 @@ html, body {
   color: var(--ink);
   letter-spacing: -0.02em;
   line-height: 1.1;
-  margin: 4px 0 1px;
+  /* v13.6: margin-top FIJO 8px (no 4px) — siempre arranca a la misma Y
+     desde el bottom del .ph (que tiene min-height fijo de 32px). */
+  margin: 8px 0 1px;
 }
 .prod-card.bad .val { color: #90101a; }
 .prod-card .val .u {
@@ -599,7 +608,9 @@ html, body {
   margin-left: 2px;
 }
 .prod-card .base {
-  margin-top: 6px;
+  /* v13.6: margin-top: auto empuja el bloque al fondo de la card,
+     consistente en las 6 tarjetas independiente del alto del KPI. */
+  margin-top: auto;
   padding-top: 5px;
   border-top: 1px solid var(--border);
   display: flex;
