@@ -286,7 +286,10 @@ html, body {
   gap: 10px;
 }
 .insumo {
-  background: var(--surface);
+  /* v13.8: card con tinte verde muy suave (estado OK por defecto). Las
+     variantes .insumo.warn / .insumo.bad sobreescriben con su propio bg
+     más abajo si llegan a aplicarse — hoy ambos insumos están OK. */
+  background: var(--pos-soft);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: 14px;
@@ -338,13 +341,15 @@ html, body {
   line-height: 0.95;
 }
 .insumo .days .big {
-  font-size: 52px;
+  /* v13.8: 52 -> 60px — KPI más prominente, aprovechando el card
+     verdesita y el centrado vertical via margin-top/bottom auto. */
+  font-size: 60px;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ink);
   line-height: 1;       /* v13.4: ajuste tight */
   display: block;       /* v13.4: nueva línea — el .u no pisa el KPI */
-  margin-bottom: 8px;   /* v13.6: 6 -> 8 - mas aire vs "DIAS DE AUTONOMIA" */
+  margin-bottom: 10px;  /* v13.8: 8 -> 10 - acompaña al KPI 60px con más aire */
 }
 .insumo .days .u {
   display: block;
@@ -596,11 +601,11 @@ html, body {
 .prod-card .val {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 30px;
+  /* v13.8: 30 -> 34px — el KPI gana presencia ahora que .base no tiene línea. */
+  font-size: 34px;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.02em;
-  line-height: 1.1;
   /* v13.6: margin-top FIJO 8px (no 4px) — siempre arranca a la misma Y
      desde el bottom del .ph (que tiene min-height fijo de 32px). */
   margin: 2px 0 0;
@@ -616,10 +621,11 @@ html, body {
 .prod-card .base {
   /* v13.7: margin-top auto empuja al FONDO de la card (clave: combinado
      con display flex column en .prod-card). padding-top 8 da aire visual
-     entre el KPI grande y la fila "vs anual / ref". */
+     entre el KPI grande y la fila "vs anual / ref".
+     v13.8: sin border-top — el aire ya separa visualmente, la línea
+     competía con el watermark de la card. */
   margin-top: auto;
   padding-top: 8px;
-  border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   font-size: 12px;
@@ -719,11 +725,13 @@ html, body {
   display: flex;
   justify-content: space-between;
   gap: 4px;
-  border-bottom: 1px solid var(--border);
+  /* v13.8: sin líneas divisorias entre filas — el `gap: 5px 20px` del .grid
+     ya separa visualmente Compra/Venta, Rinde/Feed, P.venta/Costo. */
+  border-bottom: none;
   padding: 3px 0;
   min-width: 0;  /* v13.4: permite que el flex hijo se contraiga */
 }
-.prc-card .grid .it:nth-last-child(-n+2) { border-bottom: none; }
+.prc-card .grid .it:nth-last-child(-n+2) { border-bottom: none; /* v13.8: redundante post-quitar borders */ }
 /* v13.4: el valor y el label no se parten — '400 kg' / 'Feed 99 d' enteros. */
 .prc-card .grid .it span,
 .prc-card .grid .it b {
@@ -1638,12 +1646,11 @@ html, body {
     if (n == null || isNaN(n)) return '—';
     return Math.round(n).toLocaleString('es-AR');
   };
+  // v13.8: siempre número entero con separador es-AR — los totales del
+  // rodeo se leen mejor como '4.032.000 kg' que como '4,03 M kg'.
   var fmtKgCompact = function (n) {
     if (n == null) return '—';
-    var a = Math.abs(n);
-    if (a >= 1e6) return (n / 1e6).toFixed(2).replace('.', ',') + ' M kg';
-    if (a >= 1e3) return Math.round(n / 1e3).toLocaleString('es-AR') + ' k kg';
-    return fmtInt(n) + ' kg';
+    return Math.round(n).toLocaleString('es-AR') + ' kg';
   };
   var fmtKgFull = function (n) { return n != null ? fmtInt(n) + ' kg' : '—'; };
   var fmtMoneyMM = function (n) {
@@ -1660,9 +1667,10 @@ html, body {
     var a = Math.abs(n);
     var sign = n < 0 ? '-' : '+';
     // v13.5: sufijo MM/M/k para que el spark muestre "-1,05MM" en vez de "-1,05".
-    // MM (≥1e9) con 2 decimales; M (≥1e6) entero para que entre en el slot.
-    if (a >= 1e9) return sign + (a / 1e9).toFixed(2).replace('.', ',') + 'MM';
-    if (a >= 1e6) return sign + Math.round(a / 1e6) + 'M';
+    // v13.8: 3 decimales en MM y M — "+1,962MM" / "-3,485M" entran con
+    // legibilidad fina (el slot ya soporta el ancho desde v13.5 con 140mm).
+    if (a >= 1e9) return sign + (a / 1e9).toFixed(3).replace('.', ',') + 'MM';
+    if (a >= 1e6) return sign + (a / 1e6).toFixed(3).replace('.', ',') + 'M';
     if (a >= 1e3) return sign + Math.round(a / 1e3) + 'k';
     return sign + Math.round(a);
   };
@@ -1810,6 +1818,19 @@ html, body {
   // ===== 5. Productivos (6 cards) =====
   if (Array.isArray(D.PRODUCTIVOS)) {
     var prodCards = document.querySelectorAll('.s-prod .prod-card');
+    // v13.8: parser es-AR — "1.501" → 1501 (punto = miles), "1,5" → 1.5
+    // (coma = decimal). mobile-data.js entrega los kpi en formato es-AR
+    // via toLocaleString, así que parseFloat directo se equivoca para
+    // valores >= 1000 (interpreta el punto como decimal).
+    var parseEsNum = function (s) {
+      if (s == null) return null;
+      s = String(s).replace(/[^\d,.\-]/g, '');
+      if (s === '' || s === '-') return null;
+      if (s.indexOf(',') !== -1) s = s.replace(/\./g, '').replace(',', '.');
+      else                       s = s.replace(/\./g, '');
+      var n = parseFloat(s);
+      return isNaN(n) ? null : n;
+    };
     D.PRODUCTIVOS.slice(0, 6).forEach(function (p, idx) {
       var card = prodCards[idx];
       if (!card) return;
@@ -1820,6 +1841,23 @@ html, body {
       else intent = 'warn';
       card.classList.remove('good','warn','bad');
       card.classList.add(intent);
+      // v13.8: engorde diario en kg/d (no g/d). El KPI llega como
+      // "1.501" (1501 g/día); pasamos a "1,501" kg/d. El subVal llega
+      // como "1.439 g/día" y lo convertimos igual para que la fila
+      // "vs anual" sea coherente.
+      if (p.id === 'engordeDiario') {
+        var kgValor = parseEsNum(p.kpi);
+        if (kgValor != null && kgValor > 100) {
+          p.kpi = (kgValor / 1000).toFixed(3).replace('.', ',');
+        }
+        p.unit = 'kg/d';
+        if (p.subVal) {
+          var subNum = parseEsNum(p.subVal);
+          if (subNum != null && subNum > 100) {
+            p.subVal = (subNum / 1000).toFixed(3).replace('.', ',') + ' kg/día';
+          }
+        }
+      }
       var lblEl = card.querySelector('.ph .lbl');
       if (lblEl) lblEl.textContent = p.title || p.id || '';
       var pill = card.querySelector('.ph .pill');
@@ -1884,9 +1922,21 @@ html, body {
         }
       }
       var items = card.querySelectorAll('.grid .it');
+      // v13.8: Feed con "días" completo (no "57 d"). Precio venta y
+      // costo en entero con separador es-AR (no compactado k/MM) — el
+      // ancho de la fila de la 3ra fila ya soporta 5 dígitos legibles.
+      var diasFeedLargo = (p.diasFeed != null)
+        ? Math.round(p.diasFeed) + ' días'
+        : '—';
+      var precioVentaEntero = (p.precioVenta != null)
+        ? Math.round(p.precioVenta).toLocaleString('es-AR')
+        : '—';
+      var costoKgEntero = (p.costoKgProd != null)
+        ? Math.round(p.costoKgProd).toLocaleString('es-AR')
+        : '—';
       var vals = [
         p.kgCompraFmt, p.kgVentaFmt, p.rindeFmt,
-        p.diasFeedFmt, p.precioVentaFmt, p.costoKgProdFmt
+        diasFeedLargo, precioVentaEntero, costoKgEntero
       ];
       items.forEach(function (it, j) {
         var b = it.querySelector('b');
