@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-05-30T09:03:02.455901",
+    "generado": "2026-05-30T10:03:04.346056",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
@@ -12,42 +12,50 @@
       "2026-05-27",
       "2026-05-28"
     ],
-    "dias_descartados": [],
+    "dias_descartados": [
+      {
+        "fecha": "2026-05-29",
+        "kg": 53930.0,
+        "avg_prev": 122268.3,
+        "ratio": 0.441,
+        "razon": "caida 56% vs prom 3 dias previos"
+      }
+    ],
     "umbral_caida": 0.7
   },
   "anual": {
-    "total_kg": 42450909.0,
-    "total_kg_ms": 30755313.4,
+    "total_kg": 42536554.0,
+    "total_kg_ms": 30817539.9,
     "por_insumo": [
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12894290.0,
+        "kg": 12917715.0,
         "ms_pct": 53.0,
-        "kg_ms": 6833973.7
+        "kg_ms": 6846389.0
       },
       {
         "desc": "MAIZ GRANO",
-        "kg": 12616580.0,
+        "kg": 12646220.0,
         "ms_pct": 89.0,
-        "kg_ms": 11228756.2
+        "kg_ms": 11255135.8
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9904352.0,
+        "kg": 9925812.0,
         "ms_pct": 58.0,
-        "kg_ms": 5744524.2
+        "kg_ms": 5756971.0
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 5308604.0,
+        "kg": 5317324.0,
         "ms_pct": 99.0,
-        "kg_ms": 5255518.0
+        "kg_ms": 5264150.8
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1727083.0,
+        "kg": 1729483.0,
         "ms_pct": 98.0,
-        "kg_ms": 1692541.3
+        "kg_ms": 1694893.3
       }
     ]
   },
@@ -60,50 +68,50 @@
       "2026-05-27",
       "2026-05-28"
     ],
-    "total_kg_3d": 335090.0,
-    "promedio_diario_kg": 111696.7,
-    "promedio_diario_kg_ms": 79839.3,
-    "pct_ms_global": 71.5,
+    "total_kg_3d": 366805.0,
+    "promedio_diario_kg": 122268.3,
+    "promedio_diario_kg_ms": 87324.4,
+    "pct_ms_global": 71.4,
     "por_insumo": [
       {
         "desc": "MAIZ GRANO",
-        "kg_3d": 106375.0,
+        "kg_3d": 116615.0,
         "dias_registrados": 3,
-        "promedio_diario": 35458.3,
+        "promedio_diario": 38871.7,
         "ms_pct": 89.0,
-        "promedio_diario_ms": 31557.9
+        "promedio_diario_ms": 34595.8
       },
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg_3d": 99130.0,
+        "kg_3d": 109170.0,
         "dias_registrados": 3,
-        "promedio_diario": 33043.3,
+        "promedio_diario": 36390.0,
         "ms_pct": 53.0,
-        "promedio_diario_ms": 17512.9
+        "promedio_diario_ms": 19286.7
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg_3d": 87500.0,
+        "kg_3d": 95525.0,
         "dias_registrados": 3,
-        "promedio_diario": 29166.7,
+        "promedio_diario": 31841.7,
         "ms_pct": 58.0,
-        "promedio_diario_ms": 16916.7
+        "promedio_diario_ms": 18468.2
       },
       {
         "desc": "HARINA GERMEN",
-        "kg_3d": 31210.0,
+        "kg_3d": 33595.0,
         "dias_registrados": 3,
-        "promedio_diario": 10403.3,
+        "promedio_diario": 11198.3,
         "ms_pct": 99.0,
-        "promedio_diario_ms": 10299.3
+        "promedio_diario_ms": 11086.3
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg_3d": 10875.0,
+        "kg_3d": 11900.0,
         "dias_registrados": 3,
-        "promedio_diario": 3625.0,
+        "promedio_diario": 3966.7,
         "ms_pct": 98.0,
-        "promedio_diario_ms": 3552.5
+        "promedio_diario_ms": 3887.4
       }
     ]
   },
@@ -520,16 +528,16 @@
       },
       {
         "fecha": "2026-05-28",
-        "kg_total": 92730.0,
-        "kg_ms_total": 65991.4,
-        "pct_ms": 71.2,
+        "kg_total": 124445.0,
+        "kg_ms_total": 88446.3,
+        "pct_ms": 71.1,
         "descartado": false,
         "por_insumo": {
-          "SILO DE MAIZ": 26010.0,
-          "NUCLEO CONC 5% LDB": 3200.0,
-          "GLUTEN DE MAIZ": 26595.0,
-          "MAIZ GRANO": 28815.0,
-          "HARINA GERMEN": 8110.0
+          "SILO DE MAIZ": 34035.0,
+          "NUCLEO CONC 5% LDB": 4225.0,
+          "GLUTEN DE MAIZ": 36635.0,
+          "MAIZ GRANO": 39055.0,
+          "HARINA GERMEN": 10495.0
         }
       }
     ]
