@@ -83,7 +83,7 @@ html, body {
 }
 .sheets {
   display: grid;
-  grid-template-columns: repeat(2, 528px);  /* v13.5: 500 → 528 (132mm) */
+  grid-template-columns: repeat(2, 560px);  /* v13.5: 528 → 560 (140mm) */
   gap: 28px;
   justify-content: center;
   align-items: start;
@@ -91,7 +91,7 @@ html, body {
 
 /* ===== SHEET ===== */
 .sheet {
-  width: 528px;  /* v13.5: 500 → 528 — page 132mm da más aire */
+  width: 560px;  /* v13.5: 528 → 560 — page 140mm da más aire */
   background: var(--bg);
   border-radius: 28px;
   box-shadow:
@@ -294,6 +294,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: space-between;  /* v13.5: distribuye top/name/days verticalmente */
   position: relative;
 }
 .insumo .top {
@@ -329,7 +330,7 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 .insumo .days {
-  margin-top: 14px;  /* v13.5: auto → 14px fijo — KPI sube hacia el centro */
+  margin-top: 12px;  /* v13.5: 14 → 12 — combina con justify-content space-between */
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
   line-height: 0.95;
@@ -526,6 +527,8 @@ html, body {
   padding: 10px 12px 11px 13px;  /* v13.3: +1px left para el accent ::before */
   position: relative;
   overflow: hidden;
+  display: flex;             /* v13.5: flex column para alinear KPIs entre cards */
+  flex-direction: column;
 }
 /* v13.3: accent left con pseudo-element (html2canvas no soporta
    box-shadow inset correctamente — antes pintaba el inset como un
@@ -547,7 +550,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
+  gap: 12px;  /* v13.5: 8 → 12 — separa el .lbl del .pill (chip delta) */
 }
 .prod-card .lbl {
   font-size: 12px;
@@ -559,7 +562,7 @@ html, body {
      Estadía, Conversión) ocupan el mismo alto que los de 2 líneas
      (Consumo / cab, Kg repartidos · últ. día), así los KPIs (.val)
      quedan alineados a la misma altura en las 6 cards. */
-  min-height: 28px;
+  min-height: 30px;  /* v13.5: 28 → 30 — un poco más de aire */
   line-height: 1.2;
   display: flex;
   align-items: flex-start;
@@ -682,14 +685,17 @@ html, body {
 .prc-card .grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);  /* v13.4 */
-  gap: 4px 16px;       /* v13.5: 10 → 16 horizontal — aire para "P.venta $7,3k/kg" */
+  gap: 5px 20px;       /* v13.5: 4/10 → 4/16 → 5/20 — aire para "P.venta $7,3k/kg" */
   font-size: 12.5px;
   color: var(--ink-mute);
 }
-/* v13.5: 3ra fila (P. venta / Costo) con font más chico — el "/kg"
-   del valor pisaba la columna derecha. */
+/* v13.5: 3ra fila (P. venta / Costo) más chica + un poco de aire arriba. */
 .prc-card .grid .it:nth-last-child(-n+2) {
-  font-size: 11.5px;
+  padding-top: 4px;
+}
+.prc-card .grid .it:nth-last-child(-n+2) b,
+.prc-card .grid .it:nth-last-child(-n+2) span {
+  font-size: 11px;
 }
 .prc-card .grid .it {
   display: flex;
@@ -731,7 +737,7 @@ html, body {
 /* ===== PRINT ===== */
 @media print {
   @page {
-    size: 132mm 340mm;  /* v13.5: 125 → 132 */
+    size: 140mm 340mm;  /* v13.5: 132 → 140 */
     margin: 0;
   }
   html, body { background: white; }
@@ -746,7 +752,7 @@ html, body {
     display: block;
   }
   .sheet {
-    width: 132mm;  /* v13.5: 125 → 132 */
+    width: 140mm;  /* v13.5: 132 → 140 */
     border-radius: 0;
     box-shadow: none;
     border: none;
@@ -951,7 +957,7 @@ html, body {
 @media (max-width: 900px) {
   .stage { padding: 20px 12px 40px; }
   .sheets { grid-template-columns: 1fr; }
-  .sheet { width: 100%; max-width: 528px; margin: 0 auto; }  /* v13.5: 500 → 528 */
+  .sheet { width: 100%; max-width: 560px; margin: 0 auto; }  /* v13.5: 528 → 560 */
 }
 </style>
 </head>
@@ -1536,9 +1542,10 @@ html, body {
     if (n == null) return '';
     var a = Math.abs(n);
     var sign = n < 0 ? '-' : '+';
-    // v13.5: sufijo MM/M/k para que el sparks no muestre solo "-1,05" sino "-1,05MM"
+    // v13.5: sufijo MM/M/k para que el spark muestre "-1,05MM" en vez de "-1,05".
+    // MM (≥1e9) con 2 decimales; M (≥1e6) entero para que entre en el slot.
     if (a >= 1e9) return sign + (a / 1e9).toFixed(2).replace('.', ',') + 'MM';
-    if (a >= 1e6) return sign + (a / 1e6).toFixed(2).replace('.', ',') + 'M';
+    if (a >= 1e6) return sign + Math.round(a / 1e6) + 'M';
     if (a >= 1e3) return sign + Math.round(a / 1e3) + 'k';
     return sign + Math.round(a);
   };
