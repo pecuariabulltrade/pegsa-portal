@@ -1708,15 +1708,17 @@
     </div>
   </div>
 
-  <!-- Nav tabs -->
+  <!-- Nav tabs (v14.0): 7 -> 5 con jerarquía. Histórico, Seguimiento e
+       Indiferencia de mercado pasan a sub-tabs del nuevo "Información
+       de Mercado". Los ids "mercadoTabInferencia" / "panelMercadoInferencia"
+       se mantienen (no se renombran a indiferencia2) porque el bridge
+       URL ?mod=mercado&tab=inferencia del mobile usa esa clave. -->
   <div class="nav-tabs">
-    <div class="nav-tab active" id="mercadoTabHacienda"      onclick="mercadoTab('hacienda',this)">🐄 Precios</div>
-    <div class="nav-tab"        id="mercadoTabNegocios"      onclick="mercadoTab('negocios',this)">📋 Negocios</div>
-    <div class="nav-tab"        id="mercadoTabHistorico"     onclick="mercadoTab('historico',this)">📊 Histórico</div>
-    <div class="nav-tab"        id="mercadoTabSeguimiento"   onclick="mercadoTab('seguimiento',this)">📈 Seguimiento</div>
-    <div class="nav-tab"        id="mercadoTabAnalisis"      onclick="mercadoTab('analisis',this)">🔍 Análisis Compras</div>
-    <div class="nav-tab"        id="mercadoTabIndiferencia"  onclick="mercadoTab('indiferencia',this)">💰 Indiferencia</div>
-    <div class="nav-tab"        id="mercadoTabInferencia"    onclick="mercadoTab('inferencia',this)">📊 Inferencia</div>
+    <div class="nav-tab active" id="mercadoTabHacienda"     onclick="mercadoTab('hacienda',this)">🐄 Precios de Mercado</div>
+    <div class="nav-tab"        id="mercadoTabNegocios"     onclick="mercadoTab('negocios',this)">📋 Últimos Negocios de Compra</div>
+    <div class="nav-tab"        id="mercadoTabAnalisis"     onclick="mercadoTab('analisis',this)">🔍 Análisis Compras</div>
+    <div class="nav-tab"        id="mercadoTabInferencia"   onclick="mercadoTab('inferencia',this)">💰 Indiferencia de Precios de Compra</div>
+    <div class="nav-tab"        id="mercadoTabInfoMercado"  onclick="mercadoTab('infomercado',this)">📈 Información de Mercado</div>
   </div>
 
   <div id="mercadoLoading" style="text-align:center;padding:80px 0;color:rgba(26,22,18,.4);font-family:'DM Mono',monospace;font-size:13px">Cargando datos...</div>
@@ -1748,25 +1750,6 @@
     <!-- Panel Granos (vacío, mantenido para compatibilidad JS) -->
     <div id="panelMercadoCommodities" style="display:none"></div>
 
-    <!-- Panel Seguimiento Económico Diario -->
-    <div id="panelMercadoSeguimiento" style="display:none">
-      <div class="panel" style="display:block">
-        <div class="section-header">
-          <span class="section-title">Seguimiento Económico Diario</span>
-          <span class="section-sub">Simulación automática · 5 categorías MAG · Precios del día</span>
-        </div>
-        <div class="nota-box">Resultado por cabeza según precios de hacienda e insumos del día. Los parámetros operativos (flete, comisiones, sanidad, etc.) se toman de los valores cargados en el Simulador.</div>
-        <div id="segHoyTabla" style="margin-top:16px"></div>
-        <div id="segChartWrap" style="margin-top:28px">
-          <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:10px">Evolución histórica · seleccioná la métrica</div>
-          <div id="segMetricBtns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
-          <div class="panel-chart-wrap" style="margin:0">
-            <canvas id="chartSeguimiento" style="max-height:380px"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Panel Negocios -->
     <div id="panelMercadoNegocios" style="display:none">
       <div class="panel" style="display:block">
@@ -1788,33 +1771,10 @@
       </div>
     </div>
 
-    <!-- Panel Indiferencia -->
-    <div id="panelMercadoIndiferencia" style="display:none">
-      <div class="panel" style="display:block">
-        <div class="section-header">
-          <span class="section-title">Precios de Indiferencia · Objetivo $100.000/cab</span>
-          <span class="section-sub">Cuánto pagar por kg para que la tropa rinda $100k/cab</span>
-        </div>
-        <div class="nota-box" style="margin-bottom:0">PI calculado con parámetros base actuales + insumos vigentes + reglas de pesoS dinámico. Verde = mercado por debajo de PI (oportunidad de compra).</div>
-        <div id="indiferenciaBody" style="margin-top:20px"></div>
-      </div>
-    </div>
-
-    <!-- Panel Histórico -->
-    <div id="panelMercadoHistorico" style="display:none">
-      <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Evolución Histórica de Precios</span><span class="section-sub">Todas las categorías · $/kg en pie · MAG</span></div>
-        <div id="mercadoHistNoData" class="nota-box" style="display:none">Aún no hay suficientes datos históricos. Se acumulan automáticamente con cada actualización diaria.</div>
-        <div id="mercadoHistoricoChart" style="background:white;border:1px solid var(--border);padding:24px;border-radius:2px">
-          <div id="mercadoHistFiltros" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
-          <canvas id="chartMercadoHistorico" style="max-height:360px"></canvas>
-        </div>
-        <!-- Tabla variación porcentual -->
-        <div id="mercadoHistTablaWrap" style="margin-top:20px;overflow-x:auto"></div>
-      </div>
-    </div>
-
-    <!-- Panel Inferencia (v8): tabla + line chart de precios_inferencia_historico -->
+    <!-- Panel Inferencia (v8): tabla + line chart de precios_inferencia_historico.
+         v14.0: el TEXTO de la nav-tab pasa a "Indiferencia de Precios de Compra".
+         Los ids (mercadoTabInferencia, panelMercadoInferencia) NO cambian para
+         no romper el bridge mobile ?mod=mercado&tab=inferencia. -->
     <div id="panelMercadoInferencia" style="display:none">
       <div class="panel" style="display:block">
         <div class="section-header">
@@ -1826,6 +1786,68 @@
           <canvas id="chartInferencia" style="max-height:360px"></canvas>
         </div>
         <div id="inferenciaTablaWrap" style="overflow-x:auto"></div>
+      </div>
+    </div>
+
+    <!-- Panel Info Mercado (v14.0): wrapper de 3 sub-tabs Histórico /
+         Seguimiento / Indiferencia (de mercado). El primer sub-tab abre
+         por default. infoMercadoTab() alterna entre los 3 paneles internos. -->
+    <div id="panelMercadoInfoMercado" style="display:none">
+      <div class="panel" style="display:block;margin-bottom:0">
+        <div class="section-header">
+          <span class="section-title">Información de Mercado</span>
+          <span class="section-sub">Histórico · Seguimiento · Indiferencia</span>
+        </div>
+        <div class="nav-tabs sub-tabs" style="margin:14px 0 22px;padding:0;position:static;top:auto;box-shadow:none">
+          <div class="nav-tab active" id="infoMercadoTabHistorico"    onclick="infoMercadoTab('historico',this)">📊 Histórico</div>
+          <div class="nav-tab"        id="infoMercadoTabSeguimiento"  onclick="infoMercadoTab('seguimiento',this)">📈 Seguimiento</div>
+          <div class="nav-tab"        id="infoMercadoTabIndiferencia" onclick="infoMercadoTab('indiferencia',this)">💰 Indiferencia (mercado)</div>
+        </div>
+      </div>
+
+      <!-- Panel Histórico (v14.0: ahora dentro de InfoMercado · default visible) -->
+      <div id="panelMercadoHistorico" style="display:block">
+        <div class="panel" style="display:block">
+          <div class="section-header"><span class="section-title">Evolución Histórica de Precios</span><span class="section-sub">Todas las categorías · $/kg en pie · MAG</span></div>
+          <div id="mercadoHistNoData" class="nota-box" style="display:none">Aún no hay suficientes datos históricos. Se acumulan automáticamente con cada actualización diaria.</div>
+          <div id="mercadoHistoricoChart" style="background:white;border:1px solid var(--border);padding:24px;border-radius:2px">
+            <div id="mercadoHistFiltros" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+            <canvas id="chartMercadoHistorico" style="max-height:360px"></canvas>
+          </div>
+          <!-- Tabla variación porcentual -->
+          <div id="mercadoHistTablaWrap" style="margin-top:20px;overflow-x:auto"></div>
+        </div>
+      </div>
+
+      <!-- Panel Seguimiento Económico Diario (v14.0: ahora dentro de InfoMercado) -->
+      <div id="panelMercadoSeguimiento" style="display:none">
+        <div class="panel" style="display:block">
+          <div class="section-header">
+            <span class="section-title">Seguimiento Económico Diario</span>
+            <span class="section-sub">Simulación automática · 5 categorías MAG · Precios del día</span>
+          </div>
+          <div class="nota-box">Resultado por cabeza según precios de hacienda e insumos del día. Los parámetros operativos (flete, comisiones, sanidad, etc.) se toman de los valores cargados en el Simulador.</div>
+          <div id="segHoyTabla" style="margin-top:16px"></div>
+          <div id="segChartWrap" style="margin-top:28px">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:10px">Evolución histórica · seleccioná la métrica</div>
+            <div id="segMetricBtns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+            <div class="panel-chart-wrap" style="margin:0">
+              <canvas id="chartSeguimiento" style="max-height:380px"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Indiferencia (de mercado · v14.0: ahora dentro de InfoMercado) -->
+      <div id="panelMercadoIndiferencia" style="display:none">
+        <div class="panel" style="display:block">
+          <div class="section-header">
+            <span class="section-title">Precios de Indiferencia · Objetivo $100.000/cab</span>
+            <span class="section-sub">Cuánto pagar por kg para que la tropa rinda $100k/cab</span>
+          </div>
+          <div class="nota-box" style="margin-bottom:0">PI calculado con parámetros base actuales + insumos vigentes + reglas de pesoS dinámico. Verde = mercado por debajo de PI (oportunidad de compra).</div>
+          <div id="indiferenciaBody" style="margin-top:20px"></div>
+        </div>
       </div>
     </div>
 

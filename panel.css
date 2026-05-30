@@ -1148,6 +1148,51 @@ html, body {
 .seg button.on { background: var(--surface); color: var(--primary-deep); box-shadow: var(--shadow-sm); }
 
 
+/* ════════════════════════════════════════════════════════════════
+   v14.0 · Sub-tabs dentro de paneles (ej. Información de Mercado)
+   ════════════════════════════════════════════════════════════════
+   Las nav-tabs principales son sticky (top:0) con padding lateral
+   alineado al header del screen. Los sub-tabs viven dentro de un
+   .panel y necesitan otra escala: más chicos, sin sticky, sin el
+   padding 0 36px lateral, y con un color de active más sutil que
+   el gold del nav principal — para no competir visualmente con la
+   tab madre que ya está coloreada.
+   ════════════════════════════════════════════════════════════════ */
+.nav-tabs.sub-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--v2-line, #e5e3df);
+  box-shadow: none;
+  position: static;
+  top: auto;
+  z-index: auto;
+}
+.nav-tabs.sub-tabs .nav-tab {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 10px 14px;
+  color: var(--v2-muted, rgba(26,22,18,0.55));
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;  /* solapa el border-bottom del .nav-tabs.sub-tabs */
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav-tabs.sub-tabs .nav-tab:hover {
+  color: var(--v2-ink, var(--ink));
+}
+.nav-tabs.sub-tabs .nav-tab.active {
+  color: var(--v2-blue, #1a5276);
+  border-bottom-color: var(--v2-blue, #1a5276);
+  font-weight: 600;
+}
+
+
 /* Colisión de nombres: el portal viejo usa .panel y .nav-tab — forzar visibilidad
    solo cuando estamos dentro del Panel Principal React */
 #panelRoot .panel {

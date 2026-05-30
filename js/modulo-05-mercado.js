@@ -15,31 +15,66 @@ var PRECIOS_COMMODITIES = [
   {nombre:'Soja (USD)',   unidad:'USD/tn', precio:null, ref:'CBOT'},
 ];
 
+/* v14.0: 5 nav-tabs principales en lugar de 7. Historico, Seguimiento e
+   Indiferencia (de mercado) pasaron a sub-tabs del nuevo "Información
+   de Mercado" (panelMercadoInfoMercado). Sus paneles internos siguen
+   con los mismos ids — `infoMercadoTab()` alterna entre ellos. El
+   selector '#screenMercado .nav-tab' incluye AHORA tanto los principales
+   como los sub-tabs (todos cuelgan de #screenMercado), por eso
+   limitamos el clear de active a la primera nav-tabs del screen. */
 function mercadoTab(tab, el){
-  document.querySelectorAll('#screenMercado .nav-tab').forEach(t=>t.classList.remove('active'));
+  // Solo desactivar las 5 nav-tabs PRINCIPALES (la primera .nav-tabs del
+  // screen). Los sub-tabs de InfoMercado conservan su estado.
+  var mainNav = document.querySelector('#screenMercado > .nav-tabs');
+  if (mainNav) mainNav.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoAnalisis','panelMercadoIndiferencia','panelMercadoInferencia'].forEach(function(p){
+  ['panelMercadoHacienda','panelMercadoNegocios','panelMercadoAnalisis','panelMercadoInferencia','panelMercadoInfoMercado'].forEach(function(p){
     var n=document.getElementById(p); if(n) n.style.display='none';
   });
   var map = {
-    hacienda:      'panelMercadoHacienda',
-    negocios:      'panelMercadoNegocios',
-    historico:     'panelMercadoHistorico',
-    seguimiento:   'panelMercadoSeguimiento',
-    analisis:      'panelMercadoAnalisis',
-    indiferencia:  'panelMercadoIndiferencia',
-    inferencia:    'panelMercadoInferencia',
+    hacienda:    'panelMercadoHacienda',
+    negocios:    'panelMercadoNegocios',
+    analisis:    'panelMercadoAnalisis',
+    inferencia:  'panelMercadoInferencia',
+    infomercado: 'panelMercadoInfoMercado',
   };
   if(map[tab]){
     document.getElementById(map[tab]).style.display='block';
-    if(tab==='historico')    renderHistoricoChart();
-    if(tab==='negocios')     renderNegocios();
-    if(tab==='seguimiento')  _segRun(MERCADO_DATA_CACHE);
-    if(tab==='analisis')     renderAnalisis();
-    if(tab==='indiferencia') renderIndiferencia();
-    if(tab==='inferencia')   renderInferencia();
+    if(tab==='negocios')    renderNegocios();
+    if(tab==='analisis')    renderAnalisis();
+    if(tab==='inferencia')  renderInferencia();
+    if(tab==='infomercado') {
+      // Asegurar que el primer sub-tab (Histórico) esté activo al abrir.
+      infoMercadoTab('historico', document.getElementById('infoMercadoTabHistorico'));
+    }
   }
 }
+
+/* v14.0: alterna entre los 3 sub-paneles internos de "Información de
+   Mercado". Llama a los mismos renders que la versión anterior plana
+   (renderHistoricoChart / _segRun / renderIndiferencia) para no
+   duplicar lógica. Los 3 paneles viven dentro de panelMercadoInfoMercado. */
+function infoMercadoTab(subtab, el){
+  var subNav = document.querySelector('#panelMercadoInfoMercado .nav-tabs.sub-tabs');
+  if (subNav) subNav.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  ['panelMercadoHistorico','panelMercadoSeguimiento','panelMercadoIndiferencia'].forEach(function(p){
+    var n=document.getElementById(p); if(n) n.style.display='none';
+  });
+  var subMap = {
+    historico:    'panelMercadoHistorico',
+    seguimiento:  'panelMercadoSeguimiento',
+    indiferencia: 'panelMercadoIndiferencia',
+  };
+  if(subMap[subtab]){
+    document.getElementById(subMap[subtab]).style.display='block';
+    if(subtab==='historico')    renderHistoricoChart();
+    if(subtab==='seguimiento')  _segRun(MERCADO_DATA_CACHE);
+    if(subtab==='indiferencia') renderIndiferencia();
+  }
+}
+// Exponer global (igual que mercadoTab) para los onclick inline del HTML.
+window.infoMercadoTab = infoMercadoTab;
 
 /* ============================================================
    v8 · Pestaña "Inferencia" del módulo Mercado.
