@@ -1,0 +1,1740 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PEGSA & BULLTRADE · Informe Ejecutivo · 29/5/2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: oklch(0.985 0.004 256);
+  --surface: #ffffff;
+  --surface-alt: oklch(0.97 0.006 256);
+  --border: oklch(0.91 0.008 256);
+  --border-strong: oklch(0.85 0.012 256);
+
+  --ink: oklch(0.22 0.04 256);
+  --ink-soft: oklch(0.42 0.03 256);
+  --ink-mute: oklch(0.58 0.02 256);
+  --ink-faint: oklch(0.72 0.012 256);
+
+  --primary: oklch(0.42 0.13 256);
+  --primary-deep: oklch(0.32 0.13 256);
+  --primary-soft: oklch(0.94 0.025 256);
+
+  --pos: oklch(0.55 0.13 155);
+  --pos-soft: oklch(0.95 0.04 155);
+  --neg: oklch(0.55 0.16 25);
+  --neg-soft: oklch(0.96 0.04 25);
+  --warn: oklch(0.72 0.15 75);
+  --warn-soft: oklch(0.96 0.07 85);
+
+  --r: 12px;
+  --r-lg: 16px;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: oklch(0.95 0.005 256);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== STAGE — dos hojas lado a lado ===== */
+.stage {
+  min-height: 100vh;
+  padding: 36px 24px 56px;
+  background:
+    radial-gradient(circle at 30% 20%, oklch(0.92 0.02 256) 0%, transparent 60%),
+    radial-gradient(circle at 70% 80%, oklch(0.93 0.02 220) 0%, transparent 60%),
+    oklch(0.95 0.005 256);
+}
+.stage-head {
+  max-width: 920px;
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ink-mute);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.stage-head b { color: var(--ink); }
+.stage-head .pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.stage-head .pill em {
+  font-style: normal;
+  color: var(--pos);
+}
+.sheets {
+  display: grid;
+  grid-template-columns: repeat(2, 420px);
+  gap: 28px;
+  justify-content: center;
+  align-items: start;
+}
+
+/* ===== SHEET ===== */
+.sheet {
+  width: 420px;
+  background: var(--bg);
+  border-radius: 28px;
+  box-shadow:
+    0 1px 2px oklch(0.32 0.04 256 / 0.05),
+    0 24px 60px -20px oklch(0.32 0.04 256 / 0.22);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ===== SHEET HEADER ===== */
+.sh-head {
+  background: var(--primary-deep);
+  color: white;
+  padding: 14px 18px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sh-logo {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: oklch(1 0 0 / 0.14);
+  border: 1px solid oklch(1 0 0 / 0.18);
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 10px;
+  letter-spacing: 0.08em;
+  color: white;
+}
+.sh-title {
+  flex: 1; line-height: 1.15;
+}
+.sh-title b {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  display: block;
+}
+.sh-title small {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: oklch(0.85 0.04 230 / 0.75);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.sh-page {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: oklch(0.85 0.04 230 / 0.85);
+  letter-spacing: 0.04em;
+  border: 1px solid oklch(1 0 0 / 0.18);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* ===== SECTION ===== */
+.sec {
+  padding: 16px 16px 4px;
+}
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sec-head h2 {
+  margin: 0;
+  position: relative;
+  padding-left: 12px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.sec-head h2::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 4px; height: 15px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+.sec.s-rodeo  .sec-head h2::before { background: var(--b-bull); }
+.sec.s-stock   .sec-head h2::before { background: var(--b-pegsa); }
+.sec.s-insumos .sec-head h2::before { background: var(--b-gb); }
+.sec.s-fin     .sec-head h2::before { background: var(--b-dw); }
+.sec.s-prod    .sec-head h2::before { background: var(--b-bull); }
+.sec.s-prc     .sec-head h2::before { background: var(--b-pegsa); }
+.sec-head small {
+  font-size: 13px;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+.sec-rule {
+  height: 1px;
+  background: var(--border);
+  margin: 0 16px 8px;
+}
+
+/* ===== STOCK CARD ===== */
+.stock {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.stock-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 12px 10px;
+}
+.stock-card .cat {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.stock-card .cat b {
+  color: var(--ink);
+}
+.stock-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 0 0;
+}
+.stock-row .tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--surface-alt);
+  white-space: nowrap;
+}
+.stock-row.grupo .tag {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+}
+.stock-row .nums {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.stock-row .nums .cab {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.stock-row .nums .kg {
+  font-size: 13px;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+.stock-foot {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+.stock-foot b {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+/* ===== INSUMOS (tarjetas cuadradas) ===== */
+.insumos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.insumo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+}
+.insumo .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.insumo .ic {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+}
+.insumo .ic svg { width: 24px; height: 24px; }
+.insumo .name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-top: 12px;
+}
+.insumo .name small {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ink-mute);
+  margin-top: 4px;
+  text-transform: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.insumo .days {
+  margin-top: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.95;
+}
+.insumo .days .big {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.insumo .days .u {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+}
+.insumo.ok    .days .big { color: var(--pos); }
+.insumo.warn  .days .big { color: oklch(0.5 0.15 75); }
+.insumo .state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.insumo .state .led { width: 7px; height: 7px; border-radius: 99px; }
+.insumo.ok   .state { background: var(--pos-soft); border-color: oklch(0.85 0.1 155); color: var(--pos); }
+.insumo.ok   .state .led { background: var(--pos); }
+.insumo.warn .state { background: var(--warn-soft); border-color: oklch(0.85 0.1 75); color: oklch(0.45 0.15 75); }
+.insumo.warn .state .led { background: var(--warn); }
+
+/* ===== FINANCIERO ===== */
+.fin-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px 14px;
+  margin-bottom: 8px;
+}
+.fin-group + .fin-group { margin-bottom: 0; }
+.fin-group .gh {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.fin-group .gh .lbl {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.fin-group .gh .lbl small {
+  display: block;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--ink-mute);
+  margin-top: 1px;
+}
+.fin-group .gh .partida {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--ink-mute);
+  text-align: right;
+  line-height: 1.3;
+}
+.fin-group .gh .partida b { color: var(--ink); font-weight: 600; }
+
+.fin-cells {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  position: relative;
+}
+.fin-cells::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 4px; bottom: 4px;
+  width: 1px;
+  background: var(--border);
+}
+.fin-cell { padding: 0 8px; }
+.fin-cell.left { padding-left: 0; }
+.fin-cell.right { padding-right: 0; text-align: right; }
+.fin-cell .l {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-bottom: 2px;
+}
+.fin-cell .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+.fin-cell .v.pos { color: var(--pos); }
+.fin-cell .v.neg { color: var(--neg); }
+.fin-cell .m {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* mini bars */
+.spark {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+.spark-c {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.spark-bar {
+  position: relative;
+  width: 100%;
+  height: 44px;
+}
+.spark-bar .axis {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: var(--border-strong);
+}
+.spark-bar .b {
+  position: absolute;
+  left: 18%; right: 18%;
+  border-radius: 2px;
+  min-height: 2px;
+}
+.spark-bar .b.pos { background: var(--pos); }
+.spark-bar .b.neg { background: var(--neg); }
+.spark-c.proj .b.pos { background: oklch(0.78 0.10 155); opacity: 0.65; }
+.spark-c.proj .b.neg { background: oklch(0.74 0.13 25); opacity: 0.55; }
+.spark-c .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.spark-c .v.pos { color: var(--pos); }
+.spark-c .v.neg { color: var(--neg); }
+.spark-c.proj .v { opacity: 0.75; font-weight: 500; }
+.spark-c .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: -0.01em;
+}
+
+/* ===== PRODUCTIVOS ===== */
+.prod {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.prod-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 12px 11px;
+  position: relative;
+}
+.prod-card.warn  { box-shadow: inset 3px 0 0 0 var(--warn); }
+.prod-card.bad   { box-shadow: inset 3px 0 0 0 var(--neg); background: linear-gradient(180deg, var(--neg-soft) 0%, var(--surface) 70%); }
+.prod-card.good  { box-shadow: inset 3px 0 0 0 var(--pos); }
+.prod-card .ph {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.prod-card .lbl {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.prod-card .pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: var(--surface-alt);
+  color: var(--ink-mute);
+  letter-spacing: -0.01em;
+}
+.prod-card.warn .pill { background: var(--warn-soft); color: oklch(0.45 0.15 75); }
+.prod-card.bad  .pill { background: var(--neg-soft); color: var(--neg); }
+.prod-card.good .pill { background: var(--pos-soft); color: var(--pos); }
+.prod-card .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 4px 0 1px;
+}
+.prod-card.bad .val { color: oklch(0.42 0.16 25); }
+.prod-card .val .u {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  margin-left: 2px;
+}
+.prod-card .base {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ink-mute);
+}
+.prod-card .base b {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* ===== PRECIOS INDIFERENCIA ===== */
+.prc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.prc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 11px 12px 12px;
+}
+.prc-card .ph {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.prc-card .cat {
+  line-height: 1.15;
+}
+.prc-card .cat b {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  display: block;
+}
+.prc-card .cat small {
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.prc-card .mg {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--pos-soft);
+  color: var(--pos);
+  white-space: nowrap;
+}
+.prc-card .price {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 29px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin: 2px 0 8px;
+}
+.prc-card .price .cur {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  margin-right: 2px;
+}
+.prc-card .price .u {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  margin-left: 2px;
+}
+.prc-card .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  font-size: 12.5px;
+  color: var(--ink-mute);
+}
+.prc-card .grid .it {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding: 3px 0;
+}
+.prc-card .grid .it:nth-last-child(-n+2) { border-bottom: none; }
+.prc-card .grid .it b {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ===== SHEET FOOTER ===== */
+.sh-foot {
+  margin-top: 12px;
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+.sh-foot em {
+  font-style: normal;
+  color: var(--ink-mute);
+}
+
+/* ===== PRINT ===== */
+@media print {
+  @page {
+    size: 105mm 340mm;
+    margin: 0;
+  }
+  html, body { background: white; }
+  .stage {
+    background: white;
+    padding: 0;
+    min-height: 0;
+  }
+  .stage-head { display: none; }
+  .masthead { display: none; }
+  .sheets {
+    display: block;
+  }
+  .sheet {
+    width: 105mm;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    page-break-after: always;
+    break-after: page;
+  }
+  .sheet:last-child { page-break-after: auto; break-after: auto; }
+}
+
+/* ===== BRAND BADGES ===== */
+:root {
+  --b-pegsa: #0F1B64;
+  --b-bull:  #FF9027;
+  --b-dw:    #00808B;
+  --b-gb:    #57503D;
+}
+.bmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+  flex: none;
+  box-shadow: 0 1px 2px oklch(0.2 0.04 256 / 0.25);
+}
+.bmark.pegsa { background: var(--b-pegsa); }
+.bmark.bull  { background: var(--b-bull); }
+.bmark.dw    { background: var(--b-dw); }
+.bmark.gb    { background: var(--b-gb); }
+
+/* masthead — screen only */
+.masthead {
+  max-width: 920px;
+  margin: 0 auto 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  box-shadow: 0 10px 30px -18px oklch(0.32 0.04 256 / 0.3);
+}
+.masthead .mh-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.masthead .mh-brand .nm {
+  line-height: 1.1;
+}
+.masthead .mh-brand .nm b {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.masthead .mh-brand .nm small {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.masthead .mh-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+}
+.masthead .mh-tag {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  text-align: right;
+  line-height: 1.3;
+}
+
+/* brand cluster inside sheet header */
+.sh-brands {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.sh-brands .bmark {
+  width: 24px; height: 24px;
+  font-size: 11px;
+  border: 1.5px solid var(--primary-deep);
+  margin-left: -7px;
+  border-radius: 7px;
+}
+.sh-brands .bmark:first-child { margin-left: 0; }
+
+/* ===== TOTALES DEL RODEO (strip superior) ===== */
+.rodeo {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.rodeo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 9px 8px;
+  position: relative;
+  overflow: hidden;
+}
+.rodeo-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.rodeo-card.pegsa::before { background: var(--b-pegsa); }
+.rodeo-card.haras::before { background: var(--b-dw); }
+.rodeo-card.otros::before { background: var(--b-gb); }
+.rodeo-card.grupo { background: var(--primary-soft); border-color: oklch(0.86 0.04 256); }
+.rodeo-card.grupo::before { background: var(--b-bull); }
+.rodeo-card .o {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.rodeo-card.grupo .o { color: var(--primary-deep); }
+.rodeo-card .c {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.15;
+  margin-top: 2px;
+}
+.rodeo-card .c span {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  margin-left: 2px;
+}
+.rodeo-card .k {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-top: 1px;
+}
+
+/* ===== ICON CHIPS ===== */
+.ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  flex: none;
+  vertical-align: middle;
+}
+.ic svg { width: 15px; height: 15px; display: block; }
+.ic.sm { width: 18px; height: 18px; border-radius: 5px; }
+.ic.sm svg { width: 12px; height: 12px; }
+.ic.corn { background: oklch(0.95 0.06 95); }
+.ic.peso { background: var(--pos-soft); }
+.ic.cow  { background: oklch(0.93 0.03 50); }
+.ic.gain { background: var(--neg-soft); }
+.ic.days { background: oklch(0.93 0.035 256); }
+.ic.pct  { background: var(--warn-soft); }
+.ic.feed { background: oklch(0.95 0.06 95); }
+.ic.conv { background: var(--neg-soft); }
+.ic.box  { background: var(--pos-soft); }
+
+/* icon + text layout helpers */
+.stock-card .cat,
+.prc-card .cat-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prc-card .cat-wrap { gap: 8px; margin-bottom: 0; }
+.fin-group .gh .lbl-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prod-card .lbl-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===== RESPONSIVE — apilar en mobile ===== */
+@media (max-width: 900px) {
+  .stage { padding: 20px 12px 40px; }
+  .sheets { grid-template-columns: 1fr; }
+  .sheet { width: 100%; max-width: 420px; margin: 0 auto; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- CORN / MAÍZ -->
+    <symbol id="ic-corn" viewBox="0 0 24 24">
+      <path d="M8.5 5.2C6.6 6.6 6 9 6.3 11.6 4.6 11 3 9.4 2.8 7.3 4.7 6 6.8 5.3 8.5 5.2Z" fill="#5BA845"/>
+      <path d="M15.5 3.8c1.7 1.3 1 8.2-1 12.6-.85 1.9-1.95 3.3-3 3.3s-2.15-1.4-3-3.3c-2-4.4-2.7-11.3-1-12.6 1.35-1.05 6.65-1.05 8 0Z" fill="#F4BE2C"/>
+      <g stroke="#D2920F" stroke-width="1" stroke-linecap="round">
+        <path d="M9.4 7.6l5.2.5M9.1 10.1l5.8.5M9.1 12.6l5.7.5M9.5 15.1l4.9.4"/>
+      </g>
+    </symbol>
+    <!-- PESO -->
+    <symbol id="ic-peso" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9.3" fill="#1F8A5B"/>
+      <text x="12" y="16.4" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12.5" font-weight="700" fill="#fff">$</text>
+    </symbol>
+    <!-- COW / VACA -->
+    <symbol id="ic-cow" viewBox="0 0 24 24">
+      <path d="M4.5 5.5C3.2 4.2 1.8 4 1.8 4c.2 2.1 1.1 3.7 2.4 4.4" fill="#9A6A45"/>
+      <path d="M19.5 5.5C20.8 4.2 22.2 4 22.2 4c-.2 2.1-1.1 3.7-2.4 4.4" fill="#9A6A45"/>
+      <ellipse cx="12" cy="12.3" rx="7.6" ry="6.6" fill="#C98A5E"/>
+      <path d="M9.5 6.6c1.4-.7 3.6-.7 5 0-.3 1.4-2 2-2.5 2s-2.2-.6-2.5-2Z" fill="#3A2A20"/>
+      <ellipse cx="12" cy="15" rx="4.6" ry="3.6" fill="#F2D6C2"/>
+      <circle cx="9.1" cy="10.7" r="1.15" fill="#3A2A20"/>
+      <circle cx="14.9" cy="10.7" r="1.15" fill="#3A2A20"/>
+      <circle cx="10.2" cy="15" r=".85" fill="#7A5240"/>
+      <circle cx="13.8" cy="15" r=".85" fill="#7A5240"/>
+    </symbol>
+    <!-- GAIN / engorde -->
+    <symbol id="ic-gain" viewBox="0 0 24 24">
+      <path d="M4 17.5h16" stroke="#C2410C" stroke-width="2" stroke-linecap="round"/>
+      <path d="M5 14l4.5-5 3.5 3.5L19 6" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15 6h4v4" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- DAYS / estadía -->
+    <symbol id="ic-days" viewBox="0 0 24 24">
+      <rect x="4" y="5" width="16" height="15" rx="2.5" fill="none" stroke="#3457A8" stroke-width="2"/>
+      <path d="M4 9h16M8 3v4M16 3v4" stroke="#3457A8" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="14.5" r="1.6" fill="#3457A8"/>
+    </symbol>
+    <!-- PERCENT / eficiencia -->
+    <symbol id="ic-pct" viewBox="0 0 24 24">
+      <path d="M6 18L18 6" stroke="#A16207" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="7.5" cy="7.5" r="2.6" fill="none" stroke="#A16207" stroke-width="2"/>
+      <circle cx="16.5" cy="16.5" r="2.6" fill="none" stroke="#A16207" stroke-width="2"/>
+    </symbol>
+    <!-- CONVERT / conversión -->
+    <symbol id="ic-conv" viewBox="0 0 24 24">
+      <path d="M5 9h12l-3-3M19 15H7l3 3" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- BOX / kg repartidos -->
+    <symbol id="ic-box" viewBox="0 0 24 24">
+      <path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2L12 3Z" fill="none" stroke="#1F8A5B" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M4 7.4l8 4.2 8-4.2M12 11.6V21" fill="none" stroke="#1F8A5B" stroke-width="2" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="stage">
+
+  <div class="stage-head">
+    <div>
+      Informe ejecutivo · <b>29/05/2026</b>
+    </div>
+    <div class="pill">
+      6 hojas <em>→</em> <b>2 hojas</b>
+    </div>
+  </div>
+
+  <div class="masthead">
+    <div class="mh-brand">
+      <span class="bmark pegsa">P</span>
+      <div class="nm"><b>PEGSA</b><small>Hacienda</small></div>
+    </div>
+    <div class="mh-sep"></div>
+    <div class="mh-brand">
+      <span class="bmark bull">B</span>
+      <div class="nm"><b>Bulltrade</b><small>Trading</small></div>
+    </div>
+    <div class="mh-sep"></div>
+    <div class="mh-brand">
+      <span class="bmark dw">D</span>
+      <div class="nm"><b>Darwash</b><small>Análisis</small></div>
+    </div>
+    <div class="mh-sep"></div>
+    <div class="mh-brand">
+      <span class="bmark gb">G</span>
+      <div class="nm"><b>El Garabí</b><small>Pecuaria</small></div>
+    </div>
+    <div class="mh-tag">Informe ejecutivo<br>29/05/2026</div>
+  </div>
+
+  <div class="sheets">
+
+    <!-- ============================= -->
+    <!-- HOJA 1 — STOCK · INSUMOS · FIN -->
+    <!-- ============================= -->
+    <section class="sheet">
+
+      <header class="sh-head">
+        <div class="sh-brands">
+          <span class="bmark pegsa">P</span>
+          <span class="bmark bull">B</span>
+          <span class="bmark dw">D</span>
+          <span class="bmark gb">G</span>
+        </div>
+        <div class="sh-title">
+          <b>PEGSA &amp; BULLTRADE</b>
+          <small>Informe ejecutivo · 29/5/2026</small>
+        </div>
+        <div class="sh-page mono">1 / 2</div>
+      </header>
+
+      <!-- TOTALES DEL RODEO -->
+      <div class="sec s-rodeo">
+        <div class="sec-head">
+          <h2>Totales del rodeo</h2>
+          <small>cabezas · kilos por origen</small>
+        </div>
+        <div class="rodeo">
+          <div class="rodeo-card pegsa">
+            <div class="o">PEGSA</div>
+            <div class="c">8.970<span>cab</span></div>
+            <div class="k">4,03 M kg</div>
+          </div>
+          <div class="rodeo-card haras">
+            <div class="o">Haras</div>
+            <div class="c">7.950<span>cab</span></div>
+            <div class="k">3,92 M kg</div>
+          </div>
+          <div class="rodeo-card otros">
+            <div class="o">Otros</div>
+            <div class="c">2.011<span>cab</span></div>
+            <div class="k">469 k kg</div>
+          </div>
+          <div class="rodeo-card grupo">
+            <div class="o">Grupo</div>
+            <div class="c">9.961<span>cab</span></div>
+            <div class="k">4,39 M kg</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-rule"></div>
+
+      <!-- STOCK TERMINADOS -->
+      <div class="sec s-stock">
+        <div class="sec-head">
+          <h2>Stock terminados</h2>
+          <small>cabezas · kilos</small>
+        </div>
+
+        <div class="stock">
+          <div class="stock-card">
+            <div class="cat"><span class="ic cow sm"><svg><use href="#ic-cow"/></svg></span><span>Novillo <b>&gt; 550 kg</b></span></div>
+            <div class="stock-row">
+              <span class="tag">PEGSA</span>
+              <span class="nums">
+                <span class="cab">751</span>
+                <span class="kg">460.097 kg</span>
+              </span>
+            </div>
+            <div class="stock-row grupo">
+              <span class="tag">GRUPO</span>
+              <span class="nums">
+                <span class="cab">895</span>
+                <span class="kg">549.355 kg</span>
+              </span>
+            </div>
+            <div class="stock-foot">
+              <span>Kg / cab.</span>
+              <b>613 / 614 kg</b>
+            </div>
+          </div>
+
+          <div class="stock-card">
+            <div class="cat"><span class="ic cow sm"><svg><use href="#ic-cow"/></svg></span><span>Vaca <b>&gt; 650 kg</b></span></div>
+            <div class="stock-row">
+              <span class="tag">PEGSA</span>
+              <span class="nums">
+                <span class="cab">533</span>
+                <span class="kg">346.450 kg</span>
+              </span>
+            </div>
+            <div class="stock-row grupo">
+              <span class="tag">GRUPO</span>
+              <span class="nums">
+                <span class="cab">591</span>
+                <span class="kg">384.150 kg</span>
+              </span>
+            </div>
+            <div class="stock-foot">
+              <span>Kg / cab.</span>
+              <b>650 / 650 kg</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-rule"></div>
+
+      <!-- INSUMOS CRÍTICOS -->
+      <div class="sec s-insumos">
+        <div class="sec-head">
+          <h2>Insumos críticos</h2>
+          <small>autonomía estimada</small>
+        </div>
+
+        <div class="insumos">
+          <div class="insumo ok">
+            <div class="top">
+              <span class="ic corn"><svg><use href="#ic-corn"/></svg></span>
+              <span class="state"><span class="led"></span>OK</span>
+            </div>
+            <div class="name">Silo de maíz
+              <small>10.039.630 kg · 29.167 kg/d</small>
+            </div>
+            <div class="days">
+              <span class="big">344</span>
+              <span class="u">días de autonomía</span>
+            </div>
+          </div>
+
+          <div class="insumo ok">
+            <div class="top">
+              <span class="ic corn"><svg><use href="#ic-corn"/></svg></span>
+              <span class="state"><span class="led"></span>OK</span>
+            </div>
+            <div class="name">Maíz grano
+              <small>1.851.456 kg · 35.458 kg/d</small>
+            </div>
+            <div class="days">
+              <span class="big">52</span>
+              <span class="u">días de autonomía</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-rule"></div>
+
+      <!-- FINANCIERO -->
+      <div class="sec s-fin">
+        <div class="sec-head">
+          <h2>Financiero</h2>
+          <small>saldo proyectado · 6 semanas</small>
+        </div>
+
+        <!-- PEG-BULL -->
+        <div class="fin-group">
+          <div class="gh">
+            <div class="lbl">
+              <span class="lbl-wrap"><span class="ic peso sm"><svg><use href="#ic-peso"/></svg></span>PEG-BULL</span>
+              <small>Pecuaria El Garabí + Bulltrade</small>
+            </div>
+            <div class="partida mono">
+              Hoy<br><b>-$ 370 M</b>
+            </div>
+          </div>
+
+          <div class="fin-cells">
+            <div class="fin-cell left">
+              <div class="l">Cierre · 27 may–2 jun</div>
+              <div class="v neg mono">-$ 1,05 MM</div>
+            </div>
+            <div class="fin-cell right">
+              <div class="l">Proyectado · 01/07</div>
+              <div class="v neg mono">-$ 3,48 MM</div>
+            </div>
+          </div>
+
+          <div class="spark">
+            <div class="spark-c">
+              <div class="v neg">-1,05</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:15%;"></div></div>
+              <div class="lbl">27/05</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v neg">-2,40</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:34%;"></div></div>
+              <div class="lbl">03/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v neg">-2,32</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:33%;"></div></div>
+              <div class="lbl">10/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v neg">-2,51</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:36%;"></div></div>
+              <div class="lbl">17/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v neg">-3,24</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:46%;"></div></div>
+              <div class="lbl">24/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v neg">-3,48</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:50%;"></div></div>
+              <div class="lbl">01/07</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DW -->
+        <div class="fin-group">
+          <div class="gh">
+            <div class="lbl">
+              <span class="lbl-wrap"><span class="ic peso sm"><svg><use href="#ic-peso"/></svg></span>DW · Darwash</span>
+              <small>análisis independiente</small>
+            </div>
+            <div class="partida mono">
+              Hoy<br><b>-$ 120 M</b>
+            </div>
+          </div>
+
+          <div class="fin-cells">
+            <div class="fin-cell left">
+              <div class="l">Cierre · 20–26 may</div>
+              <div class="v neg mono">-$ 120 M</div>
+            </div>
+            <div class="fin-cell right">
+              <div class="l">Proyectado · 24/06</div>
+              <div class="v pos mono">$ 2,96 MM</div>
+            </div>
+          </div>
+
+          <div class="spark">
+            <div class="spark-c">
+              <div class="v neg">-0,12</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b neg" style="top:50%; height:2%;"></div></div>
+              <div class="lbl">20/05</div>
+            </div>
+            <div class="spark-c">
+              <div class="v pos">+1,96</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b pos" style="bottom:50%; height:33%;"></div></div>
+              <div class="lbl">27/05</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v pos">+2,75</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b pos" style="bottom:50%; height:46%;"></div></div>
+              <div class="lbl">03/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v pos">+2,46</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b pos" style="bottom:50%; height:42%;"></div></div>
+              <div class="lbl">10/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v pos">+2,95</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b pos" style="bottom:50%; height:50%;"></div></div>
+              <div class="lbl">17/06</div>
+            </div>
+            <div class="spark-c proj">
+              <div class="v pos">+2,96</div>
+              <div class="spark-bar"><div class="axis"></div><div class="b pos" style="bottom:50%; height:50%;"></div></div>
+              <div class="lbl">24/06</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="sh-foot">
+        <span>Documento autogenerado · datos del panel</span>
+        <em>Uso interno · Dirección</em>
+      </footer>
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- HOJA 2 — PRODUCTIVOS · PRECIOS -->
+    <!-- ============================= -->
+    <section class="sheet">
+
+      <header class="sh-head">
+        <div class="sh-brands">
+          <span class="bmark pegsa">P</span>
+          <span class="bmark bull">B</span>
+          <span class="bmark dw">D</span>
+          <span class="bmark gb">G</span>
+        </div>
+        <div class="sh-title">
+          <b>PEGSA &amp; BULLTRADE</b>
+          <small>Informe ejecutivo · 29/5/2026</small>
+        </div>
+        <div class="sh-page mono">2 / 2</div>
+      </header>
+
+      <!-- PRODUCTIVOS -->
+      <div class="sec s-prod">
+        <div class="sec-head">
+          <h2>Productivos</h2>
+          <small>actual vs anual</small>
+        </div>
+
+        <div class="prod">
+          <div class="prod-card bad">
+            <div class="ph">
+              <span class="lbl-wrap"><span class="ic gain sm"><svg><use href="#ic-gain"/></svg></span><span class="lbl">Engorde diario</span></span>
+              <span class="pill">↓ 31%</span>
+            </div>
+            <div class="val">1.030<span class="u">g/d</span></div>
+            <div class="base"><span>vs 12 m</span><b>1.501 g/d</b></div>
+          </div>
+
+          <div class="prod-card bad">
+            <div class="ph">
+              <span class="lbl-wrap"><span class="ic days sm"><svg><use href="#ic-days"/></svg></span><span class="lbl">Estadía</span></span>
+              <span class="pill">↑ 24%</span>
+            </div>
+            <div class="val">169<span class="u">días</span></div>
+            <div class="base"><span>vs 12 m</span><b>136 d</b></div>
+          </div>
+
+          <div class="prod-card bad">
+            <div class="ph">
+              <span class="lbl-wrap"><span class="ic pct sm"><svg><use href="#ic-pct"/></svg></span><span class="lbl">Eficiencia %PV</span></span>
+              <span class="pill">↓ 21%</span>
+            </div>
+            <div class="val">2,04<span class="u">%</span></div>
+            <div class="base"><span>vs anual</span><b>2,57 %</b></div>
+          </div>
+
+          <div class="prod-card bad">
+            <div class="ph">
+              <span class="lbl-wrap"><span class="ic feed sm"><svg><use href="#ic-corn"/></svg></span><span class="lbl">Consumo / cab</span></span>
+              <span class="pill">↓ 21%</span>
+            </div>
+            <div class="val">14,1<span class="u">kg</span></div>
+            <div class="base"><span>vs anual</span><b>17,9 kg</b></div>
+          </div>
+
+          <div class="prod-card bad">
+            <div class="ph">
+              <span class="lbl-wrap"><span class="ic conv sm"><svg><use href="#ic-conv"/></svg></span><span class="lbl">Conversión</span></span>
+              <span class="pill">↑ 54%</span>
+            </div>
+            <div class="val">12,3</div>
+            <div class="base"><span>vs anual</span><b>8,0</b></div>
+          </div>
+
+          <div class="prod-card bad">
+            <div class="ph">
+              <span class="lbl-wrap"><span class="ic box sm"><svg><use href="#ic-box"/></svg></span><span class="lbl">Kg repartidos · últ. día</span></span>
+              <span class="pill">↓ 17%</span>
+            </div>
+            <div class="val">92.730<span class="u">kg</span></div>
+            <div class="base"><span>prom 3 d</span><b>111.697 kg</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-rule"></div>
+
+      <!-- PRECIOS INDIFERENCIA -->
+      <div class="sec s-prc">
+        <div class="sec-head">
+          <h2>Precios de indiferencia</h2>
+          <small>tope de compra · 27/05</small>
+        </div>
+
+        <div class="prc">
+          <div class="prc-card">
+            <div class="ph">
+              <div class="cat-wrap"><span class="ic cow sm"><svg><use href="#ic-cow"/></svg></span><div class="cat"><b>Vaca</b><small>· 100 días</small></div></div>
+              <span class="mg">+14%</span>
+            </div>
+            <div class="price"><span class="cur">$</span>3.325<span class="u">/kg</span></div>
+            <div class="grid">
+              <div class="it"><span>Compra</span><b>400 kg</b></div>
+              <div class="it"><span>Venta</span><b>550 kg</b></div>
+              <div class="it"><span>Rinde</span><b>53 %</b></div>
+              <div class="it"><span>Feed</span><b>99 d</b></div>
+              <div class="it"><span>P. venta</span><b>$ 7,3k</b></div>
+              <div class="it"><span>Costo</span><b>$ 3,4k</b></div>
+            </div>
+          </div>
+
+          <div class="prc-card">
+            <div class="ph">
+              <div class="cat-wrap"><span class="ic cow sm"><svg><use href="#ic-cow"/></svg></span><div class="cat"><b>Vaca</b><small>· 60 días</small></div></div>
+              <span class="mg">+9%</span>
+            </div>
+            <div class="price"><span class="cur">$</span>3.528<span class="u">/kg</span></div>
+            <div class="grid">
+              <div class="it"><span>Compra</span><b>500 kg</b></div>
+              <div class="it"><span>Venta</span><b>600 kg</b></div>
+              <div class="it"><span>Rinde</span><b>53 %</b></div>
+              <div class="it"><span>Feed</span><b>57 d</b></div>
+              <div class="it"><span>P. venta</span><b>$ 7,3k</b></div>
+              <div class="it"><span>Costo</span><b>$ 3,4k</b></div>
+            </div>
+          </div>
+
+          <div class="prc-card">
+            <div class="ph">
+              <div class="cat-wrap"><span class="ic cow sm"><svg><use href="#ic-cow"/></svg></span><div class="cat"><b>Novillo</b><small>· 135 días</small></div></div>
+              <span class="mg">+12%</span>
+            </div>
+            <div class="price"><span class="cur">$</span>4.840<span class="u">/kg</span></div>
+            <div class="grid">
+              <div class="it"><span>Compra</span><b>300 kg</b></div>
+              <div class="it"><span>Venta</span><b>500 kg</b></div>
+              <div class="it"><span>Rinde</span><b>56 %</b></div>
+              <div class="it"><span>Feed</span><b>135 d</b></div>
+              <div class="it"><span>P. venta</span><b>$ 8,0k</b></div>
+              <div class="it"><span>Costo</span><b>$ 2,6k</b></div>
+            </div>
+          </div>
+
+          <div class="prc-card">
+            <div class="ph">
+              <div class="cat-wrap"><span class="ic cow sm"><svg><use href="#ic-cow"/></svg></span><div class="cat"><b>Vaquillona</b><small>· 156 días</small></div></div>
+              <span class="mg">+12%</span>
+            </div>
+            <div class="price"><span class="cur">$</span>5.201<span class="u">/kg</span></div>
+            <div class="grid">
+              <div class="it"><span>Compra</span><b>250 kg</b></div>
+              <div class="it"><span>Venta</span><b>460 kg</b></div>
+              <div class="it"><span>Rinde</span><b>57 %</b></div>
+              <div class="it"><span>Feed</span><b>156 d</b></div>
+              <div class="it"><span>P. venta</span><b>$ 8,0k</b></div>
+              <div class="it"><span>Costo</span><b>$ 2,6k</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="sh-foot">
+        <span>Documento autogenerado · datos del panel</span>
+        <em>Uso interno · Dirección</em>
+      </footer>
+    </section>
+
+  </div>
+</div>
+
+<!-- v13.0: inyección de datos reales antes del auto-print.
+     El payload viene de sessionStorage (puesto por mobile.jsx
+     handleSharePdf). Si no hay payload, los valores demo del HTML
+     quedan visibles (modo preview directo). -->
+<script>
+(function injectRealData() {
+  var raw;
+  try { raw = sessionStorage.getItem('pegsa_pdf_payload'); } catch (e) {}
+  if (!raw) {
+    console.info('[informe] sin payload — render con valores demo');
+    return;
+  }
+  var D;
+  try { D = JSON.parse(raw); } catch (e) { console.error('[informe] payload corrupto', e); return; }
+
+  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+  var fmtInt = function (n) {
+    if (n == null || isNaN(n)) return '—';
+    return Math.round(n).toLocaleString('es-AR');
+  };
+  var fmtKgCompact = function (n) {
+    if (n == null) return '—';
+    var a = Math.abs(n);
+    if (a >= 1e6) return (n / 1e6).toFixed(2).replace('.', ',') + ' M kg';
+    if (a >= 1e3) return Math.round(n / 1e3).toLocaleString('es-AR') + ' k kg';
+    return fmtInt(n) + ' kg';
+  };
+  var fmtKgFull = function (n) { return n != null ? fmtInt(n) + ' kg' : '—'; };
+  var fmtMoneyMM = function (n) {
+    if (n == null) return '—';
+    var a = Math.abs(n);
+    var sign = n < 0 ? '-' : '';
+    if (a >= 1e9) return sign + '$ ' + (a / 1e9).toFixed(2).replace('.', ',') + ' MM';
+    if (a >= 1e6) return sign + '$ ' + Math.round(a / 1e6) + ' M';
+    if (a >= 1e3) return sign + '$ ' + Math.round(a / 1e3) + ' k';
+    return sign + '$ ' + Math.round(a);
+  };
+  var fmtSparkV = function (n) {
+    if (n == null) return '';
+    var a = Math.abs(n);
+    var sign = n < 0 ? '-' : '+';
+    if (a >= 1e9) return sign + (a / 1e9).toFixed(2).replace('.', ',');
+    if (a >= 1e6) return sign + (a / 1e6).toFixed(2).replace('.', ',');
+    return sign + Math.round(a);
+  };
+
+  // ===== HEADER fecha ambas hojas =====
+  try {
+    var now = new Date();
+    var dd = pad(now.getDate()), mm = pad(now.getMonth() + 1), yy = now.getFullYear();
+    var fechaCorta = parseInt(dd, 10) + '/' + parseInt(mm, 10) + '/' + yy;
+    document.querySelectorAll('.sh-title small').forEach(function (el) {
+      el.textContent = 'Informe ejecutivo · ' + fechaCorta;
+    });
+  } catch (e) {}
+
+  // ===== 1. Totales del rodeo (4 cards) =====
+  if (Array.isArray(D.STOCK_TOTALES)) {
+    var rodeoMap = { pegsa: 0, haras: 1, otros: 2, grupo: 3 };
+    Object.keys(rodeoMap).forEach(function (cls) {
+      var src = D.STOCK_TOTALES[rodeoMap[cls]];
+      if (!src) return;
+      var card = document.querySelector('.rodeo-card.' + cls);
+      if (!card) return;
+      var c = card.querySelector('.c');
+      if (c && c.firstChild) c.firstChild.nodeValue = fmtInt(src.cabezas);
+      var k = card.querySelector('.k');
+      if (k) k.textContent = fmtKgCompact(src.kg);
+    });
+  }
+
+  // ===== 2. Stock terminados (Novillo / Vaca) =====
+  if (Array.isArray(D.STOCK_TERMINADOS)) {
+    var stockCards = document.querySelectorAll('.s-stock .stock-card');
+    D.STOCK_TERMINADOS.slice(0, 2).forEach(function (cat, idx) {
+      var card = stockCards[idx];
+      if (!card) return;
+      var rows = card.querySelectorAll('.stock-row');
+      [['pegsa', rows[0]], ['grupo', rows[1]]].forEach(function (pair) {
+        var src = cat[pair[0]], row = pair[1];
+        if (!src || !row) return;
+        var cabEl = row.querySelector('.cab'),
+            kgEl  = row.querySelector('.kg');
+        if (cabEl) cabEl.textContent = fmtInt(src.cabezas);
+        if (kgEl)  kgEl.textContent  = fmtKgFull(src.kg);
+      });
+      var foot = card.querySelector('.stock-foot b');
+      var kpc = function (s) { return (s && s.cabezas && s.kg) ? Math.round(s.kg / s.cabezas) : '—'; };
+      if (foot) foot.textContent = kpc(cat.pegsa) + ' / ' + kpc(cat.grupo) + ' kg';
+    });
+  }
+
+  // ===== 3. Insumos críticos (Silo / Maíz) =====
+  if (Array.isArray(D.INSUMOS)) {
+    var insumoCards = document.querySelectorAll('.s-insumos .insumo');
+    D.INSUMOS.slice(0, 2).forEach(function (ins, idx) {
+      var card = insumoCards[idx];
+      if (!card) return;
+      var nameEl  = card.querySelector('.name');
+      var smallEl = card.querySelector('.name small');
+      var bigEl   = card.querySelector('.days .big');
+      var stateEl = card.querySelector('.state');
+      if (nameEl && nameEl.firstChild && nameEl.firstChild.nodeType === 3) {
+        nameEl.firstChild.nodeValue = (ins.title || ins.id || '') + ' ';
+      }
+      if (smallEl) {
+        var stock = ins.stockKg != null ? fmtInt(ins.stockKg) + ' kg' : '—';
+        var cons  = ins.consumoKgDia != null ? fmtInt(ins.consumoKgDia) + ' kg/d' : '—';
+        smallEl.textContent = stock + ' · ' + cons;
+      }
+      if (bigEl) bigEl.textContent = ins.diasRaw != null ? Math.round(ins.diasRaw) : '—';
+      if (stateEl && ins.state) {
+        var stateMap = { ok: 'ok', warn: 'warn', bad: 'bad' };
+        var newState = stateMap[ins.state] || 'ok';
+        card.classList.remove('ok','warn','bad');
+        card.classList.add(newState);
+        var stateLabel = ins.stateLabel ||
+          (newState === 'ok' ? 'OK' : newState === 'warn' ? 'Atención' : 'Crítico');
+        var lastNode = stateEl.lastChild;
+        if (lastNode && lastNode.nodeType === 3) lastNode.nodeValue = stateLabel;
+      }
+    });
+  }
+
+  // ===== 4. Financiero (PEG-BULL + DW) =====
+  function renderFin(g, fs) {
+    if (!fs || !g) return;
+    var partida = g.querySelector('.partida b');
+    if (partida && fs.acumulado) partida.textContent = fmtMoneyMM(fs.acumulado.value);
+    var cells = g.querySelectorAll('.fin-cell');
+    if (cells[0] && fs.cerrada) {
+      var lblL = cells[0].querySelector('.l'),
+          valL = cells[0].querySelector('.v');
+      if (lblL) lblL.textContent = 'Cierre · ' + (fs.cerrada.range || '—');
+      if (valL) {
+        valL.textContent = fmtMoneyMM(fs.cerrada.value);
+        valL.classList.remove('pos','neg');
+        valL.classList.add((fs.cerrada.value >= 0) ? 'pos' : 'neg');
+      }
+    }
+    if (cells[1] && fs.proxima) {
+      var lblR = cells[1].querySelector('.l'),
+          valR = cells[1].querySelector('.v');
+      var rng = (fs.proxima.range || '').replace(/^Cierre semana\s*/, '');
+      if (lblR) lblR.textContent = 'Proyectado · ' + (rng || '—');
+      if (valR) {
+        valR.textContent = fmtMoneyMM(fs.proxima.value);
+        valR.classList.remove('pos','neg');
+        valR.classList.add((fs.proxima.value >= 0) ? 'pos' : 'neg');
+      }
+    }
+    var sparkCells = g.querySelectorAll('.spark .spark-c');
+    var bars = fs.bars || [];
+    var maxAbs = bars.reduce(function (m, b) { return Math.max(m, Math.abs(b.v || 0)); }, 1);
+    bars.slice(0, 6).forEach(function (b, i) {
+      var cell = sparkCells[i];
+      if (!cell) return;
+      var v = b.v || 0;
+      var valEl = cell.querySelector('.v'),
+          bar   = cell.querySelector('.spark-bar .b'),
+          lblEl = cell.querySelector('.lbl');
+      if (valEl) {
+        valEl.textContent = fmtSparkV(v);
+        valEl.classList.remove('pos','neg');
+        valEl.classList.add(v >= 0 ? 'pos' : 'neg');
+      }
+      if (bar) {
+        var pct = Math.round(Math.abs(v) / maxAbs * 50);
+        bar.style.height = pct + '%';
+        bar.style.top = ''; bar.style.bottom = '';
+        bar.classList.remove('pos','neg');
+        if (v >= 0) { bar.classList.add('pos'); bar.style.bottom = '50%'; }
+        else        { bar.classList.add('neg'); bar.style.top = '50%'; }
+      }
+      if (lblEl) lblEl.textContent = b.label || '';
+      cell.classList.remove('proj');
+      if (b.kind === 'proj' || b.kind === 'future') cell.classList.add('proj');
+    });
+  }
+  var finGroups = document.querySelectorAll('.s-fin .fin-group');
+  if (finGroups[0]) renderFin(finGroups[0], D.FLUJO_SEMANAL);
+  if (finGroups[1]) {
+    if (D.FLUJO_SEMANAL_DW) renderFin(finGroups[1], D.FLUJO_SEMANAL_DW);
+    else finGroups[1].style.display = 'none';
+  }
+
+  // ===== 5. Productivos (6 cards) =====
+  if (Array.isArray(D.PRODUCTIVOS)) {
+    var prodCards = document.querySelectorAll('.s-prod .prod-card');
+    D.PRODUCTIVOS.slice(0, 6).forEach(function (p, idx) {
+      var card = prodCards[idx];
+      if (!card) return;
+      var intent = 'good';
+      if (p.tone === 'bad' || p.cardTone === 'bad') intent = 'bad';
+      else if (p.severity === 'moderado') intent = (p.tone === 'good') ? 'good' : 'warn';
+      else if (p.tone === 'good') intent = 'good';
+      else intent = 'warn';
+      card.classList.remove('good','warn','bad');
+      card.classList.add(intent);
+      var lblEl = card.querySelector('.ph .lbl');
+      if (lblEl) lblEl.textContent = p.title || p.id || '';
+      var pill = card.querySelector('.ph .pill');
+      if (pill) {
+        var arrow = (p.delta == null) ? '·' : (p.delta > 0 ? '↑' : '↓');
+        var pctOnly = (p.deltaFmt || '').replace(/^[+\-−]/, '');
+        pill.textContent = arrow + ' ' + (pctOnly || '—');
+      }
+      var valEl = card.querySelector('.val');
+      if (valEl) {
+        var unitEl = valEl.querySelector('.u');
+        if (valEl.firstChild && valEl.firstChild.nodeType === 3) {
+          valEl.firstChild.nodeValue = p.kpi || '—';
+        }
+        if (unitEl) unitEl.textContent = p.unit || '';
+      }
+      var base = card.querySelector('.base');
+      if (base) {
+        var subOverride = {
+          engordeDiario: 'vs 12 m', estadia: 'vs 12 m', kgRepartidos: 'prom 3 d'
+        };
+        var subLbl = subOverride[p.id] || (p.subLabel || 'vs anual');
+        var spanEl = base.querySelector('span'),
+            bEl    = base.querySelector('b');
+        if (spanEl) spanEl.textContent = subLbl;
+        if (bEl)    bEl.textContent    = p.subVal || '—';
+      }
+    });
+  }
+
+  // ===== 6. Precios de indiferencia (4 cards) =====
+  if (Array.isArray(D.PRECIOS_INFERENCIA)) {
+    var prcCards = document.querySelectorAll('.s-prc .prc-card');
+    D.PRECIOS_INFERENCIA.slice(0, 4).forEach(function (p, idx) {
+      var card = prcCards[idx];
+      if (!card) return;
+      var catB = card.querySelector('.cat b'),
+          catS = card.querySelector('.cat small');
+      if (catB) catB.textContent = p.nombreBase || p.nombre || '';
+      if (catS) {
+        var subTxt = p.nombreSub ||
+          (p.diasFeed != null ? '· ' + Math.round(p.diasFeed) + ' días' : '');
+        catS.textContent = subTxt;
+      }
+      var mg = card.querySelector('.ph .mg');
+      if (mg) mg.textContent = p.margenPctFmt || '—';
+      var priceEl = card.querySelector('.price');
+      if (priceEl) {
+        var nodes = Array.prototype.slice.call(priceEl.childNodes);
+        for (var i = 0; i < nodes.length; i++) {
+          if (nodes[i].nodeType === 3 && nodes[i].nodeValue.trim()) {
+            nodes[i].nodeValue = p.precioCompNum ||
+              (p.precioCompFmt || '—').replace(/^\$\s*/, '');
+            break;
+          }
+        }
+      }
+      var items = card.querySelectorAll('.grid .it');
+      var vals = [
+        p.kgCompraFmt, p.kgVentaFmt, p.rindeFmt,
+        p.diasFeedFmt, p.precioVentaFmt, p.costoKgProdFmt
+      ];
+      items.forEach(function (it, j) {
+        var b = it.querySelector('b');
+        if (b && vals[j] != null) b.textContent = vals[j];
+      });
+    });
+  }
+  try {
+    var meta = D.PRECIOS_INFERENCIA_META || {};
+    var prcCap = document.querySelector('.s-prc .sec-head small');
+    if (prcCap && meta.fechaLabel) prcCap.textContent = 'tope de compra · ' + meta.fechaLabel;
+  } catch (e) {}
+
+  console.info('[informe] payload aplicado');
+})();
+</script>
+
+<script>
+  (async () => {
+    try { await document.fonts.ready; } catch (e) {}
+    await new Promise(r => setTimeout(r, 500));
+    window.print();
+  })();
+</script>
+</body>
+</html>
