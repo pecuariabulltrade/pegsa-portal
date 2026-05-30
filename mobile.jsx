@@ -268,11 +268,11 @@ async function handleSharePdf() {
     // Ancho 420px = exactamente el .sheet del HTML; alto generoso para
     // que el sheet entero quepa sin cortes (se ajusta tras el load).
     iframe = document.createElement('iframe');
-    // v13.4: iframe 420 → 500px para matchear el page width 125mm.
+    // v13.5: iframe 500 → 528px para matchear el page width 132mm.
     iframe.style.cssText =
-      'position:absolute;left:-9999px;top:-9999px;width:500px;height:1500px;' +
+      'position:absolute;left:-9999px;top:-9999px;width:528px;height:1500px;' +
       'border:0;visibility:hidden;';
-    iframe.src = 'informe-print.html?embed=1&v=134&t=' + Date.now();
+    iframe.src = 'informe-print.html?embed=1&v=135&t=' + Date.now();
     document.body.appendChild(iframe);
 
     // Esperar load + readiness flag puesto por el script auto-print
@@ -302,25 +302,24 @@ async function handleSharePdf() {
     if (!JsPdfCtor) throw new Error('jsPDF no está cargado');
     if (typeof html2canvas !== 'function') throw new Error('html2canvas no está cargado');
 
-    // v13.4: page width 105 → 125mm. Da aire a la grilla 2-cols del
-    // HTML hifi y evita overflow horizontal de cards.
-    var doc = new JsPdfCtor({ unit: 'mm', format: [125, 340], orientation: 'portrait' });
+    // v13.5: page width 125 → 132mm. Más aire para las cards.
+    var doc = new JsPdfCtor({ unit: 'mm', format: [132, 340], orientation: 'portrait' });
 
     for (var i = 0; i < sheets.length; i++) {
       var sheet = sheets[i];
-      // v13.3: scale 2 → 2.5 + JPEG q92 → q95 para preservar separadores
-      // de miles. v13.4: windowWidth 420 → 500 (matchea page width 125mm).
+      // v13.3: scale 2.5 + JPEG q95 preserva separadores de miles.
+      // v13.5: windowWidth 500 → 528 (matchea page width 132mm).
       var canvas = await html2canvas(sheet, {
         scale: 2.5,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
-        windowWidth: 500,
+        windowWidth: 528,
         windowHeight: sheet.scrollHeight
       });
       var imgData = canvas.toDataURL('image/jpeg', 0.95);
-      if (i > 0) doc.addPage([125, 340], 'portrait');
-      doc.addImage(imgData, 'JPEG', 0, 0, 125, 340);
+      if (i > 0) doc.addPage([132, 340], 'portrait');
+      doc.addImage(imgData, 'JPEG', 0, 0, 132, 340);
     }
 
     document.body.removeChild(iframe);

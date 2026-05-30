@@ -83,7 +83,7 @@ html, body {
 }
 .sheets {
   display: grid;
-  grid-template-columns: repeat(2, 500px);  /* v13.4: 420 → 500 (125mm) */
+  grid-template-columns: repeat(2, 528px);  /* v13.5: 500 → 528 (132mm) */
   gap: 28px;
   justify-content: center;
   align-items: start;
@@ -91,7 +91,7 @@ html, body {
 
 /* ===== SHEET ===== */
 .sheet {
-  width: 500px;  /* v13.4: 420 → 500 — page 125mm da aire a las 2 cols */
+  width: 528px;  /* v13.5: 500 → 528 — page 132mm da más aire */
   background: var(--bg);
   border-radius: 28px;
   box-shadow:
@@ -329,7 +329,7 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 .insumo .days {
-  margin-top: auto;
+  margin-top: 14px;  /* v13.5: auto → 14px fijo — KPI sube hacia el centro */
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
   line-height: 0.95;
@@ -496,10 +496,11 @@ html, body {
 .spark-c .v {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: 10px;             /* v13.5: 11 → 10 para que entre "MM" */
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1;
+  white-space: nowrap;         /* v13.5: "-1,05MM" entero */
 }
 .spark-c .v.pos { color: var(--pos); }
 .spark-c .v.neg { color: var(--neg); }
@@ -554,6 +555,14 @@ html, body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-mute);
+  /* v13.5: 2 líneas mínimas — los títulos cortos (Engorde diario,
+     Estadía, Conversión) ocupan el mismo alto que los de 2 líneas
+     (Consumo / cab, Kg repartidos · últ. día), así los KPIs (.val)
+     quedan alineados a la misma altura en las 6 cards. */
+  min-height: 28px;
+  line-height: 1.2;
+  display: flex;
+  align-items: flex-start;
 }
 .prod-card .pill {
   font-family: 'JetBrains Mono', monospace;
@@ -673,9 +682,14 @@ html, body {
 .prc-card .grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);  /* v13.4 */
-  gap: 4px 10px;
+  gap: 4px 16px;       /* v13.5: 10 → 16 horizontal — aire para "P.venta $7,3k/kg" */
   font-size: 12.5px;
   color: var(--ink-mute);
+}
+/* v13.5: 3ra fila (P. venta / Costo) con font más chico — el "/kg"
+   del valor pisaba la columna derecha. */
+.prc-card .grid .it:nth-last-child(-n+2) {
+  font-size: 11.5px;
 }
 .prc-card .grid .it {
   display: flex;
@@ -717,7 +731,7 @@ html, body {
 /* ===== PRINT ===== */
 @media print {
   @page {
-    size: 125mm 340mm;  /* v13.4: 105 → 125 */
+    size: 132mm 340mm;  /* v13.5: 125 → 132 */
     margin: 0;
   }
   html, body { background: white; }
@@ -732,7 +746,7 @@ html, body {
     display: block;
   }
   .sheet {
-    width: 125mm;  /* v13.4: 105 → 125 */
+    width: 132mm;  /* v13.5: 125 → 132 */
     border-radius: 0;
     box-shadow: none;
     border: none;
@@ -937,7 +951,7 @@ html, body {
 @media (max-width: 900px) {
   .stage { padding: 20px 12px 40px; }
   .sheets { grid-template-columns: 1fr; }
-  .sheet { width: 100%; max-width: 500px; margin: 0 auto; }  /* v13.4: 420 → 500 */
+  .sheet { width: 100%; max-width: 528px; margin: 0 auto; }  /* v13.5: 500 → 528 */
 }
 </style>
 </head>
@@ -1522,8 +1536,10 @@ html, body {
     if (n == null) return '';
     var a = Math.abs(n);
     var sign = n < 0 ? '-' : '+';
-    if (a >= 1e9) return sign + (a / 1e9).toFixed(2).replace('.', ',');
-    if (a >= 1e6) return sign + (a / 1e6).toFixed(2).replace('.', ',');
+    // v13.5: sufijo MM/M/k para que el sparks no muestre solo "-1,05" sino "-1,05MM"
+    if (a >= 1e9) return sign + (a / 1e9).toFixed(2).replace('.', ',') + 'MM';
+    if (a >= 1e6) return sign + (a / 1e6).toFixed(2).replace('.', ',') + 'M';
+    if (a >= 1e3) return sign + Math.round(a / 1e3) + 'k';
     return sign + Math.round(a);
   };
 
