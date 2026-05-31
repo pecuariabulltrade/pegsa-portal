@@ -1,44 +1,44 @@
 {
   "meta": {
-    "generado": "2026-05-30T23:02:48.337526",
+    "generado": "2026-05-31T00:02:37.373631",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "mes_actual": "2026-05",
     "nombre_mes": "Mayo 2026",
-    "mes_anterior": "2026-04-30",
-    "nombre_mes_ant": "Últimos 30 días (30/04/2026 – 30/05/2026)",
-    "desde_anio": "2025-05-30",
-    "hasta": "2026-05-30",
+    "mes_anterior": "2026-05-01",
+    "nombre_mes_ant": "Últimos 30 días (01/05/2026 – 31/05/2026)",
+    "desde_anio": "2025-05-31",
+    "hasta": "2026-05-31",
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
     "muertes_anio": 287,
-    "ingresos_anio": 18497,
+    "ingresos_anio": 18293,
     "stock_haras_hoy": 7950,
-    "denominador": 26447,
-    "tasa_mensual_pct": 1.085,
+    "denominador": 26243,
+    "tasa_mensual_pct": 1.094,
     "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
     "por_grupo": {
       "Vacas": {
         "muertes": 165,
-        "ingresos": 7972,
+        "ingresos": 7880,
         "stock": 2371,
-        "denominador": 10343,
-        "tasa_mensual_pct": 1.595
+        "denominador": 10251,
+        "tasa_mensual_pct": 1.61
       },
       "Machos": {
         "muertes": 79,
-        "ingresos": 7487,
+        "ingresos": 7385,
         "stock": 4007,
-        "denominador": 11494,
-        "tasa_mensual_pct": 0.687
+        "denominador": 11392,
+        "tasa_mensual_pct": 0.693
       },
       "Hembras": {
         "muertes": 43,
-        "ingresos": 3038,
+        "ingresos": 3028,
         "stock": 1572,
-        "denominador": 4610,
-        "tasa_mensual_pct": 0.933
+        "denominador": 4600,
+        "tasa_mensual_pct": 0.935
       }
     }
   },
@@ -74,21 +74,21 @@
     }
   },
   "mes_anterior": {
-    "nombre": "Últimos 30 días (30/04/2026 – 30/05/2026)",
-    "mes": "2026-04-30",
-    "total_muertes": 31,
+    "nombre": "Últimos 30 días (01/05/2026 – 31/05/2026)",
+    "mes": "2026-05-01",
+    "total_muertes": 19,
     "por_categoria": {
-      "TM": 9,
-      "VA": 8,
       "TH": 5,
-      "NV": 4,
-      "VQ": 4,
+      "VA": 5,
+      "TM": 3,
+      "VQ": 3,
+      "NV": 2,
       "TO": 1
     },
     "por_grupo": {
-      "Vacas": 8,
-      "Machos": 14,
-      "Hembras": 9
+      "Vacas": 5,
+      "Machos": 6,
+      "Hembras": 8
     }
   }
 }
