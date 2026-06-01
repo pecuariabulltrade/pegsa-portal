@@ -1779,12 +1779,13 @@ def procesar_consumo(regs, cols, periodo):
     log.info(f"  Registros último año: {len(regs_anio):,}  |  Últimos 3 días registrados: {sorted(ultimos_3_dias)}")
 
     # Tabla de materia seca por insumo (nombre exacto → % MS)
+    # Valores actualizados por Nicolás · 2026-05 (Dirección)
     MS_PCT = {
-        "GLUTEN DE MAIZ":       41.0,
-        "MAIZ GRANO":           87.0,
-        "SILO DE MAIZ":         47.0,
-        "HARINA GERMEN":        98.0,
-        "NUCLEO CONC 5% LDB":   97.5,
+        "GLUTEN DE MAIZ":       53.0,   # 45 → 53 (Dir 2026-05)
+        "MAIZ GRANO":           89.0,   # antes 87
+        "SILO DE MAIZ":         58.0,   # 47 → 58 (Dir 2026-05)
+        "HARINA GERMEN":        99.0,   # 98 → 99 (Dir 2026-05)
+        "NUCLEO CONC 5% LDB":   98.0,   # 97.5 → 98 (Dir 2026-05)
     }
     def get_ms(desc):
         return MS_PCT.get(desc.strip().upper(), None)
@@ -1837,6 +1838,14 @@ def procesar_consumo(regs, cols, periodo):
     # Divisor = días únicos con registros en los últimos 3 (mínimo 1)
     n_dias = max(len(dias_con_datos), 1)
     log.info(f"  Últimos 3 días con registros: {n_dias} ({sorted(dias_con_datos)})")
+    # ── DEBUG: listar TODOS los insumos detectados en los 3 últimos días ──
+    log.info(f"  ╔═══ DEBUG · INSUMOS DETECTADOS EN 3 DÍAS ═══╗")
+    log.info(f"  ║  Total kg suma: {total_3d:,.1f}")
+    log.info(f"  ║  Insumos distintos: {len(semanal_por_ins)}")
+    for desc, vd in sorted(semanal_por_ins.items(), key=lambda x: -x[1]['kg']):
+        ms_marca = f"MS={get_ms(desc)}%" if get_ms(desc) is not None else "MS=??? (no en MS_PCT)"
+        log.info(f"  ║   • {desc:<35} {vd['kg']:>12,.1f} kg en {len(vd['dias'])} dias [{ms_marca}]")
+    log.info(f"  ╚════════════════════════════════════════════╝")
 
     por_insumo_3d = sorted(
         [{"desc": d, "cod": v["cod"],
@@ -2937,11 +2946,27 @@ def main():
         "cabezas":          g.get("cabezas", 0),
     }
 
-    # ── 9. JSON Consumo de Alimento (anual + promedio diario 7d) ──
-    separador("Consumo de Alimento")
-    tabla_consumo = cfg["TABLAS"].get("consumo_detallado", "v_PB_ConsumoDetallado")
-    regs_cons, cols_cons = extraer(conn, tabla_consumo, fecha_col="FECHA", dias=730)
-    consumo_data = procesar_consumo(regs_cons, cols_cons, periodo)
+    # ── 9. JSON Consumo de Alimento ──
+    # FUENTE PRIMARIA: base Access del Mixer (Dropbox) — kilos reales cargados.
+    # FUENTE FALLBACK: vista SQL v_PB_ConsumoDetallado (deprecated, pierde ~25%).
+    separador("Consumo de Alimento (Mixer Dropbox)")
+    consumo_data = None
+    try:
+        from consumo_mixer import procesar_consumo_mixer, DEFAULT_MIXER_DB
+        mixer_path = cfg["RUTAS"].get("mixer_db", DEFAULT_MIXER_DB) if cfg.has_section("RUTAS") else DEFAULT_MIXER_DB
+        consumo_data = procesar_consumo_mixer(
+            mixer_path=mixer_path,
+            periodo=periodo,
+            dias_diario=30,
+            log=log,
+        )
+        log.info(f"  ✓ Consumo leído del Mixer ({consumo_data['meta']['ultimo_completo']} = último día completo)")
+    except Exception as e:
+        log.warning(f"  ⚠ No se pudo leer el Mixer: {e}")
+        log.warning(f"  → Cayendo a fallback SQL v_PB_ConsumoDetallado")
+        tabla_consumo = cfg["TABLAS"].get("consumo_detallado", "v_PB_ConsumoDetallado")
+        regs_cons, cols_cons = extraer(conn, tabla_consumo, fecha_col="FECHA", dias=730)
+        consumo_data = procesar_consumo(regs_cons, cols_cons, periodo)
     guardar(consumo_data, carpeta, f"consumo_{periodo}.json")
     log.info(f"  ✓ consumo_{periodo}.json")
     ca = consumo_data.get("anual",   {})
@@ -3043,7 +3068,7 @@ def main():
         # ── Histórico de eficiencia — snapshot diario ──────────────────────
         try:
             hoy_str   = datetime.now().strftime("%Y-%m-%d")
-            hist_path = carpeta / "eficiencia_historico.json"
+            hist_path = Path(carpeta) / "eficiencia_historico.json"
             if hist_path.exists():
                 with open(hist_path, encoding="utf-8") as _f:
                     hist_ef = json.load(_f)
@@ -3084,6 +3109,14 @@ def main():
     except Exception as e:
         log.warning(f"  ⚠ No se pudieron calcular indicadores cruzados: {e}")
         resumen["modulos"]["indicadores"] = {"ok": False, "error": str(e)}
+
+    # ── 10b. Precios de Indiferencia diarios (6 categorías-tipo) ──
+    separador("Precios de Indiferencia")
+    try:
+        from calcular_indiferencia import actualizar_indiferencia_historico
+        actualizar_indiferencia_historico(carpeta, log=log)
+    except Exception as e:
+        log.warning(f"  ⚠ No se pudieron calcular precios de indiferencia: {e}")
 
     # ── 11. Enriquecer stock_insumos con días de consumo restantes ──
     separador("Días de Stock Restantes")
@@ -3211,6 +3244,21 @@ def main():
             saldo_disp   = gph(22,4) or 0
             usd_ars      = gph(25,3) or 0
             usd_cant     = gph(25,1) or 0
+
+            # Fix del bug del Excel: la celda de saldo_semanal de la primera
+            # semana (fila 70 col D, fórmula =-D31+D47-D66-D68+B28) incluye
+            # el saldo_inicial (B28 = 'posicion hoy'!E23) como arrastre; las
+            # semanas 1..n (cols E-T) usan =-X31+X47-X66-X68 sin ese +B28.
+            # Lo removemos para que toda la serie sea flujo puro semanal.
+            # NO se recalcula saldo_acumulado: la fila 71 del Excel ya es el
+            # saldo proyectado correcto, y el invariante
+            #   saldo_acumulado[i] == saldo_inicial + cumsum(saldo_semanal)
+            # se mantiene solo al corregir el índice 0.
+            ss = series_flujo.get('saldo_semanal')
+            if ss and len(ss) > 0:
+                _orig_ss0 = ss[0]
+                ss[0] = ss[0] - saldo_disp
+                log.info(f"  saldo_semanal[0] ajustado: {_orig_ss0:,.2f} -> {ss[0]:,.2f} (removido saldo_inicial {saldo_disp:,.2f})")
 
             # ── Hoja: cheques pendiente ──
             cheq_raw = sheets.get('cheques pendiente', pd.DataFrame())
@@ -3554,6 +3602,39 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["stock_diario"] = {"ok": False, "error": str(e)}
 
+    # ── TESORERÍA DARWASH (v11) ─────────────────────────────
+    # Análisis financiero independiente de Darwash. Lee el XLSX más
+    # reciente de `datos/financiero DW/` y vuelca tesoreria_darwash.json
+    # + tesoreria_darwash_historico.json (acumulado por fecha_corte).
+    separador("Tesorería · Darwash")
+    try:
+        _dw_snap, _dw_hist = procesar_tesoreria_darwash(carpeta, log)
+        resumen["modulos"]["tesoreria_darwash"] = {
+            "ok":          _dw_snap is not None,
+            "fecha_corte": _dw_snap["fecha_corte"] if _dw_snap else None,
+            "snapshots":   len(_dw_hist["snapshots"]) if _dw_hist else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ procesar_tesoreria_darwash falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["tesoreria_darwash"] = {"ok": False, "error": str(e)}
+
+    # ── PRECIOS DE INFERENCIA (v8) ─────────────────────────────
+    # Lee el Excel del simulador y vuelca precios_inferencia.json +
+    # precios_inferencia_historico.json (acumulado semanal por fecha).
+    separador("Precios de Inferencia")
+    try:
+        _snap, _hist = procesar_precios_inferencia(carpeta, log)
+        resumen["modulos"]["precios_inferencia"] = {
+            "ok":       _snap is not None,
+            "fecha":    _snap["meta"]["fecha"] if _snap else None,
+            "semanas":  len(_hist["semanas"]) if _hist else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ procesar_precios_inferencia falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["precios_inferencia"] = {"ok": False, "error": str(e)}
+
     separador()
     guardar(resumen, carpeta, "ultima_actualizacion.json")
 
@@ -3595,6 +3676,7 @@ def main():
                 log.info("  ℹ Git: sin cambios nuevos para publicar")
             else:
                 log.info(f"  ✓ Git commit: Actualizacion automatica {_ts}")
+                # Intento 1: push directo
                 push = subprocess.run(
                     ["git", "-C", str(_repo), "push"],
                     capture_output=True, text=True, timeout=60
@@ -3602,7 +3684,29 @@ def main():
                 if push.returncode == 0:
                     log.info("  ✓ Git push OK → GitHub Pages actualizado")
                 else:
-                    log.warning(f"  ⚠ Git push falló: {push.stderr.strip()[:200]}")
+                    # Intento 2: si rechazaron por non-fast-forward, hacer pull --rebase y retry
+                    err = (push.stderr or "").strip()
+                    if "non-fast-forward" in err or "fetch first" in err or "rejected" in err:
+                        log.warning("  ⚠ Push rechazado (remoto tiene commits nuevos). Haciendo pull --rebase...")
+                        pull = subprocess.run(
+                            ["git", "-C", str(_repo), "pull", "--rebase", "--autostash"],
+                            capture_output=True, text=True, timeout=60
+                        )
+                        if pull.returncode == 0:
+                            log.info("  ✓ Pull --rebase OK")
+                            push2 = subprocess.run(
+                                ["git", "-C", str(_repo), "push"],
+                                capture_output=True, text=True, timeout=60
+                            )
+                            if push2.returncode == 0:
+                                log.info("  ✓ Git push OK → GitHub Pages actualizado (después de rebase)")
+                            else:
+                                log.warning(f"  ⚠ Git push falló incluso después de rebase: {push2.stderr.strip()[:200]}")
+                        else:
+                            log.warning(f"  ⚠ Pull --rebase falló: {pull.stderr.strip()[:200]}")
+                            log.warning("    Resolución manual: cd al repo y correr 'git pull --rebase && git push'")
+                    else:
+                        log.warning(f"  ⚠ Git push falló: {err[:200]}")
         except Exception as _e:
             log.warning(f"  ⚠ Git error: {_e}")
             import traceback; log.warning(traceback.format_exc())
@@ -3985,7 +4089,28 @@ def scrape_entresurcosycorrales():
 # 7c. Granos — BCR Cámara Arbitral Precios de Pizarra
 # ──────────────────────────────────────────────────────────────
 def scrape_bcr_pizarra():
-    """Devuelve {maiz, soja, trigo, sorgo} en $/tn o {} si falla."""
+    """Devuelve {maiz, soja, trigo, sorgo} en $/tn o {} si falla.
+
+    v14.2 (1/6/2026): el sitio de BCR cambió de estructura — ya no usa
+    <table><tr><td>. Ahora cada grano vive en su propio bloque:
+
+        <div class="board board-maiz ">
+          <div class="board-wrapper">
+            <h3>… Maíz …</h3>
+            <div class="price"> $254.620,00 </div>
+            …
+          </div>
+        </div>
+
+    La versión vieja del scraper devolvía {} para maíz/trigo/sorgo y
+    matcheaba mal soja (898987 en lugar del precio real 465000) porque
+    el fallback de free-text se enganchaba con un número equivocado del
+    HTML. La nueva regex apunta directamente a board-<grano> + price.
+
+    Si NO se extrae maíz (señal canaria — el grano más estable), se
+    guarda una copia del HTML en datos/debug_bcr_last.html para que el
+    próximo cambio de estructura se diagnostique sin re-fetch.
+    """
     import re
     url = "https://www.cac.bcr.com.ar/es/precios-de-pizarra"
     text = _http_get(url)
@@ -3993,48 +4118,58 @@ def scrape_bcr_pizarra():
         return {}
 
     granos = {}
-    GRANOS_BUSCAR = {
-        "maiz":  ["maíz", "maiz", "corn"],
-        "soja":  ["soja", "soybean"],
-        "trigo": ["trigo", "wheat"],
-        "sorgo": ["sorgo", "sorghum"],
-    }
 
-    # Intentar parsear tablas HTML
-    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
-    for row in rows:
-        cells_raw = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row, re.DOTALL | re.IGNORECASE)
-        cells = [re.sub(r'<[^>]+>', '', c).strip().lower() for c in cells_raw]
-        if not cells:
-            continue
-        row_text = " ".join(cells)
-        for grano_key, aliases in GRANOS_BUSCAR.items():
-            if grano_key in granos:
+    # v14.2: regex específica al nuevo DOM. Captura el <div class="price"> que
+    # sigue al header del board (sin saltar a otro board gracias al lookahead
+    # negativo (?!<div class="board board-)).
+    PATTERN_BOARD = re.compile(
+        r'<div class="board board-(\w+)[^"]*">'
+        r'(?:(?!<div class="board board-).)*?'
+        r'<div class="price">\s*\$?\s*([0-9.,]+)',
+        re.DOTALL
+    )
+    for grano_key, raw in PATTERN_BOARD.findall(text):
+        p = _parse_ar_num(raw)
+        if p and 10000 < p < 2000000:
+            granos[grano_key] = round(p)
+
+    # Fallback histórico (v <14.2): tablas HTML. Por si BCR vuelve a un layout
+    # con <table>, sigue funcionando sin tener que tocar este código.
+    if not granos:
+        GRANOS_BUSCAR = {
+            "maiz":  ["maíz", "maiz", "corn"],
+            "soja":  ["soja", "soybean"],
+            "trigo": ["trigo", "wheat"],
+            "sorgo": ["sorgo", "sorghum"],
+        }
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', text, re.DOTALL | re.IGNORECASE)
+        for row in rows:
+            cells_raw = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row, re.DOTALL | re.IGNORECASE)
+            cells = [re.sub(r'<[^>]+>', '', c).strip().lower() for c in cells_raw]
+            if not cells:
                 continue
-            if any(alias in row_text for alias in aliases):
-                # Buscar precio en celdas (número mayor a 10000 = $/tn en pesos)
-                for cell in cells[1:]:
-                    p = _parse_ar_num(cell)
-                    if p and 10000 < p < 2000000:
-                        granos[grano_key] = round(p)
-                        break
+            row_text = " ".join(cells)
+            for grano_key, aliases in GRANOS_BUSCAR.items():
+                if grano_key in granos:
+                    continue
+                if any(alias in row_text for alias in aliases):
+                    for cell in cells[1:]:
+                        p = _parse_ar_num(cell)
+                        if p and 10000 < p < 2000000:
+                            granos[grano_key] = round(p)
+                            break
 
-    # Fallback: búsqueda libre en texto
-    text_lower = text.lower()
-    for grano_key, aliases in GRANOS_BUSCAR.items():
-        if grano_key in granos:
-            continue
-        for alias in aliases:
-            pattern = re.compile(
-                re.escape(alias) + r'[^0-9<]{0,60}?(\d[\d.,]{4,10})',
-                re.IGNORECASE
-            )
-            m = pattern.search(text_lower)
-            if m:
-                p = _parse_ar_num(m.group(1))
-                if p and 10000 < p < 2000000:
-                    granos[grano_key] = round(p)
-                    break
+    # v14.2: dump del HTML cuando MAÍZ falla — es el canario más confiable
+    # (siempre listado en BCR). Si maíz no aparece, lo más probable es que
+    # BCR cambió el HTML de nuevo. El dump deja evidencia para el próximo fix
+    # sin tener que re-curlear.
+    if 'maiz' not in granos and text:
+        try:
+            debug_path = Path(__file__).parent / 'debug_bcr_last.html'
+            debug_path.write_text(text[:80000], encoding='utf-8')
+            log.warning(f"  ⚠ BCR: maíz NO extraído — HTML guardado en {debug_path.name} para inspección")
+        except Exception as e:
+            log.debug(f"    BCR debug dump falló: {e}")
 
     if granos:
         for g, p in granos.items():
@@ -4470,9 +4605,30 @@ def actualizar_mercado_precios(carpeta, repo):
         "error":          negocios_raw.get("error"),
     }
 
+    # ── Generar snapshots históricos de compras (resultado simulado fijo) ──
+    try:
+        from simulador_negocios import actualizar_negocios_snapshots
+        actualizar_negocios_snapshots(carpeta, log=log)
+    except Exception as _e:
+        log.warning(f"  ⚠ No se pudo generar negocios_snapshots: {_e}")
+
+    # Cargar el snapshot recién generado para copiarlo al repo
+    snap_data = None
+    snap_path = Path(carpeta) / "negocios_snapshots.json"
+    if snap_path.exists():
+        try:
+            with open(snap_path, encoding="utf-8") as _f:
+                snap_data = json.load(_f)
+        except Exception:
+            pass
+
     # Guardar en repo GitHub Pages
-    for fname, data in [("mercado_precios.json", mercado_json),
-                        ("negocios_resumen.json", negocios_json)]:
+    _files_to_save = [("mercado_precios.json", mercado_json),
+                      ("negocios_resumen.json", negocios_json)]
+    if snap_data:
+        _files_to_save.append(("negocios_snapshots.json", snap_data))
+
+    for fname, data in _files_to_save:
         if repo_json:
             dest = Path(repo) / fname
             try:
@@ -4607,54 +4763,73 @@ def _parse_listado_caravanas_html(ruta):
         return None
 
     try:
-        # Leer como HTML — parser nativo de Python, sin dependencias externas
-        from html.parser import HTMLParser as _HTMLParser
+        # v12.7: Detectar formato. WinCampo solía exportar HTML disfrazado
+        # de .XLS; en mayo 2026 empezó a exportar XLSX real (los primeros 2
+        # bytes son "PK" del zip). Soportamos ambos.
+        raw_head = ruta.read_bytes()[:4]
+        es_xlsx_real = raw_head[:2] == b'PK'
 
-        class _TblParser(_HTMLParser):
-            def __init__(self):
-                super().__init__()
-                self.rows, self._row, self._cell, self._in = [], [], [], False
-            def handle_starttag(self, tag, attrs):
-                if tag in ('td','th'): self._in=True; self._cell=[]
-                elif tag=='tr': self._row=[]
-            def handle_endtag(self, tag):
-                if tag in ('td','th'):
-                    self._row.append(''.join(self._cell).strip()); self._in=False
-                elif tag=='tr':
-                    if self._row: self.rows.append(self._row)
-            def handle_data(self, data):
-                if self._in: self._cell.append(data)
-
-        # detectar encoding
-        raw = ruta.read_bytes()
-        for _enc in ('utf-8','latin-1','cp1252'):
-            try: html_txt = raw.decode(_enc); break
-            except: pass
-        else: html_txt = raw.decode('utf-8', errors='replace')
-
-        p = _TblParser(); p.feed(html_txt)
-        if not p.rows or len(p.rows) < 2:
-            log.warning(f"  ⚠ {nombre}: sin tablas HTML"); return None
-
-        # primera fila = encabezados
-        headers = p.rows[0]
-        data_rows = p.rows[1:]
-        # asegurar longitud uniforme
-        ncols = len(headers)
-        data_rows = [r + ['']*(ncols-len(r)) if len(r)<ncols else r[:ncols] for r in data_rows]
-        df = pd.DataFrame(data_rows, columns=headers)
-
-        # convertir números (formato argentino: punto=miles, coma=decimal)
-        def _to_num(v):
+        if es_xlsx_real:
+            # Branch XLSX nativo. WinCampo a veces guarda con extensión
+            # .XLS pero el archivo es XLSX real (zip "PK..."). openpyxl
+            # rechaza por la extensión, así que copiamos a temp con
+            # extensión .xlsx y cargamos via pandas.
+            import tempfile, shutil
+            with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as _tf:
+                _tmp_xlsx = _tf.name
             try:
-                v2 = str(v).replace('.','').replace(',','.')
-                return float(v2)
-            except: return v
-        for col in df.columns:
-            df[col] = df[col].apply(lambda v: _to_num(v) if str(v).replace('.','').replace(',','').replace('-','').strip().isdigit() or (str(v).count(',')<=1 and str(v).replace('.','').replace(',','').replace('-','').strip().replace(' ','').isdigit()) else v)
+                shutil.copy2(str(ruta), _tmp_xlsx)
+                df = pd.read_excel(_tmp_xlsx, engine='openpyxl', sheet_name=0, dtype=object)
+            finally:
+                try: Path(_tmp_xlsx).unlink()
+                except Exception: pass
+            log.info(f"    formato: XLSX nativo · {len(df)} filas")
+        else:
+            # Branch HTML disfrazado (parser nativo, sin dependencias).
+            from html.parser import HTMLParser as _HTMLParser
+
+            class _TblParser(_HTMLParser):
+                def __init__(self):
+                    super().__init__()
+                    self.rows, self._row, self._cell, self._in = [], [], [], False
+                def handle_starttag(self, tag, attrs):
+                    if tag in ('td','th'): self._in=True; self._cell=[]
+                    elif tag=='tr': self._row=[]
+                def handle_endtag(self, tag):
+                    if tag in ('td','th'):
+                        self._row.append(''.join(self._cell).strip()); self._in=False
+                    elif tag=='tr':
+                        if self._row: self.rows.append(self._row)
+                def handle_data(self, data):
+                    if self._in: self._cell.append(data)
+
+            raw = ruta.read_bytes()
+            for _enc in ('utf-8','latin-1','cp1252'):
+                try: html_txt = raw.decode(_enc); break
+                except: pass
+            else: html_txt = raw.decode('utf-8', errors='replace')
+
+            p = _TblParser(); p.feed(html_txt)
+            if not p.rows or len(p.rows) < 2:
+                log.warning(f"  ⚠ {nombre}: sin tablas HTML"); return None
+
+            headers = p.rows[0]
+            data_rows = p.rows[1:]
+            ncols = len(headers)
+            data_rows = [r + ['']*(ncols-len(r)) if len(r)<ncols else r[:ncols] for r in data_rows]
+            df = pd.DataFrame(data_rows, columns=headers)
+
+            # convertir números (formato argentino: punto=miles, coma=decimal)
+            def _to_num(v):
+                try:
+                    v2 = str(v).replace('.','').replace(',','.')
+                    return float(v2)
+                except: return v
+            for col in df.columns:
+                df[col] = df[col].apply(lambda v: _to_num(v) if str(v).replace('.','').replace(',','').replace('-','').strip().isdigit() or (str(v).count(',')<=1 and str(v).replace('.','').replace(',','').replace('-','').strip().replace(' ','').isdigit()) else v)
 
     except Exception as e:
-        log.warning(f"  ⚠ {nombre}: error leyendo HTML: {e}")
+        log.warning(f"  ⚠ {nombre}: error leyendo archivo: {e}")
         return None
 
     # Normalizar columnas
@@ -5217,6 +5392,360 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
     else:
         log.info(f"  ✓ comportamiento_historico.json — 0 meses (sin Listado_Caravanas)")
     return output
+
+
+def procesar_precios_inferencia(carpeta_out, log=None):
+    """v8: lee el Excel "referencia precios de mercado simulador.xlsx" del
+    subdir simulador/simulador/ y vuelca DOS archivos:
+
+      precios_inferencia.json           — snapshot actual (sobrescribe)
+      precios_inferencia_historico.json — acumulado por fecha (upsert)
+
+    Layout fijo del Excel (Hoja1):
+      A1 "Fecha:"        B1 <datetime>
+      A2 "Categoria:"    B2..E2  4 categorías
+      A3 "Kg Compra:"    B3..E3
+      A4 "kg Venta:"     B4..E4
+      A5 "Precio venta:" B5..E5
+      A6 "Rinde:"        B6..E6  (decimal 0..1)
+      A7 "cost kg prod:" B7..E7
+      A8 "Dias Feed:"    B8..E8
+      A11 "Precio comp:" B11..E11  ← KPI principal
+
+    El Excel está en OneDrive y a veces queda bloqueado por el sync —
+    copiamos a tempfile antes de leer.
+
+    Devuelve (snapshot_dict, hist_dict) o (None, None) si no hay archivo
+    o si hay error. NO levanta excepción — sólo loguea warning.
+    """
+    if log is None:
+        log = logging.getLogger("inferencia")
+
+    base = Path(__file__).resolve().parent.parent
+    xl = base / "simulador" / "simulador" / "referencia precios de mercado simulador.xlsx"
+    if not xl.exists():
+        log.warning(f"  ⚠ Excel de inferencia no encontrado en {xl}, saltando")
+        return None, None
+
+    # Copiar a temp (OneDrive a veces bloquea la lectura directa)
+    import shutil, tempfile
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as _tf:
+            tmp_path = _tf.name
+        shutil.copy2(str(xl), tmp_path)
+    except Exception as e:
+        log.warning(f"  ⚠ no pude copiar Excel a temp: {e}")
+        return None, None
+
+    try:
+        try:
+            import openpyxl
+        except ImportError:
+            log.warning("  ⚠ openpyxl no instalado; saltando precios de inferencia")
+            return None, None
+        try:
+            wb = openpyxl.load_workbook(tmp_path, data_only=True)
+        except Exception as e:
+            log.warning(f"  ⚠ no pude abrir Excel: {e}")
+            return None, None
+        ws = wb[wb.sheetnames[0]]
+
+        IDS = ["vaca_100", "vaca_60", "novillo", "vaquillona"]
+        NOMBRES_FALLBACK = ["Vaca 100 días", "Vaca 60 días", "Novillo", "Vaquillona"]
+
+        # B1: fecha del snapshot. Aceptar datetime o string ISO.
+        b1 = ws.cell(row=1, column=2).value
+        if isinstance(b1, datetime):
+            fecha_iso = b1.strftime("%Y-%m-%d")
+        elif isinstance(b1, str) and b1.strip():
+            # Intentar parsear varios formatos
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    fecha_iso = datetime.strptime(b1.strip(), fmt).strftime("%Y-%m-%d")
+                    break
+                except ValueError:
+                    continue
+            else:
+                fecha_iso = datetime.now().strftime("%Y-%m-%d")
+        else:
+            fecha_iso = datetime.now().strftime("%Y-%m-%d")
+
+        def cell(r, c):
+            v = ws.cell(row=r, column=c).value
+            try:
+                return float(v) if v is not None else None
+            except (TypeError, ValueError):
+                return None
+
+        items = []
+        for i, (item_id, fallback) in enumerate(zip(IDS, NOMBRES_FALLBACK)):
+            col = i + 2  # B=2, C=3, D=4, E=5
+            nombre = ws.cell(row=2, column=col).value
+            nombre = (str(nombre).strip() if nombre else fallback)
+            # Capitalizar primera letra de cada palabra para presentación uniforme
+            nombre_disp = " ".join(w.capitalize() if w.lower() != "días" else "días" for w in nombre.split())
+            items.append({
+                "id":           item_id,
+                "nombre":       nombre_disp,
+                "nombre_raw":   nombre,
+                "kg_compra":    cell(3, col),
+                "kg_venta":     cell(4, col),
+                "precio_venta": cell(5, col),
+                "rinde":        cell(6, col),
+                "cost_kg_prod": cell(7, col),
+                "dias_feed":    cell(8, col),
+                "precio_comp":  cell(11, col),
+            })
+
+        snapshot = {
+            "meta": {
+                "fecha":    fecha_iso,
+                "generado": datetime.now().isoformat(),
+                "archivo":  xl.name,
+            },
+            "items": items,
+        }
+
+        # 1) snapshot actual
+        out_actual = Path(carpeta_out) / "precios_inferencia.json"
+        with out_actual.open("w", encoding="utf-8") as f:
+            json.dump(snapshot, f, ensure_ascii=False, indent=2, default=str)
+
+        # 2) histórico (upsert por fecha)
+        hist_path = Path(carpeta_out) / "precios_inferencia_historico.json"
+        if hist_path.exists():
+            try:
+                with hist_path.open("r", encoding="utf-8") as f:
+                    hist = json.load(f)
+                if not isinstance(hist, dict) or "semanas" not in hist:
+                    hist = {"meta": {}, "semanas": []}
+            except Exception:
+                hist = {"meta": {}, "semanas": []}
+        else:
+            hist = {"meta": {}, "semanas": []}
+
+        nueva_semana = {"fecha": fecha_iso, "items": items}
+        # Si la fecha ya existe, reemplazar; sino, push y ordenar.
+        idx = next((i for i, s in enumerate(hist["semanas"]) if s.get("fecha") == fecha_iso), None)
+        if idx is not None:
+            hist["semanas"][idx] = nueva_semana
+        else:
+            hist["semanas"].append(nueva_semana)
+            hist["semanas"].sort(key=lambda s: s.get("fecha", ""))
+
+        hist["meta"] = {
+            "generado":  datetime.now().isoformat(),
+            "n_semanas": len(hist["semanas"]),
+        }
+        with hist_path.open("w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False, indent=2, default=str)
+
+        fecha_disp = "/".join(reversed(fecha_iso.split("-")))
+        log.info(f"  ✓ Precios de inferencia: snapshot {fecha_disp} · histórico {len(hist['semanas'])} semanas")
+        return snapshot, hist
+    finally:
+        try: Path(tmp_path).unlink()
+        except Exception: pass
+
+
+def procesar_tesoreria_darwash(carpeta_out, log=None):
+    """v11: lee el XLSX más reciente de `datos/financiero DW/` (subido
+    semanalmente por el usuario) y lo convierte al shape canónico de
+    tesoreria_ultimo.json (posicion + fecha_corte + flujo {saldo_inicial,
+    semanas, series.saldo_semanal, series.saldo_acumulado}).
+
+    Layout del XLSX (validado contra "2026_05_27_financiero darwash.xlsx"):
+      R1 col B  → FINAL DE FINANCIERO (= posición final)
+      R5 col B  → Capital corriente darwash
+      R7 col E..W → fechas de semanas (datetime); col E es la primera
+                    de cierre, F adelante son las proyectadas
+      R22 col D → Saldo Disponibilidades (= saldo inicial)
+      R82 col E..W → Saldo Acumulado con el total de movimientos
+                     (es la serie que el panel/módulo grafica)
+
+    Vuelca dos archivos:
+      tesoreria_darwash.json           — snapshot actual (sobrescribe)
+      tesoreria_darwash_historico.json — acumulado por fecha_corte (upsert)
+
+    Tolerante: si la carpeta no existe o está vacía → warning + None.
+    """
+    if log is None:
+        log = logging.getLogger("dw")
+    base = Path(__file__).resolve().parent.parent
+    carpeta_dw = base / "datos" / "financiero DW"
+    if not carpeta_dw.is_dir():
+        log.warning(f"  ⚠ Carpeta {carpeta_dw} no existe, saltando")
+        return None, None
+    xlsxs = sorted(carpeta_dw.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not xlsxs:
+        log.warning(f"  ⚠ Sin archivos XLSX en {carpeta_dw}, saltando")
+        return None, None
+
+    xl = xlsxs[0]
+    # Copia a temp para evitar lock de OneDrive
+    import shutil, tempfile
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as _tf:
+            tmp_path = _tf.name
+        shutil.copy2(str(xl), tmp_path)
+    except Exception as e:
+        log.warning(f"  ⚠ no pude copiar XLSX DW a temp: {e}")
+        return None, None
+
+    try:
+        try:
+            import openpyxl
+        except ImportError:
+            log.warning("  ⚠ openpyxl no instalado; saltando tesorería DW")
+            return None, None
+        try:
+            wb = openpyxl.load_workbook(tmp_path, data_only=True)
+        except Exception as e:
+            log.warning(f"  ⚠ no pude abrir XLSX DW: {e}")
+            return None, None
+        ws = wb[wb.sheetnames[0]]
+
+        def cell(r, c):
+            v = ws.cell(row=r, column=c).value
+            try:
+                return float(v) if v is not None else None
+            except (TypeError, ValueError):
+                return v if isinstance(v, datetime) else None
+
+        # Localizar filas por etiqueta de col A (robusto contra desplazamientos
+        # menores del layout). Match case-insensitive substring.
+        def find_row(*kws):
+            for r in range(1, min(ws.max_row + 1, 100)):
+                a = ws.cell(row=r, column=1).value
+                if isinstance(a, str):
+                    s = a.lower().strip()
+                    if all(kw.lower() in s for kw in kws):
+                        return r
+            return None
+
+        r_final_fin = find_row("final", "financiero") or 1
+        r_capital   = find_row("capital", "corriente")
+        r_saldo_disp = find_row("saldo", "disponibilidades")  # R22
+        r_total_disp = find_row("total", "disponib")          # R28
+        r_saldo_acum = find_row("saldo", "acumulado", "total", "movimientos")  # R82
+        if r_saldo_acum is None:
+            # Fallback: usar el primer "Saldo Acumulado" (R77 o R82)
+            r_saldo_acum = find_row("saldo", "acumulado")
+
+        # Header semanal (típicamente R7). Buscamos la fila con varias
+        # datetime en cols E..W.
+        r_header = None
+        for r in range(5, 15):
+            datetimes_in_row = sum(
+                1 for c in range(5, 24)
+                if isinstance(ws.cell(row=r, column=c).value, datetime)
+            )
+            if datetimes_in_row >= 5:
+                r_header = r
+                break
+        if r_header is None:
+            log.warning("  ⚠ No encontré fila de fechas semanales en el XLSX DW, saltando")
+            return None, None
+
+        # Extraer fechas y saldos acumulados (col E=5 hasta donde haya fechas)
+        semanas_labels = []
+        semanas_fechas = []   # ISO YYYY-MM-DD
+        saldo_acum = []
+        for c in range(5, 24):
+            f = ws.cell(row=r_header, column=c).value
+            if not isinstance(f, datetime):
+                continue
+            v = ws.cell(row=r_saldo_acum, column=c).value if r_saldo_acum else None
+            try:
+                v = float(v) if v is not None else 0.0
+            except (TypeError, ValueError):
+                v = 0.0
+            semanas_labels.append(f"{f.day:02d}/{f.month:02d}")
+            semanas_fechas.append(f.strftime("%Y-%m-%d"))
+            saldo_acum.append(v)
+
+        if not semanas_labels:
+            log.warning("  ⚠ No pude extraer semanas del XLSX DW")
+            return None, None
+
+        # saldo_semanal = delta vs semana anterior (saldo_acum[i] - saldo_acum[i-1])
+        # La primera semana usa el saldo_inicial como base.
+        saldo_inicial = (cell(r_saldo_disp, 4) if r_saldo_disp else None) or 0.0
+        prev = saldo_inicial
+        saldo_sem = []
+        for v in saldo_acum:
+            saldo_sem.append(v - prev)
+            prev = v
+
+        posicion = cell(r_final_fin, 2)
+        capital_corriente = cell(r_capital, 2) if r_capital else None
+        fecha_corte = semanas_fechas[0]  # primer cierre del bloque semanal
+
+        snapshot = {
+            "meta": {
+                "fuente":   "xlsx_financiero_dw",
+                "archivo":  xl.name,
+                "generado": datetime.now().isoformat(),
+            },
+            "fecha_corte": fecha_corte,
+            "posicion":    posicion,
+            "capital_corriente": capital_corriente,
+            "flujo": {
+                "saldo_inicial": saldo_inicial,
+                "semanas":       semanas_labels,
+                "series": {
+                    "saldo_semanal":   saldo_sem,
+                    "saldo_acumulado": saldo_acum,
+                },
+            },
+        }
+
+        # 1) snapshot actual
+        out_actual = Path(carpeta_out) / "tesoreria_darwash.json"
+        with out_actual.open("w", encoding="utf-8") as f:
+            json.dump(snapshot, f, ensure_ascii=False, indent=2, default=str)
+
+        # 2) histórico — upsert por fecha_corte
+        hist_path = Path(carpeta_out) / "tesoreria_darwash_historico.json"
+        if hist_path.exists():
+            try:
+                with hist_path.open("r", encoding="utf-8") as f:
+                    hist = json.load(f)
+                if not isinstance(hist, dict) or "snapshots" not in hist:
+                    hist = {"meta": {}, "snapshots": []}
+            except Exception:
+                hist = {"meta": {}, "snapshots": []}
+        else:
+            hist = {"meta": {}, "snapshots": []}
+
+        nueva = {
+            "fecha_corte": fecha_corte,
+            "posicion":    posicion,
+            "saldo_inicial": saldo_inicial,
+            "semanas":       semanas_labels,
+            "saldo_acumulado": saldo_acum,
+            "archivo":     xl.name,
+        }
+        idx = next((i for i, s in enumerate(hist["snapshots"]) if s.get("fecha_corte") == fecha_corte), None)
+        if idx is not None:
+            hist["snapshots"][idx] = nueva
+        else:
+            hist["snapshots"].append(nueva)
+            hist["snapshots"].sort(key=lambda s: s.get("fecha_corte", ""))
+        hist["meta"] = {
+            "generado":    datetime.now().isoformat(),
+            "n_snapshots": len(hist["snapshots"]),
+        }
+        with hist_path.open("w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False, indent=2, default=str)
+
+        fecha_disp = "/".join(reversed(fecha_corte.split("-")))
+        log.info(f"  ✓ Tesorería DW: snapshot {fecha_disp} · "
+                 f"{len(semanas_labels)} semanas · histórico {len(hist['snapshots'])} snapshots")
+        return snapshot, hist
+    finally:
+        try: Path(tmp_path).unlink()
+        except Exception: pass
 
 
 if __name__ == "__main__":

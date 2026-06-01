@@ -78,9 +78,13 @@ var SIM_DIETA = {
   invernada:[100,      0,        0,        0,         0      ]
 };
 // Flete local fijo para calcular maíz neto en feedlot:
-// maíz_neto = pizarra − contraflete(37000) + flete_local(15000)
-var SIM_MAIZ_CONTRAFLETE = 37000;
-var SIM_MAIZ_FLETE_LOCAL = 15000;
+// maíz_neto = pizarra − contraflete + flete_local
+// v14.2 (1/6/2026): actualizado por Dirección. Antes 37000/15000.
+// Delta neto: pizarra − 42239 (era pizarra − 22000) → +20239 por tonelada
+// de maíz en el costo de alimentación. Composición de dieta e IVA 1.15
+// sin cambios.
+var SIM_MAIZ_CONTRAFLETE = 63181;
+var SIM_MAIZ_FLETE_LOCAL = 20942;
 
 // Tabla MS/Peso Vivo para machos/hembras (MACHOS-HEMBRAS de 'tabla')
 var SIM_MS_TABLE_GEN = [
