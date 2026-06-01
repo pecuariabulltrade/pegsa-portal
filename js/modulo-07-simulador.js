@@ -464,6 +464,22 @@ function calcSim(tipo){
   document.getElementById('simRes-'+tipo).innerHTML = html;
   _simSave(); // persistir valores del usuario
 
+  // v14.1: Exportar resultados del simulador para que otros módulos los lean
+  // (p.ej. panel Indiferencia muestra costoPorKg por categoría)
+  window.SIM_LAST_RESULTS = window.SIM_LAST_RESULTS || {};
+  window.SIM_LAST_RESULTS[tipo] = {
+    costoPorKg: costoPorKg,
+    totalCostos: totalCostos,
+    kgsProducidos: kgsProducidos,
+    dias: dias,
+    alimentacion: alimentacion,
+    racion: racion,
+    pesoE: pesoE,
+    pesoS: pesoS
+  };
+  // Notificar a panel Indiferencia si está abierto
+  if(typeof _refreshIndiferenciaCostos === 'function') _refreshIndiferenciaCostos();
+
   // Update global KPI strip
   if(tipo === SIM_ACTIVE_TAB){
     document.getElementById('skpi-dias').textContent = Math.round(dias);

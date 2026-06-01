@@ -1629,6 +1629,16 @@ function renderIndiferencia(){
 
   var html = '';
   var fechaLeg = hoyKey.split('-').reverse().join('/');
+
+  // v14.1: Costo de Producción por categoría (en vivo desde el Simulador Feedlot)
+  // Cards mostradas arriba de la tabla. El simulador escribe en
+  // window.SIM_LAST_RESULTS al ejecutar calcSim() en cada tab.
+  // Si todavía no se inicializó, lo gatillamos en background.
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Costo del kg producido · Simulador Feedlot</div>';
+  html += '<div id="indiferenciaCostosSim" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">'
+    + _indiferenciaCostoCardsHTML()
+    + '</div>';
+
   html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resumen del día · '+fechaLeg+'</div>';
   html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
   html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
@@ -1728,6 +1738,57 @@ function _toggleIndiferenciaRow(label){
 function _setIndiferenciaPeriodo(dias){
   _indiferenciaPeriodo = dias;
   renderIndiferencia();
+}
+
+// v14.1: Costo del kg producido por categoría (Novillo / Vaquillona / Vaca)
+// El número sale del Simulador Feedlot (modulo-07) en window.SIM_LAST_RESULTS.
+// Si todavía no corrió, lo gatillamos en background con initSimulador().
+function _indiferenciaCostoCardsHTML(){
+  var R = window.SIM_LAST_RESULTS || {};
+  var defs = [
+    {tipo:'terneros', label:'Novillo',    sub:'Terneros · Novillos',     ico:'🐂', col:'#1a5276'},
+    {tipo:'terneras', label:'Vaquillona', sub:'Terneras · Vaquillonas',  ico:'🐄', col:'#7d3c98'},
+    {tipo:'vacas',    label:'Vaca',       sub:'Vacas de feedlot',         ico:'🐮', col:'#922b21'}
+  ];
+  // Si no hay datos del simulador todavía, lo arrancamos en background.
+  // initSimulador() es idempotente (SIM_INITED flag).
+  var pending = defs.some(function(d){ return !R[d.tipo] || !R[d.tipo].costoPorKg; });
+  if(pending && typeof initSimulador === 'function'){
+    setTimeout(function(){
+      try { initSimulador(); } catch(e){}
+    }, 0);
+  }
+  var out = '';
+  defs.forEach(function(d){
+    var r = R[d.tipo] || {};
+    var c = r.costoPorKg;
+    var dias = r.dias;
+    var alim = r.alimentacion;
+    var pe = r.pesoE, ps = r.pesoS;
+    var hasData = c != null && c > 0;
+    var valTxt = hasData ? '$'+Math.round(c).toLocaleString('es-AR') : '—';
+    var hintTxt = hasData
+      ? Math.round(dias)+' días · '+(pe||'?')+'→'+(ps||'?')+' kg'
+      : 'Calculando…';
+    out += '<div style="background:#fff;border:1px solid rgba(26,22,18,.12);border-left:3px solid '+d.col+';border-radius:2px;padding:14px 16px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'
+        + '<div>'
+          + '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.55);font-weight:600">'+d.ico+' '+d.label+'</div>'
+          + '<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.4);margin-top:2px">'+d.sub+'</div>'
+        + '</div>'
+      + '</div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:22px;font-weight:700;color:'+d.col+';letter-spacing:-.01em">'+valTxt+'<span style="font-size:12px;font-weight:500;color:rgba(26,22,18,.5);margin-left:6px">/ kg producido</span></div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.5);margin-top:6px">'+hintTxt+'</div>'
+      + '</div>';
+  });
+  return out;
+}
+
+// Refresh cards sin re-renderizar toda la tabla. Lo llama calcSim() del
+// simulador cuando termina de calcular cada tab.
+function _refreshIndiferenciaCostos(){
+  var el = document.getElementById('indiferenciaCostosSim');
+  if(el) el.innerHTML = _indiferenciaCostoCardsHTML();
 }
 
 function _renderIndiferenciaChart(){
