@@ -860,11 +860,19 @@
           kgVenta:        kv,
           kgVentaFmt:     kv != null ? Math.round(kv) + " kg" : "—",
           precioVenta:    pv,
-          precioVentaFmt: pv != null ? fmtCompactMoney(pv) + "/kg" : "—",
+          // v14.3: entero completo con separador es-AR ("$ 7.300/kg") en
+          // lugar del abreviado de fmtCompactMoney ("$ 7,3k/kg"). Las
+          // cards de Precios Inferencia ahora tienen ancho suficiente
+          // para mostrar el número completo y se lee más claro.
+          precioVentaFmt: pv != null ? "$ " + Math.round(pv).toLocaleString("es-AR") + "/kg" : "—",
           rinde:          ri,
-          rindeFmt:       ri != null ? Math.round(ri * 100) + " %" : "—",
+          // v14.3: un decimal con coma es-AR (53,0 %) en vez de redondeado
+          // entero (53 %). Las diferencias entre categorías son chicas
+          // (52,8 vs 53,2) y el redondeo las aplastaba.
+          rindeFmt:       ri != null ? (ri * 100).toFixed(1).replace(".", ",") + " %" : "—",
           costoKgProd:    ck,
-          costoKgProdFmt: ck != null ? fmtCompactMoney(ck) : "—",
+          // v14.3: idem precioVentaFmt — entero con separador, sin "k".
+          costoKgProdFmt: ck != null ? "$ " + Math.round(ck).toLocaleString("es-AR") : "—",
           diasFeed:       df,
           diasFeedFmt:    df != null ? Math.round(df) + " d" : "—",
           // Margen calculado
