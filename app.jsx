@@ -372,7 +372,10 @@ function PreciosInferenciaSection({ D }) {
     if (a >= 1e3) return s + "$ " + (a / 1e3).toFixed(1).replace(".", ",") + "k";
     return s + "$ " + Math.round(a);
   };
-  const fmtPct = (n) => n != null ? Math.round(n * 100) + " %" : "—";
+  // v14.4: un decimal con coma es-AR ("53,0 %") — antes era Math.round
+  // que aplastaba las diferencias chicas entre categorías (52,8 vs 53,2
+  // ambos quedaban 53). Espejo del cambio v14.3 en mobile-data.js.
+  const fmtPct = (n) => n != null ? (n * 100).toFixed(1).replace(".", ",") + " %" : "—";
   const splitNombre = (n) => {
     if (!n) return { base: "—", sub: "" };
     const m = String(n).match(/^(.*?)\s+(\d+\s*d[ií]as?)$/i);
@@ -430,8 +433,11 @@ function PreciosInferenciaSection({ D }) {
                     <div><span>Días feedlot</span><strong>{it.dias_feed != null ? Math.round(it.dias_feed) + " d" : "—"}</strong></div>
                     <div><span>Venta</span><strong>{it.kg_venta != null ? Math.round(it.kg_venta) + " kg" : "—"}</strong></div>
                     <div><span>Rinde</span><strong>{fmtPct(it.rinde)}</strong></div>
-                    <div><span>Precio venta</span><strong>{fmtCompact(it.precio_venta)}/kg</strong></div>
-                    <div><span>Costo prod</span><strong>{fmtCompact(it.cost_kg_prod)}</strong></div>
+                    {/* v14.4: fmtMoney (entero con separador es-AR) en lugar
+                        de fmtCompact (abreviaba a "$ 7,3k") — espejo de v14.3.
+                        fmtCompact sigue definido por si otra pantalla la usa. */}
+                    <div><span>Precio venta</span><strong>{fmtMoney(it.precio_venta)}/kg</strong></div>
+                    <div><span>Costo prod</span><strong>{fmtMoney(it.cost_kg_prod)}</strong></div>
                   </div>
                   {/* v12.3: bloque .prinf-margen eliminado del panel. */}
                   <button
