@@ -1,241 +1,114 @@
-# v14.1 — Costo del kg producido en panel Indiferencia (Novillo / Vaquillona / Vaca)
+# v14.3 — Precios Inferencia mobile: enteros sin "k" + % con un decimal
 
-Estoy en `C:\Users\USER\Documents\GitHub\pegsa-portal`. Necesito que apliques estos 3 cambios **tanto en el repo Github como en el espejo OneDrive**, y después pushees a GitHub. La VM de Cowork dejó el repo con un lock y el bot AUTO pisó la copia local — por las dudas tratá los archivos como si NO tuvieran ningún cambio v14.1 todavía y aplicalos desde cero. Si ya están, no rompe nada.
+Estoy en `C:\Users\USER\Documents\GitHub\pegsa-portal`. Necesito cambiar el formato de 3 campos en las **tarjetas expandibles de Precios de Inferencia** del mobile:
+
+- `Precio venta` → mostrar entero completo (`$ 7.300/kg`) en vez de abreviado (`$ 7,3k/kg`)
+- `Costo prod` → mostrar entero completo (`$ 3.400`) en vez de abreviado (`$ 3,4k`)
+- `Rinde` → mostrar con un decimal (`53,0 %`) en vez de redondeado (`53 %`)
+
+El resto de los formateadores y el resto de las pantallas no se tocan — `fmtCompactMoney` se sigue usando para el margen y otras métricas, no la borres.
 
 ## Rutas
 
-- Repo (lo que sube a GitHub Pages): `C:\Users\USER\Documents\GitHub\pegsa-portal`
-- Espejo OneDrive (lo que lee el bot AUTO y desde donde se pisa el repo cada hora): `C:\Users\USER\OneDrive - pecuaria el garabi sa\PEGSA_Portal`
+- Repo: `C:\Users\USER\Documents\GitHub\pegsa-portal`
+- Espejo OneDrive: `C:\Users\USER\OneDrive - pecuaria el garabi sa\PEGSA_Portal`
 
-**CRÍTICO**: los archivos que voy a modificar existen en AMBAS rutas. Si solo lo cambiás en una, el bot AUTO al próximo tick (`:04` de cada hora) pisa con la versión vieja. Editar ambas o editar el repo y copiar a OneDrive después.
-
-## Posibles locks de git colgados
-
-Antes de tocar nada, limpiá si existen:
-- `C:\Users\USER\Documents\GitHub\pegsa-portal\.git\HEAD.lock`
-- `C:\Users\USER\Documents\GitHub\pegsa-portal\.git\index.lock`
-
-Si el `git status` falla con "bad signature 0x00000000" en el index, borrá `.git\index` y corré `git reset HEAD` para regenerarlo desde HEAD.
+Editar en AMBAS y copiar al final, sino el bot AUTO al próximo tick `:04` pisa la versión vieja.
 
 ---
 
-## Cambio 1 — `js/modulo-07-simulador.js`
+## Cambio 1 — `mobile-data.js` (3 líneas, dentro del map de PRECIOS_INFERENCIA)
 
-Función `calcSim(tipo)`. Buscá el bloque que **actualmente termina así** (cerca de línea 464-478):
-
-```javascript
-  document.getElementById('simRes-'+tipo).innerHTML = html;
-  _simSave(); // persistir valores del usuario
-
-  // Update global KPI strip
-  if(tipo === SIM_ACTIVE_TAB){
-    document.getElementById('skpi-dias').textContent = Math.round(dias);
-    document.getElementById('skpi-costo').textContent = '$'+f2(costoPorKg);
-    var el = document.getElementById('skpi-resultado');
-    el.textContent = '$'+f2(resEco);
-    el.style.color = isPos ? '#6bc47a' : '#e74c3c';
-    var elTir = document.getElementById('skpi-tir');
-    elTir.textContent = fp(tirAnual);
-    elTir.style.color = tirAnual >= 0 ? '#6bc47a' : '#e74c3c';
-  }
-}
-```
-
-Y reemplazalo por (inserta el bloque `// v14.1` entre `_simSave()` y `// Update global KPI strip`):
+Buscá este bloque (alrededor de línea 862-869):
 
 ```javascript
-  document.getElementById('simRes-'+tipo).innerHTML = html;
-  _simSave(); // persistir valores del usuario
-
-  // v14.1: Exportar resultados del simulador para que otros módulos los lean
-  // (p.ej. panel Indiferencia muestra costoPorKg por categoría)
-  window.SIM_LAST_RESULTS = window.SIM_LAST_RESULTS || {};
-  window.SIM_LAST_RESULTS[tipo] = {
-    costoPorKg: costoPorKg,
-    totalCostos: totalCostos,
-    kgsProducidos: kgsProducidos,
-    dias: dias,
-    alimentacion: alimentacion,
-    racion: racion,
-    pesoE: pesoE,
-    pesoS: pesoS
-  };
-  // Notificar a panel Indiferencia si está abierto
-  if(typeof _refreshIndiferenciaCostos === 'function') _refreshIndiferenciaCostos();
-
-  // Update global KPI strip
-  if(tipo === SIM_ACTIVE_TAB){
-    document.getElementById('skpi-dias').textContent = Math.round(dias);
-    document.getElementById('skpi-costo').textContent = '$'+f2(costoPorKg);
-    var el = document.getElementById('skpi-resultado');
-    el.textContent = '$'+f2(resEco);
-    el.style.color = isPos ? '#6bc47a' : '#e74c3c';
-    var elTir = document.getElementById('skpi-tir');
-    elTir.textContent = fp(tirAnual);
-    elTir.style.color = tirAnual >= 0 ? '#6bc47a' : '#e74c3c';
-  }
-}
+          precioVenta:    pv,
+          precioVentaFmt: pv != null ? fmtCompactMoney(pv) + "/kg" : "—",
+          rinde:          ri,
+          rindeFmt:       ri != null ? Math.round(ri * 100) + " %" : "—",
+          costoKgProd:    ck,
+          costoKgProdFmt: ck != null ? fmtCompactMoney(ck) : "—",
+          diasFeed:       df,
+          diasFeedFmt:    df != null ? Math.round(df) + " d" : "—",
 ```
+
+Y reemplazá las 3 líneas `*Fmt` específicas (las otras NO se tocan):
+
+```javascript
+          precioVenta:    pv,
+          precioVentaFmt: pv != null ? "$ " + Math.round(pv).toLocaleString("es-AR") + "/kg" : "—",
+          rinde:          ri,
+          rindeFmt:       ri != null ? (ri * 100).toFixed(1).replace(".", ",") + " %" : "—",
+          costoKgProd:    ck,
+          costoKgProdFmt: ck != null ? "$ " + Math.round(ck).toLocaleString("es-AR") : "—",
+          diasFeed:       df,
+          diasFeedFmt:    df != null ? Math.round(df) + " d" : "—",
+```
+
+Lo que cambia, fila por fila:
+- `precioVentaFmt`: `fmtCompactMoney(pv) + "/kg"` → `"$ " + Math.round(pv).toLocaleString("es-AR") + "/kg"`
+- `rindeFmt`: `Math.round(ri * 100) + " %"` → `(ri * 100).toFixed(1).replace(".", ",") + " %"`
+- `costoKgProdFmt`: `fmtCompactMoney(ck)` → `"$ " + Math.round(ck).toLocaleString("es-AR")`
+
+Eso es todo el cambio de lógica. `toLocaleString("es-AR")` ya pone el separador de miles correcto (`$ 7.300`, `$ 8.000`).
 
 ---
 
-## Cambio 2 — `js/modulo-05-mercado.js`
+## Cambio 2 — `mobile.html` (cache-buster)
 
-### 2a — Inyectar las cards arriba de la tabla
-
-En la función `renderIndiferencia()`, buscá:
-
-```javascript
-  var html = '';
-  var fechaLeg = hoyKey.split('-').reverse().join('/');
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resumen del día · '+fechaLeg+'</div>';
-  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
-```
-
-Y reemplazalo por:
-
-```javascript
-  var html = '';
-  var fechaLeg = hoyKey.split('-').reverse().join('/');
-
-  // v14.1: Costo de Producción por categoría (en vivo desde el Simulador Feedlot)
-  // Cards mostradas arriba de la tabla. El simulador escribe en
-  // window.SIM_LAST_RESULTS al ejecutar calcSim() en cada tab.
-  // Si todavía no se inicializó, lo gatillamos en background.
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Costo del kg producido · Simulador Feedlot</div>';
-  html += '<div id="indiferenciaCostosSim" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">'
-    + _indiferenciaCostoCardsHTML()
-    + '</div>';
-
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Resumen del día · '+fechaLeg+'</div>';
-  html += '<div style="overflow-x:auto;border:1px solid rgba(26,22,18,.12);border-radius:2px;background:#fff;margin-bottom:28px">';
-```
-
-### 2b — Helpers nuevos
-
-Buscá la función `_setIndiferenciaPeriodo` (cerca de línea 1738):
-
-```javascript
-function _setIndiferenciaPeriodo(dias){
-  _indiferenciaPeriodo = dias;
-  renderIndiferencia();
-}
-```
-
-Y **justo después de su llave de cierre**, insertá estas dos funciones nuevas (antes de `_renderIndiferenciaChart`):
-
-```javascript
-
-// v14.1: Costo del kg producido por categoría (Novillo / Vaquillona / Vaca)
-// El número sale del Simulador Feedlot (modulo-07) en window.SIM_LAST_RESULTS.
-// Si todavía no corrió, lo gatillamos en background con initSimulador().
-function _indiferenciaCostoCardsHTML(){
-  var R = window.SIM_LAST_RESULTS || {};
-  var defs = [
-    {tipo:'terneros', label:'Novillo',    sub:'Terneros · Novillos',     ico:'🐂', col:'#1a5276'},
-    {tipo:'terneras', label:'Vaquillona', sub:'Terneras · Vaquillonas',  ico:'🐄', col:'#7d3c98'},
-    {tipo:'vacas',    label:'Vaca',       sub:'Vacas de feedlot',         ico:'🐮', col:'#922b21'}
-  ];
-  // Si no hay datos del simulador todavía, lo arrancamos en background.
-  // initSimulador() es idempotente (SIM_INITED flag).
-  var pending = defs.some(function(d){ return !R[d.tipo] || !R[d.tipo].costoPorKg; });
-  if(pending && typeof initSimulador === 'function'){
-    setTimeout(function(){
-      try { initSimulador(); } catch(e){}
-    }, 0);
-  }
-  var out = '';
-  defs.forEach(function(d){
-    var r = R[d.tipo] || {};
-    var c = r.costoPorKg;
-    var dias = r.dias;
-    var pe = r.pesoE, ps = r.pesoS;
-    var hasData = c != null && c > 0;
-    var valTxt = hasData ? '$'+Math.round(c).toLocaleString('es-AR') : '—';
-    var hintTxt = hasData
-      ? Math.round(dias)+' días · '+(pe||'?')+'→'+(ps||'?')+' kg'
-      : 'Calculando…';
-    out += '<div style="background:#fff;border:1px solid rgba(26,22,18,.12);border-left:3px solid '+d.col+';border-radius:2px;padding:14px 16px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'
-        + '<div>'
-          + '<div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.55);font-weight:600">'+d.ico+' '+d.label+'</div>'
-          + '<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.4);margin-top:2px">'+d.sub+'</div>'
-        + '</div>'
-      + '</div>'
-      + '<div style="font-family:DM Mono,monospace;font-size:22px;font-weight:700;color:'+d.col+';letter-spacing:-.01em">'+valTxt+'<span style="font-size:12px;font-weight:500;color:rgba(26,22,18,.5);margin-left:6px">/ kg producido</span></div>'
-      + '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.5);margin-top:6px">'+hintTxt+'</div>'
-      + '</div>';
-  });
-  return out;
-}
-
-// Refresh cards sin re-renderizar toda la tabla. Lo llama calcSim() del
-// simulador cuando termina de calcular cada tab.
-function _refreshIndiferenciaCostos(){
-  var el = document.getElementById('indiferenciaCostosSim');
-  if(el) el.innerHTML = _indiferenciaCostoCardsHTML();
-}
+Buscá las 4 líneas con `?v=141` y reemplazalas por `?v=142`:
 
 ```
+<link rel="stylesheet" href="mobile.css?v=141">
+...
+<script src="data.js?v=141"></script>
+<script src="mobile-data.js?v=141"></script>
+<script type="text/babel" data-presets="env,react" src="mobile.jsx?v=141"></script>
+```
+
+Quedan:
+
+```
+<link rel="stylesheet" href="mobile.css?v=142">
+...
+<script src="data.js?v=142"></script>
+<script src="mobile-data.js?v=142"></script>
+<script type="text/babel" data-presets="env,react" src="mobile.jsx?v=142"></script>
+```
+
+(También actualizar el comentario `v12.2: cache-buster ?v=141` a `?v=142` si querés, opcional.)
 
 ---
 
-## Cambio 3 — `index.html`
+## Después de aplicar
 
-Buscá las **3 ocurrencias** del siguiente texto y reemplazalas todas (es la nota de pie en cada solapa del simulador):
-
-**Antes:**
-```
-Maíz neto feedlot = pizarra − 37.000 (contraflete) + 15.000 (flete local) · Composición y factor IVA 1,15 según Excel
-```
-
-**Después:**
-```
-Maíz neto feedlot = pizarra − 63.181 (contraflete) + 20.942 (flete local) · Composición y factor IVA 1,15 según Excel
-```
-
-Si las 3 ocurrencias ya tienen `63.181/20.942` no hagas nada (eso es de v14.2, ya aplicado anteriormente).
-
----
-
-## Después de aplicar los 3 cambios
-
-1. Verificá sintaxis: `node -c js/modulo-05-mercado.js` y `node -c js/modulo-07-simulador.js`
-2. Verificá que las funciones nuevas estén:
-   - `grep -c "_indiferenciaCostoCardsHTML" js/modulo-05-mercado.js` → debe ser ≥3 (definición + 2 llamadas)
-   - `grep -c "SIM_LAST_RESULTS" js/modulo-07-simulador.js` → debe ser ≥2
-3. Copiá los 3 archivos al espejo OneDrive (manteniendo estructura de carpetas):
+1. Copiar al espejo OneDrive:
    ```powershell
    $repo = "C:\Users\USER\Documents\GitHub\pegsa-portal"
    $od   = "C:\Users\USER\OneDrive - pecuaria el garabi sa\PEGSA_Portal"
-   Copy-Item "$repo\index.html" "$od\index.html" -Force
-   Copy-Item "$repo\js\modulo-05-mercado.js" "$od\js\modulo-05-mercado.js" -Force
-   Copy-Item "$repo\js\modulo-07-simulador.js" "$od\js\modulo-07-simulador.js" -Force
+   Copy-Item "$repo\mobile-data.js" "$od\mobile-data.js" -Force
+   Copy-Item "$repo\mobile.html" "$od\mobile.html" -Force
    ```
-4. Commit + push:
+
+2. Commit + push:
    ```
    cd C:\Users\USER\Documents\GitHub\pegsa-portal
-   git add index.html js/modulo-05-mercado.js js/modulo-07-simulador.js
-   git commit -m "v14.1: Costo del kg producido en panel Indiferencia (Novillo/Vaquillona/Vaca)
+   git add mobile-data.js mobile.html
+   git commit -m "v14.3: Precios Inferencia mobile - enteros sin 'k' + Rinde con un decimal
 
-   - modulo-07-simulador.js: exportar window.SIM_LAST_RESULTS al final de calcSim()
-     con costoPorKg, dias, pesoE/pesoS por tipo. Notifica _refreshIndiferenciaCostos()
-     para refresh en vivo del panel Indiferencia.
-   - modulo-05-mercado.js: 3 tarjetas arriba de la tabla Indiferencia mostrando
-     costo \$/kg producido para Novillo (terneros), Vaquillona (terneras), Vaca
-     (vacas) leyendo de window.SIM_LAST_RESULTS. Si no hay datos, gatilla
-     initSimulador() en background.
-   - index.html: actualizar texto visible '37.000/15.000' a '63.181/20.942'
-     (consistente con v14.2 si todavia no estaba)."
-   git fetch origin
-   git rebase origin/main
-   git push origin main
+   - precioVentaFmt: \$7.300/kg en vez de \$7,3k/kg
+   - costoKgProdFmt: \$3.400 en vez de \$3,4k
+   - rindeFmt: 53,0 % en vez de 53 % (un decimal con coma es-AR)
+   - mobile.html cache-buster ?v=141 -> ?v=142
+
+   fmtCompactMoney se mantiene para margen y otras metricas."
+   git fetch origin && git rebase origin/main && git push origin main
    ```
 
-5. Si quedaron cambios stasheados durante el proceso (JSONs del bot), hacé `git stash pop` al final.
+3. Reportame: hash pusheado y confirmación de que los 2 archivos quedaron iguales en OneDrive (mtime/size).
 
-## Reportame
+---
 
-- Qué hash quedó pusheado (`git log --oneline -3`)
-- Si los 3 archivos quedaron actualizados en OneDrive (mostrame el size/mtime)
-- Cualquier conflicto o error
+## Verificación visual (opcional)
+
+Después del push, hard refresh (Ctrl+Shift+R) en `mobile.html` y abrir cualquier tarjeta de Precios Inferencia. Las 3 tarjetas (Vaca, Vaquillona, Novillo, etc.) deberían mostrar Precio venta como `$ 7.300/kg`, Costo prod como `$ 3.400`, y Rinde como `53,0 %` (con coma y un decimal).
