@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-06-02T23:09:30.524788",
+    "generado": "2026-06-03T00:07:49.724772",
     "periodo": "2025",
     "mes_actual": "2026-06",
     "nombre_mes": "Junio 2026",
     "mes_anterior": "2026-05",
     "nombre_mes_ant": "Mayo 2026",
-    "desde_anio": "2025-06-02",
-    "hasta": "2026-06-02",
+    "desde_anio": "2025-06-03",
+    "hasta": "2026-06-03",
     "filtros": "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos."
   },
   "anio": {
@@ -15,11 +15,11 @@
       "cabezas_ingresadas": 18293,
       "kg_ingresado": 6445478.5,
       "kg_promedio_ingreso": 352.3,
-      "cabezas_egresadas": 19174,
-      "kg_egresado": 10366310.0,
-      "kg_promedio_egreso": 540.6,
-      "saldo_cabezas": -881,
-      "saldo_kg": -3920831.5
+      "cabezas_egresadas": 18967,
+      "kg_egresado": 10242133.0,
+      "kg_promedio_egreso": 540.0,
+      "saldo_cabezas": -674,
+      "saldo_kg": -3796654.5
     },
     "ingresos": {
       "total_cabezas": 18293,
@@ -962,14 +962,14 @@
       ]
     },
     "egresos": {
-      "total_cabezas": 19174,
-      "total_kg": 10366310.0,
-      "kg_promedio": 540.6,
+      "total_cabezas": 18967,
+      "total_kg": 10242133.0,
+      "kg_promedio": 540.0,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 14985,
-          "kg": 8282108.0,
-          "kg_promedio": 552.7
+          "cabezas": 14778,
+          "kg": 8157931.0,
+          "kg_promedio": 552.0
         },
         "EL YULTO SAS": {
           "cabezas": 157,
@@ -1029,9 +1029,9 @@
       },
       "por_categoria": {
         "VACA": {
-          "cabezas": 9325,
-          "kg": 5522740.4,
-          "kg_promedio": 592.3
+          "cabezas": 9118,
+          "kg": 5398563.4,
+          "kg_promedio": 592.1
         },
         "TERNERO": {
           "cabezas": 3398,
@@ -1080,11 +1080,6 @@
           "kg": 1165966.0,
           "kg_promedio": 537.3
         },
-        "2025-06": {
-          "cabezas": 1745,
-          "kg": 929238.0,
-          "kg_promedio": 532.5
-        },
         "2025-11": {
           "cabezas": 2084,
           "kg": 1142742.0,
@@ -1099,6 +1094,11 @@
           "cabezas": 1636,
           "kg": 868125.0,
           "kg_promedio": 530.6
+        },
+        "2025-06": {
+          "cabezas": 1538,
+          "kg": 805061.0,
+          "kg_promedio": 523.4
         },
         "2026-02": {
           "cabezas": 2178,
@@ -1128,13 +1128,13 @@
       },
       "por_mes_detalle": {
         "2025-06": {
-          "cabezas": 1745,
-          "kg": 929238.0,
+          "cabezas": 1538,
+          "kg": 805061.0,
           "por_categoria": {
             "VACA": {
-              "cabezas": 889,
-              "kg": 550221.0,
-              "kg_promedio": 618.9
+              "cabezas": 682,
+              "kg": 426044.0,
+              "kg_promedio": 624.7
             },
             "TERNERO": {
               "cabezas": 254,
@@ -1169,9 +1169,9 @@
           },
           "por_propietario": {
             "PEGSA": {
-              "cabezas": 1401,
-              "kg": 791764.0,
-              "kg_promedio": 565.1
+              "cabezas": 1194,
+              "kg": 667587.0,
+              "kg_promedio": 559.1
             },
             "EL YULTO SAS": {
               "cabezas": 106,
@@ -1209,7 +1209,7 @@
               "kg_promedio": 379.8
             }
           },
-          "kg_promedio": 532.5
+          "kg_promedio": 523.4
         },
         "2025-07": {
           "cabezas": 2170,
@@ -1968,9 +1968,9 @@
       },
       "por_tipo_egreso": {
         "VENTA": {
-          "cabezas": 19174,
-          "kg": 10366310.0,
-          "kg_promedio": 540.6
+          "cabezas": 18967,
+          "kg": 10242133.0,
+          "kg_promedio": 540.0
         },
         "MUERTE": {
           "cabezas": 390,
@@ -1981,9 +1981,9 @@
       "top10_destino": [
         {
           "nombre": "FRIG. RIOPLATENCE",
-          "cabezas": 7495,
+          "cabezas": 7288,
           "por_categoria": {
-            "VACA": 7050,
+            "VACA": 6843,
             "NOVILLITO": 129,
             "VAQUILLONA": 94,
             "TERNERA": 89,
