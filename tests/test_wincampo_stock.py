@@ -35,9 +35,15 @@ def main():
             print(f"  {k}: {v!r}")
 
     # Verificar RFID único (clave de cada animal)
+    # Nota: la spec del prompt dice "RFIDs únicos: 9.969 (5 duplicados son
+    # caravanas provisorias sin RFID electrónico real — no es un bug)".
+    # Toleramos hasta 50 duplicados — si pasa de eso, probablemente el
+    # endpoint está agrupando o devolviendo cabezas de tropas en lugar de
+    # individuales y conviene revisar los flags.
     rfids = [c["RFID"] for c in cabezas if c["RFID"]]
-    print(f"\nRFIDs únicos: {len(set(rfids))} de {len(rfids)} (deben ser iguales si no hay duplicados)")
-    assert len(set(rfids)) == len(rfids), "HAY RFIDs DUPLICADOS — algo está mal"
+    dupes = len(rfids) - len(set(rfids))
+    print(f"\nRFIDs únicos: {len(set(rfids))} de {len(rfids)} ({dupes} duplicados, esperados ~5 por caravanas provisorias)")
+    assert dupes < 50, f"DEMASIADOS RFIDs DUPLICADOS ({dupes}) — probablemente el endpoint está agrupando"
 
     # Distribución por hotelero
     print("\nPor hotelero (esperado: PEGSA ~8973, TERCIO BRAVO ~449, LAS TAPERAS ~254, RICARDO BAILO ~217, DARWASH ~71, UGMA ~10):")

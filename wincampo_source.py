@@ -49,11 +49,20 @@ class WinCampoAPI:
         )
         r.raise_for_status()
         data = r.json()
+        # Verificado 2026-06-06: la API devuelve una lista de longitud 1 con un
+        # dict {nombre, empresa, establecimiento, token, refresh_token, api, …}
+        # (no un dict pelado como típicamente esperaría un cliente JWT).
+        if isinstance(data, list):
+            if not data:
+                raise RuntimeError("Login devolvió lista vacía")
+            data = data[0]
+        if not isinstance(data, dict):
+            raise RuntimeError(f"Login con shape inesperado: {type(data).__name__}")
         self.token = data.get("token") or data.get("access_token") or data.get("jwt")
         if not self.token:
-            raise RuntimeError(f"Login devolvió sin token: {data}")
+            raise RuntimeError(f"Login devolvió sin token. Keys: {list(data.keys())}")
         self.session.headers["Authorization"] = f"Bearer {self.token}"
-        log.info("WinCampo login OK")
+        log.info("WinCampo login OK (user=%s)", data.get("nombre") or self.email)
 
     def _get(self, path, params=None, retry_on_401=True):
         time.sleep(RATE_LIMIT_SLEEP)
