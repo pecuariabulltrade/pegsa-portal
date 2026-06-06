@@ -165,3 +165,132 @@ class WinCampoAPI:
             "RAZA":          x.get("DESC_RAZA"),
             "ORIGEN":        x.get("ORIGEN"),
         }
+
+    # ════════════════════════════════════════════════════════════════
+    #  TABLA 2 — Egresos de Hacienda (ventas + muertes + traslados)
+    # ════════════════════════════════════════════════════════════════
+    def fetch_egresos(self, fecha_desde=None, fecha_hasta=None):
+        """
+        Reemplazo de SELECT * FROM v_PB_Egresos.
+
+        Devuelve lista PLANA de animales egresados en el rango de fechas.
+        Aplana la jerarquía hotelero → tropa → detalle del response.
+        Calcula AdpSinDebaste localmente como (KILOS_EGRESO - KILOS_INGRESO) / DIAS.
+
+        Filtros se aplican en el pipeline (no acá). Esta función trae TODO
+        (ventas + muertes + traslados + ajustes) — los consumidores filtran:
+          - procesar_productivo: MOTIVO contiene "VENTA"
+          - procesar_muertes:    MOTIVO contiene palabras de muerte
+
+        Args:
+            fecha_desde: ISO date string (YYYY-MM-DD). Por default hoy - 365 días.
+            fecha_hasta: ISO date string. Por default hoy.
+
+        Returns:
+            list[dict] con keys que necesita el pipeline:
+                FechaSalida    (str ISO date) = FECHA_EGRESO
+                MotivoSalida   (str)         = MOTIVO
+                Estadia        (int)         = DIAS
+                KgIngreso      (float)       = KILOS_INGRESO
+                KgEgreso       (float)       = KILOS_EGRESO
+                AdpSinDebaste  (float)       = (KgEgreso - KgIngreso) / Estadia
+                Categoria      (str)         = CATEGORIA
+                RFID           (str)         = RFID
+                HOTELERO       (str)
+                NRO_CORRAL     (str)
+                NRO_TROPA      (str)
+                NRO_CARAVANA   (str)
+                Diagnostico    (str)         = DIAGNOSTICO
+                Destino        (str)         = DESTINO
+                Consignatario  (str)         = CONSIGNATARIO
+                Origen         (str)         = ORIGEN
+        """
+        from datetime import date, timedelta
+
+        if not fecha_hasta:
+            fecha_hasta = date.today().isoformat()
+        if not fecha_desde:
+            fecha_desde = (date.today() - timedelta(days=365)).isoformat()
+
+        # Convertir YYYY-MM-DD → YYYYMMDD (formato del endpoint)
+        def _to_compact(s):
+            return s.replace("-", "")
+
+        params = {
+            "fecha_desde": _to_compact(fecha_desde),
+            "fecha_hasta": _to_compact(fecha_hasta),
+            "filtro_tropa_caravana": "por_caravana",
+        }
+        data = self._get("lst_egresos_hacienda", params=params)
+
+        # Shape: { "lst_egresos_hacienda": [ { HOTELERO, tropas: [ { NRO_TROPA, detalle: [...] } ] } ] }
+        raiz = data.get("lst_egresos_hacienda") if isinstance(data, dict) else None
+        if not isinstance(raiz, list):
+            raise RuntimeError(f"Egresos: response sin lst_egresos_hacienda lista. Keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
+
+        # Aplanar
+        salida = []
+        for hot_block in raiz:
+            tropas = hot_block.get("tropas") or []
+            for tropa in tropas:
+                detalle = tropa.get("detalle") or []
+                for animal in detalle:
+                    salida.append(self._normalizar_egreso(animal))
+
+        log.info(f"Egresos {fecha_desde} a {fecha_hasta}: {len(salida)} animales")
+        return salida
+
+    def _normalizar_egreso(self, x):
+        """Normaliza una fila del detalle de egreso. Calcula ADP."""
+        def f(*keys):
+            for k in keys:
+                if k in x and x[k] not in (None, ""):
+                    try:
+                        return float(x[k])
+                    except (TypeError, ValueError):
+                        return None
+            return None
+
+        def s(*keys):
+            for k in keys:
+                if k in x and x[k] not in (None, ""):
+                    return str(x[k])
+            return None
+
+        def i(*keys):
+            for k in keys:
+                if k in x and x[k] not in (None, ""):
+                    try:
+                        return int(float(x[k]))
+                    except (TypeError, ValueError):
+                        return None
+            return None
+
+        kg_ing = f("KILOS_INGRESO")
+        kg_egr = f("KILOS_EGRESO")
+        dias = i("DIAS")
+        adp = None
+        if kg_ing is not None and kg_egr is not None and dias and dias > 0:
+            adp = round((kg_egr - kg_ing) / dias, 4)
+
+        return {
+            # Compatible con v_PB_Egresos (keys que espera procesar_productivo/procesar_muertes)
+            "FechaSalida":    s("FECHA_EGRESO"),
+            "MotivoSalida":   s("MOTIVO"),
+            "Estadia":        dias,
+            "KgIngreso":      kg_ing,
+            "KgEgreso":       kg_egr,
+            "AdpSinDebaste":  adp,
+            "Categoria":      s("CATEGORIA"),
+            "RFID":           s("RFID"),
+            # Extras útiles para otros consumidores
+            "HOTELERO":       s("HOTELERO"),
+            "NRO_CORRAL":     s("NRO_CORRAL"),
+            "NRO_TROPA":      s("NRO_TROPA"),
+            "NRO_CARAVANA":   s("NRO_CARAVANA"),
+            "Diagnostico":    s("DIAGNOSTICO"),
+            "Destino":        s("DESTINO"),
+            "Consignatario":  s("CONSIGNATARIO"),
+            "Origen":         s("ORIGEN"),
+            "FechaIngreso":   s("FECHA_INGRESO"),
+        }
