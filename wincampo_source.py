@@ -205,13 +205,41 @@ class WinCampoAPI:
                 Consignatario  (str)         = CONSIGNATARIO
                 Origen         (str)         = ORIGEN
         """
-        from datetime import date, timedelta
+        from datetime import date, timedelta, datetime as _dt
 
         if not fecha_hasta:
             fecha_hasta = date.today().isoformat()
         if not fecha_desde:
             fecha_desde = (date.today() - timedelta(days=365)).isoformat()
 
+        # v15.5: Cap empirico del rango — el endpoint /api/lst_egresos_hacienda
+        # devuelve HTTP 500 si pedimos > 500 dias. Verificado 2026-06-06:
+        # 500d=32682 egresos OK, 600d=500 Internal Server Error. Si el caller
+        # pide mas, chunkeamos automaticamente y concatenamos.
+        MAX_RANGE_DAYS = 500
+        try:
+            fd_d = _dt.strptime(fecha_desde, "%Y-%m-%d").date()
+            fh_d = _dt.strptime(fecha_hasta, "%Y-%m-%d").date()
+        except ValueError:
+            raise RuntimeError(f"fechas en formato YYYY-MM-DD esperadas, recibido: {fecha_desde} / {fecha_hasta}")
+        rango_total = (fh_d - fd_d).days
+        if rango_total > MAX_RANGE_DAYS:
+            log.info(f"Egresos: rango {rango_total}d > {MAX_RANGE_DAYS}d - chunkeando")
+            salida = []
+            cursor = fd_d
+            while cursor <= fh_d:
+                chunk_end = min(cursor + timedelta(days=MAX_RANGE_DAYS - 1), fh_d)
+                salida.extend(self._fetch_egresos_chunk(cursor.isoformat(), chunk_end.isoformat()))
+                cursor = chunk_end + timedelta(days=1)
+            log.info(f"Egresos {fecha_desde} a {fecha_hasta}: {len(salida)} animales (chunkeado)")
+            return salida
+
+        salida = self._fetch_egresos_chunk(fecha_desde, fecha_hasta)
+        log.info(f"Egresos {fecha_desde} a {fecha_hasta}: {len(salida)} animales")
+        return salida
+
+    def _fetch_egresos_chunk(self, fecha_desde, fecha_hasta):
+        """Una sola request al endpoint con rango <= MAX_RANGE_DAYS dias."""
         # Convertir YYYY-MM-DD → YYYYMMDD (formato del endpoint)
         def _to_compact(s):
             return s.replace("-", "")
@@ -237,7 +265,6 @@ class WinCampoAPI:
                 for animal in detalle:
                     salida.append(self._normalizar_egreso(animal))
 
-        log.info(f"Egresos {fecha_desde} a {fecha_hasta}: {len(salida)} animales")
         return salida
 
     def _normalizar_egreso(self, x):

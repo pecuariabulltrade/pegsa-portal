@@ -732,12 +732,19 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
         return filtrados
 
     # ── Filtrar solo VENTA en egresos ──
+    # v15.5: tolera tanto el codigo 1-letra "V" que devuelve la API WinCampo Web
+    # como el string largo "VENTA" / "VENTA con destino X" del SQL viejo. Asi
+    # funciona con ambas fuentes durante la migracion progresiva. Cuando v15.10
+    # haga cleanup del path SQL, esto se simplifica a `m == "V"`.
     def filtrar_solo_venta(regs, col_motivo):
         if not col_motivo:
             log.warning("    ⚠ No se encontró columna MotivoSalida — se usan todos los egresos")
             return regs
-        filtrados = [r for r in regs
-                     if str(r.get(col_motivo) or "").strip().upper() == "VENTA"]
+        filtrados = []
+        for r in regs:
+            m = str(r.get(col_motivo) or "").strip().upper()
+            if m == "V" or "VENTA" in m:
+                filtrados.append(r)
         log.info(f"    Filtro MotivoSalida=VENTA: {len(regs):,} → {len(filtrados):,} registros")
         return filtrados
 
@@ -1571,9 +1578,13 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         except: excl["fecha"] += 1; continue
 
         # 2) MotivoSalida = VENTA
+        # v15.5: tolera codigo 1-letra "V" (API WinCampo Web) y string largo
+        # "VENTA con destino X" (SQL viejo). Mismo patron que filtrar_solo_venta
+        # del modulo movimientos productivos.
         if col_motivo:
             mot = str(r.get(col_motivo) or "").strip().upper()
-            if "VENTA" not in mot: excl["motivo"] += 1; continue
+            if not (mot == "V" or "VENTA" in mot):
+                excl["motivo"] += 1; continue
 
         # 3) RFID solo numérico (si tiene alguna letra, se descarta)
         if col_rfid:
@@ -2724,9 +2735,11 @@ def main():
     DATA_SOURCE = os.environ.get("PEGSA_DATA_SOURCE", "wincampo_web").lower().strip()
     log.info(f"  PEGSA_DATA_SOURCE: {DATA_SOURCE}")
 
-    # Tablas que ya tienen adapter en wincampo_source.py (v15.4: solo Stock).
-    # v15.5+ ira agregando: V_EGRESOS, V_INGRESOS, etc.
-    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA"} if DATA_SOURCE == "wincampo_web" else set()
+    # Tablas que ya tienen adapter en wincampo_source.py
+    #   v15.4: V_STOCK_HACIENDA (fetch_stock_hacienda)
+    #   v15.5: + v_PB_Egresos (fetch_egresos)
+    # v15.6+ ira agregando: v_PB_Ingresos, V_MUERTES, v_PB_StockInsumo, etc.
+    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos"} if DATA_SOURCE == "wincampo_web" else set()
 
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
@@ -2937,7 +2950,21 @@ def main():
     tabla_egr = cfg["TABLAS"].get("movimientos_egresos",  "v_PB_Egresos")
 
     regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730)
-    regs_egr, cols_egr = extraer(conn, tabla_egr, fecha_col="FechaSalida",  dias=730)
+    # v15.5: si v_PB_Egresos esta migrada, leer de WinCampo Web (fetch_egresos)
+    # con el mismo rango temporal de 730 dias que usaba el SQL viejo. Las
+    # transformaciones del pipeline (limpieza NaN/inf, conversiones) se siguen
+    # aplicando porque extraer() las corre antes de retornar.
+    if tabla_egr in TABLAS_MIGRADAS and wcampo is not None:
+        import pandas as pd
+        from datetime import date, timedelta
+        fd = (date.today() - timedelta(days=730)).isoformat()
+        fh = date.today().isoformat()
+        egresos_data = wcampo.fetch_egresos(fecha_desde=fd, fecha_hasta=fh)
+        df_egr = pd.DataFrame(egresos_data)
+        log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos (730d)")
+        regs_egr, cols_egr = extraer(conn, tabla_egr, fecha_col="FechaSalida", dias=730, df_override=df_egr)
+    else:
+        regs_egr, cols_egr = extraer(conn, tabla_egr, fecha_col="FechaSalida",  dias=730)
 
     prod_data = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo)
 
