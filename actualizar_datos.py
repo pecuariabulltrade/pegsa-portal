@@ -18,6 +18,17 @@ import sys, os, json, logging, configparser, warnings, re
 from datetime import datetime
 from pathlib import Path
 
+# v15.4: el bot AUTO corre actualizar_datos.py desde
+# OneDrive\PEGSA_Portal\datos\ pero wincampo_source.py vive en
+# OneDrive\PEGSA_Portal\ (parent dir). Agregamos el parent al sys.path
+# para que el import 'from wincampo_source import WinCampoAPI' funcione
+# independientemente de cwd o de quien lance el script.
+_THIS = Path(__file__).resolve().parent
+_PARENT = _THIS.parent
+for _p in (_PARENT, _THIS):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
 # ── Verificar dependencias antes de importar ──────────────
 _missing = []
 try:
