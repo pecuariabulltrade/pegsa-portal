@@ -157,6 +157,11 @@ class WinCampoAPI:
             "CATEGORIA":     x.get("CATEGORIA"),
             "KG_INGRESO":    kg_ing,
             "FECHA_INGRESO": fecha,
+            # v15.4.1 HOTFIX: el SQL viejo traía CANTIDAD por cabeza, el adapter no
+            # la incluía y eso rompía calcular_kpis() (línea 407) que multiplica por
+            # cantidad → total_cabezas, total_kg_estimado_hoy quedaban en 0.
+            # Cada cabeza individual del adapter = 1 cabeza.
+            "CANTIDAD":      1,
             # Extras útiles que ahora podemos preservar (el SQL viejo no los traía o no los exponía)
             "RFID":          str(x.get("RFID") or "").strip() or None,
             "NRO_CARAVANA":  x.get("NRO_CARAVANA"),
@@ -310,6 +315,11 @@ class WinCampoAPI:
             "AdpSinDebaste":  adp,
             "Categoria":      s("CATEGORIA"),
             "RFID":           s("RFID"),
+            # v15.4.1 HOTFIX: procesar_productivo (líneas 669, 689) y
+            # procesar_movimientos (línea 1562) buscan
+            # _find("Cantidad", "cantidad", "cabezas", "nro_cab", "cant"). El SQL
+            # viejo traía Cantidad por animal. Cada egreso del adapter = 1 cabeza.
+            "Cantidad":       1,
             # Extras útiles para otros consumidores
             "HOTELERO":       s("HOTELERO"),
             "NRO_CORRAL":     s("NRO_CORRAL"),
