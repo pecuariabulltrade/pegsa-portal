@@ -14,7 +14,7 @@ KPIs agrupados por:
   - Clasificacion     (Macho/Hembra/Vaca/Toro)
   - Categoria final
 """
-import sys, json, logging, configparser, warnings, re
+import sys, os, json, logging, configparser, warnings, re
 from datetime import datetime
 from pathlib import Path
 
@@ -279,11 +279,17 @@ def conectar(cfg):
 # ═══════════════════════════════════════════════════════════
 #  EXTRACCION Y ENRIQUECIMIENTO
 # ═══════════════════════════════════════════════════════════
-def extraer(conn, tabla, fecha_col=None, dias=730):
+def extraer(conn, tabla, fecha_col=None, dias=730, df_override=None):
     """
     Lee una tabla SQL.
     Si se indica fecha_col, filtra en SQL a los últimos `dias` días
     para evitar traer millones de registros innecesarios.
+
+    v15.4: si `df_override` es un DataFrame, se usa directo (saltea SQL)
+    pero APLICA las mismas transformaciones (DIAS_EN_FEEDLOT, CLASIFICACION,
+    NOMBRE_CORRAL, ENGORDE_DIARIO_KG, KG_ESTIMADO_HOY, CATEGORIA_FINAL).
+    Esto permite alimentar el pipeline desde wincampo_source.WinCampoAPI
+    sin tocar la lógica de enriquecimiento.
     """
     try:
         import pandas as pd
@@ -291,17 +297,22 @@ def extraer(conn, tabla, fecha_col=None, dias=730):
         log.error("Falta pandas. Ejecuta: pip install pandas")
         sys.exit(1)
 
-    log.info(f"  Leyendo {tabla} ...")
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            if fecha_col:
-                sql = (f"SELECT * FROM {tabla} WITH (NOLOCK) "
-                       f"WHERE {fecha_col} >= DATEADD(day, -{dias}, GETDATE())")
-                log.info(f"    (filtro SQL: {fecha_col} últimos {dias} días)")
-            else:
-                sql = f"SELECT * FROM {tabla} WITH (NOLOCK)"
-            df = pd.read_sql(sql, conn)
+        if df_override is not None:
+            # v15.4: lectura desde adapter externo (WinCampo Web)
+            log.info(f"  Leyendo {tabla} desde df_override (adapter externo) ...")
+            df = df_override.copy() if hasattr(df_override, "copy") else pd.DataFrame(df_override)
+        else:
+            log.info(f"  Leyendo {tabla} ...")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                if fecha_col:
+                    sql = (f"SELECT * FROM {tabla} WITH (NOLOCK) "
+                           f"WHERE {fecha_col} >= DATEADD(day, -{dias}, GETDATE())")
+                    log.info(f"    (filtro SQL: {fecha_col} últimos {dias} días)")
+                else:
+                    sql = f"SELECT * FROM {tabla} WITH (NOLOCK)"
+                df = pd.read_sql(sql, conn)
 
         # Limpiar NaN/inf
         df = df.where(pd.notnull(df), None)
@@ -2693,6 +2704,19 @@ def main():
     log.info(f"  Inicio: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     separador()
 
+    # v15.4: Toggle de fuente de datos para la migracion progresiva
+    # SQL -> WinCampo Web (tabla por tabla).
+    #   wincampo_web (default): para tablas migradas usa la API REST de WinCampo Web.
+    #   sql_legacy: fuerza el SQL viejo en todas las tablas (modo emergencia
+    #               cuando el SQL este vivo y el adapter no).
+    # Las tablas no migradas siempre leen del SQL hasta que su adapter exista.
+    DATA_SOURCE = os.environ.get("PEGSA_DATA_SOURCE", "wincampo_web").lower().strip()
+    log.info(f"  PEGSA_DATA_SOURCE: {DATA_SOURCE}")
+
+    # Tablas que ya tienen adapter en wincampo_source.py (v15.4: solo Stock).
+    # v15.5+ ira agregando: V_EGRESOS, V_INGRESOS, etc.
+    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA"} if DATA_SOURCE == "wincampo_web" else set()
+
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
     carpeta = resolver_carpeta_salida(cfg["ONEDRIVE"].get("carpeta", ""))
@@ -2700,12 +2724,37 @@ def main():
     log.info(f"  Destino : {carpeta}")
     log.info("")
 
+    # v15.4: Instanciar adapter WinCampo una sola vez si hay tablas migradas.
+    # Si falla, hint para usar PEGSA_DATA_SOURCE=sql_legacy como fallback.
+    wcampo = None
+    if TABLAS_MIGRADAS:
+        try:
+            from wincampo_source import WinCampoAPI
+            wcampo = WinCampoAPI()
+            log.info("  + WinCampoAPI conectado (modo wincampo_web)")
+        except Exception as e:
+            log.error(f"  x Falla conectar WinCampoAPI: {e}")
+            log.error(f"  Hint: pone PEGSA_DATA_SOURCE=sql_legacy para forzar SQL viejo")
+            raise
+
+    # Conexion SQL todavia necesaria mientras queden tablas sin migrar.
+    # En v15.10 (cuando las 6 vistas esten migradas) este conectar() se elimina.
     conn    = conectar(cfg)
     resumen = {"generado": datetime.now().isoformat(), "periodo": periodo, "modulos": {}}
 
     separador("Stock de Hacienda")
     tabla      = cfg["TABLAS"].get("stock_hacienda", "V_STOCK_HACIENDA")
-    regs, cols = extraer(conn, tabla)
+    # v15.4: si la tabla esta migrada, alimentar extraer() desde el adapter.
+    # extraer() aplica las mismas transformaciones (DIAS_EN_FEEDLOT, etc.)
+    # tanto si el DataFrame viene de SQL como del adapter.
+    if tabla in TABLAS_MIGRADAS and wcampo is not None:
+        import pandas as pd
+        stock_data = wcampo.fetch_stock_hacienda()
+        df_stock = pd.DataFrame(stock_data)
+        log.info(f"  + WinCampo Web devolvio {len(df_stock):,} cabezas")
+        regs, cols = extraer(conn, tabla, df_override=df_stock)
+    else:
+        regs, cols = extraer(conn, tabla)
     # Guardar referencia al stock actual para el recálculo diario posterior
     _regs_stock_hoy = regs
     _cols_stock_hoy = cols
