@@ -282,10 +282,14 @@ def conectar(cfg):
             if "Encrypt" not in cs:
                 log.warning(f"Conexion cifrada fallo, reintentando sin cifrado...")
                 continue
-    log.error(f"No se pudo conectar: {last_error}")
-    log.error("  Verifica: 1. VPN conectada  2. WinCampo corriendo  3. Usuario/contrasena")
-    esperar_si_interactivo("\nPresiona Enter para cerrar...")
-    sys.exit(1)
+    # v15.4.2: SQL no disponible no aborta el pipeline. Las tablas migradas
+    # a WinCampo Web (Stock + Egresos en v15.4/v15.5) siguen funcionando.
+    # Las tablas NO migradas (Insumos, Ingresos, Muertes, Consumo SQL fallback)
+    # se skipean con warning en extraer().
+    log.error(f"SQL no disponible: {last_error}")
+    log.warning("  Verifica: 1. VPN conectada  2. WinCampo corriendo  3. Usuario/contrasena")
+    log.warning("  Continuando SIN SQL - solo se actualizan secciones migradas a WinCampo Web (Stock, Egresos)")
+    return None
 
 # ═══════════════════════════════════════════════════════════
 #  EXTRACCION Y ENRIQUECIMIENTO
@@ -313,6 +317,10 @@ def extraer(conn, tabla, fecha_col=None, dias=730, df_override=None):
             # v15.4: lectura desde adapter externo (WinCampo Web)
             log.info(f"  Leyendo {tabla} desde df_override (adapter externo) ...")
             df = df_override.copy() if hasattr(df_override, "copy") else pd.DataFrame(df_override)
+        elif conn is None:
+            # v15.4.2: SQL apagado y tabla no migrada - skipea con warning.
+            log.warning(f"  Skipeando {tabla} - SQL no disponible y sin df_override (tabla pendiente de migrar a WinCampo Web)")
+            return [], []
         else:
             log.info(f"  Leyendo {tabla} ...")
             with warnings.catch_warnings():
