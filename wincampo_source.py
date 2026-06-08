@@ -64,16 +64,41 @@ class WinCampoAPI:
         self.session.headers["Authorization"] = f"Bearer {self.token}"
         log.info("WinCampo login OK (user=%s)", data.get("nombre") or self.email)
 
-    def _get(self, path, params=None, retry_on_401=True):
-        time.sleep(RATE_LIMIT_SLEEP)
+    def _get(self, path, params=None, retry_on_401=True, _retry_left=3):
+        # v15.7.3: retry con backoff exponencial (1s/3s/9s) ante hiccups
+        # transitorios de la API (ChunkedEncodingError, ConnectionError, Timeout,
+        # HTTP 502/503/504). El tick 13:00 del 2026-06-08 abortó por un
+        # ChunkedEncodingError en un chunk de egresos. Errores NO transitorios
+        # (4xx, JSON malo) propagan inmediato para no enmascarar bugs reales.
+        # Los waits del backoff son ADICIONALES al RATE_LIMIT_SLEEP del path normal.
         url = API_BASE + path.lstrip("/")
-        r = self.session.get(url, params=params, timeout=TIMEOUT_DEFAULT)
-        if r.status_code == 401 and retry_on_401:
-            log.info("Token expirado, re-login")
-            self._login()
-            return self._get(path, params=params, retry_on_401=False)
-        r.raise_for_status()
-        return r.json()
+        try:
+            time.sleep(RATE_LIMIT_SLEEP)
+            r = self.session.get(url, params=params, timeout=TIMEOUT_DEFAULT)
+            if r.status_code == 401 and retry_on_401:
+                log.info("Token expirado, re-login")
+                self._login()
+                return self._get(path, params=params, retry_on_401=False, _retry_left=_retry_left)
+            if r.status_code in (502, 503, 504):
+                # gateway/unavailable/timeout — transitorio, forzar reintento
+                raise requests.exceptions.HTTPError(f"HTTP {r.status_code}", response=r)
+            r.raise_for_status()
+            return r.json()
+        except (requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.HTTPError) as e:
+            # HTTPError no-5xx (p.ej. 4xx) = bug real → propagar sin reintentar
+            if isinstance(e, requests.exceptions.HTTPError) and e.response is not None \
+                    and not (500 <= e.response.status_code < 600):
+                raise
+            if _retry_left <= 0:
+                log.error(f"  {path}: agotados reintentos tras transitorio ({type(e).__name__})")
+                raise
+            wait_s = {3: 1, 2: 3, 1: 9}[_retry_left]
+            log.warning(f"  {path}: transitorio ({type(e).__name__}), retry en {wait_s}s ({_retry_left} intentos restantes)")
+            time.sleep(wait_s)
+            return self._get(path, params=params, retry_on_401=retry_on_401, _retry_left=_retry_left - 1)
 
     # ════════════════════════════════════════════════════════════════
     #  TABLA 1 — Stock Hacienda (detalle individual por cabeza)
