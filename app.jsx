@@ -550,7 +550,6 @@ function Panel() {
 
   return (
     <>
-      <StaleBanner />
       <Topbar periodo={D.periodo} />
 
       <div className="content">
