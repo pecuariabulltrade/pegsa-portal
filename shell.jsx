@@ -453,4 +453,78 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
   );
 }
 
-Object.assign(window, { Sidebar, Topbar, ModuleDrill, IconExport, IconCalendar, IconBell, IconSearch });
+// ── StaleBanner: alerta de datos no frescos ────────────────────────────────
+// Lee ./ultima_actualizacion.json (con cache buster), compara meta.generado
+// contra ahora y muestra un banner si el portal lleva >6h sin actualizar
+// (amarillo) / >24h (rojo), o si algún módulo del pipeline reporta .ok=false.
+// Dismissible 1h via localStorage. Revalida cada 5min. Nunca rompe la UI.
+function StaleBanner() {
+  const [status, setStatus] = React.useState(null);
+  const [dismissed, setDismissed] = React.useState(() => {
+    const until = localStorage.getItem('staleBannerDismissUntil');
+    return !!(until && Date.now() < parseInt(until, 10));
+  });
+
+  const checkStatus = React.useCallback(async () => {
+    try {
+      const r = await fetch('./ultima_actualizacion.json?t=' + Date.now());
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      const gen = new Date(d.generado);
+      const hours = (Date.now() - gen.getTime()) / 3600000;
+      const modulos = d.modulos || {};
+      const modulosBad = Object.entries(modulos)
+        .filter(([k, v]) => v && v.ok === false).map(([k]) => k);
+
+      let level = 'ok';
+      let text = `Última actualización: hace ${hours.toFixed(1)} h`;
+      if (hours > 24) { level = 'critical'; text = `URGENTE: portal no actualizado en ${Math.round(hours)} h. El bot AUTO puede estar caído.`; }
+      else if (hours > 6) { level = 'warning'; text = `Última actualización hace ${hours.toFixed(1)} h.`; }
+      if (modulosBad.length > 0) {
+        if (level === 'ok') level = 'warning';
+        text += ` Módulos con error: ${modulosBad.join(', ')}.`;
+      }
+      setStatus({ level, hours, text, modulosBad, generado: d.generado });
+    } catch (e) {
+      setStatus({ level: 'error', hours: null, text: `No se pudo leer ultima_actualizacion.json: ${e.message}` });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    checkStatus();
+    const id = setInterval(checkStatus, 5 * 60 * 1000); // revalidar cada 5 min
+    return () => clearInterval(id);
+  }, [checkStatus]);
+
+  if (dismissed || !status || status.level === 'ok') return null;
+
+  const colors = {
+    warning:  { bg: '#FEF3C7', border: '#F59E0B', text: '#78350F' },
+    critical: { bg: '#FEE2E2', border: '#DC2626', text: '#7F1D1D' },
+    error:    { bg: '#E5E7EB', border: '#6B7280', text: '#1F2937' },
+  }[status.level];
+
+  const onDismiss = () => {
+    localStorage.setItem('staleBannerDismissUntil', String(Date.now() + 60 * 60 * 1000));
+    setDismissed(true);
+  };
+
+  return (
+    <div style={{
+      background: colors.bg, borderBottom: `2px solid ${colors.border}`,
+      color: colors.text, padding: '10px 20px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      fontFamily: 'inherit', fontSize: '14px', fontWeight: 500,
+      position: 'sticky', top: 0, zIndex: 1000,
+    }}>
+      <span>⚠ {status.text}</span>
+      <button onClick={onDismiss} style={{
+        background: 'transparent', border: `1px solid ${colors.border}`,
+        color: colors.text, padding: '4px 12px', borderRadius: 4,
+        cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', marginLeft: 16,
+      }}>Ocultar 1h</button>
+    </div>
+  );
+}
+
+Object.assign(window, { Sidebar, Topbar, ModuleDrill, StaleBanner, IconExport, IconCalendar, IconBell, IconSearch });
