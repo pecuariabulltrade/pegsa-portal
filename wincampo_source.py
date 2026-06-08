@@ -551,3 +551,82 @@ class WinCampoAPI:
             "FechaIngreso":  e.get("FechaIngreso"),
             "MotivoSalida":  e.get("MotivoSalida"),
         }
+
+    # ════════════════════════════════════════════════════════════════
+    #  TABLA 5 — Stock de Insumos (v_PB_StockInsumos)
+    # ════════════════════════════════════════════════════════════════
+    def fetch_stock_insumos(self, fecha=None):
+        """
+        Reemplazo de SELECT * FROM v_PB_StockInsumos.
+
+        Endpoint lst_stock_de_insumo con reporte_elegido=stock_actual (descubierto
+        2026-06-08: requiere reporte_elegido + fecha_desde + fecha_hasta). Devuelve
+        el stock actual de los ~55 insumos del establecimiento.
+
+        El pipeline (módulo 5, líneas 2928-2930) detecta col_stock="STOCK" EXACTO
+        y filtra 7 insumos por COD_INSUMO (INSUMOS_INCLUIDOS: MAIZ GRANO=2, SOJA=9,
+        NUCLEO=8, DIESEL=99, HARINA GERMEN=6, GLUTEN=7, SILO=3). Por eso el adapter
+        renombra STOCK_ACTUAL -> STOCK (sin esto, todos los kg quedan en 0 — mismo
+        bug que CANTIDAD en v15.4.1). Trae los 55 CRUDOS; el pipeline filtra.
+
+        Args:
+            fecha: ISO date string. Por default hoy. El endpoint pide fecha_desde
+                   y fecha_hasta; usamos la misma fecha (stock actual a la fecha).
+
+        Returns:
+            list[dict] con keys que necesita el pipeline:
+                COD_INSUMO   (str)   -> filtro INSUMOS_INCLUIDOS
+                DESC_INSUMO  (str)   -> nombre
+                STOCK        (float) -> renombrado de STOCK_ACTUAL
+                + extras: DESC_RUBRO, ID_INSUMO, STOCK_ANTERIOR, COMPRA,
+                  CONSUMO_MIXER, CONSUMO_SUB_RACION, EGRESO, PRODUCCION
+        """
+        fecha_iso = fecha or date.today().isoformat()
+        compact = fecha_iso.replace("-", "")
+        params = {
+            "reporte_elegido": "stock_actual",
+            "fecha_desde":     compact,
+            "fecha_hasta":     compact,
+        }
+        data = self._get("lst_stock_de_insumo", params=params)
+        raiz = data.get("lst_stock_de_insumo") if isinstance(data, dict) else None
+        if not isinstance(raiz, list):
+            raise RuntimeError(f"Insumos: response sin lst_stock_de_insumo lista. Keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
+        salida = [self._normalizar_insumo(x) for x in raiz]
+        log.info(f"Stock insumos: {len(salida)} insumos (fecha {fecha_iso})")
+        return salida
+
+    def _normalizar_insumo(self, x):
+        """Normaliza una fila de stock de insumo. Renombra STOCK_ACTUAL -> STOCK."""
+        def f(*keys):
+            for k in keys:
+                if k in x and x[k] not in (None, ""):
+                    try:
+                        return float(x[k])
+                    except (TypeError, ValueError):
+                        return None
+            return None
+
+        def s(*keys):
+            for k in keys:
+                if k in x and x[k] not in (None, ""):
+                    return str(x[k]).strip() or None
+            return None
+
+        return {
+            # keys que detecta el pipeline (módulo 5)
+            "COD_INSUMO":  s("COD_INSUMO"),
+            "DESC_INSUMO": s("DESC_INSUMO"),
+            # v15.8: el pipeline busca col_stock="STOCK" EXACTO. La API lo trae
+            # como STOCK_ACTUAL -> renombrar (sin esto kg en 0, bug tipo v15.4.1).
+            "STOCK":       f("STOCK_ACTUAL"),
+            # Extras útiles para drill-down / otros consumidores
+            "DESC_RUBRO":         s("DESC_RUBRO"),
+            "ID_INSUMO":          s("ID_INSUMO"),
+            "STOCK_ANTERIOR":     f("STOCK_ANTERIOR"),
+            "COMPRA":             f("COMPRA"),
+            "CONSUMO_MIXER":      f("CONSUMO_MIXER"),
+            "CONSUMO_SUB_RACION": f("CONSUMO_SUB_RACION"),
+            "EGRESO":             f("EGRESO"),
+            "PRODUCCION":         f("PRODUCCION"),
+        }
