@@ -1510,6 +1510,23 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         'TORO':       {'est_min':  30, 'est_max': 400, 'pe_min':   0, 'pe_max': 1000},
     }
 
+    # v15.5.1 HOTFIX: adapter WinCampo Web (fetch_egresos) devuelve Categoria
+    # como código de 2 letras (TM/VA/TH/NV/VQ/NT/TO). _ADP_TEO y _CAT_FILTROS
+    # usan nombres largos como claves históricas (TERNERO/VACA/etc.). Mapear
+    # código -> largo antes de cada lookup para que clamp ±15% y filtros
+    # per-categoría sigan funcionando como pre-v15.5 (commit ac7ad4c).
+    CATEGORIA_CODE_TO_LARGO = {
+        'TM': 'TERNERO',    'TH': 'TERNERA',
+        'NT': 'NOVILLITO',  'NV': 'NOVILLO',
+        'VQ': 'VAQUILLONA', 'VA': 'VACA',
+        'TO': 'TORO',
+    }
+
+    def _cat_largo(cat):
+        """Normaliza categoría a nombre largo para lookup en _ADP_TEO/_CAT_FILTROS."""
+        k = (cat or '').strip().upper()
+        return CATEGORIA_CODE_TO_LARGO.get(k, k)  # si ya viene larga, deja como está
+
     # Detectar columnas
     def fc(nombres):
         cl = {c.lower(): c for c in cols_egr}
@@ -1594,7 +1611,7 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     # Función para calcular promedios ponderados por cabezas
     # cat: si se provee, aplica los filtros de estadía y peso de entrada de _CAT_FILTROS
     def calc_stats(rows, cat=None):
-        filt = _CAT_FILTROS.get(cat.upper() if cat else '', {}) if cat else {}
+        filt = _CAT_FILTROS.get(_cat_largo(cat), {}) if cat else {}
         est_min = filt.get('est_min', 0)
         est_max = filt.get('est_max', 9999)
         pe_min  = filt.get('pe_min',  0)
@@ -1668,7 +1685,7 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         for cat, rows in sorted(cat_regs_90.items()):
             st = calc_stats(rows, cat=cat)
             obs = st.get('adp_promedio')
-            teo = _ADP_TEO.get(cat)
+            teo = _ADP_TEO.get(_cat_largo(cat))
             # Variación % entre observado y teórico
             var_pct = round((obs - teo) / teo * 100, 2) if (obs is not None and teo) else None
             # Calibrado: clampear obs a ±15% del teórico
