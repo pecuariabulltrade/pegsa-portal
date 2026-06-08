@@ -462,3 +462,67 @@ class WinCampoAPI:
             "TRANSPORTISTA":  _s(camion, "TRANSPORTISTA"),
             "PROMEDIO":       _f(camion, "PROMEDIO"),
         }
+
+    # ════════════════════════════════════════════════════════════════
+    #  TABLA 4 — Muertes (V_MUERTES) — derivada de egresos MOTIVO=M
+    # ════════════════════════════════════════════════════════════════
+    def fetch_muertes(self, fecha_desde=None, fecha_hasta=None):
+        """
+        Reemplazo de SELECT * FROM V_MUERTES.
+
+        En el SQL viejo V_MUERTES era una vista SEPARADA, pero en la API Web
+        las muertes son egresos con MOTIVO == "M" (código de 1 letra, discovery
+        v15.5: motivos {V, M, T}). Por eso fetch_muertes es un WRAPPER sobre
+        fetch_egresos() que filtra M y REMAPEA cada registro a las columnas que
+        esperan procesar_muertes() y procesar_muertes_30d().
+
+        Cada muerte = 1 animal individual → MUERTOS = 1. El adapter trae CRUDO
+        (todas las muertes, con remap de columnas); el pipeline aplica sus
+        filtros (>30d de encierre para la tasa anual, ventana 0-30d para la
+        tasa 30d, por categoría, etc.) — NO se duplica esa lógica acá.
+
+        Args:
+            fecha_desde: ISO date string (YYYY-MM-DD). Por default hoy - 365 días.
+            fecha_hasta: ISO date string. Por default hoy.
+
+        Returns:
+            list[dict] con keys que detectan los del pipeline (procesar_muertes
+            líneas 975-977 + dias_encierre línea 1048):
+                MUERTOS       (int)     = 1 (una cabeza por fila)
+                ABREVIATURA   (str)     = Categoria del egreso
+                FECHA_MUERTE  (str ISO) = FechaSalida del egreso (= FECHA_EGRESO)
+                DIAS_ENCIERRE (int)     = Estadia del egreso (días desde ingreso)
+                + extras heredados: RFID, HOTELERO, NRO_CORRAL, NRO_TROPA,
+                  Categoria, Diagnostico, KgIngreso, KgEgreso, FechaIngreso
+        """
+        egresos = self.fetch_egresos(fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+        muertes = [self._remap_muerte(e) for e in egresos
+                   if (e.get("MotivoSalida") or "").strip().upper() == "M"]
+        log.info(f"Muertes (MOTIVO=M): {len(muertes)} de {len(egresos)} egresos")
+        return muertes
+
+    def _remap_muerte(self, e):
+        """Remapea un egreso MOTIVO=M al shape que esperan procesar_muertes/_30d."""
+        dias = e.get("Estadia")
+        try:
+            dias = int(dias) if dias is not None else None
+        except (TypeError, ValueError):
+            dias = None
+        return {
+            # keys que detectan procesar_muertes (975-977) y dias_encierre (1048)
+            "MUERTOS":       1,
+            "ABREVIATURA":   e.get("Categoria"),
+            "FECHA_MUERTE":  e.get("FechaSalida"),
+            "DIAS_ENCIERRE": dias,
+            # extras heredados del egreso para drill-down / otros consumidores
+            "RFID":          e.get("RFID"),
+            "HOTELERO":      e.get("HOTELERO"),
+            "NRO_CORRAL":    e.get("NRO_CORRAL"),
+            "NRO_TROPA":     e.get("NRO_TROPA"),
+            "Categoria":     e.get("Categoria"),
+            "Diagnostico":   e.get("Diagnostico"),
+            "KgIngreso":     e.get("KgIngreso"),
+            "KgEgreso":      e.get("KgEgreso"),
+            "FechaIngreso":  e.get("FechaIngreso"),
+            "MotivoSalida":  e.get("MotivoSalida"),
+        }
