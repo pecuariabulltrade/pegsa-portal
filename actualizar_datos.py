@@ -2776,7 +2776,7 @@ def main():
     #   v15.4: V_STOCK_HACIENDA (fetch_stock_hacienda)
     #   v15.5: + v_PB_Egresos (fetch_egresos)
     # v15.6+ ira agregando: v_PB_Ingresos, V_MUERTES, v_PB_StockInsumo, etc.
-    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos", "v_PB_Ingresos", "V_MUERTES"} if DATA_SOURCE == "wincampo_web" else set()
+    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos", "v_PB_Ingresos", "V_MUERTES", "v_PB_StockInsumo"} if DATA_SOURCE == "wincampo_web" else set()
 
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
@@ -2913,7 +2913,18 @@ def main():
     # ── 5. JSON Stock de Insumos ──
     separador("Stock de Insumos")
     tabla_ins = cfg["TABLAS"].get("stock_insumos", "v_PB_StockInsumos")
-    regs_ins, cols_ins = extraer(conn, tabla_ins)
+    # v15.8: si v_PB_StockInsumo esta migrada, leer de WinCampo Web
+    # (fetch_stock_insumos, endpoint lst_stock_de_insumo). El adapter renombra
+    # STOCK_ACTUAL -> STOCK; el filtro de 7 insumos (INSUMOS_INCLUIDOS) sigue
+    # aplicandose abajo igual que con el SQL viejo.
+    if tabla_ins in TABLAS_MIGRADAS and wcampo is not None:
+        import pandas as pd
+        insumos_data = wcampo.fetch_stock_insumos()
+        df_ins = pd.DataFrame(insumos_data)
+        log.info(f"  + WinCampo Web devolvio {len(df_ins):,} insumos (stock actual)")
+        regs_ins, cols_ins = extraer(conn, tabla_ins, df_override=df_ins)
+    else:
+        regs_ins, cols_ins = extraer(conn, tabla_ins)
 
     INSUMOS_INCLUIDOS = {
         2: "MAIZ GRANO",
