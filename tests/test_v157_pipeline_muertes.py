@@ -8,10 +8,14 @@ Corre el path real:
 y verifica que la tasa de mortandad es calculable y el total de muertes
 coincide con el baseline SQL viejo.
 
-OJO con el baseline: fetch_muertes trae 392 muertes CRUDAS en 365d, pero
-procesar_muertes aplica el filtro >30d de encierre para la tasa anual, así
-que anio.total_muertes ~= 289 (Web). El SQL viejo (muertes_2025.json
-generado 10:01 hoy) reporta 287 — apples-to-apples ~1% de diferencia.
+OJO con el baseline: fetch_muertes trae 392 muertes CRUDAS en 365d. El
+pipeline aplica >30d de encierre Y (desde v15.7.1) filtro El Haras (1-199):
+  392 crudas -> 289 (>30d, todos los corrales) -> 279 (>30d + solo Haras).
+
+v15.7.1 corrige un bug latente del SQL viejo: contaba 10 muertes de recría
+(corrales 200/300/400) en el numerador de la tasa de feedlot. El SQL viejo
+reportaba 287 (= 289 - 2 fantasma, sin filtro de establecimiento). Tras el
+fix damos 279 — diverge -2,9% del SQL INTENCIONALMENTE (corrección, no bug).
 """
 import sys
 from pathlib import Path
@@ -22,8 +26,9 @@ from datetime import date, timedelta
 from wincampo_source import WinCampoAPI
 from actualizar_datos import extraer, procesar_muertes
 
-# Baseline SQL viejo (muertes_2025.json, meta.generado 2026-06-08T10:01).
-SQL_BASELINE_TOTAL = 287
+# Baseline POST-FIX v15.7.1 (>30d + solo El Haras 1-199). Diverge del SQL
+# viejo (287) intencionalmente: el SQL contaba 10 muertes de recría de más.
+BASELINE_POST_FIX = 279
 
 
 def main():
@@ -49,23 +54,23 @@ def main():
     mort = res.get("mortandad", {})
     tasa = mort.get("tasa_mensual_pct")
 
-    print(f"\n--- procesar_muertes (Web) ---")
-    print(f"  anio.total_muertes (>30d):  {total}   (baseline SQL: {SQL_BASELINE_TOTAL})")
-    print(f"  por_categoria:              {res['anio'].get('por_categoria')}")
-    print(f"  mortandad.tasa_mensual_pct: {tasa}")
-    print(f"  mortandad.tasa_anual_pct:   {mort.get('tasa_anual_pct')}")
-    print(f"  mes_anterior.total_muertes: {res['mes_anterior'].get('total_muertes')}")
+    print(f"\n--- procesar_muertes (Web, post v15.7.1 filtro El Haras) ---")
+    print(f"  anio.total_muertes (>30d, Haras): {total}   (baseline post-fix: {BASELINE_POST_FIX})")
+    print(f"  por_categoria:                    {res['anio'].get('por_categoria')}")
+    print(f"  mortandad.tasa_mensual_pct:       {tasa}")
+    print(f"  mortandad.tasa_anual_pct:         {mort.get('tasa_anual_pct')}")
+    print(f"  mes_anterior.total_muertes:       {res['mes_anterior'].get('total_muertes')}")
 
     # Tasa calculable (número positivo)
     assert isinstance(tasa, (int, float)) and tasa > 0, f"tasa_mensual_pct no calculable: {tasa!r}"
 
-    # Total cerca del baseline SQL (apples-to-apples post filtro >30d). ±20% holgado.
-    lo, hi = round(SQL_BASELINE_TOTAL * 0.8), round(SQL_BASELINE_TOTAL * 1.2)
-    assert lo <= total <= hi, \
-        f"total_muertes {total} fuera de [{lo},{hi}] vs baseline SQL {SQL_BASELINE_TOTAL} — NO commitear, diagnosticar"
+    # Total post-fix (>30d + solo El Haras). Diverge -2,9% del SQL viejo (287)
+    # a propósito: v15.7.1 corrige las 10 muertes de recría que el SQL contaba.
+    assert 270 < total < 290, \
+        f"total_muertes {total} fuera de (270,290) vs baseline post-fix {BASELINE_POST_FIX} — NO commitear, diagnosticar"
 
-    delta_pct = 100 * (total - SQL_BASELINE_TOTAL) / SQL_BASELINE_TOTAL
-    print(f"\nv15.7 fase 2 OK — muertes {total} (Web) vs {SQL_BASELINE_TOTAL} (SQL), delta {delta_pct:+.1f}%, tasa {tasa}%")
+    delta_pct = 100 * (total - BASELINE_POST_FIX) / BASELINE_POST_FIX
+    print(f"\nv15.7.1 OK — muertes {total} (Haras >30d) vs {BASELINE_POST_FIX} esperado, delta {delta_pct:+.1f}%, tasa {tasa}%")
 
 
 if __name__ == "__main__":

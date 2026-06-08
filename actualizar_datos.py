@@ -1083,6 +1083,23 @@ def procesar_muertes(regs_m, cols_m, regs_ing, cols_ing, regs_stock, cols_stock,
         regs_anio_m = regs_m
         log.warning(f"    ⚠ col_fecha_m=None — sin filtro de fecha")
 
+    # ── Filtro El Haras (corrales 1-199) ──
+    # v15.7.1: el SQL viejo V_MUERTES contaba muertes de todos los corrales
+    # (incluyendo recría: corrales 200/300/400), inflando el numerador de la
+    # tasa de feedlot. Corrección de bug latente: la mortandad del feedlot
+    # debe ser solo de El Haras (1-199), igual que el denominador (stock Haras).
+    def _es_haras_muerte(r):
+        try:
+            n = int(float(r.get("NRO_CORRAL") or 0))
+            return 1 <= n <= 199
+        except (TypeError, ValueError):
+            return False
+
+    regs_anio_m_haras = [r for r in regs_anio_m if _es_haras_muerte(r)]
+    excluidos_haras = len(regs_anio_m) - len(regs_anio_m_haras)
+    log.info(f"    Filtro El Haras (corrales 1-199): {len(regs_anio_m):,} → {len(regs_anio_m_haras):,} ({excluidos_haras} fuera de Haras excluidos)")
+    regs_anio_m = regs_anio_m_haras
+
     # ── Filtro >30 días de encierre (columna DIAS_ENCIERRE) ────────────────
     regs_anio_m30 = [r for r in regs_anio_m if dias_encierre(r) > 30]
     excluidos_30  = len(regs_anio_m) - len(regs_anio_m30)
@@ -1359,9 +1376,21 @@ def procesar_muertes_30d(regs_m, cols_m, regs_ing, cols_ing, regs_stock, cols_st
         cat = str(r.get(col_cat_s) or "").strip().lower() if col_cat_s else ""
         return CAT_FINAL_GRUPO.get(cat, "Otros")
 
+    # v15.7.1: filtrar El Haras (1-199) — ver procesar_muertes(). El SQL viejo
+    # mezclaba muertes de recría en el numerador de la tasa de feedlot.
+    def _es_haras_muerte(r):
+        try:
+            n = int(float(r.get("NRO_CORRAL") or 0))
+            return 1 <= n <= 199
+        except (TypeError, ValueError):
+            return False
+
     # ── A) MUERTES últimos 30d con >30d encierre ────────────
     if col_fecha_m:
-        regs_30d = [r for r in regs_m if en_30d(r, col_fecha_m) and dias_encierre(r) > 30]
+        regs_30d = [r for r in regs_m
+                    if en_30d(r, col_fecha_m)
+                    and dias_encierre(r) > 30
+                    and _es_haras_muerte(r)]
     else:
         regs_30d = []
 
