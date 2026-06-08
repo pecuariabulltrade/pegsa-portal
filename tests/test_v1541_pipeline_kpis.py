@@ -21,7 +21,7 @@ def main():
     df = pd.DataFrame(api.fetch_stock_hacienda())
     assert "CANTIDAD" in df.columns, "El adapter no devolvió la columna CANTIDAD"
 
-    registros, columnas = extraer(None, "V_STOCK_HACIENDA", df_override=df)
+    registros, columnas = extraer("V_STOCK_HACIENDA", df_override=df)
     assert registros, "extraer() devolvió 0 registros"
     assert registros[0]["CANTIDAD"] == 1, "CANTIDAD no persistió tras extraer()"
     assert "CANTIDAD" in columnas, "CANTIDAD ausente en columnas tras extraer()"

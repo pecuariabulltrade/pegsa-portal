@@ -42,9 +42,9 @@ def main():
     print(f"fetch: {len(df_stock)} stock, {len(df_ing)} ingresos, {len(df_m)} muertes crudas (730d)")
     assert "DIAS_ENCIERRE" in df_m.columns, "Falta DIAS_ENCIERRE en el df de muertes"
 
-    regs_st, cols_st = extraer(None, "V_STOCK_HACIENDA", df_override=df_stock)
-    regs_ing, cols_ing = extraer(None, "v_PB_Ingresos", fecha_col="FechaIngreso", dias=730, df_override=df_ing)
-    regs_m, cols_m = extraer(None, "V_MUERTES", fecha_col="FECHA_MUERTE", dias=730, df_override=df_m)
+    regs_st, cols_st = extraer("V_STOCK_HACIENDA", df_override=df_stock)
+    regs_ing, cols_ing = extraer("v_PB_Ingresos", fecha_col="FechaIngreso", dias=730, df_override=df_ing)
+    regs_m, cols_m = extraer("V_MUERTES", fecha_col="FECHA_MUERTE", dias=730, df_override=df_m)
     assert regs_m, "extraer() devolvió 0 muertes"
 
     # Corre sin errores

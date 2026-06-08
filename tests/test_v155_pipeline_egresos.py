@@ -42,9 +42,9 @@ def main():
     print(f"DataFrame: {len(df):,} filas, {len(df.columns)} columnas")
     print(f"Columnas: {list(df.columns)}\n")
 
-    # extraer() con df_override (conn=None, no toca SQL)
-    print("=== Llamando extraer(None, 'v_PB_Egresos', df_override=df) ===\n")
-    regs, cols = ad.extraer(None, "v_PB_Egresos", fecha_col="FechaSalida", dias=730, df_override=df)
+    # extraer() con df_override (v15.10: firma sin conn)
+    print("=== Llamando extraer('v_PB_Egresos', df_override=df) ===\n")
+    regs, cols = ad.extraer("v_PB_Egresos", fecha_col="FechaSalida", dias=730, df_override=df)
     print(f"\n[OK] extraer() devolvio: {len(regs):,} registros, {len(cols)} columnas\n")
 
     # Distribucion de motivos

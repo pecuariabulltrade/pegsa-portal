@@ -26,7 +26,7 @@ def main():
     assert "STOCK" in df_ins.columns, "Falta STOCK (¿no se renombró STOCK_ACTUAL?)"
 
     # conn=None garantiza que no se toca SQL.
-    regs_ins, cols_ins = extraer(None, "v_PB_StockInsumo", df_override=df_ins)
+    regs_ins, cols_ins = extraer("v_PB_StockInsumo", df_override=df_ins)
     assert regs_ins, "extraer() devolvió 0 insumos"
     assert "STOCK" in cols_ins, "STOCK no sobrevivió a extraer()"
     assert "COD_INSUMO" in cols_ins and "DESC_INSUMO" in cols_ins

@@ -53,9 +53,9 @@ def main():
     assert not faltantes, f"Faltan columnas criticas: {faltantes}"
     print(f"[OK] Las 5 columnas requeridas estan presentes\n")
 
-    # 3. Llamar a extraer() con conn=None y df_override
-    print("=== Llamando extraer(conn=None, 'V_STOCK_HACIENDA', df_override=df) ===\n")
-    regs, cols = ad.extraer(None, "V_STOCK_HACIENDA", df_override=df)
+    # 3. Llamar a extraer() con df_override (v15.10: firma sin conn)
+    print("=== Llamando extraer('V_STOCK_HACIENDA', df_override=df) ===\n")
+    regs, cols = ad.extraer("V_STOCK_HACIENDA", df_override=df)
 
     # 4. Verificar que las 6 transformaciones aplicaron
     assert len(regs) > 5000, f"extraer() devolvio {len(regs)} registros — algo se perdio"

@@ -33,8 +33,8 @@ def main():
     assert "Consignatario" in df_ing.columns, "Falta Consignatario en el df de ingresos"
 
     # conn=None garantiza que NO se toca SQL — solo el path df_override.
-    regs_ing, cols_ing = extraer(None, "v_PB_Ingresos", fecha_col="FechaIngreso", dias=730, df_override=df_ing)
-    regs_egr, cols_egr = extraer(None, "v_PB_Egresos",  fecha_col="FechaSalida",  dias=730, df_override=df_egr)
+    regs_ing, cols_ing = extraer("v_PB_Ingresos", fecha_col="FechaIngreso", dias=730, df_override=df_ing)
+    regs_egr, cols_egr = extraer("v_PB_Egresos",  fecha_col="FechaSalida",  dias=730, df_override=df_egr)
     assert regs_ing, "extraer() devolvió 0 registros de ingresos"
 
     prod = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, 2026)

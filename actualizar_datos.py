@@ -35,10 +35,6 @@ try:
     import pandas as pd
 except ImportError:
     _missing.append("pandas")
-try:
-    import pyodbc as _pyodbc_check
-except ImportError:
-    _missing.append("pyodbc")
 
 if _missing:
     # Escribir error en log aunque el logger no este listo aun
@@ -48,7 +44,7 @@ if _missing:
     _msg = (f"ERROR CRITICO: faltan dependencias: {', '.join(_missing)}\n"
             f"Python: {sys.executable} (v{sys.version})\n"
             f"Solución: correr  1_INSTALAR.bat  o ejecutar:\n"
-            f"  {sys.executable} -m pip install pandas pyodbc\n")
+            f"  {sys.executable} -m pip install pandas\n")
     _err_file.write_text(_msg, encoding="utf-8")
     print(_msg)
     sys.exit(1)
@@ -239,72 +235,17 @@ def cargar_config():
     return cfg
 
 # ═══════════════════════════════════════════════════════════
-#  CONEXION SQL
-# ═══════════════════════════════════════════════════════════
-def conectar(cfg):
-    try:
-        import pyodbc
-    except ImportError:
-        log.error("Falta pyodbc. Ejecuta: pip install pyodbc pandas")
-        esperar_si_interactivo("\nPresiona Enter para cerrar...")
-        sys.exit(1)
-
-    srv  = cfg["SQL"]["servidor"]
-    db   = cfg["SQL"]["base_datos"]
-    auth = cfg["SQL"]["autenticacion"].lower()
-
-    if auth == "windows":
-        cs_base = (f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-                   f"SERVER={srv};DATABASE={db};"
-                   f"Trusted_Connection=yes;TrustServerCertificate=yes;")
-    else:
-        u = cfg["SQL"]["usuario"]
-        p = cfg["SQL"]["contrasena"]
-        cs_base = (f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-                   f"SERVER={srv};DATABASE={db};"
-                   f"UID={u};PWD={p};TrustServerCertificate=yes;")
-
-    # Intentar primero con cifrado (default Driver 18), luego sin cifrado si falla SSL
-    connection_strings = [
-        cs_base,
-        cs_base + "Encrypt=no;",
-    ]
-
-    log.info(f"Conectando a  {srv}  /  {db}  ...")
-    last_error = None
-    for cs in connection_strings:
-        try:
-            conn = pyodbc.connect(cs, timeout=20)
-            log.info("Conexion SQL OK")
-            return conn
-        except Exception as e:
-            last_error = e
-            if "Encrypt" not in cs:
-                log.warning(f"Conexion cifrada fallo, reintentando sin cifrado...")
-                continue
-    # v15.4.2: SQL no disponible no aborta el pipeline. Las tablas migradas
-    # a WinCampo Web (Stock + Egresos en v15.4/v15.5) siguen funcionando.
-    # Las tablas NO migradas (Insumos, Ingresos, Muertes, Consumo SQL fallback)
-    # se skipean con warning en extraer().
-    log.error(f"SQL no disponible: {last_error}")
-    log.warning("  Verifica: 1. VPN conectada  2. WinCampo corriendo  3. Usuario/contrasena")
-    log.warning("  Continuando SIN SQL - solo se actualizan secciones migradas a WinCampo Web (Stock, Egresos)")
-    return None
-
-# ═══════════════════════════════════════════════════════════
 #  EXTRACCION Y ENRIQUECIMIENTO
 # ═══════════════════════════════════════════════════════════
-def extraer(conn, tabla, fecha_col=None, dias=730, df_override=None):
+def extraer(tabla, fecha_col=None, dias=730, df_override=None):
     """
-    Lee una tabla SQL.
-    Si se indica fecha_col, filtra en SQL a los últimos `dias` días
-    para evitar traer millones de registros innecesarios.
+    Aplica las transformaciones de enriquecimiento (DIAS_EN_FEEDLOT,
+    CLASIFICACION, NOMBRE_CORRAL, ENGORDE_DIARIO_KG, KG_ESTIMADO_HOY,
+    CATEGORIA_FINAL) sobre el DataFrame que entrega el adapter WinCampo Web.
 
-    v15.4: si `df_override` es un DataFrame, se usa directo (saltea SQL)
-    pero APLICA las mismas transformaciones (DIAS_EN_FEEDLOT, CLASIFICACION,
-    NOMBRE_CORRAL, ENGORDE_DIARIO_KG, KG_ESTIMADO_HOY, CATEGORIA_FINAL).
-    Esto permite alimentar el pipeline desde wincampo_source.WinCampoAPI
-    sin tocar la lógica de enriquecimiento.
+    v15.10: el path SQL se eliminó (migración completa). `df_override` es
+    obligatorio; sin él la tabla se skipea. `fecha_col`/`dias` se mantienen
+    por compatibilidad de firma (el filtro temporal lo hace cada fetch_*).
     """
     try:
         import pandas as pd
@@ -313,25 +254,11 @@ def extraer(conn, tabla, fecha_col=None, dias=730, df_override=None):
         sys.exit(1)
 
     try:
-        if df_override is not None:
-            # v15.4: lectura desde adapter externo (WinCampo Web)
-            log.info(f"  Leyendo {tabla} desde df_override (adapter externo) ...")
-            df = df_override.copy() if hasattr(df_override, "copy") else pd.DataFrame(df_override)
-        elif conn is None:
-            # v15.4.2: SQL apagado y tabla no migrada - skipea con warning.
-            log.warning(f"  Skipeando {tabla} - SQL no disponible y sin df_override (tabla pendiente de migrar a WinCampo Web)")
+        if df_override is None:
+            log.warning(f"  Skipeando {tabla} - sin df_override (v15.10: ya no hay path SQL)")
             return [], []
-        else:
-            log.info(f"  Leyendo {tabla} ...")
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                if fecha_col:
-                    sql = (f"SELECT * FROM {tabla} WITH (NOLOCK) "
-                           f"WHERE {fecha_col} >= DATEADD(day, -{dias}, GETDATE())")
-                    log.info(f"    (filtro SQL: {fecha_col} últimos {dias} días)")
-                else:
-                    sql = f"SELECT * FROM {tabla} WITH (NOLOCK)"
-                df = pd.read_sql(sql, conn)
+        log.info(f"  Leyendo {tabla} desde df_override (adapter externo) ...")
+        df = df_override.copy() if hasattr(df_override, "copy") else pd.DataFrame(df_override)
 
         # Limpiar NaN/inf
         df = df.where(pd.notnull(df), None)
@@ -2763,21 +2690,6 @@ def main():
     log.info(f"  Inicio: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
     separador()
 
-    # v15.4: Toggle de fuente de datos para la migracion progresiva
-    # SQL -> WinCampo Web (tabla por tabla).
-    #   wincampo_web (default): para tablas migradas usa la API REST de WinCampo Web.
-    #   sql_legacy: fuerza el SQL viejo en todas las tablas (modo emergencia
-    #               cuando el SQL este vivo y el adapter no).
-    # Las tablas no migradas siempre leen del SQL hasta que su adapter exista.
-    DATA_SOURCE = os.environ.get("PEGSA_DATA_SOURCE", "wincampo_web").lower().strip()
-    log.info(f"  PEGSA_DATA_SOURCE: {DATA_SOURCE}")
-
-    # Tablas que ya tienen adapter en wincampo_source.py
-    #   v15.4: V_STOCK_HACIENDA (fetch_stock_hacienda)
-    #   v15.5: + v_PB_Egresos (fetch_egresos)
-    # v15.6+ ira agregando: v_PB_Ingresos, V_MUERTES, v_PB_StockInsumo, etc.
-    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos", "v_PB_Ingresos", "V_MUERTES", "v_PB_StockInsumo"} if DATA_SOURCE == "wincampo_web" else set()
-
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
     carpeta = resolver_carpeta_salida(cfg["ONEDRIVE"].get("carpeta", ""))
@@ -2785,37 +2697,28 @@ def main():
     log.info(f"  Destino : {carpeta}")
     log.info("")
 
-    # v15.4: Instanciar adapter WinCampo una sola vez si hay tablas migradas.
-    # Si falla, hint para usar PEGSA_DATA_SOURCE=sql_legacy como fallback.
-    wcampo = None
-    if TABLAS_MIGRADAS:
-        try:
-            from wincampo_source import WinCampoAPI
-            wcampo = WinCampoAPI()
-            log.info("  + WinCampoAPI conectado (modo wincampo_web)")
-        except Exception as e:
-            log.error(f"  x Falla conectar WinCampoAPI: {e}")
-            log.error(f"  Hint: pone PEGSA_DATA_SOURCE=sql_legacy para forzar SQL viejo")
-            raise
+    # v15.10: migración completa. Las 5 tablas (Stock, Egresos, Ingresos,
+    # Muertes, Stock Insumos) vienen 100% de WinCampo Web; Consumo del Mixer
+    # Dropbox. Ya no hay SQL ni conectar(): el adapter es la única fuente.
+    try:
+        from wincampo_source import WinCampoAPI
+        wcampo = WinCampoAPI()
+        log.info("  + WinCampoAPI conectado (modo wincampo_web)")
+    except Exception as e:
+        log.error(f"  x Falla conectar WinCampoAPI: {e}")
+        raise
 
-    # Conexion SQL todavia necesaria mientras queden tablas sin migrar.
-    # En v15.10 (cuando las 6 vistas esten migradas) este conectar() se elimina.
-    conn    = conectar(cfg)
     resumen = {"generado": datetime.now().isoformat(), "periodo": periodo, "modulos": {}}
 
     separador("Stock de Hacienda")
     tabla      = cfg["TABLAS"].get("stock_hacienda", "V_STOCK_HACIENDA")
-    # v15.4: si la tabla esta migrada, alimentar extraer() desde el adapter.
-    # extraer() aplica las mismas transformaciones (DIAS_EN_FEEDLOT, etc.)
-    # tanto si el DataFrame viene de SQL como del adapter.
-    if tabla in TABLAS_MIGRADAS and wcampo is not None:
-        import pandas as pd
-        stock_data = wcampo.fetch_stock_hacienda()
-        df_stock = pd.DataFrame(stock_data)
-        log.info(f"  + WinCampo Web devolvio {len(df_stock):,} cabezas")
-        regs, cols = extraer(conn, tabla, df_override=df_stock)
-    else:
-        regs, cols = extraer(conn, tabla)
+    # v15.10: única fuente WinCampo Web. extraer() aplica las transformaciones
+    # (DIAS_EN_FEEDLOT, CLASIFICACION, etc.) sobre el DataFrame del adapter.
+    import pandas as pd
+    stock_data = wcampo.fetch_stock_hacienda()
+    df_stock = pd.DataFrame(stock_data)
+    log.info(f"  + WinCampo Web devolvio {len(df_stock):,} cabezas")
+    regs, cols = extraer(tabla, df_override=df_stock)
     # Guardar referencia al stock actual para el recálculo diario posterior
     _regs_stock_hoy = regs
     _cols_stock_hoy = cols
@@ -2913,18 +2816,13 @@ def main():
     # ── 5. JSON Stock de Insumos ──
     separador("Stock de Insumos")
     tabla_ins = cfg["TABLAS"].get("stock_insumos", "v_PB_StockInsumos")
-    # v15.8: si v_PB_StockInsumo esta migrada, leer de WinCampo Web
-    # (fetch_stock_insumos, endpoint lst_stock_de_insumo). El adapter renombra
-    # STOCK_ACTUAL -> STOCK; el filtro de 7 insumos (INSUMOS_INCLUIDOS) sigue
-    # aplicandose abajo igual que con el SQL viejo.
-    if tabla_ins in TABLAS_MIGRADAS and wcampo is not None:
-        import pandas as pd
-        insumos_data = wcampo.fetch_stock_insumos()
-        df_ins = pd.DataFrame(insumos_data)
-        log.info(f"  + WinCampo Web devolvio {len(df_ins):,} insumos (stock actual)")
-        regs_ins, cols_ins = extraer(conn, tabla_ins, df_override=df_ins)
-    else:
-        regs_ins, cols_ins = extraer(conn, tabla_ins)
+    # v15.10: WinCampo Web. El adapter renombra STOCK_ACTUAL -> STOCK; el filtro
+    # de 7 insumos (INSUMOS_INCLUIDOS) se aplica abajo.
+    import pandas as pd
+    insumos_data = wcampo.fetch_stock_insumos()
+    df_ins = pd.DataFrame(insumos_data)
+    log.info(f"  + WinCampo Web devolvio {len(df_ins):,} insumos (stock actual)")
+    regs_ins, cols_ins = extraer(tabla_ins, df_override=df_ins)
 
     INSUMOS_INCLUIDOS = {
         2: "MAIZ GRANO",
@@ -2997,34 +2895,25 @@ def main():
     tabla_ing = cfg["TABLAS"].get("movimientos_ingresos", "v_PB_Ingresos")
     tabla_egr = cfg["TABLAS"].get("movimientos_egresos",  "v_PB_Egresos")
 
-    # v15.6: si v_PB_Ingresos esta migrada, leer de WinCampo Web (fetch_ingresos).
-    # Endpoint sin cap de rango (a diferencia de Egresos) — pide 730d directo.
-    if tabla_ing in TABLAS_MIGRADAS and wcampo is not None:
-        import pandas as pd
-        from datetime import date, timedelta
-        fd = (date.today() - timedelta(days=730)).isoformat()
-        fh = date.today().isoformat()
-        ingresos_data = wcampo.fetch_ingresos(fecha_desde=fd, fecha_hasta=fh)
-        df_ing = pd.DataFrame(ingresos_data)
-        log.info(f"  + WinCampo Web devolvio {len(df_ing):,} sub-grupos de ingresos (730d)")
-        regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730, df_override=df_ing)
-    else:
-        regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730)
-    # v15.5: si v_PB_Egresos esta migrada, leer de WinCampo Web (fetch_egresos)
-    # con el mismo rango temporal de 730 dias que usaba el SQL viejo. Las
-    # transformaciones del pipeline (limpieza NaN/inf, conversiones) se siguen
-    # aplicando porque extraer() las corre antes de retornar.
-    if tabla_egr in TABLAS_MIGRADAS and wcampo is not None:
-        import pandas as pd
-        from datetime import date, timedelta
-        fd = (date.today() - timedelta(days=730)).isoformat()
-        fh = date.today().isoformat()
-        egresos_data = wcampo.fetch_egresos(fecha_desde=fd, fecha_hasta=fh)
-        df_egr = pd.DataFrame(egresos_data)
-        log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos (730d)")
-        regs_egr, cols_egr = extraer(conn, tabla_egr, fecha_col="FechaSalida", dias=730, df_override=df_egr)
-    else:
-        regs_egr, cols_egr = extraer(conn, tabla_egr, fecha_col="FechaSalida",  dias=730)
+    # v15.6/v15.10: Ingresos desde WinCampo Web (fetch_ingresos). Endpoint sin
+    # cap de rango (a diferencia de Egresos) — pide 730d directo.
+    import pandas as pd
+    from datetime import date, timedelta
+    fd = (date.today() - timedelta(days=730)).isoformat()
+    fh = date.today().isoformat()
+    ingresos_data = wcampo.fetch_ingresos(fecha_desde=fd, fecha_hasta=fh)
+    df_ing = pd.DataFrame(ingresos_data)
+    log.info(f"  + WinCampo Web devolvio {len(df_ing):,} sub-grupos de ingresos (730d)")
+    regs_ing, cols_ing = extraer(tabla_ing, fecha_col="FechaIngreso", dias=730, df_override=df_ing)
+    # v15.5/v15.10: Egresos desde WinCampo Web (fetch_egresos), rango 730d.
+    import pandas as pd
+    from datetime import date, timedelta
+    fd = (date.today() - timedelta(days=730)).isoformat()
+    fh = date.today().isoformat()
+    egresos_data = wcampo.fetch_egresos(fecha_desde=fd, fecha_hasta=fh)
+    df_egr = pd.DataFrame(egresos_data)
+    log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos (730d)")
+    regs_egr, cols_egr = extraer(tabla_egr, fecha_col="FechaSalida", dias=730, df_override=df_egr)
 
     prod_data = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo)
 
@@ -3039,20 +2928,16 @@ def main():
     # ── 7. JSON Muertes + Tasa de Mortandad ──
     separador("Muertes & Tasa de Mortandad")
     tabla_muertes = cfg["TABLAS"].get("muertes", "V_MUERTES")
-    # v15.7: si V_MUERTES esta migrada, leer de WinCampo Web (fetch_muertes,
-    # wrapper sobre egresos MOTIVO=M con remap a las columnas de V_MUERTES).
-    # Mismo rango 730d que el SQL viejo; sin cap (hereda fetch_egresos chunking).
-    if tabla_muertes in TABLAS_MIGRADAS and wcampo is not None:
-        import pandas as pd
-        from datetime import date, timedelta
-        fd = (date.today() - timedelta(days=730)).isoformat()
-        fh = date.today().isoformat()
-        muertes_raw = wcampo.fetch_muertes(fecha_desde=fd, fecha_hasta=fh)
-        df_m = pd.DataFrame(muertes_raw)
-        log.info(f"  + WinCampo Web devolvio {len(df_m):,} muertes MOTIVO=M (730d)")
-        regs_m, cols_m = extraer(conn, tabla_muertes, fecha_col="FECHA_MUERTE", dias=730, df_override=df_m)
-    else:
-        regs_m, cols_m = extraer(conn, tabla_muertes, fecha_col="FECHA_MUERTE", dias=730)
+    # v15.7/v15.10: Muertes desde WinCampo Web (fetch_muertes, wrapper sobre
+    # egresos MOTIVO=M con remap a las columnas de V_MUERTES), rango 730d.
+    import pandas as pd
+    from datetime import date, timedelta
+    fd = (date.today() - timedelta(days=730)).isoformat()
+    fh = date.today().isoformat()
+    muertes_raw = wcampo.fetch_muertes(fecha_desde=fd, fecha_hasta=fh)
+    df_m = pd.DataFrame(muertes_raw)
+    log.info(f"  + WinCampo Web devolvio {len(df_m):,} muertes MOTIVO=M (730d)")
+    regs_m, cols_m = extraer(tabla_muertes, fecha_col="FECHA_MUERTE", dias=730, df_override=df_m)
 
     # Reusar regs_ing/cols_ing (ya cargados en módulo 6) y regs/cols de stock hacienda
     # regs_ing ya fue cargado arriba; regs (stock) también — los pasamos directamente
@@ -3122,11 +3007,9 @@ def main():
         )
         log.info(f"  ✓ Consumo leído del Mixer ({consumo_data['meta']['ultimo_completo']} = último día completo)")
     except Exception as e:
-        log.warning(f"  ⚠ No se pudo leer el Mixer: {e}")
-        log.warning(f"  → Cayendo a fallback SQL v_PB_ConsumoDetallado")
-        tabla_consumo = cfg["TABLAS"].get("consumo_detallado", "v_PB_ConsumoDetallado")
-        regs_cons, cols_cons = extraer(conn, tabla_consumo, fecha_col="FECHA", dias=730)
-        consumo_data = procesar_consumo(regs_cons, cols_cons, periodo)
+        log.error(f"  x No se pudo leer el Mixer: {e}")
+        log.error(f"  -> No hay fallback SQL (v15.10). Saltando modulo Consumo.")
+        consumo_data = {"meta": {"error": str(e)}, "anual": {}, "semanal": {}, "diario": []}
     guardar(consumo_data, carpeta, f"consumo_{periodo}.json")
     log.info(f"  ✓ consumo_{periodo}.json")
     ca = consumo_data.get("anual",   {})
@@ -3314,8 +3197,6 @@ def main():
         log.info(f"  ✓ stock_insumos_{periodo}.json actualizado con días restantes")
     except Exception as e:
         log.warning(f"  ⚠ No se pudieron calcular días restantes: {e}")
-
-    conn.close()
 
     # ── 12. JSON Tesorería (Excel YYYY-MM-DD_financiero.xlsx en OneDrive) ──
     separador("Tesorería Financiera")
