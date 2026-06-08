@@ -331,3 +331,134 @@ class WinCampoAPI:
             "Origen":         s("ORIGEN"),
             "FechaIngreso":   s("FECHA_INGRESO"),
         }
+
+    # ════════════════════════════════════════════════════════════════
+    #  TABLA 3 — Ingresos de Hacienda (movimientos de entrada)
+    # ════════════════════════════════════════════════════════════════
+    def fetch_ingresos(self, fecha_desde=None, fecha_hasta=None):
+        """
+        Reemplazo de SELECT * FROM v_PB_Ingresos.
+
+        Devuelve lista PLANA de SUB-GRUPOS de ingreso (camión × categoría),
+        NO una fila por cabeza individual (a diferencia de fetch_stock_hacienda).
+        Cada fila = "N cabezas de categoría X que llegaron en este camión-tropa".
+        Por eso Cantidad es el ENTERO REAL del sub-grupo, no 1.
+
+        Aplana la jerarquía tropa → CAMIONES[]. CONSIGNATARIO, PROVEEDOR y
+        FECHA_INGRESO viven a nivel tropa y se heredan a cada sub-grupo;
+        CATEGORIA, CANTIDAD y KILOS_CAMION_PARCIAL viven a nivel camión.
+
+        El endpoint lst_movimiento_hacienda NO tiene cap de rango (a diferencia
+        de lst_egresos_hacienda que corta a 500d). Verificado 2026-06-08:
+        730d = 540 tropas / 49.965 cabezas, status 200. Pide 730d directo.
+
+        Filtros se aplican en el pipeline (no acá):
+          - procesar_movimientos: CONSIGNATARIA_EXCLUIR = {"destete","traslado"}
+
+        Args:
+            fecha_desde: ISO date string (YYYY-MM-DD). Por default hoy - 365 días.
+            fecha_hasta: ISO date string. Por default hoy.
+
+        Returns:
+            list[dict] con keys que necesita el pipeline (procesar_movimientos,
+            líneas 673-689):
+                FechaIngreso  (str ISO date) = tropa.FECHA_INGRESO (parseado)
+                hotelero      (str)          = tropa.HOTELERO
+                categoria     (str)          = camion.CATEGORIA
+                Cantidad      (int)          = camion.CANTIDAD (real, NO 1)
+                KgIngreso     (float)        = camion.KILOS_CAMION_PARCIAL (total sub-grupo)
+                Consignatario (str)          = tropa.CONSIGNATARIO (heredado; campo filtro)
+                Proveedor     (str)          = tropa.PROVEEDOR (heredado)
+                + extras: NRO_TROPA, NRO_CORRAL, ORIGEN, DESTINO_COMPRA,
+                          LOCALIDAD, TRANSPORTISTA, PROMEDIO
+        """
+        from datetime import date, timedelta
+
+        if not fecha_hasta:
+            fecha_hasta = date.today().isoformat()
+        if not fecha_desde:
+            fecha_desde = (date.today() - timedelta(days=365)).isoformat()
+
+        def _to_compact(s):
+            return s.replace("-", "")
+
+        params = {
+            "fecha_desde":     _to_compact(fecha_desde),
+            "fecha_hasta":     _to_compact(fecha_hasta),
+            "reporte_elegido": "ingreso_hacienda",
+            "agrupado":        "N",
+            "visualiza_dte":   "N",
+        }
+        data = self._get("lst_movimiento_hacienda", params=params)
+
+        # Shape: { "lst_movimiento_hacienda": [ { ...tropa..., CAMIONES: [ {...sub-grupo...} ] } ] }
+        raiz = data.get("lst_movimiento_hacienda") if isinstance(data, dict) else None
+        if not isinstance(raiz, list):
+            raise RuntimeError(f"Ingresos: response sin lst_movimiento_hacienda lista. Keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
+
+        salida = []
+        for tropa in raiz:
+            camiones = tropa.get("CAMIONES") or []
+            for camion in camiones:
+                salida.append(self._normalizar_ingreso(tropa, camion))
+
+        log.info(f"Ingresos {fecha_desde} a {fecha_hasta}: {len(salida)} sub-grupos (camion x categoria)")
+        return salida
+
+    def _normalizar_ingreso(self, tropa, camion):
+        """
+        Normaliza un sub-grupo de ingreso (camión × categoría) al shape del pipeline.
+        Recibe el dict de la tropa (padre) y el del camión (hijo).
+        """
+        def _f(d, *keys):
+            for k in keys:
+                if k in d and d[k] not in (None, ""):
+                    try:
+                        return float(d[k])
+                    except (TypeError, ValueError):
+                        return None
+            return None
+
+        def _s(d, *keys):
+            for k in keys:
+                if k in d and d[k] not in (None, ""):
+                    return str(d[k]).strip() or None
+            return None
+
+        def _i(d, *keys):
+            for k in keys:
+                if k in d and d[k] not in (None, ""):
+                    try:
+                        return int(float(d[k]))
+                    except (TypeError, ValueError):
+                        return None
+            return None
+
+        # FECHA_INGRESO viene como "2026-05-08 00:00:00.000" → recortar a date ISO
+        fecha = _s(tropa, "FECHA_INGRESO")
+        if fecha:
+            fecha = fecha.split(" ")[0]
+
+        return {
+            # keys que matchean los detectores de procesar_movimientos (líneas 673-689)
+            "FechaIngreso":   fecha,
+            "hotelero":       _s(tropa, "HOTELERO"),
+            "categoria":      _s(camion, "CATEGORIA"),
+            # Cantidad = entero REAL del sub-grupo (NO 1 como en Stock/Egresos).
+            # El SQL viejo v_PB_Ingresos devolvía 1 fila por sub-grupo con N cabezas.
+            "Cantidad":       _i(camion, "CANTIDAD"),
+            # KILOS_CAMION_PARCIAL = total kg del sub-grupo (no por cabeza).
+            "KgIngreso":      _f(camion, "KILOS_CAMION_PARCIAL"),
+            # CONSIGNATARIO/PROVEEDOR viven a nivel tropa; se heredan al sub-grupo.
+            # Consignatario es el campo del filtro CONSIGNATARIA_EXCLUIR del pipeline.
+            "Consignatario":  _s(tropa, "CONSIGNATARIO"),
+            "Proveedor":      _s(tropa, "PROVEEDOR"),
+            # Extras útiles para drill-down futuro
+            "NRO_TROPA":      _s(tropa, "NRO_TROPA"),
+            "NRO_CORRAL":     _s(camion, "NRO_CORRAL"),
+            "ORIGEN":         _s(tropa, "ORIGEN"),
+            "DESTINO_COMPRA": _s(tropa, "DESTINO_COMPRA"),
+            "LOCALIDAD":      _s(tropa, "LOCALIDAD"),
+            "TRANSPORTISTA":  _s(camion, "TRANSPORTISTA"),
+            "PROMEDIO":       _f(camion, "PROMEDIO"),
+        }
