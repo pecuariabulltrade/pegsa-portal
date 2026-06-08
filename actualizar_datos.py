@@ -2747,7 +2747,7 @@ def main():
     #   v15.4: V_STOCK_HACIENDA (fetch_stock_hacienda)
     #   v15.5: + v_PB_Egresos (fetch_egresos)
     # v15.6+ ira agregando: v_PB_Ingresos, V_MUERTES, v_PB_StockInsumo, etc.
-    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos", "v_PB_Ingresos"} if DATA_SOURCE == "wincampo_web" else set()
+    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos", "v_PB_Ingresos", "V_MUERTES"} if DATA_SOURCE == "wincampo_web" else set()
 
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
@@ -2999,7 +2999,20 @@ def main():
     # ── 7. JSON Muertes + Tasa de Mortandad ──
     separador("Muertes & Tasa de Mortandad")
     tabla_muertes = cfg["TABLAS"].get("muertes", "V_MUERTES")
-    regs_m, cols_m = extraer(conn, tabla_muertes, fecha_col="FECHA_MUERTE", dias=730)
+    # v15.7: si V_MUERTES esta migrada, leer de WinCampo Web (fetch_muertes,
+    # wrapper sobre egresos MOTIVO=M con remap a las columnas de V_MUERTES).
+    # Mismo rango 730d que el SQL viejo; sin cap (hereda fetch_egresos chunking).
+    if tabla_muertes in TABLAS_MIGRADAS and wcampo is not None:
+        import pandas as pd
+        from datetime import date, timedelta
+        fd = (date.today() - timedelta(days=730)).isoformat()
+        fh = date.today().isoformat()
+        muertes_raw = wcampo.fetch_muertes(fecha_desde=fd, fecha_hasta=fh)
+        df_m = pd.DataFrame(muertes_raw)
+        log.info(f"  + WinCampo Web devolvio {len(df_m):,} muertes MOTIVO=M (730d)")
+        regs_m, cols_m = extraer(conn, tabla_muertes, fecha_col="FECHA_MUERTE", dias=730, df_override=df_m)
+    else:
+        regs_m, cols_m = extraer(conn, tabla_muertes, fecha_col="FECHA_MUERTE", dias=730)
 
     # Reusar regs_ing/cols_ing (ya cargados en módulo 6) y regs/cols de stock hacienda
     # regs_ing ya fue cargado arriba; regs (stock) también — los pasamos directamente
