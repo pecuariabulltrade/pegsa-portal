@@ -2747,7 +2747,7 @@ def main():
     #   v15.4: V_STOCK_HACIENDA (fetch_stock_hacienda)
     #   v15.5: + v_PB_Egresos (fetch_egresos)
     # v15.6+ ira agregando: v_PB_Ingresos, V_MUERTES, v_PB_StockInsumo, etc.
-    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos"} if DATA_SOURCE == "wincampo_web" else set()
+    TABLAS_MIGRADAS = {"V_STOCK_HACIENDA", "v_PB_Egresos", "v_PB_Ingresos"} if DATA_SOURCE == "wincampo_web" else set()
 
     cfg     = cargar_config()
     periodo = cfg["OPCIONES"]["periodo"]
@@ -2957,7 +2957,19 @@ def main():
     tabla_ing = cfg["TABLAS"].get("movimientos_ingresos", "v_PB_Ingresos")
     tabla_egr = cfg["TABLAS"].get("movimientos_egresos",  "v_PB_Egresos")
 
-    regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730)
+    # v15.6: si v_PB_Ingresos esta migrada, leer de WinCampo Web (fetch_ingresos).
+    # Endpoint sin cap de rango (a diferencia de Egresos) — pide 730d directo.
+    if tabla_ing in TABLAS_MIGRADAS and wcampo is not None:
+        import pandas as pd
+        from datetime import date, timedelta
+        fd = (date.today() - timedelta(days=730)).isoformat()
+        fh = date.today().isoformat()
+        ingresos_data = wcampo.fetch_ingresos(fecha_desde=fd, fecha_hasta=fh)
+        df_ing = pd.DataFrame(ingresos_data)
+        log.info(f"  + WinCampo Web devolvio {len(df_ing):,} sub-grupos de ingresos (730d)")
+        regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730, df_override=df_ing)
+    else:
+        regs_ing, cols_ing = extraer(conn, tabla_ing, fecha_col="FechaIngreso", dias=730)
     # v15.5: si v_PB_Egresos esta migrada, leer de WinCampo Web (fetch_egresos)
     # con el mismo rango temporal de 730 dias que usaba el SQL viejo. Las
     # transformaciones del pipeline (limpieza NaN/inf, conversiones) se siguen
