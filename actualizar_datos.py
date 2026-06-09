@@ -121,7 +121,7 @@ CLASIFICACION_MAP = {
 #   Macho  350-550 → novillo pesado:  ADP obs=1.23  (días 30-350,  pesoE 350-750, N=188)
 #   Vaca    0-650  → vacas engorde:   ADP obs=1.40  (días 30-350,  pesoE 0-750,   N=1727)
 # DEPRECADO v15.13: ya NO se consulta para feedlot. El path El Haras pasó a
-# ADP_CAL_POR_CAT (abajo). Se deja como comentario muerto por si vuelve a usarse.
+# ADP_CAL_FALLBACK / _ADP_CAL_RUNTIME (abajo). Se deja como comentario muerto.
 ENGORDE_DIARIO = [
     ("Hembra", 0,    250,  1.32),
     ("Hembra", 250,  1000, 1.35),
@@ -134,11 +134,12 @@ ENGORDE_DIARIO = [
     ("Vaca",   650,  1000, 1.00),
 ]
 
-# v15.13: ADP calibrado (límite inferior del rango ±15% del teórico, NO el observado
-# real — decisión usuario 2026-06-08). Sigue al usuario aunque el observado real esté
-# aún más abajo: actúa como guardrail contra la realidad imperfecta del feedlot.
-# Reemplaza la tabla ENGORDE_DIARIO para el path El Haras (corrales 1-199).
-ADP_CAL_POR_CAT = {
+# v15.13: ADP calibrado (límite inferior del rango ±15% del teórico).
+# v15.13.2: renombrado a ADP_CAL_FALLBACK. Ya NO es el valor usado en runtime:
+# main() actualiza _ADP_CAL_RUNTIME con el adp_calibrado dinámico que calcula
+# procesar_productivo (clamp ±15% del teórico) en cada tick. Este dict queda
+# como FALLBACK para una categoría sin observado suficiente.
+ADP_CAL_FALLBACK = {
     'TM': 1.165,  # ternero macho   (= 1.371 × 0.85)
     'TH': 1.125,  # ternera         (= 1.324 × 0.85)
     'NT': 1.266,  # novillito       (= 1.489 × 0.85)
@@ -147,6 +148,11 @@ ADP_CAL_POR_CAT = {
     'VA': 1.189,  # vaca            (= 1.399 × 0.85)
     'TO': 1.360,  # toro            (= 1.60  × 0.85)
 }
+
+# v15.13.2: ADP runtime (dinámico). Se inicializa con el fallback y main() lo
+# pisa con los valores de procesar_productivo al inicio. Se MUTA in-place (no se
+# re-bindea) para que calc_engorde, que lo lee como global, vea los valores frescos.
+_ADP_CAL_RUNTIME = dict(ADP_CAL_FALLBACK)
 
 # v15.13: techo kg_estimado_hoy por categoría (decisión usuario 2026-06-08).
 # Reemplaza TECHO_KG_FEEDLOT=650 único para el path El Haras.
@@ -321,8 +327,10 @@ def extraer(tabla, fecha_col=None, dias=730, df_override=None):
                 if "haras" in nombre:
                     # v15.13: ADP calibrado per categoría (código TM/VA/etc.) en vez
                     # de la tabla ENGORDE_DIARIO de teóricos plenos.
+                    # v15.13.2: lee _ADP_CAL_RUNTIME (dinámico, lo setea main() desde
+                    # procesar_productivo); cae a ADP_CAL_FALLBACK si falta la cat.
                     cat = str(row.get("CATEGORIA") or "").strip().upper()
-                    return ADP_CAL_POR_CAT.get(cat, 1.0)  # default conservador si cat desconocida
+                    return _ADP_CAL_RUNTIME.get(cat, ADP_CAL_FALLBACK.get(cat, 1.0))
                 return ENGORDE_RECRIA  # recría: fijo 0.5 kg/día sin importar categoría
 
             def calc_kg_est(row):
@@ -2759,6 +2767,29 @@ def main():
         raise
 
     resumen = {"generado": datetime.now().isoformat(), "periodo": periodo, "modulos": {}}
+
+    # ── v15.13.2: Pre-step · Egresos + procesar_productivo para ADP dinámico ──
+    # Debe correr ANTES de Stock: Stock usa _ADP_CAL_RUNTIME (vía calc_engorde en
+    # extraer) y acá lo actualizamos con el adp_calibrado real per categoría.
+    # egresos_data/regs_egr/cols_egr/prod_data quedan en scope para reusar abajo.
+    separador("Pre-step · Egresos + ADP dinámico")
+    import pandas as pd
+    from datetime import date, timedelta
+    fd_egr = (date.today() - timedelta(days=730)).isoformat()
+    fh_egr = date.today().isoformat()
+    egresos_data = wcampo.fetch_egresos(fecha_desde=fd_egr, fecha_hasta=fh_egr)
+    df_egr = pd.DataFrame(egresos_data)
+    log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos (730d)")
+    regs_egr, cols_egr = extraer("v_PB_Egresos", fecha_col="FechaSalida", dias=730, df_override=df_egr)
+    prod_data = procesar_productivo(regs_egr, cols_egr, periodo)
+    # Actualizar _ADP_CAL_RUNTIME (in-place) con el adp_calibrado dinámico per cat
+    pc90 = prod_data.get("por_categoria_90d", {})
+    for _cat, _info in pc90.items():
+        _cal = _info.get("adp_calibrado")
+        if _cal is not None and _cal > 0:
+            _ADP_CAL_RUNTIME[_cat] = _cal
+    log.info(f"  + ADP_CAL_RUNTIME (dinámico): {_ADP_CAL_RUNTIME}")
+    log.info(f"    Fallback si categoría sin observado: {ADP_CAL_FALLBACK}")
 
     separador("Stock de Hacienda")
     tabla      = cfg["TABLAS"].get("stock_hacienda", "V_STOCK_HACIENDA")
