@@ -154,8 +154,8 @@ TECHO_KG_POR_CAT = {
     'TM': 550,  # ternero (terminación)
     'TH': 500,  # ternera
     'NT': 550,  # novillito
-    'NV': 550,  # novillo
-    'VQ': 500,  # vaquillona
+    'NV': 600,  # v15.13.1: subido de 550 → 600 (decisión usuario 2026-06-08)
+    'VQ': 550,  # v15.13.1: subido de 500 → 550 (decisión usuario 2026-06-08)
     'VA': 650,  # vaca
     'TO': 800,  # toro
 }
