@@ -2974,33 +2974,20 @@ def main():
     # ── 6. JSON Movimientos Productivos (Ingresos + Egresos) ──
     separador("Movimientos Productivos")
     tabla_ing = cfg["TABLAS"].get("movimientos_ingresos", "v_PB_Ingresos")
-    tabla_egr = cfg["TABLAS"].get("movimientos_egresos",  "v_PB_Egresos")
 
-    # v15.6/v15.10: Ingresos desde WinCampo Web (fetch_ingresos). Endpoint sin
-    # cap de rango (a diferencia de Egresos) — pide 730d directo.
-    import pandas as pd
-    from datetime import date, timedelta
-    fd = (date.today() - timedelta(days=730)).isoformat()
-    fh = date.today().isoformat()
-    ingresos_data = wcampo.fetch_ingresos(fecha_desde=fd, fecha_hasta=fh)
+    # v15.6/v15.10: Ingresos desde WinCampo Web (fetch_ingresos). Endpoint sin cap.
+    # v15.13.2: egresos (regs_egr/cols_egr) ya cargados en el pre-step — NO se
+    # vuelven a fetchear. Reusa fd_egr/fh_egr del pre-step.
+    ingresos_data = wcampo.fetch_ingresos(fecha_desde=fd_egr, fecha_hasta=fh_egr)
     df_ing = pd.DataFrame(ingresos_data)
     log.info(f"  + WinCampo Web devolvio {len(df_ing):,} sub-grupos de ingresos (730d)")
     regs_ing, cols_ing = extraer(tabla_ing, fecha_col="FechaIngreso", dias=730, df_override=df_ing)
-    # v15.5/v15.10: Egresos desde WinCampo Web (fetch_egresos), rango 730d.
-    import pandas as pd
-    from datetime import date, timedelta
-    fd = (date.today() - timedelta(days=730)).isoformat()
-    fh = date.today().isoformat()
-    egresos_data = wcampo.fetch_egresos(fecha_desde=fd, fecha_hasta=fh)
-    df_egr = pd.DataFrame(egresos_data)
-    log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos (730d)")
-    regs_egr, cols_egr = extraer(tabla_egr, fecha_col="FechaSalida", dias=730, df_override=df_egr)
 
-    prod_data = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo)
+    mov_data = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo)
 
-    guardar(prod_data, carpeta, f"movimientos_{periodo}.json")
+    guardar(mov_data, carpeta, f"movimientos_{periodo}.json")
     log.info(f"  ✓ movimientos_{periodo}.json")
-    m = prod_data.get("resumen", {})
+    m = mov_data.get("resumen", {})
     log.info(f"  Ingresos  :  {m.get('total_cabezas_ingresadas',0):>8,} cab  /  {m.get('total_kg_ingresado',0):>12,.0f} kg")
     log.info(f"  Egresos   :  {m.get('total_cabezas_egresadas',0):>8,} cab  /  {m.get('total_kg_egresado',0):>12,.0f} kg")
     log.info(f"  Saldo neto:  {m.get('saldo_cabezas',0):>+8,} cab  /  {m.get('saldo_kg',0):>+12,.0f} kg")
@@ -3058,7 +3045,7 @@ def main():
 
     # ── 8. JSON Parámetros Productivos (ADP + Estadía) ──
     separador("Parámetros Productivos")
-    prod_data = procesar_productivo(regs_egr, cols_egr, periodo)
+    # v15.13.2: prod_data ya calculado en el pre-step (antes de Stock), solo se guarda.
     guardar(prod_data, carpeta, f"productivo_{periodo}.json")
     log.info(f"  ✓ productivo_{periodo}.json")
     g = prod_data.get("general", {})
