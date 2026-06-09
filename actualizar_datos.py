@@ -269,6 +269,94 @@ def cargar_config():
     return cfg
 
 # ═══════════════════════════════════════════════════════════
+#  SMOKE TEST (v15.14)
+# ═══════════════════════════════════════════════════════════
+def smoke_test(carpeta, periodo):
+    """
+    v15.14: Smoke test de los JSONs generados por el pipeline.
+    Valida rangos razonables de los KPIs principales. Detecta bugs silenciosos
+    (ej. ADP teórico null como pasó en v15.5.1, masa inflada como v15.13).
+    Devuelve dict {ok, checks_passed, checks_failed, errors[]}.
+    Nunca tira excepción — si un JSON no se puede leer, lo reporta como error.
+    """
+    from pathlib import Path
+    import json as _json
+    base = Path(carpeta)
+    results = {"ok": True, "checks_passed": 0, "checks_failed": 0, "errors": []}
+
+    def _check(name, cond, detail):
+        if cond:
+            results["checks_passed"] += 1
+        else:
+            results["checks_failed"] += 1
+            results["ok"] = False
+            results["errors"].append(f"{name}: {detail}")
+
+    def _load(filename):
+        try:
+            return _json.load(open(base / filename, encoding="utf-8"))
+        except Exception as e:
+            results["errors"].append(f"no se pudo leer {filename}: {e}")
+            results["ok"] = False
+            return None
+
+    # --- stock_kpis ---
+    sk = _load(f"stock_kpis_{periodo}.json")
+    if sk:
+        cab = sk.get("kpis", {}).get("total_cabezas", 0)
+        kg  = sk.get("kpis", {}).get("total_kg_estimado_hoy", 0)
+        _check("stock.cabezas",  5000 < cab < 20000, f"cabezas={cab:,} fuera de [5000, 20000]")
+        _check("stock.kg",       2_500_000 < kg < 6_000_000, f"kg={kg:,} fuera de [2.5M, 6M]")
+        if cab > 0:
+            kg_cab = kg / cab
+            _check("stock.kg_por_cab", 300 < kg_cab < 700, f"kg/cab={kg_cab:.0f} fuera de [300, 700]")
+
+    # --- productivo (ADP teórico null detection — el bug de ayer) ---
+    p = _load(f"productivo_{periodo}.json")
+    if p:
+        pc90 = p.get("por_categoria_90d", {})
+        cats_con_teo = sum(1 for c in pc90.values() if c.get("adp_teorico") is not None)
+        _check("productivo.cats_con_adp_teorico", cats_con_teo >= 6,
+               f"solo {cats_con_teo}/7 categorías tienen adp_teorico — posible regresión v15.5.1")
+        registros = p.get("meta", {}).get("registros_filtrados", 0)
+        _check("productivo.registros", registros > 1000, f"solo {registros} egresos filtrados")
+
+    # --- muertes (anual razonable) ---
+    m = _load(f"muertes_{periodo}.json")
+    if m:
+        muertes_anio = m.get("anio", {}).get("total_muertes", 0)
+        _check("muertes.anio", 100 < muertes_anio < 600,
+               f"muertes año={muertes_anio} fuera de [100, 600]")
+        tasa = m.get("mortandad", {}).get("tasa_mensual_pct")
+        if tasa is not None:
+            _check("muertes.tasa_mensual", 0.3 < tasa < 3.0,
+                   f"tasa mensual={tasa}% fuera de [0.3, 3.0]")
+
+    # --- movimientos (ingresos razonables) ---
+    mv = _load(f"movimientos_{periodo}.json")
+    if mv:
+        ing_anio = mv.get("anio", {}).get("ingresos", {})
+        cab_ing = ing_anio.get("total_cabezas", 0)
+        _check("movimientos.ingresos_anio", 5000 < cab_ing < 30000,
+               f"ingresos año={cab_ing:,} fuera de [5000, 30000]")
+
+    # --- insumos (al menos los 7 críticos) ---
+    ins = _load(f"stock_insumos_{periodo}.json")
+    if ins:
+        insumos_list = ins.get("insumos") or ins.get("registros") or []
+        _check("insumos.count", len(insumos_list) >= 6,
+               f"solo {len(insumos_list)} insumos críticos — esperado >= 6 de los 7")
+
+    # --- consumo (anual razonable) ---
+    c = _load(f"consumo_{periodo}.json")
+    if c:
+        anual_kg = c.get("anual", {}).get("total_kg", 0)
+        _check("consumo.anual", anual_kg > 10_000_000,
+               f"consumo anual={anual_kg:,} kg muy bajo (esperado > 10M)")
+
+    return results
+
+# ═══════════════════════════════════════════════════════════
 #  EXTRACCION Y ENRIQUECIMIENTO
 # ═══════════════════════════════════════════════════════════
 def extraer(tabla, fecha_col=None, dias=730, df_override=None):
@@ -3743,6 +3831,29 @@ def main():
         log.warning(f"  ⚠ procesar_precios_inferencia falló: {e}")
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["precios_inferencia"] = {"ok": False, "error": str(e)}
+
+    # ── v15.14: Smoke test post-pipeline ──
+    # Valida que los JSONs tengan números razonables. Si falla, queda registrado
+    # en modulos.smoke_test → el banner stale v15.12 lo detecta como módulo con
+    # error y se muestra en el portal. Pipeline NUNCA aborta por esto.
+    separador("Smoke Test · Validación post-pipeline")
+    try:
+        smoke = smoke_test(carpeta, periodo)
+        if smoke["ok"]:
+            log.info(f"  ✓ Smoke test OK ({smoke['checks_passed']} checks)")
+        else:
+            log.error(f"  ✗ Smoke test FALLÓ ({smoke['checks_failed']} checks fallidos):")
+            for err in smoke["errors"]:
+                log.error(f"     - {err}")
+        resumen["modulos"]["smoke_test"] = {
+            "ok": smoke["ok"],
+            "checks_passed": smoke["checks_passed"],
+            "checks_failed": smoke["checks_failed"],
+            "errors": smoke["errors"][:5],  # max 5 para no explotar el JSON
+        }
+    except Exception as e:
+        log.error(f"  ✗ Smoke test crasheó: {e}")
+        resumen["modulos"]["smoke_test"] = {"ok": False, "errors": [f"smoke test crashed: {e}"]}
 
     separador()
     guardar(resumen, carpeta, "ultima_actualizacion.json")
