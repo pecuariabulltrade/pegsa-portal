@@ -120,6 +120,8 @@ CLASIFICACION_MAP = {
 #   Macho  250-350 → novillito:       ADP obs=1.49  (días 30-350,  pesoE 200-400, N=691)
 #   Macho  350-550 → novillo pesado:  ADP obs=1.23  (días 30-350,  pesoE 350-750, N=188)
 #   Vaca    0-650  → vacas engorde:   ADP obs=1.40  (días 30-350,  pesoE 0-750,   N=1727)
+# DEPRECADO v15.13: ya NO se consulta para feedlot. El path El Haras pasó a
+# ADP_CAL_POR_CAT (abajo). Se deja como comentario muerto por si vuelve a usarse.
 ENGORDE_DIARIO = [
     ("Hembra", 0,    250,  1.32),
     ("Hembra", 250,  1000, 1.35),
@@ -131,6 +133,32 @@ ENGORDE_DIARIO = [
     ("Vaca",   0,    650,  1.40),
     ("Vaca",   650,  1000, 1.00),
 ]
+
+# v15.13: ADP calibrado (límite inferior del rango ±15% del teórico, NO el observado
+# real — decisión usuario 2026-06-08). Sigue al usuario aunque el observado real esté
+# aún más abajo: actúa como guardrail contra la realidad imperfecta del feedlot.
+# Reemplaza la tabla ENGORDE_DIARIO para el path El Haras (corrales 1-199).
+ADP_CAL_POR_CAT = {
+    'TM': 1.165,  # ternero macho   (= 1.371 × 0.85)
+    'TH': 1.125,  # ternera         (= 1.324 × 0.85)
+    'NT': 1.266,  # novillito       (= 1.489 × 0.85)
+    'NV': 1.046,  # novillo         (= 1.231 × 0.85)
+    'VQ': 1.144,  # vaquillona      (= 1.346 × 0.85)
+    'VA': 1.189,  # vaca            (= 1.399 × 0.85)
+    'TO': 1.360,  # toro            (= 1.60  × 0.85)
+}
+
+# v15.13: techo kg_estimado_hoy por categoría (decisión usuario 2026-06-08).
+# Reemplaza TECHO_KG_FEEDLOT=650 único para el path El Haras.
+TECHO_KG_POR_CAT = {
+    'TM': 550,  # ternero (terminación)
+    'TH': 500,  # ternera
+    'NT': 550,  # novillito
+    'NV': 550,  # novillo
+    'VQ': 500,  # vaquillona
+    'VA': 650,  # vaca
+    'TO': 800,  # toro
+}
 
 # Tabla 2: categoria final segun clasificacion y kg estimado
 CATEGORIA_FINAL_MAP = [
@@ -159,7 +187,7 @@ CORRALES = [
     (1000, 1099, "Recepción"),
 ]
 
-TECHO_KG_FEEDLOT = 650   # techo para El Haras (feedlot)
+TECHO_KG_FEEDLOT = 650   # DEPRECADO v15.13 (reemplazado por TECHO_KG_POR_CAT); techo único viejo El Haras
 TECHO_KG_RECRIA  = 380   # techo para establecimientos de recría
 ENGORDE_RECRIA   = 0.5   # kg/día fijo para todos los establecimientos de recría
 TECHO_DIAS = 365         # dias maximos en feedlot
@@ -291,10 +319,10 @@ def extraer(tabla, fecha_col=None, dias=730, df_override=None):
             def calc_engorde(row):
                 nombre = str(row.get("NOMBRE_CORRAL") or "").strip().lower()
                 if "haras" in nombre:
-                    return get_engorde(
-                        str(row["CLASIFICACION"] or ""),
-                        float(row["KG_INGRESO"] or 0)
-                    )
+                    # v15.13: ADP calibrado per categoría (código TM/VA/etc.) en vez
+                    # de la tabla ENGORDE_DIARIO de teóricos plenos.
+                    cat = str(row.get("CATEGORIA") or "").strip().upper()
+                    return ADP_CAL_POR_CAT.get(cat, 1.0)  # default conservador si cat desconocida
                 return ENGORDE_RECRIA  # recría: fijo 0.5 kg/día sin importar categoría
 
             def calc_kg_est(row):
@@ -302,12 +330,17 @@ def extraer(tabla, fecha_col=None, dias=730, df_override=None):
                 dias    = int(row["DIAS_EN_FEEDLOT"] or 0)
                 engorde = float(row["ENGORDE_DIARIO_KG"] or 0)
                 nombre  = str(row.get("NOMBRE_CORRAL") or "").strip().lower()
-                techo   = TECHO_KG_FEEDLOT if "haras" in nombre else TECHO_KG_RECRIA
+                if "haras" in nombre:
+                    # v15.13: techo per categoría
+                    cat   = str(row.get("CATEGORIA") or "").strip().upper()
+                    techo = TECHO_KG_POR_CAT.get(cat, 650)
+                else:
+                    techo = TECHO_KG_RECRIA
                 return round(min(kg_ing + dias * engorde, techo), 1)
 
             df["ENGORDE_DIARIO_KG"] = df.apply(calc_engorde, axis=1)
             df["KG_ESTIMADO_HOY"]   = df.apply(calc_kg_est,  axis=1)
-            log.info(f"  + KG_ESTIMADO_HOY  feedlot techo {TECHO_KG_FEEDLOT} kg | recría techo {TECHO_KG_RECRIA} kg @ {ENGORDE_RECRIA} kg/día | prom: {df['KG_ESTIMADO_HOY'].mean():.1f}")
+            log.info(f"  + KG_ESTIMADO_HOY  feedlot (v15.13: ADP calibrado + techo por cat) | recría techo {TECHO_KG_RECRIA} kg @ {ENGORDE_RECRIA} kg/día | prom: {df['KG_ESTIMADO_HOY'].mean():.1f}")
 
         # 4. Categoria final segun KG_ESTIMADO_HOY
         if all(c in df.columns for c in ["CLASIFICACION", "KG_ESTIMADO_HOY"]):
