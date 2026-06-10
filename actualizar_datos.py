@@ -5078,6 +5078,18 @@ def _parse_listado_caravanas_html(ruta):
     df['_peso']     = pd.to_numeric(df[col_peso_p],  errors='coerce').fillna(0)
     df['_hotelero'] = df[col_hotelero].astype(str).str.strip().str.upper()
 
+    # v15.16 · Consolidar BULLTRADE SRL → PEGSA también en el histórico mensual.
+    # El Listado_Caravanas viene del SQL viejo / export manual y trae los
+    # hoteleros sin consolidar. Aplicamos el mismo mapeo que el adapter
+    # WinCampo Web para que comportamiento_historico, valuacion_historica
+    # y módulo Histórico muestren un único PEGSA en todos los meses.
+    try:
+        from wincampo_source import HOTELEROS_CONSOLIDADOS_A_PEGSA
+        _h_set = HOTELEROS_CONSOLIDADOS_A_PEGSA
+    except Exception:
+        _h_set = {"BULLTRADE SRL", "BULLTRADE", "BULL TRADE SRL"}
+    df['_hotelero'] = df['_hotelero'].where(~df['_hotelero'].isin(_h_set), 'PEGSA')
+
     # Mapear corral → campo usando tabla CORRALES global
     def _get_campo(nro):
         try:

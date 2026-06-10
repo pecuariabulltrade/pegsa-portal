@@ -29,6 +29,28 @@ RATE_LIMIT_SLEEP = 0.3
 TIMEOUT_DEFAULT = 90  # el endpoint de stock puede tardar — animal por animal
 
 
+# v15.16 · Consolidación de hoteleros para reportes de hacienda.
+# BULLTRADE SRL forma parte del mismo grupo PEGSA a fines productivos
+# (stock, kg, ADP, eficiencia, histórico). Las cuentas bancarias de
+# Bulltrade y la consignataria Bulltrade mantienen entidad separada
+# en el módulo Tesorería; el alcance acá es solo hacienda.
+HOTELEROS_CONSOLIDADOS_A_PEGSA = {"BULLTRADE SRL", "BULLTRADE", "BULL TRADE SRL"}
+
+
+def consolidar_hotelero(nombre):
+    """Mapea hoteleros del set a 'PEGSA'. Idempotente, case-insensitive.
+    None → None. Otros valores pasan sin cambio (preservando case original).
+    """
+    if nombre is None:
+        return None
+    s = str(nombre).strip()
+    if not s:
+        return None
+    if s.upper() in HOTELEROS_CONSOLIDADOS_A_PEGSA:
+        return "PEGSA"
+    return s
+
+
 class WinCampoAPI:
     def __init__(self, email=None, password=None):
         self.email = email or os.environ["WINCAMPO_EMAIL"]
@@ -178,7 +200,8 @@ class WinCampoAPI:
         return {
             # 5 críticos del pipeline (mismas keys que V_STOCK_HACIENDA del SQL viejo)
             "NRO_CORRAL":    str(x.get("NRO_CORRAL") or "").strip() or None,
-            "HOTELERO":      x.get("HOTELERO"),
+            # v15.16: BULLTRADE SRL → PEGSA en hacienda
+            "HOTELERO":      consolidar_hotelero(x.get("HOTELERO")),
             "CATEGORIA":     x.get("CATEGORIA"),
             "KG_INGRESO":    kg_ing,
             "FECHA_INGRESO": fecha,
@@ -346,7 +369,8 @@ class WinCampoAPI:
             # viejo traía Cantidad por animal. Cada egreso del adapter = 1 cabeza.
             "Cantidad":       1,
             # Extras útiles para otros consumidores
-            "HOTELERO":       s("HOTELERO"),
+            # v15.16: BULLTRADE SRL → PEGSA en hacienda
+            "HOTELERO":       consolidar_hotelero(s("HOTELERO")),
             "NRO_CORRAL":     s("NRO_CORRAL"),
             "NRO_TROPA":      s("NRO_TROPA"),
             "NRO_CARAVANA":   s("NRO_CARAVANA"),
@@ -467,7 +491,8 @@ class WinCampoAPI:
         return {
             # keys que matchean los detectores de procesar_movimientos (líneas 673-689)
             "FechaIngreso":   fecha,
-            "hotelero":       _s(tropa, "HOTELERO"),
+            # v15.16: BULLTRADE SRL → PEGSA en hacienda
+            "hotelero":       consolidar_hotelero(_s(tropa, "HOTELERO")),
             "categoria":      _s(camion, "CATEGORIA"),
             # Cantidad = entero REAL del sub-grupo (NO 1 como en Stock/Egresos).
             # El SQL viejo v_PB_Ingresos devolvía 1 fila por sub-grupo con N cabezas.
@@ -541,7 +566,8 @@ class WinCampoAPI:
             "DIAS_ENCIERRE": dias,
             # extras heredados del egreso para drill-down / otros consumidores
             "RFID":          e.get("RFID"),
-            "HOTELERO":      e.get("HOTELERO"),
+            # v15.16: idempotente — el egreso ya viene consolidado, esto es defensa
+            "HOTELERO":      consolidar_hotelero(e.get("HOTELERO")),
             "NRO_CORRAL":    e.get("NRO_CORRAL"),
             "NRO_TROPA":     e.get("NRO_TROPA"),
             "Categoria":     e.get("Categoria"),
