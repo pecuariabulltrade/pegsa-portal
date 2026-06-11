@@ -2,18 +2,24 @@
   "establecimiento": "El Descanso",
   "kpis": {
     "total_cabezas": 404,
-    "total_kg_estimado_hoy": 115316,
-    "total_ton_estimado_hoy": 115.32,
-    "kg_promedio_estimado": 285.4,
-    "dias_promedio_feedlot": 204.6,
+    "total_kg_estimado_hoy": 114562,
+    "total_ton_estimado_hoy": 114.56,
+    "kg_promedio_estimado": 283.6,
+    "dias_promedio_feedlot": 196.2,
     "total_establecimientos": 1,
     "total_propietarios": 2,
     "por_categoria": {
       "TH": {
-        "cabezas": 201.0,
-        "kg_estimado": 56874,
-        "ton_estimado": 56.87,
-        "kg_promedio": 283.0
+        "cabezas": 199.0,
+        "kg_estimado": 55439,
+        "ton_estimado": 55.44,
+        "kg_promedio": 278.6
+      },
+      "VA": {
+        "cabezas": 2.0,
+        "kg_estimado": 680,
+        "ton_estimado": 0.68,
+        "kg_promedio": 340.0
       },
       "TM": {
         "cabezas": 203.0,
@@ -24,32 +30,38 @@
     },
     "por_propietario": {
       "PEGSA": {
-        "cabezas": 344.0,
-        "kg_estimado": 99814,
-        "ton_estimado": 99.81,
-        "kg_promedio": 290.2
+        "cabezas": 363.0,
+        "kg_estimado": 104440,
+        "ton_estimado": 104.44,
+        "kg_promedio": 287.7
       },
       "LAS TAPERAS": {
-        "cabezas": 60.0,
-        "kg_estimado": 15502,
-        "ton_estimado": 15.5,
-        "kg_promedio": 258.4
+        "cabezas": 41.0,
+        "kg_estimado": 10122,
+        "ton_estimado": 10.12,
+        "kg_promedio": 246.9
       }
     },
     "por_establecimiento": {
       "El Descanso": {
         "cabezas": 404.0,
-        "kg_estimado": 115316,
-        "ton_estimado": 115.32,
-        "kg_promedio": 285.4
+        "kg_estimado": 114562,
+        "ton_estimado": 114.56,
+        "kg_promedio": 283.6
       }
     },
     "por_clasificacion": {
       "Hembra": {
-        "cabezas": 201.0,
-        "kg_estimado": 56874,
-        "ton_estimado": 56.87,
-        "kg_promedio": 283.0
+        "cabezas": 199.0,
+        "kg_estimado": 55439,
+        "ton_estimado": 55.44,
+        "kg_promedio": 278.6
+      },
+      "Vaca": {
+        "cabezas": 2.0,
+        "kg_estimado": 680,
+        "ton_estimado": 0.68,
+        "kg_promedio": 340.0
       },
       "Macho": {
         "cabezas": 203.0,
@@ -60,10 +72,16 @@
     },
     "por_categoria_final": {
       "vaquillona": {
-        "cabezas": 146.0,
-        "kg_estimado": 44964,
-        "ton_estimado": 44.96,
-        "kg_promedio": 308.0
+        "cabezas": 130.0,
+        "kg_estimado": 40582,
+        "ton_estimado": 40.58,
+        "kg_promedio": 312.2
+      },
+      "vaca": {
+        "cabezas": 2.0,
+        "kg_estimado": 680,
+        "ton_estimado": 0.68,
+        "kg_promedio": 340.0
       },
       "novillito": {
         "cabezas": 132.0,
@@ -71,17 +89,17 @@
         "ton_estimado": 39.29,
         "kg_promedio": 297.7
       },
+      "ternera": {
+        "cabezas": 69.0,
+        "kg_estimado": 14856,
+        "ton_estimado": 14.86,
+        "kg_promedio": 215.3
+      },
       "novillo": {
         "cabezas": 23.0,
         "kg_estimado": 8640,
         "ton_estimado": 8.64,
         "kg_promedio": 375.6
-      },
-      "ternera": {
-        "cabezas": 55.0,
-        "kg_estimado": 11910,
-        "ton_estimado": 11.91,
-        "kg_promedio": 216.5
       },
       "ternero": {
         "cabezas": 48.0,
@@ -93,10 +111,16 @@
     "por_establecimiento_categoria": {
       "El Descanso": {
         "vaquillona": {
-          "cabezas": 146.0,
-          "kg_estimado": 44964.5,
-          "ton_estimado": 44.96,
-          "kg_promedio": 308.0
+          "cabezas": 130.0,
+          "kg_estimado": 40582.5,
+          "ton_estimado": 40.58,
+          "kg_promedio": 312.2
+        },
+        "vaca": {
+          "cabezas": 2.0,
+          "kg_estimado": 680.0,
+          "ton_estimado": 0.68,
+          "kg_promedio": 340.0
         },
         "novillito": {
           "cabezas": 132.0,
@@ -104,17 +128,17 @@
           "ton_estimado": 39.29,
           "kg_promedio": 297.7
         },
+        "ternera": {
+          "cabezas": 69.0,
+          "kg_estimado": 14856.5,
+          "ton_estimado": 14.86,
+          "kg_promedio": 215.3
+        },
         "novillo": {
           "cabezas": 23.0,
           "kg_estimado": 8639.5,
           "ton_estimado": 8.64,
           "kg_promedio": 375.6
-        },
-        "ternera": {
-          "cabezas": 55.0,
-          "kg_estimado": 11909.5,
-          "ton_estimado": 11.91,
-          "kg_promedio": 216.5
         },
         "ternero": {
           "cabezas": 48.0,
@@ -128,24 +152,42 @@
       "vaquillona": {
         "por_establecimiento": {
           "El Descanso": {
-            "cabezas": 146.0,
-            "kg_estimado": 44964.5,
-            "ton_estimado": 44.96,
-            "kg_promedio": 308.0
+            "cabezas": 130.0,
+            "kg_estimado": 40582.5,
+            "ton_estimado": 40.58,
+            "kg_promedio": 312.2
           }
         },
         "por_propietario": {
           "PEGSA": {
-            "cabezas": 125.0,
-            "kg_estimado": 39075.0,
-            "ton_estimado": 39.08,
-            "kg_promedio": 312.6
+            "cabezas": 128.0,
+            "kg_estimado": 40074.0,
+            "ton_estimado": 40.07,
+            "kg_promedio": 313.1
           },
           "LAS TAPERAS": {
-            "cabezas": 21.0,
-            "kg_estimado": 5889.5,
-            "ton_estimado": 5.89,
-            "kg_promedio": 280.5
+            "cabezas": 2.0,
+            "kg_estimado": 508.5,
+            "ton_estimado": 0.51,
+            "kg_promedio": 254.2
+          }
+        }
+      },
+      "vaca": {
+        "por_establecimiento": {
+          "El Descanso": {
+            "cabezas": 2.0,
+            "kg_estimado": 680.0,
+            "ton_estimado": 0.68,
+            "kg_promedio": 340.0
+          }
+        },
+        "por_propietario": {
+          "PEGSA": {
+            "cabezas": 2.0,
+            "kg_estimado": 680.0,
+            "ton_estimado": 0.68,
+            "kg_promedio": 340.0
           }
         }
       },
@@ -173,6 +215,30 @@
           }
         }
       },
+      "ternera": {
+        "por_establecimiento": {
+          "El Descanso": {
+            "cabezas": 69.0,
+            "kg_estimado": 14856.5,
+            "ton_estimado": 14.86,
+            "kg_promedio": 215.3
+          }
+        },
+        "por_propietario": {
+          "PEGSA": {
+            "cabezas": 61.0,
+            "kg_estimado": 13070.0,
+            "ton_estimado": 13.07,
+            "kg_promedio": 214.3
+          },
+          "LAS TAPERAS": {
+            "cabezas": 8.0,
+            "kg_estimado": 1786.5,
+            "ton_estimado": 1.79,
+            "kg_promedio": 223.3
+          }
+        }
+      },
       "novillo": {
         "por_establecimiento": {
           "El Descanso": {
@@ -188,30 +254,6 @@
             "kg_estimado": 8639.5,
             "ton_estimado": 8.64,
             "kg_promedio": 375.6
-          }
-        }
-      },
-      "ternera": {
-        "por_establecimiento": {
-          "El Descanso": {
-            "cabezas": 55.0,
-            "kg_estimado": 11909.5,
-            "ton_estimado": 11.91,
-            "kg_promedio": 216.5
-          }
-        },
-        "por_propietario": {
-          "PEGSA": {
-            "cabezas": 47.0,
-            "kg_estimado": 10123.0,
-            "ton_estimado": 10.12,
-            "kg_promedio": 215.4
-          },
-          "LAS TAPERAS": {
-            "cabezas": 8.0,
-            "kg_estimado": 1786.5,
-            "ton_estimado": 1.79,
-            "kg_promedio": 223.3
           }
         }
       },
