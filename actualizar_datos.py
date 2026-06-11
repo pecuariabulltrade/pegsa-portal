@@ -4996,7 +4996,11 @@ def _parse_listado_caravanas_html(ruta):
     Detecta la fila de headers buscando 'Corral'; las columnas se localizan
     luego por substring (_find), tolerante a los renombres del sistema nuevo
     (Nº Tropa, Kilos Ingreso, etc.). Extrae fecha del nombre del archivo,
-    mapea Corral → Campo, usa 'Peso Proyectado' directamente para la masa de kg.
+    mapea Corral → Campo.
+    v15.18 Op 3: la masa de kg NO sale de 'Peso Proyectado' sino que se
+    recalcula con la lógica del módulo Stock (calc_engorde: ADP+techo por
+    categoría en El Haras, path recría en el resto), usando ADP_CAL_FALLBACK
+    para meses cerrados y _ADP_CAL_RUNTIME para el mes corriente.
     Returns: dict {fecha, total_cabezas, total_kg, pegsa, por_hotelero}
     o None si falla.
     """
@@ -5120,15 +5124,57 @@ def _parse_listado_caravanas_html(ruta):
     col_hotelero = _find(['hotelero'])
     col_peso_p   = _find(['peso proyectado', 'proyectado'])
     col_categoria= _find(['categor'])
+    col_kg_ing   = _find(['kilos ingreso', 'kg ingreso'])         # v15.18 Op 3
+    col_fecha_in = _find(['fecha de ingreso', 'fecha ingreso'])   # v15.18 Op 3
 
-    if col_corral is None or col_hotelero is None or col_peso_p is None:
+    # v15.18 Op 3: ahora basta con Kg Ingreso para recalcular la masa; Peso
+    # Proyectado queda como fallback si faltara Kg Ingreso/Fecha de Ingreso.
+    if col_corral is None or col_hotelero is None or (col_peso_p is None and col_kg_ing is None):
         log.warning(f"  ⚠ {nombre}: columnas requeridas no encontradas. Cols: {list(df.columns)}")
         return None
 
     # Normalizar datos
     df['_corral_n'] = pd.to_numeric(df[col_corral], errors='coerce')
-    df['_peso']     = pd.to_numeric(df[col_peso_p],  errors='coerce').fillna(0)
     df['_hotelero'] = df[col_hotelero].astype(str).str.strip().str.upper()
+
+    # v15.18 Op 3 (decisión usuario 2026-06-11) · kg consistente con módulo Stock.
+    # La masa de kg deja de salir de 'Peso Proyectado' (lo que calcula WinCampo) y
+    # se recalcula con la MISMA lógica del Stock vivo (v15.13):
+    #   - El Haras (corral 1-199): min(kg_ingreso + dias·ADP, TECHO_KG_POR_CAT[cat])
+    #   - Resto de campos: path recría → min(kg_ingreso + dias·ENGORDE_RECRIA, TECHO_KG_RECRIA)
+    # dias = fecha_corte_del_mes − Fecha de Ingreso, clampeado a [0, TECHO_DIAS].
+    # ADP: mes corriente → _ADP_CAL_RUNTIME (calibrado dinámico, corre antes del
+    # módulo 9); meses cerrados → ADP_CAL_FALLBACK (el runtime refleja la
+    # productividad de hoy, no la del mes histórico).
+    # NOTA: la fórmula del PROMPT original usaba kg crudo para no-Haras; se corrigió
+    # al path recría real del Stock (0,5 kg/día, techo 380).
+    import numpy as _np
+    _peso_proy = (pd.to_numeric(df[col_peso_p], errors='coerce').fillna(0)
+                  if col_peso_p else pd.Series(0.0, index=df.index))
+    if col_kg_ing is None or col_fecha_in is None:
+        log.warning(f"    ⚠ {nombre}: faltan Kg Ingreso/Fecha de Ingreso "
+                    f"(kg={col_kg_ing}, fi={col_fecha_in}) — uso Peso Proyectado")
+        df['_peso'] = _peso_proy
+    else:
+        _fecha_corte  = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        _es_corriente = _fecha_corte >= datetime.now().date().replace(day=1)
+        _adp_src      = _ADP_CAL_RUNTIME if _es_corriente else ADP_CAL_FALLBACK
+        _kg_ing = pd.to_numeric(df[col_kg_ing], errors='coerce').fillna(0.0)
+        _fi     = pd.to_datetime(df[col_fecha_in], errors='coerce')
+        _dias   = (((pd.Timestamp(_fecha_corte) - _fi).dt.days)
+                   .clip(lower=0, upper=TECHO_DIAS).fillna(0).astype(int))
+        _cat    = (df[col_categoria].astype(str).str.strip().str.upper()
+                   if col_categoria else pd.Series('', index=df.index))
+        _es_haras = df['_corral_n'].between(1, 199)
+        _adp   = _cat.map(lambda c: float(_adp_src.get(c, ADP_CAL_FALLBACK.get(c, 1.0))))
+        _techo = _cat.map(lambda c: float(TECHO_KG_POR_CAT.get(c, 650)))
+        _kg_haras  = _np.minimum(_kg_ing + _dias * _adp, _techo)
+        _kg_recria = _np.minimum(_kg_ing + _dias * ENGORDE_RECRIA, float(TECHO_KG_RECRIA))
+        df['_peso'] = pd.Series(_np.where(_es_haras, _kg_haras, _kg_recria),
+                                index=df.index).round(1)
+        log.info(f"    kg recalc Op 3 (ADP {'runtime' if _es_corriente else 'fallback'}): "
+                 f"Peso Proy {float(_peso_proy.sum()):,.0f} → "
+                 f"calc_engorde {float(df['_peso'].sum()):,.0f}")
 
     # v15.16 · Consolidar BULLTRADE SRL → PEGSA también en el histórico mensual.
     # El Listado_Caravanas viene del SQL viejo / export manual y trae los
@@ -5479,19 +5525,22 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
     log.info("  Escaneando Listado_Caravanas...")
     # 1. Listar archivos Listado_Caravanas
     # v15.18: matchea .XLS (legacy), .xls, .xlsx, .XLSX (sistema nuevo WinCampo
-    # Web exporta .xlsx). Si para un mismo mes coexisten .XLS y .xlsx (caso
-    # transición: Cowork pre-procesó mayo a .XLS para destrabarlo antes del fix),
-    # se deduplica por nombre-sin-extensión prefiriendo el primero del sort
-    # (.XLS antes que .xlsx), que es la copia ya validada.
+    # Web exporta .xlsx). Si para un mismo mes coexisten varios archivos (p.ej.
+    # el .xlsx ORIGINAL de WinCampo Web + un .XLS pre-procesado a mano), se
+    # deduplica por mes PREFIRIENDO el .xlsx nativo. Bajo Op 3 el kg se recalcula
+    # desde Kg Ingreso + Fecha de Ingreso, y el pre-procesado puede traer la
+    # fecha como serial Excel ('45875') que rompe el cálculo de días → el .xlsx
+    # original es la fuente canónica correcta.
     patron_xls = _os.path.join(carpeta_stock_mensuales, "Listado_Caravanas*.[Xx][Ll][Ss]*")
-    archivos_cara = sorted(set(_glob.glob(patron_xls)))
-    _vistos, _dedup = set(), []
-    for _f in archivos_cara:
+    _todos = sorted(set(_glob.glob(patron_xls)))
+    def _pref_ext(_f):
+        return 0 if _os.path.basename(_f).rsplit('.', 1)[-1].lower() == 'xlsx' else 1
+    _por_mes = {}
+    for _f in _todos:
         _key = _os.path.basename(_f).rsplit('.', 1)[0].lower()
-        if _key not in _vistos:
-            _vistos.add(_key)
-            _dedup.append(_f)
-    archivos_cara = _dedup
+        if _key not in _por_mes or _pref_ext(_f) < _pref_ext(_por_mes[_key]):
+            _por_mes[_key] = _f
+    archivos_cara = sorted(_por_mes.values())
     log.info(f"  Archivos Listado_Caravanas: {len(archivos_cara)}")
 
     # 2. Listar archivos financieros y parsearlos todos
