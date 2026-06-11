@@ -4959,11 +4959,44 @@ def actualizar_stock_insumos_excel(insumos_list, carpeta_stock_mensuales, today_
         import traceback; log.warning(traceback.format_exc())
 
 
+def _sanitize_xlsx_nan(ruta_src, ruta_dst):
+    """
+    v15.18: El sistema nuevo WinCampo Web escribe celdas numéricas con el
+    string literal 'NaN'. Eso rompe openpyxl._cast_number (int('NaN') →
+    ValueError) DURANTE pd.read_excel — el na_values de pandas no alcanza
+    porque el crash ocurre dentro de openpyxl, antes de que pandas pueda
+    filtrar. Reescribimos el xlsx (es un zip) quitando '<v>NaN</v>' de las
+    hojas de cálculo: la celda queda sin valor → se lee como None/NaN, y el
+    pd.to_numeric(errors='coerce') aguas abajo la deja en 0.
+    Escribe el resultado saneado en ruta_dst. Devuelve nº de celdas saneadas.
+    """
+    import zipfile, re as _re2
+    _pat = _re2.compile(r'<v>\s*[Nn][Aa][Nn]\s*</v>')
+    n_fix = 0
+    with zipfile.ZipFile(str(ruta_src), 'r') as zin, \
+         zipfile.ZipFile(str(ruta_dst), 'w', zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename.startswith('xl/worksheets/') and item.filename.endswith('.xml'):
+                txt = data.decode('utf-8', errors='replace')
+                txt, n = _pat.subn('', txt)
+                n_fix += n
+                data = txt.encode('utf-8')
+            zout.writestr(item, data)
+    return n_fix
+
+
 def _parse_listado_caravanas_html(ruta):
     """
-    Parsea un Listado_Caravanas*.XLS (archivo HTML disfrazado de XLS).
-    Extrae fecha del nombre del archivo, mapea Corral → Campo,
-    usa 'Peso Proyectado' directamente para la masa de kg.
+    Parsea un Listado_Caravanas*.{XLS,xlsx} (Stock detallado de Caravanas).
+    Soporta 3 formatos históricos:
+      - HTML disfrazado de XLS (SQL viejo, hasta marzo 2026)
+      - XLSX nativo con headers en R1 (transición, abril 2026)
+      - XLSX nativo con metadata en R1 + headers en R2 (WinCampo Web, mayo 2026+)
+    Detecta la fila de headers buscando 'Corral'; las columnas se localizan
+    luego por substring (_find), tolerante a los renombres del sistema nuevo
+    (Nº Tropa, Kilos Ingreso, etc.). Extrae fecha del nombre del archivo,
+    mapea Corral → Campo, usa 'Peso Proyectado' directamente para la masa de kg.
     Returns: dict {fecha, total_cabezas, total_kg, pegsa, por_hotelero}
     o None si falla.
     """
@@ -4990,20 +5023,39 @@ def _parse_listado_caravanas_html(ruta):
         es_xlsx_real = raw_head[:2] == b'PK'
 
         if es_xlsx_real:
-            # Branch XLSX nativo. WinCampo a veces guarda con extensión
-            # .XLS pero el archivo es XLSX real (zip "PK..."). openpyxl
-            # rechaza por la extensión, así que copiamos a temp con
-            # extensión .xlsx y cargamos via pandas.
-            import tempfile, shutil
+            # Branch XLSX nativo. WinCampo guarda a veces con extensión .XLS
+            # aunque el archivo sea XLSX real (zip "PK..."); openpyxl lo
+            # rechaza por la extensión, así que escribimos a un temp .xlsx.
+            # v15.18: el sistema nuevo (WinCampo Web, mayo 2026+) además
+            #   (a) mete metadata en la fila 1 y los headers reales en la 2, y
+            #   (b) escribe celdas numéricas con el string literal 'NaN' que
+            #       rompe openpyxl._cast_number durante el read.
+            # _sanitize_xlsx_nan resuelve (b) al copiar al temp; la detección
+            # de header debajo resuelve (a). El formato de transición (abril,
+            # headers en R1) cae en _hidx=0 → idéntico al comportamiento previo.
+            import tempfile
             with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as _tf:
                 _tmp_xlsx = _tf.name
             try:
-                shutil.copy2(str(ruta), _tmp_xlsx)
-                df = pd.read_excel(_tmp_xlsx, engine='openpyxl', sheet_name=0, dtype=object)
+                _n_nan = _sanitize_xlsx_nan(ruta, _tmp_xlsx)
+                df_raw = pd.read_excel(_tmp_xlsx, engine='openpyxl', sheet_name=0,
+                                       dtype=object, header=None)
             finally:
                 try: Path(_tmp_xlsx).unlink()
                 except Exception: pass
-            log.info(f"    formato: XLSX nativo · {len(df)} filas")
+            # Detectar la fila de headers buscando 'Corral' (R1 en transición,
+            # R2 en WinCampo Web por la fila de metadata).
+            _hidx = 0
+            for _i in range(min(6, len(df_raw))):
+                _vals = [str(v).strip() if v is not None else '' for v in df_raw.iloc[_i].tolist()]
+                if any(c.lower() == 'corral' for c in _vals):
+                    _hidx = _i
+                    break
+            df = df_raw.iloc[_hidx + 1:].copy()
+            df.columns = [str(c).strip() for c in df_raw.iloc[_hidx].tolist()]
+            df = df.reset_index(drop=True)
+            log.info(f"    formato: XLSX nativo · headers R{_hidx+1} · "
+                     f"{len(df)} filas · {_n_nan} celdas 'NaN' saneadas")
         else:
             # Branch HTML disfrazado (parser nativo, sin dependencias).
             from html.parser import HTMLParser as _HTMLParser
@@ -5426,8 +5478,20 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
 
     log.info("  Escaneando Listado_Caravanas...")
     # 1. Listar archivos Listado_Caravanas
-    patron_xls = _os.path.join(carpeta_stock_mensuales, "Listado_Caravanas*.XLS")
-    archivos_cara = sorted(_glob.glob(patron_xls))
+    # v15.18: matchea .XLS (legacy), .xls, .xlsx, .XLSX (sistema nuevo WinCampo
+    # Web exporta .xlsx). Si para un mismo mes coexisten .XLS y .xlsx (caso
+    # transición: Cowork pre-procesó mayo a .XLS para destrabarlo antes del fix),
+    # se deduplica por nombre-sin-extensión prefiriendo el primero del sort
+    # (.XLS antes que .xlsx), que es la copia ya validada.
+    patron_xls = _os.path.join(carpeta_stock_mensuales, "Listado_Caravanas*.[Xx][Ll][Ss]*")
+    archivos_cara = sorted(set(_glob.glob(patron_xls)))
+    _vistos, _dedup = set(), []
+    for _f in archivos_cara:
+        _key = _os.path.basename(_f).rsplit('.', 1)[0].lower()
+        if _key not in _vistos:
+            _vistos.add(_key)
+            _dedup.append(_f)
+    archivos_cara = _dedup
     log.info(f"  Archivos Listado_Caravanas: {len(archivos_cara)}")
 
     # 2. Listar archivos financieros y parsearlos todos
