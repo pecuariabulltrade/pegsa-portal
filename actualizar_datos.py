@@ -5664,48 +5664,84 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
         return candidatos[0][0], candidatos[0][1]
 
     # 6. Construir snapshots
+    # v15.19: snapshots INMUTABLES. Los meses CERRADOS (periodo < mes corriente)
+    # congelan su hacienda_masa: una vez calculado con los parámetros vigentes al
+    # cierre, NO se recalcula aunque después cambien ADP_CAL/TECHO/recría. Sólo el
+    # mes corriente recalcula cada tick ("stock vivo"). financiero e insumos
+    # SIEMPRE se refrescan — el usuario sube el financiero tarde (p.ej. el de mayo
+    # lo carga en jun/jul), así que congelar el snapshot entero rompería ese flujo.
     log.info("  Construyendo snapshots mensuales...")
+
+    # Cargar snapshots previos para reutilizar hacienda_masa de meses cerrados.
+    import json as _json
+    snaps_previos = {}  # periodo → hacienda_masa cacheado (con parametros_calc)
+    _ruta_prev = Path(carpeta) / "comportamiento_historico.json"
+    if _ruta_prev.exists():
+        try:
+            with open(_ruta_prev, encoding='utf-8') as _fp:
+                _prev = _json.load(_fp)
+            for _s in _prev.get('snapshots', []):
+                _hm = _s.get('hacienda_masa')
+                if _s.get('periodo') and isinstance(_hm, dict) and 'parametros_calc' in _hm:
+                    snaps_previos[_s['periodo']] = _hm
+            log.info(f"  Snapshots previos con parametros_calc: {len(snaps_previos)}")
+        except Exception as _e:
+            log.warning(f"  ⚠ No se pudo leer comportamiento_historico.json previo: {_e}")
+
+    mes_corriente = datetime.now().strftime('%Y-%m')
     snapshots = []
 
     for ruta_c in archivos_cara:
         nombre_c = _os.path.basename(ruta_c)
-        log.info(f"  → Procesando {nombre_c}")
 
-        # Parsear Listado Caravanas
-        masa = _parse_listado_caravanas_html(ruta_c)
-        if masa is None:
-            log.warning(f"    ⚠ Skipping {nombre_c} — error en parseo")
-            continue
-
-        fecha_snap = masa['fecha']
-
-        # Buscar financiero más próximo
-        fin = _financiero_mas_proximo(fecha_snap)
-        if fin:
-            fin_log = f"financiero: {fin['fecha']} (${fin['disponible']:,.0f})"
-        else:
-            fin_log = "financiero: no disponible"
-
-        # Buscar insumos más próximos
-        fecha_ins, ins_data = _insumos_mas_proximos(fecha_snap)
-        if ins_data:
-            ins_log = f"insumos: {fecha_ins} ({ins_data['total_kg']:,.0f} kg)"
-        else:
-            ins_log = "insumos: no disponibles"
-
-        log.info(f"    {fin_log} | {ins_log}")
-
-        # Extraer período (YYYY-MM) del nombre del archivo
+        # Período (YYYY-MM) y fecha (YYYY-MM-DD) desde el nombre del archivo
         m2 = re.search(r'(\d{2})-(\d{2})-(\d{4})', nombre_c)
         if m2:
             d2, mo2, y2 = m2.groups()
-            periodo = f"{y2}-{mo2}"
+            periodo   = f"{y2}-{mo2}"
+            fecha_nom = f"{y2}-{mo2}-{d2}"
         else:
-            periodo = fecha_snap[:7]
+            periodo, fecha_nom = None, None
+
+        es_corriente = (periodo == mes_corriente)
+        hm_cache = snaps_previos.get(periodo) if periodo else None
+
+        if hm_cache is not None and not es_corriente:
+            # Mes cerrado ya sellado → congelar: reutilizar hacienda_masa tal cual.
+            masa = hm_cache
+            fecha_snap = masa.get('fecha', fecha_nom)
+            log.info(f"  → {nombre_c} · {periodo} CERRADO — hacienda_masa congelado "
+                     f"(parametros_calc {masa.get('parametros_calc', {}).get('version', '?')})")
+        else:
+            # Mes corriente, o cerrado sin sellar (1ª corrida post-v15.19) →
+            # (re)calcular y sellar el bloque parametros_calc dentro de hacienda_masa.
+            log.info(f"  → Procesando {nombre_c}" + (" (mes corriente)" if es_corriente else ""))
+            masa = _parse_listado_caravanas_html(ruta_c)
+            if masa is None:
+                log.warning(f"    ⚠ Skipping {nombre_c} — error en parseo")
+                continue
+            fecha_snap = masa['fecha']
+            masa['parametros_calc'] = {
+                'version':          'v15.19',
+                'adp_cal_por_cat':  dict(_ADP_CAL_RUNTIME if es_corriente else ADP_CAL_FALLBACK),
+                'techo_kg_por_cat': dict(TECHO_KG_POR_CAT),
+                'engorde_recria':   ENGORDE_RECRIA,
+                'techo_kg_recria':  TECHO_KG_RECRIA,
+                'fecha_calculado':  datetime.now().isoformat(),
+            }
+
+        # financiero + insumos SIEMPRE se refrescan (NO se congelan)
+        fin = _financiero_mas_proximo(fecha_snap)
+        fin_log = (f"financiero: {fin['fecha']} (${fin['disponible']:,.0f})"
+                   if fin else "financiero: no disponible")
+        fecha_ins, ins_data = _insumos_mas_proximos(fecha_snap)
+        ins_log = (f"insumos: {fecha_ins} ({ins_data['total_kg']:,.0f} kg)"
+                   if ins_data else "insumos: no disponibles")
+        log.info(f"    {fin_log} | {ins_log}")
 
         snap = {
             'fecha':   fecha_snap,
-            'periodo': periodo,
+            'periodo': periodo if periodo else fecha_snap[:7],
             'hacienda_masa': masa,
             'insumos': {
                 'fecha_col':   fecha_ins,
