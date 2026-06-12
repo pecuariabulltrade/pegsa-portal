@@ -873,46 +873,42 @@ function renderIndicadores(data) {
   function fmtD(n, d) { return (n != null && n !== undefined) ? Number(n).toFixed(d||1).replace('.',',') : '—'; }
   function fmtN(n)    { return n != null ? Number(Math.round(n||0)).toLocaleString('es-AR') : '—'; }
 
-  // Semáforo: devuelve color + etiqueta según posición relativa a refs
-  function semaforo(val, min, opt, max, invertido) {
-    // invertido=true: menor es mejor (conversión)
-    if (val == null) return { color:'#aaa', bg:'rgba(150,150,150,.1)', label:'Sin datos' };
-    if (!invertido) {
-      if (val < min)             return { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Bajo' };
-      if (val >= min && val < opt) return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
-      if (val >= opt && val <=max) return { color:'#27613d', bg:'rgba(39,97,61,.08)',  label:'Óptimo' };
-      return                          { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Alto' };
-    } else {
-      if (val <= max && val >= min) return { color:'#27613d', bg:'rgba(39,97,61,.08)',  label:'Óptimo' };
-      if (val < min)                return { color:'#27613d', bg:'rgba(39,97,61,.08)',  label:'Excelente' };
-      if (val > max && val < max*1.3) return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Elevado' };
-      return                            { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Muy alto' };
-    }
+  // v15.20: semáforo de 5 zonas (rojo-amarillo-verde-amarillo-rojo).
+  // val en [optMin, optMax] → verde Óptimo; en [normalMin, normalMax] pero fuera
+  // de óptimo → amarillo Normal; resto (incl. fuera de la escala) → rojo Bajo/Alto.
+  function semaforo5(val, normalMin, optMin, optMax, normalMax) {
+    if (val == null)                       return { color:'#aaa',    bg:'rgba(150,150,150,.1)', label:'Sin datos' };
+    if (val < normalMin)                   return { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Bajo' };
+    if (val >= optMin && val <= optMax)    return { color:'#27613d', bg:'rgba(39,97,61,.08)',   label:'Óptimo' };
+    if (val >= normalMin && val < optMin)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)',  label:'Normal' };
+    if (val > optMax && val <= normalMax)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)',  label:'Normal' };
+    return                                        { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Alto' };
   }
 
-  // Semáforo consumo/cab: rango total 8-19, normal 10-16, óptimo 13-15
+  // v15.20: consumo/cab vía semaforo5 — escala 8–23, normal 11–20, óptimo 13–18
   function semaforoCab(val) {
-    if (val == null) return { color:'#aaa', bg:'rgba(150,150,150,.1)', label:'Sin datos' };
-    if (val < 10)              return { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Bajo' };
-    if (val >= 10 && val < 13)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
-    if (val >= 13 && val <= 15) return { color:'#27613d', bg:'rgba(39,97,61,.08)',  label:'Óptimo' };
-    if (val > 15 && val <= 16)  return { color:'#b8922a', bg:'rgba(184,146,42,.1)', label:'Normal' };
-    return                          { color:'#c0392b', bg:'rgba(192,57,43,.08)',  label:'Alto' };
+    return semaforo5(val, 11, 13, 18, 20);
   }
   function barraRefCab(val) {
-    // Escala: 8 a 19 kg/cab/día · óptimo 13–15
-    var rMin = 8, rMax = 19, optMin = 13, optMax = 15;
+    // v15.20: escala 8–23 · normal amarillo 11–20 · óptimo verde 13–18
+    var rMin = 8, rMax = 23, nMin = 11, nMax = 20, oMin = 13, oMax = 18;
     if (val == null) return '';
-    var pct    = Math.min(Math.max((val - rMin) / (rMax - rMin) * 100, 2), 98);
-    var oMinPct = (optMin - rMin) / (rMax - rMin) * 100;
-    var oMaxPct = (optMax - rMin) / (rMax - rMin) * 100;
+    var pct     = Math.min(Math.max((val - rMin) / (rMax - rMin) * 100, 2), 98);
+    var nMinPct = (nMin - rMin) / (rMax - rMin) * 100;
+    var nMaxPct = (nMax - rMin) / (rMax - rMin) * 100;
+    var oMinPct = (oMin - rMin) / (rMax - rMin) * 100;
+    var oMaxPct = (oMax - rMin) / (rMax - rMin) * 100;
     var col = semaforoCab(val).color;
     return '<div style="position:relative;height:6px;background:rgba(26,22,18,.07);border-radius:4px;margin-top:14px">'
+      // zona normal amarilla sombreada
+      +'<div style="position:absolute;left:'+nMinPct.toFixed(1)+'%;width:'+(nMaxPct-nMinPct).toFixed(1)+'%;height:100%;background:rgba(184,146,42,.12);border-radius:4px"></div>'
+      // zona óptima verde sombreada (encima)
       +'<div style="position:absolute;left:'+oMinPct.toFixed(1)+'%;width:'+(oMaxPct-oMinPct).toFixed(1)+'%;height:100%;background:rgba(39,97,61,.18);border-radius:4px"></div>'
+      // marcador del valor
       +'<div style="position:absolute;left:'+pct.toFixed(1)+'%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:'+col+';top:-3px;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);margin-top:6px">'
-      +'<span>8</span><span style="color:rgba(39,97,61,.6)">óptimo 13–15</span><span>19</span></div>';
+      +'<span>8</span><span style="color:rgba(39,97,61,.6)">óptimo 13–18</span><span>23</span></div>';
   }
 
   var sPv   = semaforo(pv.valor,   pv.ref_min,  pv.ref_opt,  pv.ref_max,  false);
@@ -1002,7 +998,7 @@ function renderIndicadores(data) {
     'Consumo por Cabeza',
     fmtD(cab.valor_tc, 1) + '<span style="font-size:18px;margin-left:4px">kg TC/cab</span>',
     fmtD(cab.valor_ms, 1) + ' kg MS/cab/día  ·  '+fmtN(cabDenom)+' cabezas ('+denominador+')',
-    '8 – 23 kg TC/cab/día  ·  normal 11 – 20  ·  óptimo 13 – 18',
+    '8 – 19 kg TC/cab/día  ·  normal 10 – 16  ·  óptimo 13 – 15',
     'kg TC/día ÷ cabezas '+denominador,
     sCab,
     barraRefCab(cab.valor_tc)
@@ -1017,10 +1013,10 @@ function renderIndicadores(data) {
     (pvAnual != null ? fmtD(pvAnual,2)+'% PV anual' : '—')
       + ' × ' + fmtD(kgCabHaras,1) + ' kg/cab Haras  ÷  ADP ' + fmtD(adpUltMes,2) + ' kg/día'
       + (fuen.adp_mes ? '  ·  ' + fuen.adp_mes : ''),
-    '5 : 1 – 13 : 1  ·  normal 6 – 10  ·  óptimo 7 – 9',
+    '5 : 1 – 8 : 1  ·  menor = más eficiente',
     '(% PV anual × kg/cab Haras) ÷ ADP último mes cerrado',
     sConv,
-    barraRef5(conv.valor, 5.0, 6.0, 7.0, 9.0, 10.0, 13.0, false)
+    barraRef(conv.valor, conv.ref_min, conv.ref_max, true)
   ));
 
   panel.appendChild(grid);
