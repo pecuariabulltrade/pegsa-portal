@@ -3230,9 +3230,17 @@ def main():
                     "valor":       pct_pv,
                     "unidad":      "% PV",
                     "descripcion": "Consumo MS como % del peso vivo — El Haras",
-                    "ref_min":     2.0,
-                    "ref_opt":     2.5,
-                    "ref_max":     3.0,
+                    # v15.20: rangos de 5 zonas (escala · normal amarillo · óptimo verde)
+                    "esc_min":        1.5,
+                    "esc_max":        3.5,
+                    "ref_normal_min": 2.3,
+                    "ref_normal_max": 2.9,
+                    "ref_opt_min":    2.4,
+                    "ref_opt_max":    2.8,
+                    # legacy (compat con consumidores que aún leen ref_min/opt/max):
+                    "ref_min":     2.3,
+                    "ref_opt":     2.6,
+                    "ref_max":     2.9,
                     "formula":     "kg MS/día ÷ kg PV El Haras × 100",
                 },
                 "consumo_por_cabeza": {
@@ -3240,28 +3248,42 @@ def main():
                     "valor_ms":    consumo_cab_ms,
                     "unidad":      "kg/cab/día",
                     "descripcion": "Alimento por animal por día — El Haras",
-                    "ref_min":     8.0,
-                    "ref_opt_min": 12.5,
-                    "ref_opt_max": 15.5,
-                    "ref_max":     19.0,
+                    # v15.20: rangos de 5 zonas
+                    "esc_min":        8.0,
+                    "esc_max":        23.0,
+                    "ref_normal_min": 11.0,
+                    "ref_normal_max": 20.0,
+                    "ref_opt_min":    13.0,
+                    "ref_opt_max":    18.0,
+                    # legacy:
+                    "ref_min":     11.0,
+                    "ref_max":     20.0,
                     "formula":     "kg TC/día ÷ cabezas El Haras",
                 },
                 "conversion_alimenticia": {
                     "valor":       conversion,
                     "unidad":      "kg MS : kg carne",
                     "descripcion": "Kg MS por cab por día dividido ADP — El Haras",
-                    "ref_min":     5.0,
-                    "ref_max":     8.0,
+                    # v15.20: rangos de 5 zonas (simétrico)
+                    "esc_min":        5.0,
+                    "esc_max":        13.0,
+                    "ref_normal_min": 6.0,
+                    "ref_normal_max": 10.0,
+                    "ref_opt_min":    7.0,
+                    "ref_opt_max":    9.0,
+                    # legacy:
+                    "ref_min":     7.0,
+                    "ref_max":     9.0,
                     "formula":     "(kg MS/día ÷ cabezas El Haras) ÷ ADP",
                 },
             },
         }
         guardar(indicadores, carpeta, f"indicadores_{periodo}.json")
         log.info(f"  ✓ indicadores_{periodo}.json")
-        log.info(f"  % Peso Vivo        : {pct_pv}%   (ref: 2.0–3.0%)")
-        log.info(f"  Consumo/cab (TC)   : {consumo_cab_tc} kg/cab/día")
+        log.info(f"  % Peso Vivo        : {pct_pv}%   (ref óptimo 2.4–2.8% · normal 2.3–2.9 · escala 1.5–3.5)")
+        log.info(f"  Consumo/cab (TC)   : {consumo_cab_tc} kg/cab/día   (ref óptimo 13–18 · normal 11–20 · escala 8–23)")
         log.info(f"  Consumo/cab (MS)   : {consumo_cab_ms} kg MS/cab/día")
-        log.info(f"  Conversión alim.   : {conversion}:1   (ref: 5–8)")
+        log.info(f"  Conversión alim.   : {conversion}:1   (ref óptimo 7–9 · normal 6–10 · escala 5–13)")
         log.info(f"  Producción diaria  : {prod_diaria_kg:,.0f} kg (ADP {adp_prom} × {cab_haras:,} cab Haras)")
 
         # ── Histórico de eficiencia — snapshot diario ──────────────────────

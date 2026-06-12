@@ -697,8 +697,10 @@ window.PEGSA_DATA = {
       actual:    { v: pvActualAj,   unit: '%', label: 'hoy',   decimals: 2 },
       historico: { v: anuales.pctPV, unit: '%', label: 'anual', decimals: 2 },
       mejorEs: 'mayor',
-      umbrales: { ref_min: 2.2, ref_opt: 2.4, ref_max: 2.7 },
-      descripcion: 'Consumo MS como % del peso vivo (El Haras). Hoy = (kg MS/día ÷ kg PV El Haras × 100) ÷ 0,92 — ajuste del módulo. Rango óptimo 2,4-2,6.'
+      // v15.20: rangos de 5 zonas (alineado con desktop). El coloreo del mobile
+      // es por delta-vs-histórico, así que estos umbrales son de referencia.
+      umbrales: { esc_min: 1.5, esc_max: 3.5, ref_normal_min: 2.3, ref_normal_max: 2.9, ref_opt_min: 2.4, ref_opt_max: 2.8 },
+      descripcion: 'Consumo MS como % del peso vivo (El Haras). Hoy = (kg MS/día ÷ kg PV El Haras × 100) ÷ 0,92 — ajuste del módulo. Rango óptimo 2,4-2,8 · normal 2,3-2,9.'
     };
   }
 
@@ -708,8 +710,9 @@ window.PEGSA_DATA = {
       actual:    { v: indicadores.indicadores.consumo_por_cabeza.valor_tc, unit: 'kg/cab', label: 'hoy',   decimals: 1 },
       historico: { v: anuales.consumoPorCabeza,                            unit: 'kg/cab', label: 'anual', decimals: 1 },
       mejorEs: 'rango',
-      umbrales: { ref_opt_min: 13, ref_opt_max: 15 },
-      descripcion: 'Alimento TC por animal por día (El Haras). Hoy = kg TC/día ÷ cabezas El Haras. Rango óptimo 13-15 kg.'
+      // v15.20: rangos de 5 zonas (alineado con desktop).
+      umbrales: { esc_min: 8, esc_max: 23, ref_normal_min: 11, ref_normal_max: 20, ref_opt_min: 13, ref_opt_max: 18 },
+      descripcion: 'Alimento TC por animal por día (El Haras). Hoy = kg TC/día ÷ cabezas El Haras. Rango óptimo 13-18 kg · normal 11-20.'
     };
   }
 
@@ -729,9 +732,11 @@ window.PEGSA_DATA = {
     D.productivos.conversion = {
       actual:    { v: convActual,         unit: '', label: 'hoy',   decimals: 1 },
       historico: { v: anuales.conversion, unit: '', label: 'anual', decimals: 1 },
-      mejorEs: 'menor', // menos kg consumo por kg ganado = mejor
-      umbrales: { ref_opt_min: 5, ref_opt_max: 8 },
-      descripcion: 'Hoy = (%PV anual × kg/cab Haras) ÷ ADP último mes (sobreescritura del módulo). Anual = MS/cab/día ÷ ADP anual ponderado. Menos = mejor (ref. 5-8).'
+      mejorEs: 'menor', // menos kg consumo por kg ganado = mejor (trend del mobile)
+      // v15.20: rangos de 5 zonas (alineado con desktop, simétrico). El trend del
+      // mobile sigue tratando "menor = mejor" para la flecha vs histórico.
+      umbrales: { esc_min: 5, esc_max: 13, ref_normal_min: 6, ref_normal_max: 10, ref_opt_min: 7, ref_opt_max: 9 },
+      descripcion: 'Hoy = (%PV anual × kg/cab Haras) ÷ ADP último mes (sobreescritura del módulo). Anual = MS/cab/día ÷ ADP anual ponderado. Rango óptimo 7-9 · normal 6-10.'
     };
   }
 

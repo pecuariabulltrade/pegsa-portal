@@ -911,28 +911,32 @@ function renderIndicadores(data) {
       +'<span>8</span><span style="color:rgba(39,97,61,.6)">óptimo 13–18</span><span>23</span></div>';
   }
 
-  var sPv   = semaforo(pv.valor,   pv.ref_min,  pv.ref_opt,  pv.ref_max,  false);
+  // v15.20: 5 zonas. % PV escala 1,5–3,5 (normal 2,3–2,9, óptimo 2,4–2,8);
+  // conversión simétrica escala 5–13 (normal 6–10, óptimo 7–9).
+  var sPv   = semaforo5(pv.valor,   2.3, 2.4, 2.8, 2.9);
   var sCab  = semaforoCab(cab.valor_tc);
-  var sConv = semaforo(conv.valor, conv.ref_min, conv.ref_min, conv.ref_max, true);
+  var sConv = semaforo5(conv.valor, 6.0, 7.0, 9.0, 10.0);
 
-  // Barra de posición dentro del rango de referencia (escala fija opcional)
-  function barraRef(val, min, max, invertido, escMin, escMax) {
+  // v15.20: barra con 2 zonas sombreadas (normal amarilla + óptima verde encima).
+  // El argumento `invertido` se mantiene por firma pero el color sale de semaforo5.
+  function barraRef5(val, escMin, normalMin, optMin, optMax, normalMax, escMax, invertido) {
     if (val == null) return '';
-    var rMin = (escMin != null) ? escMin : min * 0.7;
-    var rMax = (escMax != null) ? escMax : max * 1.3;
-    var pct  = Math.min(Math.max((val - rMin) / (rMax - rMin) * 100, 2), 98);
-    var minPct = (min - rMin) / (rMax - rMin) * 100;
-    var maxPct = (max - rMin) / (rMax - rMin) * 100;
-    var lblMin = (escMin != null) ? escMin : min;
-    var lblMax = (escMax != null) ? escMax : max;
+    var rMin = escMin, rMax = escMax;
+    var pct     = Math.min(Math.max((val - rMin) / (rMax - rMin) * 100, 2), 98);
+    var nMinPct = (normalMin - rMin) / (rMax - rMin) * 100;
+    var nMaxPct = (normalMax - rMin) / (rMax - rMin) * 100;
+    var oMinPct = (optMin    - rMin) / (rMax - rMin) * 100;
+    var oMaxPct = (optMax    - rMin) / (rMax - rMin) * 100;
+    var col = semaforo5(val, normalMin, optMin, optMax, normalMax).color;
     return '<div style="position:relative;height:6px;background:rgba(26,22,18,.07);border-radius:4px;margin-top:14px">'
-      // zona óptima sombreada
-      +'<div style="position:absolute;left:'+minPct.toFixed(1)+'%;width:'+(maxPct-minPct).toFixed(1)+'%;height:100%;background:rgba(39,97,61,.15);border-radius:4px"></div>'
-      // marcador del valor
-      +'<div style="position:absolute;left:'+pct.toFixed(1)+'%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:'+(invertido ? (val<=max?'#27613d':'#c0392b') : (val>=min&&val<=max?'#27613d':'#c0392b'))+';top:-3px;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>'
+      +'<div style="position:absolute;left:'+nMinPct.toFixed(1)+'%;width:'+(nMaxPct-nMinPct).toFixed(1)+'%;height:100%;background:rgba(184,146,42,.12);border-radius:4px"></div>'
+      +'<div style="position:absolute;left:'+oMinPct.toFixed(1)+'%;width:'+(oMaxPct-oMinPct).toFixed(1)+'%;height:100%;background:rgba(39,97,61,.18);border-radius:4px"></div>'
+      +'<div style="position:absolute;left:'+pct.toFixed(1)+'%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:'+col+';top:-3px;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);margin-top:6px">'
-      +'<span>'+fmtD(lblMin,1)+'</span><span style="color:rgba(39,97,61,.6)">óptimo '+fmtD(min,1)+'–'+fmtD(max,1)+'</span><span>'+fmtD(lblMax,1)+'</span></div>';
+      +'<span>'+escMin.toFixed(1).replace('.',',')+'</span>'
+      +'<span style="color:rgba(39,97,61,.6)">óptimo '+optMin.toFixed(1).replace('.',',')+'–'+optMax.toFixed(1).replace('.',',')+'</span>'
+      +'<span>'+escMax.toFixed(1).replace('.',',')+'</span></div>';
   }
 
   var denominador = data.denominador || 'El Haras';
@@ -987,10 +991,10 @@ function renderIndicadores(data) {
     '% Consumo de Peso Vivo',
     fmtD(pv.valor, 2) + '<span style="font-size:18px;margin-left:4px">% PV</span>',
     'kg MS/día sobre el peso vivo — '+denominador,
-    '1,5% – 3,0%  ·  normal 2,2 – 2,7  ·  óptimo 2,4 – 2,6',
+    '1,5 – 3,5 % PV  ·  normal 2,3 – 2,9  ·  óptimo 2,4 – 2,8',
     '(kg MS/día ÷ kg PV '+denominador+' × 100) ÷ 0,92',
     sPv,
-    barraRef(pv.valor, pv.ref_min, pv.ref_max, false, pv.esc_min, pv.esc_max)
+    barraRef5(pv.valor, 1.5, 2.3, 2.4, 2.8, 2.9, 3.5, false)
   ));
 
   // Card 2 — Consumo por cabeza
@@ -998,7 +1002,7 @@ function renderIndicadores(data) {
     'Consumo por Cabeza',
     fmtD(cab.valor_tc, 1) + '<span style="font-size:18px;margin-left:4px">kg TC/cab</span>',
     fmtD(cab.valor_ms, 1) + ' kg MS/cab/día  ·  '+fmtN(cabDenom)+' cabezas ('+denominador+')',
-    '8 – 19 kg TC/cab/día  ·  normal 10 – 16  ·  óptimo 13 – 15',
+    '8 – 23 kg TC/cab/día  ·  normal 11 – 20  ·  óptimo 13 – 18',
     'kg TC/día ÷ cabezas '+denominador,
     sCab,
     barraRefCab(cab.valor_tc)
@@ -1013,10 +1017,10 @@ function renderIndicadores(data) {
     (pvAnual != null ? fmtD(pvAnual,2)+'% PV anual' : '—')
       + ' × ' + fmtD(kgCabHaras,1) + ' kg/cab Haras  ÷  ADP ' + fmtD(adpUltMes,2) + ' kg/día'
       + (fuen.adp_mes ? '  ·  ' + fuen.adp_mes : ''),
-    '5 : 1 – 8 : 1  ·  menor = más eficiente',
+    '5 : 1 – 13 : 1  ·  normal 6 – 10  ·  óptimo 7 – 9',
     '(% PV anual × kg/cab Haras) ÷ ADP último mes cerrado',
     sConv,
-    barraRef(conv.valor, conv.ref_min, conv.ref_max, true)
+    barraRef5(conv.valor, 5.0, 6.0, 7.0, 9.0, 10.0, 13.0, false)
   ));
 
   panel.appendChild(grid);
