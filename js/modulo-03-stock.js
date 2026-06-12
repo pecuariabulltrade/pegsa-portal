@@ -1002,7 +1002,7 @@ function renderIndicadores(data) {
     'Consumo por Cabeza',
     fmtD(cab.valor_tc, 1) + '<span style="font-size:18px;margin-left:4px">kg TC/cab</span>',
     fmtD(cab.valor_ms, 1) + ' kg MS/cab/día  ·  '+fmtN(cabDenom)+' cabezas ('+denominador+')',
-    '8 – 19 kg TC/cab/día  ·  normal 10 – 16  ·  óptimo 13 – 15',
+    '8 – 23 kg TC/cab/día  ·  normal 11 – 20  ·  óptimo 13 – 18',
     'kg TC/día ÷ cabezas '+denominador,
     sCab,
     barraRefCab(cab.valor_tc)
@@ -1017,10 +1017,10 @@ function renderIndicadores(data) {
     (pvAnual != null ? fmtD(pvAnual,2)+'% PV anual' : '—')
       + ' × ' + fmtD(kgCabHaras,1) + ' kg/cab Haras  ÷  ADP ' + fmtD(adpUltMes,2) + ' kg/día'
       + (fuen.adp_mes ? '  ·  ' + fuen.adp_mes : ''),
-    '5 : 1 – 8 : 1  ·  menor = más eficiente',
+    '5 : 1 – 13 : 1  ·  normal 6 – 10  ·  óptimo 7 – 9',
     '(% PV anual × kg/cab Haras) ÷ ADP último mes cerrado',
     sConv,
-    barraRef(conv.valor, conv.ref_min, conv.ref_max, true)
+    barraRef5(conv.valor, 5.0, 6.0, 7.0, 9.0, 10.0, 13.0, false)
   ));
 
   panel.appendChild(grid);
