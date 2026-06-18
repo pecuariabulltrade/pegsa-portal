@@ -2487,6 +2487,20 @@ def actualizar_valuacion(carpeta, snaps_historico):
 
     nuevos_snaps = []
 
+    # v15.21: Forward-fill de precios cuando el scraping devuelve None.
+    # Probable cuando la BCR aún no publicó el precio mensual del último mes
+    # cerrado (típico desfasaje). El forward-fill se aplica SOLO al cálculo de
+    # componentes; los campos en 'precios' mantienen el valor scrapeado real
+    # (None si falló) para que cuando se publique el precio real después, el
+    # scraping/cache lo capture solo y se actualice sin intervención manual.
+    _ult_mag      = None
+    _ult_bcr_maiz = None
+    _ult_bcr_soja = None
+    _ult_bna_tc   = None
+
+    # Garantizar orden ASC por periodo para que el forward-fill funcione.
+    snaps_historico = sorted(snaps_historico, key=lambda s: s.get('periodo', ''))
+
     for snap in snaps_historico:
         periodo  = snap.get('periodo', '')
         hm       = snap.get('hacienda_masa', {})
@@ -2537,6 +2551,44 @@ def actualizar_valuacion(carpeta, snaps_historico):
             if bna_tc is None and _bna_tc_hoy:
                 log.info(f'    TC {periodo}: ${_bna_tc_hoy:,.0f} (TC actual como fallback)')
                 bna_tc = _bna_tc_hoy
+
+        # ── 1c. v15.21 · Forward-fill. Si scraping/cache devolvió None, usar el
+        # último mes con precio conocido. Las variables _ult_* se actualizan SOLO
+        # con valores reales (no heredados) para no propagar herencias en cadena
+        # cuando varios meses seguidos fallen el scraping.
+        # IMPORTANTE: estos valores heredados se usan en el cálculo de componentes
+        # (maiz_pesos, soja_pesos, hacienda_pesos, total_pesos), pero NO se
+        # persisten en 'precios' — esos quedan con el valor scrapeado real (None
+        # si falló) para que el próximo tick re-scrapee y obtenga el precio real
+        # cuando la BCR lo publique.
+        mag_indice_scraped = mag_indice
+        bcr_maiz_scraped   = bcr_maiz
+        bcr_soja_scraped   = bcr_soja
+        bna_tc_scraped     = bna_tc
+
+        if mag_indice is None and _ult_mag is not None:
+            mag_indice = _ult_mag
+            log.info(f'    MAG {periodo}: {mag_indice:,.2f} (forward-fill del mes anterior)')
+        elif mag_indice is not None:
+            _ult_mag = mag_indice
+
+        if bcr_maiz is None and _ult_bcr_maiz is not None:
+            bcr_maiz = _ult_bcr_maiz
+            log.info(f'    BCR maíz {periodo}: ${bcr_maiz:,.0f}/ton (forward-fill del mes anterior)')
+        elif bcr_maiz is not None:
+            _ult_bcr_maiz = bcr_maiz
+
+        if bcr_soja is None and _ult_bcr_soja is not None:
+            bcr_soja = _ult_bcr_soja
+            log.info(f'    BCR soja {periodo}: ${bcr_soja:,.0f}/ton (forward-fill del mes anterior)')
+        elif bcr_soja is not None:
+            _ult_bcr_soja = bcr_soja
+
+        if bna_tc is None and _ult_bna_tc is not None:
+            bna_tc = _ult_bna_tc
+            log.info(f'    BNA TC {periodo}: ${bna_tc:,.2f}/USD (forward-fill del mes anterior)')
+        elif bna_tc is not None:
+            _ult_bna_tc = bna_tc
 
         # ── 2. Hacienda PEGSA en pesos ──
         kg_pegsa       = float(pegsa.get('kg_proyectado') or 0)
@@ -2606,10 +2658,28 @@ def actualizar_valuacion(carpeta, snaps_historico):
             'periodo':  periodo,
             'fecha':    snap.get('fecha', ''),
             'precios': {
+                # v15.21: persistimos lo scrapeado (puede ser None) para que el
+                # cache no fije el valor heredado. La próxima corrida re-intenta
+                # scraping y, si la BCR publica el precio real, lo agarra.
+                'mag_indice':    mag_indice_scraped,
+                'bcr_maiz_ton':  bcr_maiz_scraped,
+                'bcr_soja_ton':  bcr_soja_scraped,
+                'bna_tc_venta':  bna_tc_scraped,
+            },
+            'precios_efectivos': {
+                # v15.21: valores realmente usados en el cálculo de componentes
+                # (heredados del mes anterior si el scraped fue None), con flag
+                # por campo para auditoría.
                 'mag_indice':    mag_indice,
                 'bcr_maiz_ton':  bcr_maiz,
                 'bcr_soja_ton':  bcr_soja,
                 'bna_tc_venta':  bna_tc,
+                'heredado': {
+                    'mag_indice':    mag_indice_scraped is None and mag_indice is not None,
+                    'bcr_maiz_ton':  bcr_maiz_scraped is None and bcr_maiz is not None,
+                    'bcr_soja_ton':  bcr_soja_scraped is None and bcr_soja is not None,
+                    'bna_tc_venta':  bna_tc_scraped is None and bna_tc is not None,
+                },
             },
             'componentes': {
                 'hacienda_kg_pegsa': round(kg_pegsa),
@@ -2818,6 +2888,30 @@ def recalcular_stock_diario_desde_movimientos(
 
     # Ordenar ascendente (más antiguo primero)
     snapshots.sort(key=lambda s: s["fecha"])
+
+    # ── 7. v15.21 · Forward-fill de por_propietario corrupto ──────────
+    # Bug detectado 2026-06-18: ciertos snapshots tienen total_cabezas correcto
+    # pero por_propietario vacío ({}) o con todos los hoteleros en 0 (la vista
+    # WinCampo del día devolvió ceros y se arrastró, o nunca se acumuló el día).
+    # Eso rompe el gráfico Evolución Diaria del módulo Histórico que renderiza
+    # stacked por propietario → cae a 0 visual aunque el total esté OK.
+    # Defense-in-depth: pasada ASC heredando el desglose del último día sano.
+    # Los totales (total_cabezas/total_kg_estimado) se mantienen como están.
+    _ult_pp_sano = None
+    _n_filled = 0
+    for _snap in snapshots:
+        _h    = _snap.get("hacienda", {})
+        _pp_d = _h.get("por_propietario") or {}
+        _suma = sum((v.get("cabezas", 0) or 0) for v in _pp_d.values())
+        if not _pp_d or _suma == 0:
+            if _ult_pp_sano:
+                _h["por_propietario"] = {p: dict(d) for p, d in _ult_pp_sano.items()}
+                _h["_pp_origen"]      = "forward-fill día anterior"
+                _n_filled += 1
+        else:
+            _ult_pp_sano = _pp_d
+    if _n_filled:
+        log.info(f"  por_propietario: {_n_filled} día(s) heredados del día anterior (forward-fill v15.21)")
 
     diario = {
         "generado":  datetime.now().isoformat(),
@@ -5705,6 +5799,12 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
             for _s in _prev.get('snapshots', []):
                 _hm = _s.get('hacienda_masa')
                 if _s.get('periodo') and isinstance(_hm, dict) and 'parametros_calc' in _hm:
+                    # v15.21: NO sellar snapshots heredados (forward-fill por
+                    # parseo vacío). Se excluyen del cache para que el mes vuelva
+                    # a reparsear cada tick y se auto-sane cuando el XLS sea
+                    # legible (entonces sella con el cálculo real).
+                    if _hm.get('parametros_calc', {}).get('origen') == 'heredado':
+                        continue
                     snaps_previos[_s['periodo']] = _hm
             log.info(f"  Snapshots previos con parametros_calc: {len(snaps_previos)}")
         except Exception as _e:
@@ -5780,6 +5880,33 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
 
     # Ordenar por fecha
     snapshots.sort(key=lambda s: s['fecha'])
+
+    # v15.21 · Blindaje (preventivo): forward-fill de cab/kg si un mes parseó
+    # vacío (total_cabezas==0). Hereda total_cabezas/total_kg/por_hotelero/pegsa
+    # del último mes sano y marca parametros_calc.origen='heredado' para que el
+    # sellado v15.19 NO lo congele (reparsea cada tick hasta auto-sanar).
+    # NOTA: el modo "el mes desaparece" (parseo→None→snapshot omitido) ya está
+    # mitigado por v15.19 (meses cerrados se sirven del cache, inmunes al lock).
+    _ult_masa_sana = None
+    _n_masa_fill = 0
+    for _snap9 in snapshots:
+        _masa9 = _snap9.get('hacienda_masa', {})
+        if (_masa9.get('total_cabezas', 0) or 0) == 0:
+            if _ult_masa_sana is not None:
+                _masa9['total_cabezas'] = _ult_masa_sana.get('total_cabezas', 0)
+                _masa9['total_kg']      = _ult_masa_sana.get('total_kg', 0)
+                _masa9['por_hotelero']  = {h: dict(d) for h, d in _ult_masa_sana.get('por_hotelero', {}).items()}
+                _masa9['pegsa']         = dict(_ult_masa_sana.get('pegsa', {}))
+                _pc = _masa9.setdefault('parametros_calc', {})
+                _pc['origen']           = 'heredado'
+                _pc['heredado_de']      = _ult_masa_sana.get('fecha', '?')
+                _n_masa_fill += 1
+                log.info(f"    Mes {_snap9.get('periodo')}: cab/kg heredados de "
+                         f"{_ult_masa_sana.get('fecha','?')} (parseo vacío)")
+        else:
+            _ult_masa_sana = _masa9
+    if _n_masa_fill:
+        log.info(f"  Módulo 9: {_n_masa_fill} mes(es) con cab/kg heredados (forward-fill v15.21)")
 
     output = {
         'generado':  datetime.now().isoformat(),
