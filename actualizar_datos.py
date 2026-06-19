@@ -2411,43 +2411,19 @@ def actualizar_valuacion(carpeta, snaps_historico):
     Componentes:
       · Hacienda PEGSA = kg_pegsa × indice_MAG ($/kg)
       · Insumos        = kg_maiz × precio_maiz/ton + kg_soja × precio_soja/ton
-      · Financiero     = disponible + cartera - emitidos + cobrar_hac - pagar_hac + lcg + tercio - darwash   # v15.22
+      · Financiero     = disponible + cartera - emitidos + cobrar_hac - pagar_hac + lcg + tercio - darwash   # v15.23
+      #   (darwash = suma col B de la hoja 'cuenta  corriente con darwash' del propio archivo financiero)
       · USD            = usd_ars (ya convertido al TC del mes)
     Cachea precios scrapeados para no re-consultar períodos ya guardados.
     """
     val_path = Path(carpeta) / 'valuacion_historica.json'
 
-    # v15.22: Posición Darwash por fecha_corte (deuda PEGSA→Darwash = pasivo).
-    # tesoreria_darwash_historico.json guarda 'posicion' POSITIVA (saldo a favor
-    # de Darwash). Desde la perspectiva PEGSA es un PASIVO → se RESTA de fin_pesos.
-    # Sólo se aplica a meses con un snapshot de fecha_corte <= fin del periodo
-    # (los datos DW arrancan 2026-05); meses sin snapshot previo → 0, para NO
-    # contaminar el histórico 2024-2025 con una posición de 2026.
-    _darwash_path = Path(carpeta) / 'tesoreria_darwash_historico.json'
-    darwash_snaps = []
-    if _darwash_path.exists():
-        try:
-            with open(_darwash_path, encoding='utf-8') as _fdw:
-                _dw = json.load(_fdw)
-            darwash_snaps = sorted(
-                (s for s in _dw.get('snapshots', []) if s.get('fecha_corte')),
-                key=lambda s: s['fecha_corte'])
-        except Exception:
-            pass
-
-    def _darwash_mas_proximo(fecha_periodo_str):
-        """Posición Darwash del snapshot con fecha_corte <= fin del periodo, el
-        MÁS RECIENTE (saldo vigente al cierre). Devuelve (posicion, fecha_corte),
-        o (0.0, None) si no hay snapshot previo al periodo. NO usa fallback global
-        para no aplicar una posición de 2026 a meses anteriores a la existencia
-        de datos Darwash."""
-        if not darwash_snaps or not fecha_periodo_str:
-            return 0.0, None
-        previos = [s for s in darwash_snaps if s.get('fecha_corte', '') <= fecha_periodo_str]
-        if not previos:
-            return 0.0, None
-        elegido = previos[-1]   # darwash_snaps está ordenado ASC por fecha_corte
-        return float(elegido.get('posicion', 0) or 0), elegido.get('fecha_corte')
+    # v15.23: la posición Darwash ahora viene DENTRO de cada snapshot financiero
+    # (campo 'darwash_pos', calculado en _parse_financiero_nuevo desde la hoja
+    # 'cuenta  corriente con darwash' del propio archivo). Se eliminó el cargador
+    # de tesoreria_darwash_historico.json de v15.22 (daba cifra parcial: $2.297M
+    # en vez de $2.430M al 27-may, porque leía otra fuente). procesar_tesoreria_
+    # darwash sigue generando ese JSON para el módulo Tesorería — no se toca.
 
     # ── TC Dólar MEP promedio mensual — Fuente: Ambito historico ──
     # Usados como fallback cuando scraping en tiempo real falla.
@@ -2665,8 +2641,11 @@ def actualizar_valuacion(carpeta, snaps_historico):
         pagar   = float(fin.get('pagar_hacienda')   or 0)
         lcg     = float(fin.get('lcg')              or 0)
         tercio  = float(fin.get('tercio_bravo')     or 0)
-        # v15.22: posición Darwash al cierre del periodo (pasivo PEGSA → restar)
-        darwash_pos, darwash_fc = _darwash_mas_proximo(snap.get('fecha', ''))
+        # v15.23: posición Darwash del PROPIO financiero (hoja 'cuenta corriente
+        # con darwash'), pasivo PEGSA → restar. Reemplaza el cruce con
+        # tesoreria_darwash_historico.json de v15.22.
+        darwash_pos    = float(fin.get('darwash_pos') or 0)
+        darwash_origen = fin.get('darwash_origen')
         fin_pesos = (round(disp + cartera - emit + cobrar - pagar + lcg + tercio - darwash_pos)
                      if any([disp, cartera, cobrar]) else None)
 
@@ -2725,8 +2704,8 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'soja_pesos':        soja_pesos,
                 'insumos_pesos':     insumos_pesos,
                 'financiero_pesos':  fin_pesos,
-                'darwash_pos':         round(darwash_pos),   # v15.22 (pasivo restado)
-                'darwash_fecha_corte': darwash_fc,           # v15.22
+                'darwash_pos':       round(darwash_pos),   # v15.23 (pasivo restado)
+                'darwash_origen':    darwash_origen,       # v15.23 (hoja del propio financiero)
                 'usd_cant':          round(_usd_cant) if _usd_cant else None,
                 'usd_pesos':         usd_pesos,
                 'total_pesos':       total_pesos,
@@ -5527,6 +5506,8 @@ def _parse_financiero_viejo(df, fecha_str):
         'usd_ars':          round(usd_ars, 2),
         'lcg':              round(lcg, 2),
         'tercio_bravo':     round(tercio_bravo, 2),
+        'darwash_pos':      0.0,    # v15.23 · no aplica al formato viejo (hasta feb-2026)
+        'darwash_origen':   None,   # v15.23
     }
 
 
@@ -5633,6 +5614,44 @@ def _parse_financiero_nuevo(sheets, fecha_str):
                 if v and v > 0:
                     cobrar_hacienda += v
 
+    # ── v15.23 · Posición Cuenta Corriente Darwash (pasivo PEGSA → Darwash) ──
+    # FUENTE A (preferida): suma de la col B de la hoja dedicada
+    # 'cuenta  corriente con darwash' (¡OJO: DOS espacios entre 'cuenta' y
+    # 'corriente', peculiaridad del template!). Cada fila es un movimiento
+    # (col A fecha, col B importe ya con signo: egreso +, ingreso −, col C tipo).
+    # Robusta: no depende de un rango fijo de filas.
+    # FUENTE B (fallback): la fila del resumen rotulada 'Cuenta Corriente
+    # Darwash' (~R98), sumando sus columnas — da el mismo total que Fuente A.
+    # (Se descartó sumar R100-R104 como proponía el PROMPT: los labels de esas
+    #  filas cambian entre archivos y sumar sus columnas duplica el desglose
+    #  semanal → da un total erróneo. Verificado empíricamente 2026-06-18.)
+    # Validado al 27-may: $2.430.035.525 (matchea exacto con el usuario).
+    darwash_pos    = 0.0
+    darwash_origen = None
+    _dw_name = next((n for n in sheets.keys()
+                     if 'darwash' in str(n).lower() and 'corriente' in str(n).lower()), None)
+    if _dw_name is not None:
+        _dw = sheets[_dw_name]
+        if _dw.shape[1] > 1:
+            _colb = pd.to_numeric(_dw.iloc[:, 1], errors='coerce').fillna(0)
+            darwash_pos    = float(_colb.sum())
+            darwash_origen = f"hoja {_dw_name!r} col B"
+    if darwash_origen is None or darwash_pos == 0:
+        # Fallback: fila 'Cuenta Corriente Darwash' del resumen (por label)
+        for _r in range(len(res)):
+            _lbl = gres(_r, 0)
+            if isinstance(_lbl, str) and 'cuenta corriente darwash' in _lbl.lower():
+                _s = 0.0
+                for _c in range(1, res.shape[1]):
+                    _v = gres(_r, _c)
+                    if isinstance(_v, (int, float)):
+                        _s += float(_v)
+                if _s:
+                    darwash_pos    = _s
+                    darwash_origen = f"resumen fila {_r} 'Cuenta Corriente Darwash'"
+                break
+    log.info(f"    Darwash pos: ${darwash_pos:,.0f} (origen: {darwash_origen or 'no encontrado'})")
+
     return {
         'fecha':            fecha_str,
         'formato':          'nuevo',
@@ -5645,6 +5664,8 @@ def _parse_financiero_nuevo(sheets, fecha_str):
         'usd_ars':          round(usd_ars, 2),
         'lcg':              round(lcg, 2),
         'tercio_bravo':     round(tercio_bravo, 2),
+        'darwash_pos':      round(darwash_pos, 2),   # v15.23
+        'darwash_origen':   darwash_origen,          # v15.23 (auditoría)
     }
 
 
