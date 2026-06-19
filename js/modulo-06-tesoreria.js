@@ -276,6 +276,17 @@ function tesRenderAcum(flujo) {
   var series = flujo.series||{};
   var N = Math.min(sems.length, _tesVista==='mensual'?12:12);
 
+  // v15.26: label de barra/columna = fecha de CIERRE de la semana (domingo =
+  // lunes+6), porque saldo_acumulado es el saldo proyectado al cierre. El JSON
+  // sigue con los lunes ('16/06'…); solo cambia lo visible. Mismo criterio que
+  // data.js (mobile). Solo aplica a la vista semanal (la mensual usa nombres de
+  // mes). Año = actual (horizonte de proyección cercano a hoy).
+  function _cierreLbl(lblIni){
+    var p=String(lblIni).split('/'); if(p.length<2) return lblIni;
+    var d=new Date(new Date().getFullYear(),(+p[1])-1,(+p[0])+6);
+    return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  }
+
   // ── Cobertura financiera: hasta qué semana el saldo se mantiene positivo ──
   // "Cobertura hasta X" = X es la primera semana donde el saldo cruza a negativo
   var serieAcum  = series.saldo_acumulado || [];
@@ -334,7 +345,7 @@ function tesRenderAcum(flujo) {
     });
   } else {
     periodos=sems.slice(0,N).map(function(s,i){
-      var row={label:s};
+      var row={label:_cierreLbl(s)};   // v15.26: fecha de cierre (domingo)
       Object.keys(series).forEach(function(k){row[k]=series[k][i]||0;});
       return row;
     });

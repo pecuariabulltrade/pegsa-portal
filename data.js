@@ -326,6 +326,16 @@ window.PEGSA_DATA = {
         ? `${ini.getDate()} al ${fin.getDate()} ${MESES[ini.getMonth()]}`
         : `${ini.getDate()} ${MESES[ini.getMonth()]} al ${fin.getDate()} ${MESES[fin.getMonth()]}`;
     };
+    // v15.26: el label original es el LUNES (inicio de semana), pero el
+    // saldo_acumulado es el saldo proyectado al CIERRE = domingo (lunes + 6).
+    // Etiquetar con la fecha de cierre responde "¿qué saldo voy a tener al
+    // cerrar esa semana?" sin confundir con el inicio.
+    const fmtCierre = (ini) => {
+      const fin = new Date(ini); fin.setDate(fin.getDate() + 6);
+      const dd = String(fin.getDate()).padStart(2, '0');
+      const mm = String(fin.getMonth() + 1).padStart(2, '0');
+      return `${dd}/${mm}`;
+    };
     const semNumIso = (d) => {
       const tmp = new Date(d.getTime());
       tmp.setHours(0, 0, 0, 0);
@@ -370,15 +380,21 @@ window.PEGSA_DATA = {
       anioActual: hoy0.getFullYear(),
       saldoInicial: fl.saldo_inicial || 0,
       semanas: seis.map(s => ({
-        label: s.label, estado: s.estado,
+        label: fmtCierre(s.fechaIni),   // v15.26: cierre (domingo)
+        labelInicio: s.label,           // v15.26: original (lunes) para tooltip/auditoría
+        estado: s.estado,
         saldoSemanal: s.saldoSemanal, saldoAcumulado: s.saldoAcumulado,
       })),
       cierrePrimera: primera ? {
-        label: primera.label, rangoLabel: primera.rangoLabel,
+        label: fmtCierre(primera.fechaIni), // v15.26
+        labelInicio: primera.label,         // v15.26
+        rangoLabel: primera.rangoLabel,     // "16 al 22 jun" queda igual (es un rango)
         valor: primera.saldoAcumulado, signo: signo(primera.saldoAcumulado),
       } : null,
       cierreFinal: ultima ? {
-        label: ultima.label, rangoLabel: ultima.rangoLabel,
+        label: fmtCierre(ultima.fechaIni),  // v15.26
+        labelInicio: ultima.label,          // v15.26
+        rangoLabel: ultima.rangoLabel,
         valor: ultima.saldoAcumulado, signo: signo(ultima.saldoAcumulado),
       } : null,
     };
