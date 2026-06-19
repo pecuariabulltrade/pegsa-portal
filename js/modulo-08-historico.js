@@ -618,14 +618,41 @@ function _renderValuacion(){
     financiero: { bg: 'rgba(45,106,138,.75)', border: '#2d6a8a' },
     usd:        { bg: 'rgba(138,45,138,.7)',  border: '#8a2d8a' },
   };
+  // v15.25: absorber Pos. Financiera negativa en Hacienda PEGSA para que la
+  // altura apilada coincida con el total neto. Sin esto, una pos. financiera
+  // negativa se renderiza debajo del cero y la altura "visible" de positivos
+  // engaña (mayo 2026 con fin=-$2.276M parece más alto que marzo con fin>0,
+  // cuando los totales netos son similares). Los datos ORIGINALES se preservan
+  // para el tooltip + la tabla + el JSON. Identidad garantizada:
+  //   hac_show + ins + fin_show + usd === hac + ins + fin + usd === total_neto.
+  function _ajustarV1525(s){
+    var c = s.componentes || {};
+    var hac = c.hacienda_pesos, ins = c.insumos_pesos, fin = c.financiero_pesos, usd = c.usd_pesos;
+    var hac_show = hac, fin_show = fin;
+    if (fin != null && fin < 0 && hac != null && hac > 0) {
+      var absorber = Math.min(hac, -fin);
+      hac_show = hac - absorber;
+      fin_show = fin + absorber;  // 0 si hac alcanzó, sino el resto negativo
+    }
+    return { hac_show: hac_show, ins: ins, fin_show: fin_show, usd: usd,
+             hac_orig: hac, fin_orig: fin };
+  }
+  var ajustados = snaps.map(_ajustarV1525);
+
   var dsStack = [
-    { label: 'Hacienda PEGSA', data: snaps.map(function(s){ return s.componentes.hacienda_pesos!=null ? Math.round(s.componentes.hacienda_pesos/1e6) : null; }),
-      backgroundColor: colores.hacienda.bg, borderColor: colores.hacienda.border, borderWidth:1, borderRadius:2 },
-    { label: 'Insumos (M+S)',  data: snaps.map(function(s){ return s.componentes.insumos_pesos!=null ? Math.round(s.componentes.insumos_pesos/1e6) : null; }),
+    { label: 'Hacienda PEGSA',
+      data: ajustados.map(function(a){ return a.hac_show!=null ? Math.round(a.hac_show/1e6) : null; }),
+      backgroundColor: colores.hacienda.bg, borderColor: colores.hacienda.border, borderWidth:1, borderRadius:2,
+      _origData: ajustados.map(function(a){ return { orig: a.hac_orig, absorbido: (a.hac_orig!=null && a.hac_show!=null) ? a.hac_orig - a.hac_show : 0 }; }) },
+    { label: 'Insumos (M+S)',
+      data: ajustados.map(function(a){ return a.ins!=null ? Math.round(a.ins/1e6) : null; }),
       backgroundColor: colores.insumos.bg, borderColor: colores.insumos.border, borderWidth:1, borderRadius:2 },
-    { label: 'Pos. Financiera', data: snaps.map(function(s){ return s.componentes.financiero_pesos!=null ? Math.round(s.componentes.financiero_pesos/1e6) : null; }),
-      backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2 },
-    { label: 'USD (en $)',      data: snaps.map(function(s){ return s.componentes.usd_pesos!=null ? Math.round(s.componentes.usd_pesos/1e6) : null; }),
+    { label: 'Pos. Financiera',
+      data: ajustados.map(function(a){ return a.fin_show!=null ? Math.round(a.fin_show/1e6) : null; }),
+      backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2,
+      _origData: ajustados.map(function(a){ return { orig: a.fin_orig, absorbido: (a.fin_orig!=null && a.fin_show!=null) ? a.fin_show - a.fin_orig : 0 }; }) },
+    { label: 'USD (en $)',
+      data: ajustados.map(function(a){ return a.usd!=null ? Math.round(a.usd/1e6) : null; }),
       backgroundColor: colores.usd.bg, borderColor: colores.usd.border, borderWidth:1, borderRadius:2 },
   ];
   _destroyChart('chartValStack');
@@ -639,7 +666,23 @@ function _renderValuacion(){
         interaction: { mode:'index', intersect:false },
         plugins: {
           legend: { position:'bottom', labels:{ font:{family:'DM Mono',size:11}, boxWidth:12, padding:14 } },
-          tooltip: { callbacks: { label: function(ctx){ return ' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString('es-AR')+'M'; } } }
+          tooltip: { callbacks: { label: function(ctx){
+            // v15.25: mostrar el valor ORIGINAL (no el ajustado por absorción)
+            // + nota cuando hubo absorción de Pos. Financiera negativa.
+            var ds = ctx.dataset, i = ctx.dataIndex, shown = ctx.parsed.y;
+            if (ds._origData && ds._origData[i]) {
+              var od = ds._origData[i];
+              var orig = od.orig != null ? Math.round(od.orig/1e6) : shown;
+              var absorbido = Math.round((od.absorbido || 0)/1e6);
+              if (Math.abs(absorbido) > 1) {
+                var nota = ds.label === 'Pos. Financiera'
+                  ? ' (absorbida en Hacienda)'
+                  : ' (incluye absorción de Pos. Fin: $'+Math.abs(absorbido).toLocaleString('es-AR')+'M)';
+                return ' '+ds.label+': $'+orig.toLocaleString('es-AR')+'M'+nota;
+              }
+            }
+            return ' '+ds.label+': $'+shown.toLocaleString('es-AR')+'M';
+          } } }
         },
         scales: {
           x: { stacked:true, ticks:{ font:{family:'DM Mono',size:10}, maxRotation:0 }, grid:{ display:false } },
