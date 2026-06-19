@@ -5448,16 +5448,38 @@ def _parse_financiero_viejo(df, fecha_str):
                     cobrar_hacienda += v
             break
 
-    # ── pagar hacienda: "total vtos x compras" o "vencimientos a pagar" → abs(sum cols3+) ──
+    # ── pagar hacienda (v15.24): sumar el DETALLE de proveedores ──
+    # La fila 'Total Vtos x Compras Hacienda' / 'Vencimientos a Pagar hacienda'
+    # mezcla las columnas semanales de proveedores CON las filas 'Darwash - *'
+    # (que viven DENTRO del mismo bloque de compras) → sumar abs de sus columnas
+    # infla el valor (al feb-26: $2.783M vs $492M real). Solución: sumar las
+    # filas de detalle entre el header 'VENCIMIENTOS COMPRAS HACIENDA A PAGAR' y
+    # la primera fila 'Darwash -*' / 'Total Vtos' / próxima sección. Cada fila es
+    # un proveedor con su importe en la columna-semana de vencimiento.
+    # Validado feb-26 = $492.170.660 (matchea con el usuario).
     pagar_hacienda = 0.0
-    for _, row in df.iterrows():
+    _ph_start = None
+    for i, row in df.iterrows():
         label = str(row.iloc[0] if row.iloc[0] is not None else '').lower()
-        if 'total vtos x compras' in label or 'vencimientos a pagar' in label:
-            for c in range(3, len(row)):
-                v = _sf(row.iloc[c])
-                if v and v != 0:
-                    pagar_hacienda += abs(v)
+        if 'vencimientos' in label and 'compras' in label and 'hacienda' in label and 'pagar' in label:
+            _ph_start = i + 1
             break
+    if _ph_start is not None:
+        for i in range(_ph_start, min(_ph_start + 60, len(df))):
+            row   = df.iloc[i]
+            label = str(row.iloc[0] if row.iloc[0] is not None else '').strip().lower()
+            # Cortar al llegar al total o a la próxima sección.
+            if ('total vtos' in label or 'vencimientos a cobrar' in label
+                    or 'vta hacienda' in label or 'ventas de hacienda' in label):
+                break
+            # Saltar las filas 'Darwash -*' (se cuentan aparte en darwash_pos),
+            # sin cortar — por si aparecen intercaladas antes de proveedores.
+            if label.startswith('darwash'):
+                continue
+            for c in range(2, len(row)):
+                v = _sf(row.iloc[c])
+                if v and v > 0:
+                    pagar_hacienda += v
 
     # ── dólares: primera "compra dolares" en sección disponibilidades → col1=qty, col3=ARS ──
     usd_cant = 0.0; usd_ars = 0.0
@@ -5494,6 +5516,25 @@ def _parse_financiero_viejo(df, fecha_str):
             if tercio_bravo > 0:
                 break
 
+    # ── v15.24: Cuenta Corriente Darwash en formato viejo ──
+    # Filas con label 'Darwash - *' (viven dentro del bloque compras a pagar).
+    # Suma CON SIGNO de sus columnas semanales = posición neta. Positiva = pasivo
+    # PEGSA → Darwash → se resta en módulo 10 (igual criterio que formato nuevo).
+    # Antes (v15.23) estaba hardcodeado a 0. Validado feb-26: 6 filas → +$573.622.408.
+    darwash_pos    = 0.0
+    darwash_origen = None
+    _dw_n = 0
+    for _, row in df.iterrows():
+        label = str(row.iloc[0] if row.iloc[0] is not None else '').strip().lower()
+        if label.startswith('darwash -') or label.startswith('darwash-'):
+            _dw_n += 1
+            for c in range(1, len(row)):
+                v = _sf(row.iloc[c])
+                if v:
+                    darwash_pos += v
+    if _dw_n:
+        darwash_origen = f"formato viejo · {_dw_n} filas 'Darwash -*'"
+
     return {
         'fecha':            fecha_str,
         'formato':          'viejo',
@@ -5506,8 +5547,8 @@ def _parse_financiero_viejo(df, fecha_str):
         'usd_ars':          round(usd_ars, 2),
         'lcg':              round(lcg, 2),
         'tercio_bravo':     round(tercio_bravo, 2),
-        'darwash_pos':      0.0,    # v15.23 · no aplica al formato viejo (hasta feb-2026)
-        'darwash_origen':   None,   # v15.23
+        'darwash_pos':      round(darwash_pos, 2),   # v15.24 (era 0.0 en v15.23)
+        'darwash_origen':   darwash_origen,          # v15.24
     }
 
 
