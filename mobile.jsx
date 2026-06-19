@@ -976,9 +976,26 @@ function FlujoSemanal({ source }) {
               <h4>Saldo proyectado · {f.bars.length} semanas</h4>
               {kvList(f.bars.map((b) => ({
                 k: b.label + (b.kind === "next" ? " · actual" : ""),
-                v: fmtMoneyCompact(b.v),
+                v: fmtMoney(b.v),
                 cls: b.v >= 0 ? "pos" : "neg"
               })))}
+            </div>
+          )}
+          {f.composicion && (
+            <div className="modal-section">
+              <h4>Composición Financiero Básico</h4>
+              {kvList([
+                { k: "Disponibilidad",   v: fmtMoney(f.composicion.disponibilidad), cls: f.composicion.disponibilidad >= 0 ? "pos" : "neg" },
+                { k: "Cheques a Pagar",  v: fmtMoney(f.composicion.cheques_pagar),  cls: f.composicion.cheques_pagar  >= 0 ? "pos" : "neg" },
+                { k: "Ventas a Cobrar",  v: fmtMoney(f.composicion.ventas_cobrar),  cls: f.composicion.ventas_cobrar  >= 0 ? "pos" : "neg" },
+                { k: "Hacienda a Pagar", v: fmtMoney(f.composicion.hacienda_pagar), cls: f.composicion.hacienda_pagar >= 0 ? "pos" : "neg" },
+                { k: "Relación Darwash", v: fmtMoney(f.composicion.darwash_pos),    cls: f.composicion.darwash_pos    >= 0 ? "pos" : "neg" },
+              ])}
+              <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid rgba(0,0,0,.08)",
+                            display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
+                <span>Total Pos. Financiera Básica</span>
+                <span className={f.composicion.total_basico >= 0 ? "pos" : "neg"}>{fmtMoney(f.composicion.total_basico)}</span>
+              </div>
             </div>
           )}
           <div className="modal-section">
@@ -1006,7 +1023,7 @@ function FlujoSemanal({ source }) {
           <div className="flujo-panel-label">{f.cerrada.label}</div>
           <div className="flujo-panel-sub">{f.cerrada.range}</div>
         </div>
-        <div className="flujo-panel-val">{f.cerrada.value != null ? fmtMoneyCompact(f.cerrada.value) : "N/D"}</div>
+        <div className="flujo-panel-val">{f.cerrada.value != null ? fmtMoney(f.cerrada.value) : "N/D"}</div>
       </div>
 
       <div className="flujo-arrow">↓</div>
@@ -1016,7 +1033,7 @@ function FlujoSemanal({ source }) {
           <div className="flujo-panel-label">{f.proxima.label}</div>
           <div className="flujo-panel-sub">{f.proxima.range}</div>
         </div>
-        <div className="flujo-panel-val">{f.proxima.value != null ? fmtMoneyCompact(f.proxima.value) : "N/D"}</div>
+        <div className="flujo-panel-val">{f.proxima.value != null ? fmtMoney(f.proxima.value) : "N/D"}</div>
       </div>
 
       {f.bars.length > 0 && (
@@ -1061,7 +1078,7 @@ function FlujoSemanal({ source }) {
           <div className="flujo-acum-label">{f.acumulado.label}</div>
           <div className="flujo-acum-sub">{f.acumulado.sub}</div>
         </div>
-        <div className="flujo-acum-val">{f.acumulado.value != null ? fmtMoneyCompact(f.acumulado.value) : "N/D"}</div>
+        <div className="flujo-acum-val">{f.acumulado.value != null ? fmtMoney(f.acumulado.value) : "N/D"}</div>
       </div>
     </article>
   );

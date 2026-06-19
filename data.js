@@ -374,6 +374,31 @@ window.PEGSA_DATA = {
     const primera = seis[0] || null;
     const ultima  = seis[seis.length - 1] || null;
 
+    // v15.27: composición del Financiero Básico para el modal de
+    // "Financiero · saldo proyectado". 5 KPIs sumados desde el snapshot crudo
+    // (tesoreria_ultimo.json). Validado al 16/06 contra el usuario. Solo aplica
+    // al financiero PEG-BULL: el snapshot DW no tiene cheques/hacienda → null.
+    const _sumLista = (arr, key) => Array.isArray(arr)
+      ? arr.reduce((a, x) => a + (typeof (x && x[key]) === 'number' ? x[key] : 0), 0) : 0;
+    const _sumDarwash = (arr) => Array.isArray(arr)
+      ? arr.reduce((a, g) => a + _sumLista(g && g.items, 'monto'), 0) : 0;
+    let composicion = null;
+    if (snap && snap.cheques && snap.hacienda) {
+      const disponibilidad = (snap.posicion && snap.posicion.saldo_disponibilidades) || 0;
+      const cheques_pagar  = -_sumLista(snap.cheques.por_vencimiento, 'monto');
+      const ventas_cobrar  =  _sumLista(snap.hacienda.ventas, 'monto');
+      const hacienda_pagar = -_sumLista(snap.hacienda.compras, 'monto');
+      const darwash_pos    =  _sumDarwash(snap.darwash);
+      composicion = {
+        disponibilidad: disponibilidad,
+        cheques_pagar:  cheques_pagar,
+        ventas_cobrar:  ventas_cobrar,
+        hacienda_pagar: hacienda_pagar,
+        darwash_pos:    darwash_pos,
+        total_basico:   disponibilidad + cheques_pagar + ventas_cobrar + hacienda_pagar + darwash_pos,
+      };
+    }
+
     return {
       fechaCorte: fechaCorte,
       semanaNumActual: semNumIso(hoy0),
@@ -397,6 +422,7 @@ window.PEGSA_DATA = {
         rangoLabel: ultima.rangoLabel,
         valor: ultima.saldoAcumulado, signo: signo(ultima.saldoAcumulado),
       } : null,
+      composicion: composicion,   // v15.27 (null para el snapshot DW)
     };
   }
 

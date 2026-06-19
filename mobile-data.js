@@ -568,7 +568,8 @@
           sub: "Hoy",
           value: fs.saldoInicial != null ? fs.saldoInicial : null
         },
-        fechaCorte: fs.fechaCorte
+        fechaCorte: fs.fechaCorte,
+        composicion: fs.composicion || null   // v15.27
       };
     }
 
