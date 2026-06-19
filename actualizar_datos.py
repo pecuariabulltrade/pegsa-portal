@@ -2411,11 +2411,43 @@ def actualizar_valuacion(carpeta, snaps_historico):
     Componentes:
       · Hacienda PEGSA = kg_pegsa × indice_MAG ($/kg)
       · Insumos        = kg_maiz × precio_maiz/ton + kg_soja × precio_soja/ton
-      · Financiero     = disponible + cartera - emitidos + cobrar_hac - pagar_hac + lcg + tercio
+      · Financiero     = disponible + cartera - emitidos + cobrar_hac - pagar_hac + lcg + tercio - darwash   # v15.22
       · USD            = usd_ars (ya convertido al TC del mes)
     Cachea precios scrapeados para no re-consultar períodos ya guardados.
     """
     val_path = Path(carpeta) / 'valuacion_historica.json'
+
+    # v15.22: Posición Darwash por fecha_corte (deuda PEGSA→Darwash = pasivo).
+    # tesoreria_darwash_historico.json guarda 'posicion' POSITIVA (saldo a favor
+    # de Darwash). Desde la perspectiva PEGSA es un PASIVO → se RESTA de fin_pesos.
+    # Sólo se aplica a meses con un snapshot de fecha_corte <= fin del periodo
+    # (los datos DW arrancan 2026-05); meses sin snapshot previo → 0, para NO
+    # contaminar el histórico 2024-2025 con una posición de 2026.
+    _darwash_path = Path(carpeta) / 'tesoreria_darwash_historico.json'
+    darwash_snaps = []
+    if _darwash_path.exists():
+        try:
+            with open(_darwash_path, encoding='utf-8') as _fdw:
+                _dw = json.load(_fdw)
+            darwash_snaps = sorted(
+                (s for s in _dw.get('snapshots', []) if s.get('fecha_corte')),
+                key=lambda s: s['fecha_corte'])
+        except Exception:
+            pass
+
+    def _darwash_mas_proximo(fecha_periodo_str):
+        """Posición Darwash del snapshot con fecha_corte <= fin del periodo, el
+        MÁS RECIENTE (saldo vigente al cierre). Devuelve (posicion, fecha_corte),
+        o (0.0, None) si no hay snapshot previo al periodo. NO usa fallback global
+        para no aplicar una posición de 2026 a meses anteriores a la existencia
+        de datos Darwash."""
+        if not darwash_snaps or not fecha_periodo_str:
+            return 0.0, None
+        previos = [s for s in darwash_snaps if s.get('fecha_corte', '') <= fecha_periodo_str]
+        if not previos:
+            return 0.0, None
+        elegido = previos[-1]   # darwash_snaps está ordenado ASC por fecha_corte
+        return float(elegido.get('posicion', 0) or 0), elegido.get('fecha_corte')
 
     # ── TC Dólar MEP promedio mensual — Fuente: Ambito historico ──
     # Usados como fallback cuando scraping en tiempo real falla.
@@ -2633,7 +2665,10 @@ def actualizar_valuacion(carpeta, snaps_historico):
         pagar   = float(fin.get('pagar_hacienda')   or 0)
         lcg     = float(fin.get('lcg')              or 0)
         tercio  = float(fin.get('tercio_bravo')     or 0)
-        fin_pesos = round(disp + cartera - emit + cobrar - pagar + lcg + tercio) if any([disp, cartera, cobrar]) else None
+        # v15.22: posición Darwash al cierre del periodo (pasivo PEGSA → restar)
+        darwash_pos, darwash_fc = _darwash_mas_proximo(snap.get('fecha', ''))
+        fin_pesos = (round(disp + cartera - emit + cobrar - pagar + lcg + tercio - darwash_pos)
+                     if any([disp, cartera, cobrar]) else None)
 
         # ── 5. Dólares en pesos ──
         # Prioridad: usd_ars (ya convertido en el Excel); fallback: usd_cant × TC actual
@@ -2690,6 +2725,8 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'soja_pesos':        soja_pesos,
                 'insumos_pesos':     insumos_pesos,
                 'financiero_pesos':  fin_pesos,
+                'darwash_pos':         round(darwash_pos),   # v15.22 (pasivo restado)
+                'darwash_fecha_corte': darwash_fc,           # v15.22
                 'usd_cant':          round(_usd_cant) if _usd_cant else None,
                 'usd_pesos':         usd_pesos,
                 'total_pesos':       total_pesos,
@@ -5534,21 +5571,41 @@ def _parse_financiero_nuevo(sheets, fecha_str):
     lcg          = abs(gres(1, 1) or 0.0)
     tercio_bravo = abs(gres(2, 1) or 0.0)
 
-    # ── cheques pendiente → cartera (checks to receive) ──
-    cheq_raw      = sheets.get('cheques pendiente', pd.DataFrame())
-    total_cartera = 0.0
-    if len(cheq_raw) > 4:
-        importe_col = pd.to_numeric(cheq_raw.iloc[4:, 5], errors='coerce').fillna(0)
-        total_cartera = float(importe_col[importe_col > 0].sum())
-
-    # ── cheques emitidos: resumen row 30 "cheques pendientes" → sum cols1+ ──
-    # (organizados por semana, representan cheques diferidos emitidos pendientes)
+    # ── v15.22 · cheques pendiente: distinción EMITIDOS vs CARTERA ──
+    # La hoja 'cheques pendiente' lista cheques EMITIDOS (a pagar), NO cheques al
+    # cobro. Razonamiento contable (confirmado por usuario 2026-06-18):
+    #   · venc <  fecha del archivo: ya vencidos pero aún no presentados al banco
+    #     → YA están descontados dentro de 'disponible'. Sumarlos como emitidos
+    #     sería doble-conteo (se restarían dos veces).
+    #   · venc >= fecha del archivo: diferidos; no afectan el saldo bancario
+    #     actual → pasivo cierto futuro = cheques_emitidos.
+    # Cartera (cheques al cobro) = 0 en este formato: los marcados 'AL COBRO=SI'
+    # son presentaciones del día (no pendientes de cobro). Se loguea su suma por
+    # visibilidad, NO se computa como cartera.
+    # (Antes de v15.22: se sumaba TODA la columna F como cartera (+$1.954M
+    #  ficticios) y los emitidos salían de la row 30 del resumen — ambos mal.)
+    cheq_raw         = sheets.get('cheques pendiente', pd.DataFrame())
+    total_cartera    = 0.0
     cheques_emitidos = 0.0
-    if len(res) > 30:
-        for c in range(1, res.shape[1]):
-            v = gres(30, c)
-            if v and v > 0:
-                cheques_emitidos += v
+    _al_cobro_dia    = 0.0
+    if len(cheq_raw) > 4:
+        from datetime import datetime as _dtv
+        _sub   = cheq_raw.iloc[4:]
+        _venc  = pd.to_datetime(_sub.iloc[:, 1], errors='coerce')           # col B
+        _imp   = pd.to_numeric(_sub.iloc[:, 5], errors='coerce').fillna(0)  # col F
+        _cobro = _sub.iloc[:, 6].astype(str).str.upper().str.strip() if _sub.shape[1] > 6 \
+                 else pd.Series(['']*len(_sub), index=_sub.index)           # col G 'AL COBRO'
+        try:
+            _fecha_archivo = _dtv.strptime(fecha_str, '%Y-%m-%d')
+        except Exception:
+            _fecha_archivo = None
+        if _fecha_archivo is not None:
+            cheques_emitidos = float(_imp[(_venc >= _fecha_archivo) & (_imp > 0)].sum())
+        else:
+            cheques_emitidos = float(_imp[_imp > 0].sum())
+        _al_cobro_dia = float(_imp[_cobro.isin(['SI', 'SÍ', 'YES', 'TRUE']) & (_imp > 0)].sum())
+    log.info(f"    cheques pendiente → emitidos diferidos (venc>={fecha_str})="
+             f"${cheques_emitidos:,.0f} | cartera=$0 | al-cobro-del-día=${_al_cobro_dia:,.0f}")
 
     # ── vencimientos de hacienda ──
     hac = sheets.get('vencimientos de hacienda', pd.DataFrame())
