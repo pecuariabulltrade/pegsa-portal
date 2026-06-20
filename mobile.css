@@ -1338,9 +1338,11 @@ img, svg { display: block; max-width: 100%; }
 .mdonut-leg li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;               /* v15.28: ahora hay nombre + cab + kg + % */
   font-size: 11.5px;
-  line-height: 1.2;
+  line-height: 1.35;
+  padding: 2px 0;
   min-width: 0;
 }
 .mleg-dot {
@@ -1351,19 +1353,31 @@ img, svg { display: block; max-width: 100%; }
 }
 .mleg-name {
   color: var(--ink);
-  font-weight: 500;
-  flex: 1;
-  min-width: 0;
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 72px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.mleg-pct {
-  color: var(--ink-mute);
+/* v15.28: cabezas + kg por establecimiento en el legend del donut */
+.mleg-cab,
+.mleg-kg {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
   font-size: 11px;
+  color: var(--ink-mute);
+  white-space: nowrap;
   flex: 0 0 auto;
+}
+.mleg-pct {
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+  margin-left: auto;            /* empuja el % al extremo derecho */
 }
 
 /* En viewports muy chicos (< 360px) el donut + leyenda apilan. */

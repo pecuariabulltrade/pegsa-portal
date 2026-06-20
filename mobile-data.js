@@ -346,6 +346,7 @@
         tag: "propio",
         cab: pegsaCab,
         t: Math.round(pegsaKg / 1000),
+        kg: Math.round(pegsaKg),          // v15.28: kg crudo para mostrar en modal
         kgCab: pegsaCab ? Math.round(pegsaKg / pegsaCab) : 0,
         est: pegsaEst
       },
@@ -353,6 +354,7 @@
         tag: "total",
         cab: totalCab,
         t: Math.round(totalKg / 1000),
+        kg: Math.round(totalKg),          // v15.28
         kgCab: totalCab ? Math.round(totalKg / totalCab) : 0,
         est: totalEst
       },
@@ -655,7 +657,7 @@
 
     var STOCK_KILOS = {
       title: "Stock kilos · diario",
-      sub: stockKgTotal ? (Math.round(stockKgTotal / 1000).toLocaleString("es-AR") + " t") : "—",
+      sub: stockKgTotal ? (Math.round(stockKgTotal).toLocaleString("es-AR") + " kg") : "—",  // v15.28: t → kg
       delta: deltaTotal(stockSpark),
       deltaLabel: buildDeltaLabel("diario", stockSpark.length),
       yLabels: (function () {

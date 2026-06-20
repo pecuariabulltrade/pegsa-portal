@@ -499,7 +499,7 @@ function CategoriasBars({ items }) {
             <div className="mbar-head">
               <span className="mbar-name">{it.categoria}</span>
               <span className="mbar-val">
-                {fmt(it.cabezas)} cab · {fmt(Math.round((it.kg || 0) / 1000))} t
+                {fmt(it.cabezas)} cab · {fmt(Math.round(it.kg || 0))} kg
               </span>
             </div>
             <div className="mbar-track">
@@ -577,6 +577,9 @@ function EstabDonut({ items }) {
             <li key={i}>
               <span className="mleg-dot" style={{ background: DONUT_PALETTE[i % DONUT_PALETTE.length] }} />
               <span className="mleg-name">{it.nombre}</span>
+              {/* v15.28: cabezas + kg por establecimiento (D.haciendaPegsaPorEstab) */}
+              <span className="mleg-cab">{fmt(it.cabezas || 0)} cab</span>
+              <span className="mleg-kg">{fmt(Math.round(it.kg || 0))} kg</span>
               <span className="mleg-pct">{pct.toFixed(pct < 10 ? 1 : 0).replace(".", ",")}%</span>
             </li>
           );
@@ -635,10 +638,28 @@ function StockHero() {
               { k: h.var12mLabel, v: h.var12m != null ? fmtPct(h.var12m) : "N/D",
                 cls: (h.var12m != null && h.var12m < 0) ? "neg" : "pos" },
               { k: "Hoteleros (terceros)", v: fmt(h.hoteleros) + " cab" },
-              { k: "PEGSA propio",         v: fmt(h.pegsa.cab) + " cab · " + fmt(h.pegsa.t) + " t" },
-              { k: "Grupo total",          v: fmt(h.grupo.cab) + " cab · " + fmt(h.grupo.t) + " t" }
+              { k: "PEGSA propio",         v: fmt(h.pegsa.cab) + " cab · " + fmt(Math.round(h.pegsa.kg != null ? h.pegsa.kg : h.pegsa.t * 1000)) + " kg" },
+              { k: "Grupo total",          v: fmt(h.grupo.cab) + " cab · " + fmt(Math.round(h.grupo.kg != null ? h.grupo.kg : h.grupo.t * 1000)) + " kg" }
             ])}
           </div>
+
+          {/* v15.28: cuadro resumen tabular por establecimiento (PEGSA propio). */}
+          {Array.isArray(D.haciendaPegsaPorEstab) && D.haciendaPegsaPorEstab.length > 0 && (
+            <div className="modal-section">
+              <h4>Resumen por establecimiento</h4>
+              {kvList(D.haciendaPegsaPorEstab.map((e) => ({
+                k: e.nombre,
+                v: fmt(e.cabezas || 0) + " cab · " + fmt(Math.round(e.kg || 0)) + " kg",
+              })))}
+              {D.haciendaPegsaTotal && (
+                <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid rgba(0,0,0,.08)",
+                              display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
+                  <span>Total PEGSA propio</span>
+                  <span>{fmt(D.haciendaPegsaTotal.cabezas || 0)} cab · {fmt(Math.round(D.haciendaPegsaTotal.kg || 0))} kg</span>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )
     });
@@ -665,7 +686,7 @@ function StockHero() {
             <span className="sh-big-unit">cab</span>
           </div>
           <div className="sh-meta">
-            <b>{fmt(h.pegsa.t)}</b> t · <b>{h.pegsa.kgCab}</b> kg/cab{h.pegsa.est != null ? <> · <b>{h.pegsa.est}</b> est.</> : null}
+            <b>{fmt(h.pegsa.kg != null ? Math.round(h.pegsa.kg) : (h.pegsa.t || 0) * 1000)}</b> kg · <b>{h.pegsa.kgCab}</b> kg/cab{h.pegsa.est != null ? <> · <b>{h.pegsa.est}</b> est.</> : null}
           </div>
         </div>
 
@@ -680,7 +701,7 @@ function StockHero() {
             <span className="sh-big-unit">cab</span>
           </div>
           <div className="sh-meta">
-            <b>{fmt(h.grupo.t)}</b> t · <b>{h.grupo.kgCab}</b> kg/cab · <b>{h.grupo.est}</b> est.
+            <b>{fmt(h.grupo.kg != null ? Math.round(h.grupo.kg) : (h.grupo.t || 0) * 1000)}</b> kg · <b>{h.grupo.kgCab}</b> kg/cab · <b>{h.grupo.est}</b> est.
           </div>
         </div>
       </div>
