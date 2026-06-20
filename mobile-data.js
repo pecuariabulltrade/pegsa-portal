@@ -175,7 +175,9 @@
   var fmtMoney = function (n, suffix) {
     if (n == null || isNaN(n)) return "—";
     var sign = n < 0 ? "-" : (n > 0 ? "+" : "");
-    var v = fmt(Math.abs(n));
+    // v15.30: redondear a entero para no mostrar centavos (tesoreria_ultimo.json
+    // expone valores float — ej 506948338.5 salía como "-$ 506.948.338,5").
+    var v = fmt(Math.round(Math.abs(n)));
     return sign + "$ " + v + (suffix ? " " + suffix : "");
   };
   // Compactar montos: 1.363.651.930 → "$1,4 MM", 352.200.997 → "$352 M"
