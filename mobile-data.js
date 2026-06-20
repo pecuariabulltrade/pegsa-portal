@@ -1010,6 +1010,14 @@
       MODULOS: MODULOS,
       TABS: TABS,
       BOTTOM_TABS: BOTTOM_TABS,
+      // v15.31: passthrough de D.haciendaXxxPorEstab/Total para que los bloques
+      // de v15.28 (Resumen PEGSA propio) y v15.29 (donut + Resumen Grupo) puedan
+      // leerlos desde D dentro de mobile.jsx (D ahí = window.MOBILE_DATA, no
+      // window.PEGSA_DATA). Sin esto los bloques nunca renderizaban.
+      haciendaPegsaPorEstab: D.haciendaPegsaPorEstab,
+      haciendaPegsaTotal:    D.haciendaPegsaTotal,
+      haciendaGrupoPorEstab: D.haciendaGrupoPorEstab,
+      haciendaGrupoTotal:    D.haciendaGrupoTotal,
       // Helpers
       fmt: fmt,
       fmtPct: fmtPct,
