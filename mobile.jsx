@@ -631,6 +631,14 @@ function StockHero() {
             </div>
           )}
 
+          {/* v15.29: torta por establecimiento · Grupo completo (incluye hoteleros). */}
+          {Array.isArray(D.haciendaGrupoPorEstab) && D.haciendaGrupoPorEstab.length > 0 && (
+            <div className="modal-section">
+              <h4>Por establecimiento · Grupo completo</h4>
+              <EstabDonut items={D.haciendaGrupoPorEstab} />
+            </div>
+          )}
+
           {/* Referencia: var 12m y hoteleros (terceros). */}
           <div className="modal-section">
             <h4>Referencia</h4>
@@ -656,6 +664,24 @@ function StockHero() {
                               display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
                   <span>Total PEGSA propio</span>
                   <span>{fmt(D.haciendaPegsaTotal.cabezas || 0)} cab · {fmt(Math.round(D.haciendaPegsaTotal.kg || 0))} kg</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* v15.29: cuadro resumen tabular por establecimiento · Grupo completo. */}
+          {Array.isArray(D.haciendaGrupoPorEstab) && D.haciendaGrupoPorEstab.length > 0 && (
+            <div className="modal-section">
+              <h4>Resumen por establecimiento · Grupo</h4>
+              {kvList(D.haciendaGrupoPorEstab.map((e) => ({
+                k: e.nombre,
+                v: fmt(e.cabezas || 0) + " cab · " + fmt(Math.round(e.kg || 0)) + " kg",
+              })))}
+              {D.haciendaGrupoTotal && (
+                <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid rgba(0,0,0,.08)",
+                              display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
+                  <span>Total Grupo</span>
+                  <span>{fmt(D.haciendaGrupoTotal.cabezas || 0)} cab · {fmt(Math.round(D.haciendaGrupoTotal.kg || 0))} kg</span>
                 </div>
               )}
             </div>

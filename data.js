@@ -201,6 +201,30 @@ window.PEGSA_DATA = {
     }
   }
 
+  // v15.29: hacienda Grupo completo por establecimiento (PEGSA propio + hoteleros).
+  // Mismo shape que D.haciendaPegsaPorEstab pero desde stockKpis.kpis.por_establecimiento
+  // (el Grupo incluye La Panchita, 100% hoteleros, que no aparece en el dataset PEGSA
+  // propio). Para el donut + resumen "Grupo completo" del modal Stock de hacienda.
+  if (stockKpis?.kpis?.por_establecimiento) {
+    const peGrp = stockKpis.kpis.por_establecimiento;
+    const arrG = Object.entries(peGrp)
+      .map(([nombre, d]) => ({
+        nombre: nombre,
+        cabezas: Math.round(d?.cabezas || 0),
+        kg: Math.round(d?.kg_estimado || 0),
+        kgPromedio: Math.round(d?.kg_promedio || 0),
+      }))
+      .filter(e => e.cabezas > 0)
+      .sort((a, b) => b.cabezas - a.cabezas);
+    if (arrG.length > 0) {
+      D.haciendaGrupoPorEstab = arrG;
+      D.haciendaGrupoTotal = {
+        cabezas: stockKpis.kpis.total_cabezas || arrG.reduce((s, e) => s + e.cabezas, 0),
+        kg: stockKpis.kpis.total_kg_estimado_hoy || arrG.reduce((s, e) => s + e.kg, 0),
+      };
+    }
+  }
+
   // v12.2 · Stock por categoría · por establecimiento (para el PDF):
   //   - D.stockCategoriasHaras = directo del Haras (subset del Grupo)
   //   - D.stockCategoriasOtros = suma de Cucuca + Descanso + Panchita
