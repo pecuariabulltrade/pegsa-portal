@@ -2941,6 +2941,48 @@ def recalcular_stock_diario_desde_movimientos(
     return diario
 
 
+def _xlsx_es_placeholder_onedrive(path):
+    """v15.32: detecta archivos OneDrive en estado placeholder (cloud-only).
+    OneDrive reporta size > 0 en metadata pero el contenido no está en disco
+    local → pd.read_excel falla con [Errno 22]. Leemos los primeros 4 bytes:
+    si NO son la signature ZIP/XLSX (PK\\x03\\x04), es placeholder o corrupto.
+    Returns: (es_placeholder: bool, motivo: str|None)
+    """
+    try:
+        if not os.path.exists(path):
+            return True, "no_existe"
+        size = os.path.getsize(path)
+        if size < 100:
+            return True, f"tamano_invalido ({size} bytes)"
+        with open(path, "rb") as f:
+            head = f.read(4)
+        if head != b"PK\x03\x04":
+            return True, f"header_no_xlsx ({head!r})"
+        return False, None
+    except OSError as e:
+        # Errno 22 acá típicamente significa "online-only file" no hidratado.
+        return True, f"oserror_{e.errno}: {e}"
+
+
+def _intentar_warming_onedrive(path, max_intentos=2):
+    """v15.32: fuerza a OneDrive a hidratar el archivo leyendo unos KB.
+    Retorna True si tras el warming pasa el check de placeholder, False si
+    sigue inaccesible.
+    """
+    import time
+    for _ in range(max_intentos):
+        try:
+            with open(path, "rb") as f:
+                f.read(8192)   # forzar a OneDrive a bajar al menos 8 KB
+            time.sleep(0.5)
+            es_ph, _motivo = _xlsx_es_placeholder_onedrive(path)
+            if not es_ph:
+                return True
+        except OSError:
+            time.sleep(1.0)
+    return False
+
+
 def main():
     separador("PEGSA & BULLTRADE - Actualizador de Datos")
     log.info(f"  Inicio: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
@@ -3719,16 +3761,37 @@ def main():
             }
 
         # Procesar todos los archivos
+        # v15.32: robusto ante placeholders OneDrive (cloud-only). Un archivo
+        # no hidratado hacía fallar pd.read_excel con [Errno 22] y tumbaba todo
+        # el módulo (ok=false → banner stale). Ahora detectamos placeholder,
+        # intentamos warming, y si falla skipeamos ESE archivo reportándolo como
+        # warning — el resto de los cortes se procesa igual.
         cortes_proc = []
         ultimo_corte = None
+        archivos_skipados = []
         for ruta in archivos:
             nombre = _os.path.basename(ruta)
             fecha_str = nombre[:10]
             try: datetime.strptime(fecha_str, "%Y-%m-%d")
             except:
                 log.warning(f"  ⚠ Ignorando: {nombre}"); continue
+
+            es_ph, motivo = _xlsx_es_placeholder_onedrive(ruta)
+            if es_ph:
+                log.warning(f"  ⚠ {nombre}: placeholder OneDrive ({motivo}). Intentando warming...")
+                if not _intentar_warming_onedrive(ruta):
+                    log.warning(f"  ⚠ {nombre}: skipeado ({motivo})")
+                    archivos_skipados.append({"archivo": nombre, "motivo": motivo})
+                    continue
+                log.info(f"  ✓ {nombre}: hidratado tras warming")
+
             log.info(f"  Procesando: {nombre}")
-            resultado = proc_financiero(ruta)
+            try:
+                resultado = proc_financiero(ruta)
+            except Exception as _e:
+                log.warning(f"  ⚠ {nombre}: error al parsear ({type(_e).__name__}: {_e}). Skipeado.")
+                archivos_skipados.append({"archivo": nombre, "motivo": f"parse_error: {type(_e).__name__}"})
+                continue
             if resultado:
                 cortes_proc.append(resultado)
                 ultimo_corte = resultado
@@ -3750,6 +3813,20 @@ def main():
                 "cortes":      len(cortes_proc),
                 "ultimo_corte": ultimo_corte['fecha_corte'],
                 "saldo_disp":  ultimo_corte['posicion']['saldo_disponibilidades'],
+            }
+            # v15.32: archivos skipados como warning (no fatal)
+            if archivos_skipados:
+                resumen["modulos"]["tesoreria"]["warnings"] = archivos_skipados
+                resumen["modulos"]["tesoreria"]["warning_count"] = len(archivos_skipados)
+                log.warning(f"  ⚠ Tesorería: {len(archivos_skipados)} archivo(s) skipado(s) "
+                            f"(placeholder/parse). Módulo OK con {len(cortes_proc)} cortes.")
+        elif archivos_skipados:
+            # Había archivos pero NINGUNO se pudo procesar → error real
+            log.warning("  ⚠ Tesorería: ningún archivo financiero se pudo procesar")
+            resumen["modulos"]["tesoreria"] = {
+                "ok":      False,
+                "error":   "No se pudo procesar ningún archivo financiero",
+                "archivos_skipados": archivos_skipados,
             }
         else:
             log.info("  ℹ Sin archivos YYYY-MM-DD_financiero.xlsx en la carpeta")
@@ -6230,7 +6307,19 @@ def procesar_tesoreria_darwash(carpeta_out, log=None):
         log.warning(f"  ⚠ Sin archivos XLSX en {carpeta_dw}, saltando")
         return None, None
 
-    xl = xlsxs[0]
+    # v15.32: elegir el más reciente HIDRATADO. Si el más nuevo es placeholder
+    # OneDrive (cloud-only), intentar warming y, si falla, caer al siguiente.
+    xl = None
+    for _cand in xlsxs:
+        _es_ph, _motivo = _xlsx_es_placeholder_onedrive(str(_cand))
+        if _es_ph and not _intentar_warming_onedrive(str(_cand)):
+            log.warning(f"  ⚠ DW {_cand.name}: placeholder OneDrive ({_motivo}), probando anterior...")
+            continue
+        xl = _cand
+        break
+    if xl is None:
+        log.warning(f"  ⚠ Todos los XLSX DW son placeholders inaccesibles, saltando")
+        return None, None
     # Copia a temp para evitar lock de OneDrive
     import shutil, tempfile
     try:
