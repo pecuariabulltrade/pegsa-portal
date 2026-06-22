@@ -189,7 +189,7 @@ CORRALES = [
     (600, 699, "El Morrón"),
     (700, 799, "La Panchita"),
     (800, 899, "La Cucuca"),
-    (900, 999, "Sin asignar"),
+    (900, 999, "El Durazno"),
     (1000, 1099, "Recepción"),
 ]
 
