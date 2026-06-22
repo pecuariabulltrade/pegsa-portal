@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-06-22T19:23:23.667260",
+    "generado": "2026-06-22T20:26:32.826952",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "mes_actual": "2026-06",
@@ -12,19 +12,19 @@
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_anio": 283,
+    "muertes_anio": 285,
     "ingresos_anio": 17617,
-    "stock_haras_hoy": 6434,
-    "denominador": 24051,
-    "tasa_mensual_pct": 1.177,
+    "stock_haras_hoy": 6432,
+    "denominador": 24049,
+    "tasa_mensual_pct": 1.185,
     "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
     "por_grupo": {
       "Vacas": {
-        "muertes": 165,
+        "muertes": 167,
         "ingresos": 7304,
-        "stock": 2210,
-        "denominador": 9514,
-        "tasa_mensual_pct": 1.734
+        "stock": 2208,
+        "denominador": 9512,
+        "tasa_mensual_pct": 1.756
       },
       "Machos": {
         "muertes": 80,
@@ -43,9 +43,9 @@
     }
   },
   "anio": {
-    "total_muertes": 283,
+    "total_muertes": 285,
     "por_categoria": {
-      "VA": 165,
+      "VA": 167,
       "TM": 56,
       "TH": 29,
       "NV": 16,
@@ -54,7 +54,7 @@
       "TO": 1
     },
     "por_grupo": {
-      "Vacas": 165,
+      "Vacas": 167,
       "Machos": 80,
       "Hembras": 38
     },
@@ -71,21 +71,21 @@
       "2026-03": 26,
       "2026-04": 23,
       "2026-05": 23,
-      "2026-06": 2
+      "2026-06": 4
     }
   },
   "mes_anterior": {
     "nombre": "Últimos 30 días (23/05/2026 – 22/06/2026)",
     "mes": "2026-05-23",
-    "total_muertes": 8,
+    "total_muertes": 10,
     "por_categoria": {
       "TM": 4,
+      "VA": 3,
       "TH": 2,
-      "VQ": 1,
-      "VA": 1
+      "VQ": 1
     },
     "por_grupo": {
-      "Vacas": 1,
+      "Vacas": 3,
       "Machos": 4,
       "Hembras": 3
     }

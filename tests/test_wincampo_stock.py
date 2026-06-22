@@ -79,7 +79,7 @@ def main():
         "El Morrón (600-699)":      0,
         "La Panchita (700-799)":    0,
         "La Cucuca (800-899)":      0,
-        "Sin asignar (900-999)":    0,
+        "El Durazno (900-999)":     0,
         "Recepción (1000+)":        0,
         "Fuera de rango":           0,
     }
@@ -97,7 +97,7 @@ def main():
         elif 600<=n<=699:   rangos["El Morrón (600-699)"] += 1
         elif 700<=n<=799:   rangos["La Panchita (700-799)"] += 1
         elif 800<=n<=899:   rangos["La Cucuca (800-899)"] += 1
-        elif 900<=n<=999:   rangos["Sin asignar (900-999)"] += 1
+        elif 900<=n<=999:   rangos["El Durazno (900-999)"] += 1
         elif 1000<=n<=1099: rangos["Recepción (1000+)"] += 1
         else:               rangos["Fuera de rango"] += 1
 
