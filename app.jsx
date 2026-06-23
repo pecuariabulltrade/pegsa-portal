@@ -438,6 +438,16 @@ function PreciosInferenciaSection({ D }) {
                         fmtCompact sigue definido por si otra pantalla la usa. */}
                     <div><span>Precio venta</span><strong>{fmtMoney(it.precio_venta)}/kg</strong></div>
                     <div><span>Costo prod</span><strong>{fmtMoney(it.cost_kg_prod)}</strong></div>
+                    {/* v15.34: engorde diario (kg/día) y eficiencia engorde (% con signo) */}
+                    <div><span>Engorde</span><strong>{it.engorde != null ? it.engorde.toFixed(2).replace(".", ",") + " kg/día" : "—"}</strong></div>
+                    <div>
+                      <span>Eficiencia</span>
+                      <strong className={it.eficiencia_engorde != null && it.eficiencia_engorde < 0 ? "neg" : ""}>
+                        {it.eficiencia_engorde != null
+                          ? ((it.eficiencia_engorde >= 0 ? "+" : "−") + Math.abs(it.eficiencia_engorde * 100).toFixed(0) + " %")
+                          : "—"}
+                      </strong>
+                    </div>
                   </div>
                   {/* v12.3: bloque .prinf-margen eliminado del panel. */}
                   <button

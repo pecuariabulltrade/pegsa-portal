@@ -6121,22 +6121,24 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
 
 
 def procesar_precios_inferencia(carpeta_out, log=None):
-    """v8: lee el Excel "referencia precios de mercado simulador.xlsx" del
-    subdir simulador/simulador/ y vuelca DOS archivos:
+    """v8 / v15.34: lee el Excel "referencia precios de mercado simulador.xlsx"
+    del subdir simulador/simulador/ y vuelca DOS archivos:
 
       precios_inferencia.json           — snapshot actual (sobrescribe)
       precios_inferencia_historico.json — acumulado por fecha (upsert)
 
     Layout fijo del Excel (Hoja1):
-      A1 "Fecha:"        B1 <datetime>
-      A2 "Categoria:"    B2..E2  4 categorías
-      A3 "Kg Compra:"    B3..E3
-      A4 "kg Venta:"     B4..E4
-      A5 "Precio venta:" B5..E5
-      A6 "Rinde:"        B6..E6  (decimal 0..1)
-      A7 "cost kg prod:" B7..E7
-      A8 "Dias Feed:"    B8..E8
-      A11 "Precio comp:" B11..E11  ← KPI principal
+      A1  "Fecha:"               B1 <datetime>
+      A2  "Categoria:"           B2..E2  4 categorías
+      A3  "Kg Compra:"           B3..E3
+      A4  "kg Venta:"            B4..E4
+      A5  "Precio venta:"        B5..E5
+      A6  "Rinde:"               B6..E6  (decimal 0..1)
+      A7  "cost kg prod:"        B7..E7
+      A8  "Dias Feed:"           B8..E8
+      A9  "Engorde:"             B9..E9    ← v15.34 (kg/día)
+      A10 "Eficiencia Engorde:"  B10..E10  ← v15.34 (decimal, puede ser negativo)
+      A11 "Precio comp:"         B11..E11  ← KPI principal
 
     El Excel está en OneDrive y a veces queda bloqueado por el sync —
     copiamos a tempfile antes de leer.
@@ -6211,16 +6213,19 @@ def procesar_precios_inferencia(carpeta_out, log=None):
             # Capitalizar primera letra de cada palabra para presentación uniforme
             nombre_disp = " ".join(w.capitalize() if w.lower() != "días" else "días" for w in nombre.split())
             items.append({
-                "id":           item_id,
-                "nombre":       nombre_disp,
-                "nombre_raw":   nombre,
-                "kg_compra":    cell(3, col),
-                "kg_venta":     cell(4, col),
-                "precio_venta": cell(5, col),
-                "rinde":        cell(6, col),
-                "cost_kg_prod": cell(7, col),
-                "dias_feed":    cell(8, col),
-                "precio_comp":  cell(11, col),
+                "id":                 item_id,
+                "nombre":             nombre_disp,
+                "nombre_raw":         nombre,
+                "kg_compra":          cell(3, col),
+                "kg_venta":           cell(4, col),
+                "precio_venta":       cell(5, col),
+                "rinde":              cell(6, col),
+                "cost_kg_prod":       cell(7, col),
+                "dias_feed":          cell(8, col),
+                # v15.34: 2 datos nuevos del Excel (filas A9 y A10)
+                "engorde":            cell(9, col),    # kg/día (ej 1.14)
+                "eficiencia_engorde": cell(10, col),   # decimal con signo (ej -0.25 = -25%)
+                "precio_comp":        cell(11, col),
             })
 
         snapshot = {

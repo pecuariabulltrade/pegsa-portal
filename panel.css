@@ -2181,6 +2181,8 @@ html, body {
   font-weight: 600;
   color: var(--ink-soft);
 }
+/* v15.34: eficiencia engorde negativa en rojo */
+.prinf-params-grid strong.neg { color: var(--neg); }
 
 /* Caja MARGEN ESTIMADO / CAB · primary-soft + chip semaforizada. */
 .prinf-margen {

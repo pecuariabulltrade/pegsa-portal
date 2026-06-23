@@ -1444,6 +1444,9 @@ function PreciosInferenciaGrid() {
                   <div><span>Rinde</span><strong>{it.rindeFmt}</strong></div>
                   <div><span>Precio venta</span><strong>{it.precioVentaFmt}</strong></div>
                   <div><span>Costo prod</span><strong>{it.costoKgProdFmt}</strong></div>
+                  {/* v15.34: engorde diario y eficiencia engorde */}
+                  <div><span>Engorde</span><strong>{it.engordeFmt}</strong></div>
+                  <div><span>Eficiencia</span><strong className={it.eficienciaEngordeNeg ? "neg" : ""}>{it.eficienciaEngordeFmt}</strong></div>
                 </div>
                 {/* v12.3: bloque .prinf-margen eliminado del panel.
                     El cálculo de margen sigue en mobile-data.js porque

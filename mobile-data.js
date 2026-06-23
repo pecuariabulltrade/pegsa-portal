@@ -819,6 +819,8 @@
         var df = it.dias_feed;
         var kc = it.kg_compra;
         var kv = it.kg_venta;
+        var en = it.engorde;             // v15.34: kg/día
+        var ef = it.eficiencia_engorde;  // v15.34: decimal (puede ser negativo)
         var nom = splitNombre(it.nombre);
 
         // v9: Cálculo de margen estimado por cabeza (espejo del simulador).
@@ -880,6 +882,15 @@
           costoKgProdFmt: ck != null ? "$ " + Math.round(ck).toLocaleString("es-AR") : "—",
           diasFeed:       df,
           diasFeedFmt:    df != null ? Math.round(df) + " d" : "—",
+          // v15.34: engorde diario (kg/día, factor positivo) y eficiencia
+          // engorde (% con signo; puede ser negativa = ajuste a la baja).
+          engorde:              en,
+          engordeFmt:           en != null ? en.toFixed(2).replace(".", ",") + " kg/día" : "—",
+          eficienciaEngorde:    ef,
+          eficienciaEngordeFmt: ef != null
+                                  ? ((ef >= 0 ? "+" : "−") + Math.abs(ef * 100).toFixed(0) + " %")
+                                  : "—",
+          eficienciaEngordeNeg: ef != null && ef < 0,
           // Margen calculado
           margen:         margen,
           margenFmt:      margenFmt,
