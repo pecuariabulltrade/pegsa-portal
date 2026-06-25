@@ -831,6 +831,58 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
             d[t]["kg_promedio"] = round(d[t]["kg"] / d[t]["cabezas"], 1) if d[t]["cabezas"] > 0 else 0
         return d
 
+    # ── v15.37: detalle granular últimos 15 días (tablas del módulo
+    # Stock → Movimientos). Agrupa por NRO_TROPA = 1 fila por evento
+    # documental. (El endpoint WinCampo NO expone DTE/Remito en egresos —
+    # verificado con probe 2026-06-25 — así que se usa NRO_TROPA como id.)
+    from datetime import date as _date15, timedelta as _td15
+    corte_15d = _date15.today() - _td15(days=15)
+
+    def _detalle_15d(regs, col_fecha, col_cab, id_keys, lugar_keys, consig_keys):
+        grupos = {}
+        for r in regs:
+            fv = r.get(col_fecha) if col_fecha else None
+            try:
+                f = pd.to_datetime(fv, errors="coerce")
+                if f is None or pd.isnull(f) or f.date() < corte_15d:
+                    continue
+                fecha_iso = f.strftime("%Y-%m-%d")
+            except Exception:
+                continue
+            doc = next((str(r.get(k)).strip() for k in id_keys
+                        if r.get(k) not in (None, "")), "—")
+            key = (fecha_iso, doc)
+            g = grupos.get(key)
+            if g is None:
+                g = {"fecha": fecha_iso, "doc": doc, "cabezas": 0,
+                     "lugar": "—", "consignatario": "—", "categorias": set()}
+                grupos[key] = g
+            try:
+                g["cabezas"] += int(round(float(r.get(col_cab) or 0))) if col_cab else 1
+            except (TypeError, ValueError):
+                g["cabezas"] += 1
+            if g["lugar"] == "—":
+                lv = next((str(r.get(k)).strip() for k in lugar_keys
+                           if r.get(k) not in (None, "")), None)
+                if lv:
+                    g["lugar"] = lv
+            if g["consignatario"] == "—":
+                cv = next((str(r.get(k)).strip() for k in consig_keys
+                           if r.get(k) not in (None, "")), None)
+                if cv:
+                    g["consignatario"] = cv
+            cat = r.get("categoria") or r.get("Categoria")
+            if cat:
+                g["categorias"].add(str(cat).strip())
+        items = [{"fecha": g["fecha"], "doc": g["doc"], "cabezas": g["cabezas"],
+                  "lugar": g["lugar"], "consignatario": g["consignatario"],
+                  "categorias": sorted(g["categorias"])} for g in grupos.values()]
+        items.sort(key=lambda x: (x["fecha"], x["doc"]), reverse=True)
+        return items
+
+    ingresos_15d = []
+    egresos_15d  = []
+
     # ────────────────────────────────────────────────────────
     # INGRESOS
     # ────────────────────────────────────────────────────────
@@ -844,6 +896,12 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
         # Filtrar: último año + consignataria
         ing_anio = filtrar_anio(regs_ing, col_fecha_i)
         ing_anio = filtrar_consignataria(ing_anio, col_cons_i)
+
+        # v15.37: detalle últimos 15 días (1 fila por tropa)
+        ingresos_15d = _detalle_15d(
+            ing_anio, col_fecha_i, col_cab_i,
+            id_keys=["NRO_TROPA"], lugar_keys=["ORIGEN", "Proveedor"],
+            consig_keys=["Consignatario"])
 
         # Último mes → mes anterior (completo)
         ing_mes_regs = [r for r in ing_anio if _get_mes(r, col_fecha_i) == mes_anterior]
@@ -893,6 +951,12 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
 
         # Para KPIs y tablas: solo VENTA
         egr_anio_venta = filtrar_solo_venta(egr_anio_todos, col_motivo_e)
+
+        # v15.37: detalle últimos 15 días (1 fila por tropa; egreso = 1 cab/reg)
+        egresos_15d = _detalle_15d(
+            egr_anio_venta, col_fecha_e, col_cab_e,
+            id_keys=["NRO_TROPA"], lugar_keys=["Destino", "DestinoVenta"],
+            consig_keys=["Consignatario"])
 
         # Mes anterior (sobre ventas)
         egr_mes_regs = [r for r in egr_anio_venta if _get_mes(r, col_fecha_e) == mes_anterior]
@@ -963,11 +1027,14 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
             "desde_anio":    hace_un_anio.strftime("%Y-%m-%d"),
             "hasta":         hoy.strftime("%Y-%m-%d"),
             "filtros":       "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos.",
+            "detalle_desde": corte_15d.isoformat(),   # v15.37
         },
         "anio": {
             "resumen":  make_resumen(ing_anio_data, egr_anio_data),
             "ingresos": ing_anio_data,
             "egresos":  egr_anio_data,
+            "ingresos_detalle_15d": ingresos_15d,   # v15.37
+            "egresos_detalle_15d":  egresos_15d,    # v15.37
         },
         "ultimo_mes": {
             "nombre":   nombre_mes_ant,
