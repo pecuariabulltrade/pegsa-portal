@@ -1638,7 +1638,7 @@ function renderConsumo(data) {
       // Estilo del día descartado: fondo rosado claro + texto opaco
       if (esDesc) {
         tr.style.cssText = 'background:rgba(220,80,80,.06);color:rgba(26,22,18,.45)';
-        tr.title = 'Día descartado del cálculo (caída >30% — probable falta de datos de un mixer)';
+        tr.title = 'Día descartado del cálculo (caída >15% — probable falta de datos de un mixer)';
       }
       var fechaCell = '<strong>'+fmtFecha(d.fecha)+'</strong>'
         + (esDesc ? ' <span style="font-family:DM Mono,monospace;font-size:10px;color:#c0392b;background:rgba(220,80,80,.12);padding:1px 6px;border-radius:2px;margin-left:6px;letter-spacing:.06em">PARCIAL</span>' : '');
@@ -1673,7 +1673,7 @@ function renderConsumo(data) {
       leyenda.innerHTML =
         '<strong style="color:#c0392b">Nota:</strong> los días marcados como '
         + '<span style="background:rgba(220,80,80,.12);color:#c0392b;padding:1px 6px;border-radius:2px">PARCIAL</span> '
-        + 'tienen una caída &gt;30% vs el promedio reciente. Posible causa: uno de los dos mixers no subió datos al Dropbox ese día. '
+        + 'tienen una caída &gt;15% vs el promedio reciente. Posible causa: uno de los dos mixers no subió datos al Dropbox ese día. '
         + 'Estos días NO se usan para calcular el promedio diario ni el total de los últimos 3 días.';
       secD.appendChild(leyenda);
     }
