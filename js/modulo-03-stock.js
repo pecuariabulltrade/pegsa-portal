@@ -2428,6 +2428,69 @@ function renderMovimientos(data) {
   el.appendChild(hdr);
 
   // ══════════════════════════════════════════════════════════
+  // ── v15.37: DETALLE ÚLTIMOS 15 DÍAS (ingresos / egresos) ──
+  // 1 fila por evento documental: ingresos por NRO_TROPA, egresos por
+  // NRO_TRANSACCION (≈ remito). Nota: la API no expone consignatario en
+  // egresos → esa columna muestra "—".
+  // ══════════════════════════════════════════════════════════
+  var ing15 = anio.ingresos_detalle_15d || [];
+  var egr15 = anio.egresos_detalle_15d  || [];
+  var corteDesde = meta.detalle_desde   || '';
+  if (ing15.length || egr15.length) {
+    var detSec = document.createElement('div');
+    detSec.style.cssText = 'margin-bottom:40px';
+    var detTit = document.createElement('div');
+    detTit.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:12px';
+    detTit.textContent = 'Detalle últimos 15 días'
+      + (corteDesde ? ' · desde ' + corteDesde.split('-').reverse().join('/') : '');
+    detSec.appendChild(detTit);
+
+    function _fechaDMY(s){ return s ? String(s).split('-').reverse().join('/') : '—'; }
+    function _tablaDet(titulo, items, cols) {
+      var box = document.createElement('div');
+      box.style.cssText = 'margin-bottom:24px';
+      var t = '<div style="font-family:\'Playfair Display\',serif;font-size:18px;margin-bottom:8px">'
+            + titulo + ' <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">· '
+            + items.length + ' eventos</span></div>';
+      if (!items.length) {
+        t += '<div style="color:rgba(26,22,18,.45);font-family:\'DM Mono\',monospace;font-size:12px">— sin movimientos en el período —</div>';
+        box.innerHTML = t; return box;
+      }
+      t += '<table class="data-table"><thead><tr>';
+      cols.forEach(function(c){ t += '<th class="'+(c.align||'')+'">'+c.label+'</th>'; });
+      t += '</tr></thead><tbody>';
+      items.forEach(function(it){
+        t += '<tr>';
+        cols.forEach(function(c){
+          var v = it[c.key];
+          if (c.fmt === 'num')        v = Number(v||0).toLocaleString('es-AR');
+          else if (c.fmt === 'fecha') v = _fechaDMY(v);
+          t += '<td class="'+(c.align?c.align+' mono':'')+'">'+(v!=null && v!=='' ? v : '—')+'</td>';
+        });
+        t += '</tr>';
+      });
+      t += '</tbody></table>';
+      box.innerHTML = t;
+      return box;
+    }
+    detSec.appendChild(_tablaDet('Ingresos', ing15, [
+      {key:'doc',           label:'Tropa',         align:'right'},
+      {key:'fecha',         label:'Fecha',                       fmt:'fecha'},
+      {key:'cabezas',       label:'Cantidad',      align:'right', fmt:'num'},
+      {key:'lugar',         label:'Origen'},
+      {key:'consignatario', label:'Consignatario'},
+    ]));
+    detSec.appendChild(_tablaDet('Egresos', egr15, [
+      {key:'doc',           label:'Remito / DTE',  align:'right'},
+      {key:'fecha',         label:'Fecha',                       fmt:'fecha'},
+      {key:'cabezas',       label:'Cantidad',      align:'right', fmt:'num'},
+      {key:'lugar',         label:'Destino'},
+      {key:'consignatario', label:'Consignatario'},
+    ]));
+    el.appendChild(detSec);
+  }
+
+  // ══════════════════════════════════════════════════════════
   // ── FILTRO DE MESES ──────────────────────────────────────
   // ══════════════════════════════════════════════════════════
   var ingDet = (anio.ingresos  || {}).por_mes_detalle || {};

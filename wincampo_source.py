@@ -379,6 +379,11 @@ class WinCampoAPI:
             "Consignatario":  s("CONSIGNATARIO"),
             "Origen":         s("ORIGEN"),
             "FechaIngreso":   s("FECHA_INGRESO"),
+            # v15.37: nro de transacción de venta (≈ remito) para agrupar el
+            # detalle de egresos del módulo Movimientos. El endpoint NO expone
+            # DTE de egreso; NRO_TRANSACCION es el id de venta real (1 por
+            # evento documental, ~27 en 15d vs ~212 agrupando por tropa).
+            "NRO_TRANSACCION": s("NRO_TRANSACCION"),
         }
 
     # ════════════════════════════════════════════════════════════════

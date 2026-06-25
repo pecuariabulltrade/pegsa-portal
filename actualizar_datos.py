@@ -952,10 +952,12 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
         # Para KPIs y tablas: solo VENTA
         egr_anio_venta = filtrar_solo_venta(egr_anio_todos, col_motivo_e)
 
-        # v15.37: detalle últimos 15 días (1 fila por tropa; egreso = 1 cab/reg)
+        # v15.37: detalle últimos 15 días (1 fila por VENTA = NRO_TRANSACCION;
+        # egreso = 1 cab/reg). Fallback a NRO_TROPA si la transacción viene null.
+        # Nota: la API NO expone consignatario en egresos → esa col queda "—".
         egresos_15d = _detalle_15d(
             egr_anio_venta, col_fecha_e, col_cab_e,
-            id_keys=["NRO_TROPA"], lugar_keys=["Destino", "DestinoVenta"],
+            id_keys=["NRO_TRANSACCION", "NRO_TROPA"], lugar_keys=["Destino", "DestinoVenta"],
             consig_keys=["Consignatario"])
 
         # Mes anterior (sobre ventas)
