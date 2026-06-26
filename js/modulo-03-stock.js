@@ -2485,7 +2485,8 @@ function renderMovimientos(data) {
       {key:'fecha',         label:'Fecha',                       fmt:'fecha'},
       {key:'cabezas',       label:'Cantidad',      align:'right', fmt:'num'},
       {key:'lugar',         label:'Destino'},
-      {key:'consignatario', label:'Consignatario'},
+      // v15.37.1: columna "Consignatario" removida — la API WinCampo no la
+      // expone en egresos (0/1151 poblado), siempre quedaba en "—".
     ]));
     el.appendChild(detSec);
   }
@@ -2961,60 +2962,4 @@ function renderMovimientos(data) {
 
   // ── Bloque EGRESOS ──
   var divEgr = document.createElement('div');
-  divEgr.style.cssText = 'margin-bottom:48px;padding:28px 32px;background:rgba(192,57,43,.03);border:1px solid rgba(192,57,43,.12);border-left:4px solid #c0392b;border-radius:2px';
-  divEgr.innerHTML =
-    '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#c0392b;margin-bottom:4px">Detalle · Último año</div>'
-    +'<div style="font-family:\'Playfair Display\',serif;font-size:20px;font-weight:700;margin-bottom:20px">&#8595; Egresos del Feedlot</div>';
-  var tE1 = renderTabla('Por Propietario',    egrAnio.por_propietario||{});
-  var tE2 = renderTabla('Por Categor\u00eda', egrAnio.por_categoria||{});
-  if (tE1) divEgr.appendChild(tE1);
-  if (tE2) divEgr.appendChild(tE2);
-
-  // ── Top 10 Destinos de Venta (Egresos) ──
-  var top10dest = egrAnio.top10_destino || [];
-  if (top10dest.length) {
-    var maxDest = top10dest[0].cabezas;
-    var secDest = document.createElement('div'); secDest.style.cssText = 'margin-bottom:24px';
-    secDest.innerHTML = '<div class="section-header"><span class="section-title">Top 10 Destinos de Venta</span><span class="section-sub">mayor cantidad de cabezas vendidas · último año</span></div>';
-    var tDest = document.createElement('table'); tDest.className = 'data-table';
-    tDest.innerHTML = '<thead><tr><th>#</th><th>Frigorífico / Destino</th><th class="right">Cabezas</th><th style="width:200px">Participación</th></tr></thead>';
-    var bDest = document.createElement('tbody');
-    var totDest = top10dest.reduce(function(s,r){return s+r.cabezas;},0);
-    top10dest.forEach(function(r,i) {
-      var pct  = totDest>0 ? (r.cabezas/totDest*100).toFixed(1) : '0.0';
-      var barW = maxDest>0 ? (r.cabezas/maxDest*100).toFixed(1) : '0';
-      var tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.title = 'Ver desglose por categoría';
-      tr.innerHTML = '<td style="color:rgba(26,22,18,.4);font-family:DM Mono,monospace;font-size:13px;width:32px">'+(i+1)+'</td>'
-        +'<td><strong>'+r.nombre+'</strong> <span style="font-size:12px;color:rgba(26,22,18,.3)">&#9656;</span></td>'
-        +'<td class="right mono" style="color:#c0392b;font-weight:700">'+movFmt(r.cabezas)+'</td>'
-        +'<td style="padding:6px 16px;vertical-align:middle">'
-          +'<div style="display:flex;align-items:center;gap:8px">'
-            +'<div style="flex:1;background:rgba(26,22,18,.07);border-radius:2px;height:12px">'
-              +'<div style="background:#c0392b;height:100%;width:'+barW+'%;border-radius:2px"></div>'
-            +'</div>'
-            +'<span style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.5);width:36px;text-align:right">'+pct+'%</span>'
-          +'</div>'
-        +'</td>';
-      (function(row){ tr.addEventListener('click', function(){
-        openPieModal(row.nombre, row.cabezas, row.por_categoria||{}, '#c0392b', 'Egresos por categoría');
-      }); })(r);
-      bDest.appendChild(tr);
-    });
-    tDest.appendChild(bDest); secDest.appendChild(tDest); divEgr.appendChild(secDest);
-  }
-  el.appendChild(divEgr);
-
-  // ── Evolución mensual ──
-  var tMes = renderMeses(ingAnio.por_mes||{}, egrAnio.por_mes||{});
-  if (tMes) el.appendChild(tMes);
-
-  // ── Nota filtros ──
-  if (meta.filtros) {
-    var nota = document.createElement('div');
-    nota.style.cssText = 'margin-top:24px;padding:10px 14px;background:rgba(184,146,42,.07);border-left:3px solid var(--gold);font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.45)';
-    nota.textContent = '\u24d8 ' + meta.filtros;
-    el.appendChild(nota);
-  }
-}
+  divEgr.style.cssText = 'margin-bottom:48px;padding:28px 32px;bac
