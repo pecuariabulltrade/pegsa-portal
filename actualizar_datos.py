@@ -831,20 +831,22 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
             d[t]["kg_promedio"] = round(d[t]["kg"] / d[t]["cabezas"], 1) if d[t]["cabezas"] > 0 else 0
         return d
 
-    # ── v15.37: detalle granular últimos 15 días (tablas del módulo
-    # Stock → Movimientos). Agrupa por NRO_TROPA = 1 fila por evento
-    # documental. (El endpoint WinCampo NO expone DTE/Remito en egresos —
-    # verificado con probe 2026-06-25 — así que se usa NRO_TROPA como id.)
-    from datetime import date as _date15, timedelta as _td15
-    corte_15d = _date15.today() - _td15(days=15)
+    # ── v15.38: detalle granular últimos 30 días (era 15d en v15.37).
+    # Agrupa por NRO_TROPA (ingresos) / NRO_TRANSACCION (egresos) = 1 fila
+    # por evento documental. Cada fila incluye categorias_detalle =
+    # [{categoria, cabezas, kg_prom}] para el desplegable del frontend, más
+    # kg_total y kg_prom (promedio ponderado) del evento.
+    from datetime import date as _date30, timedelta as _td30
+    corte_30d = _date30.today() - _td30(days=30)
 
-    def _detalle_15d(regs, col_fecha, col_cab, id_keys, lugar_keys, consig_keys):
+    def _detalle_30d(regs, col_fecha, col_cab, col_kg, id_keys,
+                     lugar_keys, vendedor_keys, consig_keys):
         grupos = {}
         for r in regs:
             fv = r.get(col_fecha) if col_fecha else None
             try:
                 f = pd.to_datetime(fv, errors="coerce")
-                if f is None or pd.isnull(f) or f.date() < corte_15d:
+                if f is None or pd.isnull(f) or f.date() < corte_30d:
                     continue
                 fecha_iso = f.strftime("%Y-%m-%d")
             except Exception:
@@ -854,34 +856,64 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
             key = (fecha_iso, doc)
             g = grupos.get(key)
             if g is None:
-                g = {"fecha": fecha_iso, "doc": doc, "cabezas": 0,
-                     "lugar": "—", "consignatario": "—", "categorias": set()}
+                g = {"fecha": fecha_iso, "doc": doc, "cabezas": 0, "kg_total": 0.0,
+                     "lugar": "—", "vendedor": "—", "consignatario": "—",
+                     "_por_cat": {}}
                 grupos[key] = g
             try:
-                g["cabezas"] += int(round(float(r.get(col_cab) or 0))) if col_cab else 1
+                cab_reg = int(round(float(r.get(col_cab) or 0))) if col_cab else 1
             except (TypeError, ValueError):
-                g["cabezas"] += 1
+                cab_reg = 1
+            g["cabezas"] += cab_reg
+            try:
+                kg_reg = float(r.get(col_kg) or 0) if col_kg else 0.0
+            except (TypeError, ValueError):
+                kg_reg = 0.0
+            g["kg_total"] += kg_reg
+            cat = str(r.get("categoria") or r.get("Categoria") or "?").strip() or "?"
+            pc = g["_por_cat"].setdefault(cat, {"cabezas": 0, "kg": 0.0})
+            pc["cabezas"] += cab_reg
+            pc["kg"]      += kg_reg
             if g["lugar"] == "—":
                 lv = next((str(r.get(k)).strip() for k in lugar_keys
                            if r.get(k) not in (None, "")), None)
                 if lv:
                     g["lugar"] = lv
+            if g["vendedor"] == "—":
+                vv = next((str(r.get(k)).strip() for k in vendedor_keys
+                           if r.get(k) not in (None, "")), None)
+                if vv:
+                    g["vendedor"] = vv
             if g["consignatario"] == "—":
                 cv = next((str(r.get(k)).strip() for k in consig_keys
                            if r.get(k) not in (None, "")), None)
                 if cv:
                     g["consignatario"] = cv
-            cat = r.get("categoria") or r.get("Categoria")
-            if cat:
-                g["categorias"].add(str(cat).strip())
-        items = [{"fecha": g["fecha"], "doc": g["doc"], "cabezas": g["cabezas"],
-                  "lugar": g["lugar"], "consignatario": g["consignatario"],
-                  "categorias": sorted(g["categorias"])} for g in grupos.values()]
+        items = []
+        for g in grupos.values():
+            cats = []
+            for cat, d in sorted(g["_por_cat"].items()):
+                cats.append({
+                    "categoria": cat,
+                    "cabezas":   d["cabezas"],
+                    "kg_prom":   round(d["kg"] / d["cabezas"], 1) if d["cabezas"] else 0,
+                })
+            items.append({
+                "fecha":              g["fecha"],
+                "doc":                g["doc"],
+                "cabezas":            g["cabezas"],
+                "kg_total":           round(g["kg_total"], 1),
+                "kg_prom":            round(g["kg_total"] / g["cabezas"], 1) if g["cabezas"] else 0,
+                "lugar":              g["lugar"],
+                "vendedor":           g["vendedor"],
+                "consignatario":      g["consignatario"],
+                "categorias_detalle": cats,
+            })
         items.sort(key=lambda x: (x["fecha"], x["doc"]), reverse=True)
         return items
 
-    ingresos_15d = []
-    egresos_15d  = []
+    ingresos_30d = []
+    egresos_30d  = []
 
     # ────────────────────────────────────────────────────────
     # INGRESOS
@@ -897,10 +929,11 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
         ing_anio = filtrar_anio(regs_ing, col_fecha_i)
         ing_anio = filtrar_consignataria(ing_anio, col_cons_i)
 
-        # v15.37: detalle últimos 15 días (1 fila por tropa)
-        ingresos_15d = _detalle_15d(
-            ing_anio, col_fecha_i, col_cab_i,
-            id_keys=["NRO_TROPA"], lugar_keys=["ORIGEN", "Proveedor"],
+        # v15.38: detalle últimos 30 días (1 fila por tropa) + kg + vendedor + cats
+        ingresos_30d = _detalle_30d(
+            ing_anio, col_fecha_i, col_cab_i, col_kg_i,
+            id_keys=["NRO_TROPA"], lugar_keys=["ORIGEN"],
+            vendedor_keys=["Proveedor", "PROVEEDOR"],
             consig_keys=["Consignatario"])
 
         # Último mes → mes anterior (completo)
@@ -952,12 +985,13 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
         # Para KPIs y tablas: solo VENTA
         egr_anio_venta = filtrar_solo_venta(egr_anio_todos, col_motivo_e)
 
-        # v15.37: detalle últimos 15 días (1 fila por VENTA = NRO_TRANSACCION;
+        # v15.38: detalle últimos 30 días (1 fila por VENTA = NRO_TRANSACCION;
         # egreso = 1 cab/reg). Fallback a NRO_TROPA si la transacción viene null.
         # Nota: la API NO expone consignatario en egresos → esa col queda "—".
-        egresos_15d = _detalle_15d(
-            egr_anio_venta, col_fecha_e, col_cab_e,
+        egresos_30d = _detalle_30d(
+            egr_anio_venta, col_fecha_e, col_cab_e, "KgEgreso",
             id_keys=["NRO_TRANSACCION", "NRO_TROPA"], lugar_keys=["Destino", "DestinoVenta"],
+            vendedor_keys=[],
             consig_keys=["Consignatario"])
 
         # Mes anterior (sobre ventas)
@@ -1029,14 +1063,14 @@ def procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo):
             "desde_anio":    hace_un_anio.strftime("%Y-%m-%d"),
             "hasta":         hoy.strftime("%Y-%m-%d"),
             "filtros":       "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos.",
-            "detalle_desde": corte_15d.isoformat(),   # v15.37
+            "detalle_desde": corte_30d.isoformat(),   # v15.38 (era 15d)
         },
         "anio": {
             "resumen":  make_resumen(ing_anio_data, egr_anio_data),
             "ingresos": ing_anio_data,
             "egresos":  egr_anio_data,
-            "ingresos_detalle_15d": ingresos_15d,   # v15.37
-            "egresos_detalle_15d":  egresos_15d,    # v15.37
+            "ingresos_detalle_30d": ingresos_30d,   # v15.38 (era 15d)
+            "egresos_detalle_30d":  egresos_30d,    # v15.38
         },
         "ultimo_mes": {
             "nombre":   nombre_mes_ant,

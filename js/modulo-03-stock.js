@@ -2428,24 +2428,26 @@ function renderMovimientos(data) {
   el.appendChild(hdr);
 
   // ══════════════════════════════════════════════════════════
-  // ── v15.37: DETALLE ÚLTIMOS 15 DÍAS (ingresos / egresos) ──
-  // 1 fila por evento documental: ingresos por NRO_TROPA, egresos por
-  // NRO_TRANSACCION (≈ remito). Nota: la API no expone consignatario en
-  // egresos → esa columna muestra "—".
+  // ── v15.38: DETALLE ÚLTIMOS 30 DÍAS (ingresos / egresos) ──
+  // 1 fila por evento documental (ingresos NRO_TROPA, egresos NRO_TRANSACCION).
+  // Cada fila se despliega al click para mostrar el detalle por categoría
+  // (categoría · cabezas · kg promedio).
   // ══════════════════════════════════════════════════════════
-  var ing15 = anio.ingresos_detalle_15d || [];
-  var egr15 = anio.egresos_detalle_15d  || [];
+  var ing30 = anio.ingresos_detalle_30d || anio.ingresos_detalle_15d || [];
+  var egr30 = anio.egresos_detalle_30d  || anio.egresos_detalle_15d  || [];
   var corteDesde = meta.detalle_desde   || '';
-  if (ing15.length || egr15.length) {
+  if (ing30.length || egr30.length) {
     var detSec = document.createElement('div');
     detSec.style.cssText = 'margin-bottom:40px';
     var detTit = document.createElement('div');
     detTit.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:12px';
-    detTit.textContent = 'Detalle últimos 15 días'
+    detTit.textContent = 'Detalle últimos 30 días'
       + (corteDesde ? ' · desde ' + corteDesde.split('-').reverse().join('/') : '');
     detSec.appendChild(detTit);
 
     function _fechaDMY(s){ return s ? String(s).split('-').reverse().join('/') : '—'; }
+    function _fmtNum(v){ return Number(v || 0).toLocaleString('es-AR'); }
+
     function _tablaDet(titulo, items, cols) {
       var box = document.createElement('div');
       box.style.cssText = 'margin-bottom:24px';
@@ -2457,36 +2459,71 @@ function renderMovimientos(data) {
         box.innerHTML = t; return box;
       }
       t += '<table class="data-table"><thead><tr>';
+      t += '<th style="width:24px"></th>';
       cols.forEach(function(c){ t += '<th class="'+(c.align||'')+'">'+c.label+'</th>'; });
       t += '</tr></thead><tbody>';
-      items.forEach(function(it){
-        t += '<tr>';
+      items.forEach(function(it, idx){
+        var rowId = 'detrow-' + titulo.toLowerCase() + '-' + idx;
+        t += '<tr class="det-main" data-target="'+rowId+'" style="cursor:pointer">';
+        t += '<td class="mono" style="color:rgba(26,22,18,.4);text-align:center;width:24px">▸</td>';
         cols.forEach(function(c){
           var v = it[c.key];
-          if (c.fmt === 'num')        v = Number(v||0).toLocaleString('es-AR');
+          if (c.fmt === 'num')        v = _fmtNum(v);
           else if (c.fmt === 'fecha') v = _fechaDMY(v);
           t += '<td class="'+(c.align?c.align+' mono':'')+'">'+(v!=null && v!=='' ? v : '—')+'</td>';
         });
         t += '</tr>';
+        var cats = it.categorias_detalle || [];
+        t += '<tr id="'+rowId+'" class="det-sub" style="display:none;background:rgba(184,146,42,.04)">';
+        t += '<td></td><td colspan="'+cols.length+'" style="padding:8px 16px 12px 16px">';
+        if (!cats.length) {
+          t += '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.4)">— sin detalle por categoría —</div>';
+        } else {
+          t += '<div style="font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,22,18,.4);margin-bottom:6px">Detalle por categoría</div>';
+          t += '<table style="border-collapse:collapse;width:auto;min-width:300px">';
+          t += '<thead><tr style="border-bottom:1px solid rgba(26,22,18,.1)">';
+          t += '<th style="padding:4px 14px 4px 0;text-align:left;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.06em;color:rgba(26,22,18,.55);font-weight:600">Categoría</th>';
+          t += '<th style="padding:4px 14px 4px 0;text-align:right;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.06em;color:rgba(26,22,18,.55);font-weight:600">Cabezas</th>';
+          t += '<th style="padding:4px 0;text-align:right;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.06em;color:rgba(26,22,18,.55);font-weight:600">Kg promedio</th>';
+          t += '</tr></thead><tbody>';
+          cats.forEach(function(c){
+            t += '<tr>';
+            t += '<td class="mono" style="padding:3px 14px 3px 0">'+(c.categoria || '?')+'</td>';
+            t += '<td class="mono" style="padding:3px 14px 3px 0;text-align:right">'+_fmtNum(c.cabezas)+'</td>';
+            t += '<td class="mono" style="padding:3px 0;text-align:right">'+_fmtNum(c.kg_prom)+' kg</td>';
+            t += '</tr>';
+          });
+          t += '</tbody></table>';
+        }
+        t += '</td></tr>';
       });
       t += '</tbody></table>';
       box.innerHTML = t;
+      box.querySelectorAll('tr.det-main').forEach(function(row){
+        row.addEventListener('click', function(){
+          var sub = box.querySelector('#' + row.dataset.target);
+          if (!sub) return;
+          var open = sub.style.display !== 'none';
+          sub.style.display = open ? 'none' : '';
+          row.querySelector('td:first-child').textContent = open ? '▸' : '▾';
+        });
+      });
       return box;
     }
-    detSec.appendChild(_tablaDet('Ingresos', ing15, [
-      {key:'doc',           label:'Tropa',         align:'right'},
-      {key:'fecha',         label:'Fecha',                       fmt:'fecha'},
-      {key:'cabezas',       label:'Cantidad',      align:'right', fmt:'num'},
-      {key:'lugar',         label:'Origen'},
+
+    detSec.appendChild(_tablaDet('Ingresos', ing30, [
+      {key:'doc',           label:'Tropa',        align:'right'},
+      {key:'fecha',         label:'Fecha',                      fmt:'fecha'},
+      {key:'cabezas',       label:'Cantidad',     align:'right', fmt:'num'},
+      {key:'vendedor',      label:'Vendedor'},
       {key:'consignatario', label:'Consignatario'},
     ]));
-    detSec.appendChild(_tablaDet('Egresos', egr15, [
-      {key:'doc',           label:'Remito / DTE',  align:'right'},
-      {key:'fecha',         label:'Fecha',                       fmt:'fecha'},
-      {key:'cabezas',       label:'Cantidad',      align:'right', fmt:'num'},
+    detSec.appendChild(_tablaDet('Egresos', egr30, [
+      {key:'doc',           label:'Remito / DTE', align:'right'},
+      {key:'fecha',         label:'Fecha',                      fmt:'fecha'},
+      {key:'cabezas',       label:'Cantidad',     align:'right', fmt:'num'},
       {key:'lugar',         label:'Destino'},
-      // v15.37.1: columna "Consignatario" removida — la API WinCampo no la
-      // expone en egresos (0/1151 poblado), siempre quedaba en "—".
+      {key:'consignatario', label:'Consignataria'},
     ]));
     el.appendChild(detSec);
   }
