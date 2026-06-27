@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-06-26T14:02:31.697172",
+    "generado": "2026-06-26T22:03:11.194734",
     "periodo": "2025",
     "mes_actual": "2026-06",
     "nombre_mes": "Junio 2026",
@@ -9,28 +9,28 @@
     "desde_anio": "2025-06-26",
     "hasta": "2026-06-26",
     "filtros": "Ingresos: excluye CONSIGNATARIO en [DESTETE, TRASLADO]. Egresos: solo MotivoSalida=VENTA para KPIs. Por Tipo incluye todos los motivos.",
-    "detalle_desde": "2026-06-11"
+    "detalle_desde": "2026-05-27"
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 17508,
-      "kg_ingresado": 6031122.5,
-      "kg_promedio_ingreso": 344.5,
+      "cabezas_ingresadas": 17526,
+      "kg_ingresado": 6038772.5,
+      "kg_promedio_ingreso": 344.6,
       "cabezas_egresadas": 19569,
       "kg_egresado": 10475670.6,
       "kg_promedio_egreso": 535.3,
-      "saldo_cabezas": -2061,
-      "saldo_kg": -4444548.1
+      "saldo_cabezas": -2043,
+      "saldo_kg": -4436898.1
     },
     "ingresos": {
-      "total_cabezas": 17508,
-      "total_kg": 6031122.5,
-      "kg_promedio": 344.5,
+      "total_cabezas": 17526,
+      "total_kg": 6038772.5,
+      "kg_promedio": 344.6,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 15132,
-          "kg": 5392906.0,
-          "kg_promedio": 356.4
+          "cabezas": 15150,
+          "kg": 5400556.0,
+          "kg_promedio": 356.5
         },
         "DARWASH SA": {
           "cabezas": 103,
@@ -90,14 +90,14 @@
           "kg_promedio": 202.5
         },
         "VA": {
-          "cabezas": 6771,
-          "kg": 3108986.0,
+          "cabezas": 6772,
+          "kg": 3109391.0,
           "kg_promedio": 459.2
         },
         "TM": {
-          "cabezas": 3747,
-          "kg": 828474.0,
-          "kg_promedio": 221.1
+          "cabezas": 3764,
+          "kg": 835719.0,
+          "kg_promedio": 222.0
         },
         "VQ": {
           "cabezas": 943,
@@ -122,9 +122,9 @@
           "kg_promedio": 382.0
         },
         "2026-06": {
-          "cabezas": 650,
-          "kg": 188365.0,
-          "kg_promedio": 289.8
+          "cabezas": 668,
+          "kg": 196015.0,
+          "kg_promedio": 293.4
         },
         "2025-07": {
           "cabezas": 1322,
@@ -813,13 +813,13 @@
           "kg_promedio": 382.0
         },
         "2026-06": {
-          "cabezas": 650,
-          "kg": 188365.0,
+          "cabezas": 668,
+          "kg": 196015.0,
           "por_categoria": {
             "VA": {
-              "cabezas": 140,
-              "kg": 67027.0,
-              "kg_promedio": 478.8
+              "cabezas": 141,
+              "kg": 67432.0,
+              "kg_promedio": 478.2
             },
             "TH": {
               "cabezas": 69,
@@ -827,9 +827,9 @@
               "kg_promedio": 183.1
             },
             "TM": {
-              "cabezas": 399,
-              "kg": 88377.0,
-              "kg_promedio": 221.5
+              "cabezas": 416,
+              "kg": 95622.0,
+              "kg_promedio": 229.9
             },
             "TO": {
               "cabezas": 14,
@@ -849,12 +849,12 @@
               "kg_promedio": 495.0
             },
             "PEGSA": {
-              "cabezas": 547,
-              "kg": 137375.0,
-              "kg_promedio": 251.1
+              "cabezas": 565,
+              "kg": 145025.0,
+              "kg_promedio": 256.7
             }
           },
-          "kg_promedio": 289.8
+          "kg_promedio": 293.4
         }
       },
       "top10_origen": [
@@ -886,11 +886,11 @@
         },
         {
           "nombre": "SOC. RURAL. GRAL VILLEGAS",
-          "cabezas": 1400,
+          "cabezas": 1418,
           "por_categoria": {
-            "VA": 941,
+            "VA": 942,
             "NT": 129,
-            "TM": 109,
+            "TM": 126,
             "TH": 105,
             "NV": 98,
             "VQ": 10,
@@ -2004,290 +2004,1657 @@
       },
       "top10_destino": []
     },
-    "ingresos_detalle_15d": [
+    "ingresos_detalle_30d": [
       {
         "fecha": "2026-06-21",
         "doc": "DAR.HUI.21/06/26",
         "cabezas": 35,
+        "kg_total": 17790.0,
+        "kg_prom": 508.3,
         "lugar": "CAMPO",
+        "vendedor": "FERIA RODEO HUINCA S.R.L",
         "consignatario": "DARWASH SA",
-        "categorias": [
-          "VA"
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 35,
+            "kg_prom": 508.3
+          }
         ]
       },
       {
         "fecha": "2026-06-19",
         "doc": "PEG.UTE.19/06/26",
         "cabezas": 213,
+        "kg_total": 48170.0,
+        "kg_prom": 226.2,
         "lugar": "CAMPO",
+        "vendedor": "UTE DARWASH SILVIO FER.",
         "consignatario": "DARWASH SA",
-        "categorias": [
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "TM",
+            "cabezas": 213,
+            "kg_prom": 226.2
+          }
         ]
       },
       {
         "fecha": "2026-06-19",
         "doc": "PEG.HUI.19/06/26",
         "cabezas": 34,
+        "kg_total": 16870.0,
+        "kg_prom": 496.2,
         "lugar": "CAMPO",
+        "vendedor": "FERIA RODEO HUINCA S.R.L",
         "consignatario": "DARWASH SA",
-        "categorias": [
-          "NV",
-          "TO"
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 28,
+            "kg_prom": 486.1
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 6,
+            "kg_prom": 543.3
+          }
         ]
       },
       {
         "fecha": "2026-06-19",
         "doc": "DAR.HUI.19/06/26",
         "cabezas": 68,
+        "kg_total": 33200.0,
+        "kg_prom": 488.2,
         "lugar": "CAMPO",
+        "vendedor": "FERIA RODEO HUINCA S.R.L",
         "consignatario": "DARWASH SA",
-        "categorias": [
-          "VA"
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 68,
+            "kg_prom": 488.2
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-17",
+        "doc": "PEG.VIL.17/06/26",
+        "cabezas": 18,
+        "kg_total": 7650.0,
+        "kg_prom": 425.0,
+        "lugar": "CAMPO",
+        "vendedor": "SOC. RURAL. GRAL VILLEGAS",
+        "consignatario": "BULLTRADE SRL",
+        "categorias_detalle": [
+          {
+            "categoria": "TM",
+            "cabezas": 17,
+            "kg_prom": 426.2
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 1,
+            "kg_prom": 405.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "PEG.LAP.10/06/2026",
+        "cabezas": 44,
+        "kg_total": 19008.0,
+        "kg_prom": 432.0,
+        "lugar": "CAMPO",
+        "vendedor": "ARIMAX SRL",
+        "consignatario": "DARWASH SA",
+        "categorias_detalle": [
+          {
+            "categoria": "TO",
+            "cabezas": 8,
+            "kg_prom": 432.0
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 36,
+            "kg_prom": 432.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "PEG.DAR.10/06/26",
+        "cabezas": 113,
+        "kg_total": 26200.0,
+        "kg_prom": 231.9,
+        "lugar": "CAMPO",
+        "vendedor": "DARWASH SA",
+        "consignatario": "DARWASH SA",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 10,
+            "kg_prom": 181.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 102,
+            "kg_prom": 234.4
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 1,
+            "kg_prom": 485.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-08",
+        "doc": "PEG.ERI.08/06/26",
+        "cabezas": 79,
+        "kg_total": 13239.0,
+        "kg_prom": 167.6,
+        "lugar": "CAMPO",
+        "vendedor": "MEZA NICOLAS ALEJANDRO",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 39,
+            "kg_prom": 166.3
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 40,
+            "kg_prom": 168.8
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-03",
+        "doc": "PEG.ERI.03/06/26",
+        "cabezas": 64,
+        "kg_total": 13888.0,
+        "kg_prom": 217.0,
+        "lugar": "CAMPO",
+        "vendedor": "FISCHER SERGIO GABRIEL",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 20,
+            "kg_prom": 217.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 44,
+            "kg_prom": 217.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-29",
+        "doc": "PEG.ERI.29/05/26",
+        "cabezas": 109,
+        "kg_total": 22020.0,
+        "kg_prom": 202.0,
+        "lugar": "CAMPO",
+        "vendedor": "FISCHER SERGIO GABRIEL",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 34,
+            "kg_prom": 202.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 75,
+            "kg_prom": 202.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-28",
+        "doc": "PEGDARW28/05/2026",
+        "cabezas": 19,
+        "kg_total": 6151.0,
+        "kg_prom": 323.7,
+        "lugar": "CAMPO",
+        "vendedor": "DARWASH SA",
+        "consignatario": "DARWASH SA",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 19,
+            "kg_prom": 323.7
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-28",
+        "doc": "BULLDARW28/05/2026",
+        "cabezas": 78,
+        "kg_total": 37756.0,
+        "kg_prom": 484.1,
+        "lugar": "CAMPO",
+        "vendedor": "DARWASH SA",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 47,
+            "kg_prom": 522.3
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 31,
+            "kg_prom": 426.1
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-27",
+        "doc": "PEG.DAR.22/05/26",
+        "cabezas": 51,
+        "kg_total": 17033.0,
+        "kg_prom": 334.0,
+        "lugar": "CAMPO",
+        "vendedor": "DARWASH SA",
+        "consignatario": "DARWASH SA",
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 39,
+            "kg_prom": 375.2
+          },
+          {
+            "categoria": "TH",
+            "cabezas": 12,
+            "kg_prom": 200.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-27",
+        "doc": "BUL.HUI.27/05/26",
+        "cabezas": 37,
+        "kg_total": 9533.0,
+        "kg_prom": 257.6,
+        "lugar": "CAMPO",
+        "vendedor": "FERIA RODEO HUINCA S.R.L",
+        "consignatario": "FERIA RODEO HUINCA S.R.L",
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 14,
+            "kg_prom": 353.1
+          },
+          {
+            "categoria": "TH",
+            "cabezas": 23,
+            "kg_prom": 199.6
+          }
         ]
       }
     ],
-    "egresos_detalle_15d": [
+    "egresos_detalle_30d": [
       {
         "fecha": "2026-06-25",
         "doc": "2206",
         "cabezas": 66,
+        "kg_total": 29840.0,
+        "kg_prom": 452.1,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 38,
+            "kg_prom": 454.5
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 6,
+            "kg_prom": 465.3
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 22,
+            "kg_prom": 444.5
+          }
         ]
       },
       {
         "fecha": "2026-06-24",
         "doc": "2205",
         "cabezas": 4,
+        "kg_total": 1955.0,
+        "kg_prom": 488.8,
         "lugar": "TRASLADO A FERIA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 1,
+            "kg_prom": 550.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 3,
+            "kg_prom": 468.3
+          }
         ]
       },
       {
         "fecha": "2026-06-24",
         "doc": "2204",
         "cabezas": 48,
+        "kg_total": 26359.0,
+        "kg_prom": 549.1,
         "lugar": "TRASLADO A FERIA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM",
-          "TO"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 24,
+            "kg_prom": 597.0
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 1,
+            "kg_prom": 538.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 16,
+            "kg_prom": 503.8
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 7,
+            "kg_prom": 490.6
+          }
         ]
       },
       {
         "fecha": "2026-06-23",
         "doc": "2203",
         "cabezas": 35,
+        "kg_total": 18036.0,
+        "kg_prom": 515.3,
         "lugar": "TRASLADO A FERIA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "TH",
-          "VA",
-          "VQ"
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 12,
+            "kg_prom": 526.2
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 19,
+            "kg_prom": 516.6
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 4,
+            "kg_prom": 476.5
+          }
         ]
       },
       {
         "fecha": "2026-06-23",
         "doc": "2202",
         "cabezas": 43,
+        "kg_total": 19962.0,
+        "kg_prom": 464.2,
         "lugar": "TRASLADO A FERIA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "TH",
-          "VA",
-          "VQ"
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 28,
+            "kg_prom": 459.5
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 12,
+            "kg_prom": 469.9
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 3,
+            "kg_prom": 486.0
+          }
         ]
       },
       {
         "fecha": "2026-06-23",
         "doc": "2201",
         "cabezas": 32,
+        "kg_total": 17720.0,
+        "kg_prom": 553.8,
         "lugar": "MILLAN SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NV",
-          "TH",
-          "TM",
-          "TO",
-          "VA",
-          "VQ"
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 3,
+            "kg_prom": 596.3
+          },
+          {
+            "categoria": "TH",
+            "cabezas": 6,
+            "kg_prom": 516.5
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 7,
+            "kg_prom": 627.0
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 3,
+            "kg_prom": 534.4
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 6,
+            "kg_prom": 557.9
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 7,
+            "kg_prom": 498.8
+          }
         ]
       },
       {
         "fecha": "2026-06-23",
         "doc": "2200",
         "cabezas": 33,
+        "kg_total": 17900.0,
+        "kg_prom": 542.4,
         "lugar": "MILLAN SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NV",
-          "TH",
-          "TM",
-          "TO",
-          "VA",
-          "VQ"
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 1,
+            "kg_prom": 580.9
+          },
+          {
+            "categoria": "TH",
+            "cabezas": 6,
+            "kg_prom": 488.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 9,
+            "kg_prom": 605.1
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 3,
+            "kg_prom": 582.8
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 12,
+            "kg_prom": 524.3
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 2,
+            "kg_prom": 452.8
+          }
         ]
       },
       {
         "fecha": "2026-06-16",
         "doc": "2196",
         "cabezas": 20,
+        "kg_total": 8311.0,
+        "kg_prom": 415.6,
         "lugar": "RICARDO BAILO Y OMAR BAILO SOC. DE HECHO",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NV"
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 20,
+            "kg_prom": 415.6
+          }
         ]
       },
       {
         "fecha": "2026-06-16",
         "doc": "2195",
         "cabezas": 87,
+        "kg_total": 36189.0,
+        "kg_prom": 416.0,
         "lugar": "RICARDO BAILO Y OMAR BAILO SOC. DE HECHO",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 3,
+            "kg_prom": 429.3
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 82,
+            "kg_prom": 414.9
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 2,
+            "kg_prom": 440.0
+          }
         ]
       },
       {
         "fecha": "2026-06-15",
         "doc": "2194",
         "cabezas": 68,
+        "kg_total": 30960.0,
+        "kg_prom": 455.3,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM",
-          "TO"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 38,
+            "kg_prom": 449.4
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 5,
+            "kg_prom": 461.1
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 24,
+            "kg_prom": 463.2
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 459.1
+          }
         ]
       },
       {
         "fecha": "2026-06-15",
         "doc": "2193",
         "cabezas": 42,
+        "kg_total": 18880.0,
+        "kg_prom": 449.5,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 21,
+            "kg_prom": 438.1
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 3,
+            "kg_prom": 468.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 18,
+            "kg_prom": 459.7
+          }
         ]
       },
       {
         "fecha": "2026-06-15",
         "doc": "2192",
         "cabezas": 37,
+        "kg_total": 19480.0,
+        "kg_prom": 526.5,
         "lugar": "DON DELFOR S.A",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 21,
+            "kg_prom": 525.2
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 16,
+            "kg_prom": 528.2
+          }
         ]
       },
       {
         "fecha": "2026-06-15",
         "doc": "2191",
         "cabezas": 36,
+        "kg_total": 17180.0,
+        "kg_prom": 477.2,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 2,
+            "kg_prom": 458.4
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 34,
+            "kg_prom": 478.3
+          }
         ]
       },
       {
         "fecha": "2026-06-15",
         "doc": "2190",
         "cabezas": 61,
+        "kg_total": 29400.0,
+        "kg_prom": 482.0,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 3,
+            "kg_prom": 458.1
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 58,
+            "kg_prom": 483.2
+          }
         ]
       },
       {
         "fecha": "2026-06-11",
         "doc": "2188",
         "cabezas": 62,
+        "kg_total": 28520.0,
+        "kg_prom": 460.0,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 10,
+            "kg_prom": 459.5
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 17,
+            "kg_prom": 459.7
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 35,
+            "kg_prom": 460.3
+          }
         ]
       },
       {
         "fecha": "2026-06-11",
         "doc": "2187",
         "cabezas": 48,
+        "kg_total": 22380.0,
+        "kg_prom": 466.2,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NV",
+            "cabezas": 3,
+            "kg_prom": 523.6
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 45,
+            "kg_prom": 462.4
+          }
         ]
       },
       {
         "fecha": "2026-06-11",
         "doc": "2185",
         "cabezas": 66,
+        "kg_total": 28520.1,
+        "kg_prom": 432.1,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TO"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 54,
+            "kg_prom": 426.0
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 11,
+            "kg_prom": 458.3
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 476.5
+          }
         ]
       },
       {
         "fecha": "2026-06-11",
         "doc": "2184",
         "cabezas": 42,
+        "kg_total": 18220.0,
+        "kg_prom": 433.8,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 38,
+            "kg_prom": 431.9
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 3,
+            "kg_prom": 455.6
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 1,
+            "kg_prom": 441.1
+          }
         ]
       },
       {
         "fecha": "2026-06-11",
         "doc": "2182",
         "cabezas": 61,
+        "kg_total": 28520.0,
+        "kg_prom": 467.5,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 22,
+            "kg_prom": 463.0
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 16,
+            "kg_prom": 493.7
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 23,
+            "kg_prom": 453.7
+          }
         ]
       },
       {
         "fecha": "2026-06-11",
         "doc": "2181",
         "cabezas": 65,
+        "kg_total": 28859.9,
+        "kg_prom": 444.0,
         "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
         "consignatario": "nan",
-        "categorias": [
-          "NT",
-          "NV",
-          "TM",
-          "TO"
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 31,
+            "kg_prom": 439.3
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 15,
+            "kg_prom": 452.7
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 17,
+            "kg_prom": 440.0
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 2,
+            "kg_prom": 485.3
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "2189",
+        "cabezas": 66,
+        "kg_total": 29980.0,
+        "kg_prom": 454.2,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 29,
+            "kg_prom": 455.9
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 5,
+            "kg_prom": 468.8
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 29,
+            "kg_prom": 452.7
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 3,
+            "kg_prom": 428.8
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "2179",
+        "cabezas": 17,
+        "kg_total": 17480.0,
+        "kg_prom": 1028.2,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 17,
+            "kg_prom": 1028.2
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "2178",
+        "cabezas": 33,
+        "kg_total": 18760.0,
+        "kg_prom": 568.5,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 4,
+            "kg_prom": 615.2
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 29,
+            "kg_prom": 562.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "2177",
+        "cabezas": 33,
+        "kg_total": 18800.0,
+        "kg_prom": 569.7,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 33,
+            "kg_prom": 569.7
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "2176",
+        "cabezas": 74,
+        "kg_total": 30000.0,
+        "kg_prom": 405.4,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 13,
+            "kg_prom": 437.6
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 7,
+            "kg_prom": 447.4
+          },
+          {
+            "categoria": "TH",
+            "cabezas": 24,
+            "kg_prom": 372.3
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 13,
+            "kg_prom": 450.9
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 446.4
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 1,
+            "kg_prom": 388.7
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 15,
+            "kg_prom": 369.9
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-10",
+        "doc": "2174",
+        "cabezas": 68,
+        "kg_total": 31075.7,
+        "kg_prom": 457.0,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 25,
+            "kg_prom": 443.5
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 10,
+            "kg_prom": 484.4
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 32,
+            "kg_prom": 458.4
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 473.9
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-09",
+        "doc": "2172",
+        "cabezas": 33,
+        "kg_total": 19000.0,
+        "kg_prom": 575.8,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 33,
+            "kg_prom": 575.8
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-09",
+        "doc": "2171",
+        "cabezas": 32,
+        "kg_total": 18460.0,
+        "kg_prom": 576.9,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 1,
+            "kg_prom": 533.6
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 31,
+            "kg_prom": 578.3
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-09",
+        "doc": "2170",
+        "cabezas": 32,
+        "kg_total": 18320.0,
+        "kg_prom": 572.5,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 32,
+            "kg_prom": 572.5
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-09",
+        "doc": "2169",
+        "cabezas": 32,
+        "kg_total": 18880.0,
+        "kg_prom": 590.0,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 32,
+            "kg_prom": 590.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-08",
+        "doc": "2168",
+        "cabezas": 75,
+        "kg_total": 27829.0,
+        "kg_prom": 371.1,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 74,
+            "kg_prom": 371.3
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 1,
+            "kg_prom": 351.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-08",
+        "doc": "2167",
+        "cabezas": 42,
+        "kg_total": 18674.0,
+        "kg_prom": 444.6,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 13,
+            "kg_prom": 438.3
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 6,
+            "kg_prom": 442.5
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 23,
+            "kg_prom": 448.7
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-08",
+        "doc": "2166",
+        "cabezas": 40,
+        "kg_total": 18935.0,
+        "kg_prom": 473.4,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 11,
+            "kg_prom": 485.9
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 11,
+            "kg_prom": 480.5
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 17,
+            "kg_prom": 457.5
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 526.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-08",
+        "doc": "2165",
+        "cabezas": 40,
+        "kg_total": 18950.0,
+        "kg_prom": 473.8,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 11,
+            "kg_prom": 474.7
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 13,
+            "kg_prom": 462.2
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 16,
+            "kg_prom": 482.4
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-08",
+        "doc": "2164",
+        "cabezas": 57,
+        "kg_total": 26577.0,
+        "kg_prom": 466.3,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 11,
+            "kg_prom": 473.5
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 21,
+            "kg_prom": 473.1
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 25,
+            "kg_prom": 457.3
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2163",
+        "cabezas": 38,
+        "kg_total": 18861.0,
+        "kg_prom": 496.3,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 18,
+            "kg_prom": 483.1
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 3,
+            "kg_prom": 495.0
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 3,
+            "kg_prom": 545.7
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 14,
+            "kg_prom": 503.1
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2162",
+        "cabezas": 31,
+        "kg_total": 16220.0,
+        "kg_prom": 523.2,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 10,
+            "kg_prom": 524.4
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 10,
+            "kg_prom": 525.7
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 11,
+            "kg_prom": 519.9
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2161",
+        "cabezas": 36,
+        "kg_total": 19180.0,
+        "kg_prom": 532.8,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 28,
+            "kg_prom": 534.2
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 3,
+            "kg_prom": 530.0
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 5,
+            "kg_prom": 526.6
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2160",
+        "cabezas": 36,
+        "kg_total": 19125.0,
+        "kg_prom": 531.2,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 10,
+            "kg_prom": 535.8
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 24,
+            "kg_prom": 529.3
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 2,
+            "kg_prom": 532.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2159",
+        "cabezas": 50,
+        "kg_total": 31220.0,
+        "kg_prom": 624.4,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 11,
+            "kg_prom": 597.3
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 29,
+            "kg_prom": 630.8
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 2,
+            "kg_prom": 642.0
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 8,
+            "kg_prom": 634.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2158",
+        "cabezas": 30,
+        "kg_total": 19080.0,
+        "kg_prom": 636.0,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 5,
+            "kg_prom": 646.0
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 18,
+            "kg_prom": 637.5
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 5,
+            "kg_prom": 634.9
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 2,
+            "kg_prom": 600.3
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2157",
+        "cabezas": 30,
+        "kg_total": 18780.0,
+        "kg_prom": 626.0,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 6,
+            "kg_prom": 620.7
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 18,
+            "kg_prom": 623.7
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 5,
+            "kg_prom": 620.0
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 729.1
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-07",
+        "doc": "2156",
+        "cabezas": 52,
+        "kg_total": 32120.0,
+        "kg_prom": 617.7,
+        "lugar": "AZUL NATURAL BEEF S.A",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 5,
+            "kg_prom": 611.2
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 22,
+            "kg_prom": 623.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 24,
+            "kg_prom": 609.2
+          },
+          {
+            "categoria": "TO",
+            "cabezas": 1,
+            "kg_prom": 735.4
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-03",
+        "doc": "2155",
+        "cabezas": 10,
+        "kg_total": 8000.0,
+        "kg_prom": 800.0,
+        "lugar": "DARWASH SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TO",
+            "cabezas": 10,
+            "kg_prom": 800.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-03",
+        "doc": "2154",
+        "cabezas": 25,
+        "kg_total": 5077.0,
+        "kg_prom": 203.1,
+        "lugar": "DARWASH SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 24,
+            "kg_prom": 201.0
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 1,
+            "kg_prom": 254.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-03",
+        "doc": "2153",
+        "cabezas": 16,
+        "kg_total": 5725.0,
+        "kg_prom": 357.8,
+        "lugar": "DARWASH SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 4,
+            "kg_prom": 323.5
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 2,
+            "kg_prom": 280.5
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 2,
+            "kg_prom": 238.0
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 7,
+            "kg_prom": 441.6
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 1,
+            "kg_prom": 303.0
+          }
+        ]
+      },
+      {
+        "fecha": "2026-06-03",
+        "doc": "2152",
+        "cabezas": 25,
+        "kg_total": 9279.0,
+        "kg_prom": 371.2,
+        "lugar": "DARWASH SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 1,
+            "kg_prom": 411.0
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 2,
+            "kg_prom": 362.5
+          },
+          {
+            "categoria": "TH",
+            "cabezas": 8,
+            "kg_prom": 364.8
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 7,
+            "kg_prom": 355.7
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 3,
+            "kg_prom": 429.3
+          },
+          {
+            "categoria": "VQ",
+            "cabezas": 4,
+            "kg_prom": 361.8
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-28",
+        "doc": "2147",
+        "cabezas": 57,
+        "kg_total": 33455.0,
+        "kg_prom": 586.9,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "BULLTRADE SRL",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 57,
+            "kg_prom": 586.9
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-28",
+        "doc": "2146",
+        "cabezas": 31,
+        "kg_total": 18789.0,
+        "kg_prom": 606.1,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "BULLTRADE SRL",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 31,
+            "kg_prom": 606.1
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-28",
+        "doc": "2145",
+        "cabezas": 48,
+        "kg_total": 29298.0,
+        "kg_prom": 610.4,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "BULLTRADE SRL",
+        "categorias_detalle": [
+          {
+            "categoria": "VA",
+            "cabezas": 48,
+            "kg_prom": 610.4
+          }
+        ]
+      },
+      {
+        "fecha": "2026-05-28",
+        "doc": "2144",
+        "cabezas": 30,
+        "kg_total": 18966.0,
+        "kg_prom": 632.2,
+        "lugar": "FRIG. RIOPLATENCE",
+        "vendedor": "—",
+        "consignatario": "DARWASH SA",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 1,
+            "kg_prom": 578.0
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 29,
+            "kg_prom": 634.1
+          }
         ]
       }
     ]
