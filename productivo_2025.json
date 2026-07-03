@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generado": "2026-07-03T14:01:05.335350",
+    "generado": "2026-07-03T15:01:03.862361",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 47968,
-    "registros_filtrados": 13279,
+    "registros_totales": 47980,
+    "registros_filtrados": 13285,
     "excluidos": {
       "motivo": 4335,
-      "rfid": 4002,
+      "rfid": 4007,
       "estadia": 243,
-      "adp": 1646,
+      "adp": 1647,
       "fecha": 24463
     },
     "col_adp": "AdpSinDebaste",
@@ -19,7 +19,7 @@
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 13279,
+    "cabezas": 13285,
     "adp_promedio": 1.443,
     "adp_min": 0.004,
     "adp_max": 5.0,
@@ -56,11 +56,11 @@
       "estadia_max": 438
     },
     "TM": {
-      "cabezas": 378,
-      "adp_promedio": 1.212,
+      "cabezas": 382,
+      "adp_promedio": 1.211,
       "adp_min": 0.605,
       "adp_max": 2.783,
-      "estadia_promedio": 259.6,
+      "estadia_promedio": 259.9,
       "estadia_min": 111,
       "estadia_max": 449
     },
@@ -139,16 +139,16 @@
       "adp_max_range": 1.5226
     },
     "TM": {
-      "cabezas": 56,
-      "adp_promedio": 1.153,
+      "cabezas": 60,
+      "adp_promedio": 1.15,
       "adp_min": 0.623,
       "adp_max": 1.854,
-      "estadia_promedio": 262.5,
+      "estadia_promedio": 264.2,
       "estadia_min": 184,
       "estadia_max": 441,
       "adp_teorico": 1.371,
       "adp_calibrado": 1.1653,
-      "variacion_pct": -15.9,
+      "variacion_pct": -16.12,
       "ajustado": true,
       "adp_min_range": 1.1653,
       "adp_max_range": 1.5766
@@ -307,6 +307,15 @@
       "estadia_promedio": 174.1,
       "estadia_min": 19,
       "estadia_max": 441
+    },
+    "2026-07": {
+      "cabezas": 6,
+      "adp_promedio": 1.115,
+      "adp_min": 0.894,
+      "adp_max": 1.345,
+      "estadia_promedio": 287.2,
+      "estadia_min": 210,
+      "estadia_max": 314
     }
   }
 }
