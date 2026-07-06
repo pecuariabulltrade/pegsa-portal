@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-07-06T15:03:13.696097",
+    "generado": "2026-07-06T16:02:51.844785",
     "periodo": "2025",
     "mes_actual": "2026-07",
     "nombre_mes": "Julio 2026",
@@ -13,24 +13,24 @@
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 17621,
-      "kg_ingresado": 6018917.5,
-      "kg_promedio_ingreso": 341.6,
+      "cabezas_ingresadas": 17971,
+      "kg_ingresado": 6089621.5,
+      "kg_promedio_ingreso": 338.9,
       "cabezas_egresadas": 19061,
       "kg_egresado": 10199058.6,
       "kg_promedio_egreso": 535.1,
-      "saldo_cabezas": -1440,
-      "saldo_kg": -4180141.1
+      "saldo_cabezas": -1090,
+      "saldo_kg": -4109437.1
     },
     "ingresos": {
-      "total_cabezas": 17621,
-      "total_kg": 6018917.5,
-      "kg_promedio": 341.6,
+      "total_cabezas": 17971,
+      "total_kg": 6089621.5,
+      "kg_promedio": 338.9,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 14950,
-          "kg": 5291802.0,
-          "kg_promedio": 354.0
+          "cabezas": 15300,
+          "kg": 5362506.0,
+          "kg_promedio": 350.5
         },
         "DARWASH SA": {
           "cabezas": 236,
@@ -80,9 +80,9 @@
           "kg_promedio": 358.2
         },
         "TH": {
-          "cabezas": 1890,
-          "kg": 381540.5,
-          "kg_promedio": 201.9
+          "cabezas": 1993,
+          "kg": 402511.5,
+          "kg_promedio": 202.0
         },
         "VA": {
           "cabezas": 6766,
@@ -90,9 +90,9 @@
           "kg_promedio": 454.5
         },
         "TM": {
-          "cabezas": 3764,
-          "kg": 835704.0,
-          "kg_promedio": 222.0
+          "cabezas": 4011,
+          "kg": 885437.0,
+          "kg_promedio": 220.8
         },
         "VQ": {
           "cabezas": 943,
@@ -170,6 +170,11 @@
           "cabezas": 616,
           "kg": 240166.0,
           "kg_promedio": 389.9
+        },
+        "2026-07": {
+          "cabezas": 350,
+          "kg": 70704.0,
+          "kg_promedio": 202.0
         }
       },
       "por_mes_detalle": {
@@ -860,6 +865,30 @@
             }
           },
           "kg_promedio": 294.8
+        },
+        "2026-07": {
+          "cabezas": 350,
+          "kg": 70704.0,
+          "por_categoria": {
+            "TH": {
+              "cabezas": 103,
+              "kg": 20971.0,
+              "kg_promedio": 203.6
+            },
+            "TM": {
+              "cabezas": 247,
+              "kg": 49733.0,
+              "kg_promedio": 201.3
+            }
+          },
+          "por_propietario": {
+            "PEGSA": {
+              "cabezas": 350,
+              "kg": 70704.0,
+              "kg_promedio": 202.0
+            }
+          },
+          "kg_promedio": 202.0
         }
       },
       "top10_origen": [
@@ -953,6 +982,14 @@
           }
         },
         {
+          "nombre": "EL DESCANSO",
+          "cabezas": 350,
+          "por_categoria": {
+            "TM": 247,
+            "TH": 103
+          }
+        },
+        {
           "nombre": "SILVIO FERNANDEZ",
           "cabezas": 292,
           "por_categoria": {
@@ -960,13 +997,6 @@
             "TH": 89,
             "NV": 47,
             "TM": 29
-          }
-        },
-        {
-          "nombre": "PERDO NOEL IREY SRL",
-          "cabezas": 192,
-          "por_categoria": {
-            "TM": 192
           }
         }
       ]
@@ -2000,6 +2030,28 @@
       "top10_destino": []
     },
     "ingresos_detalle_30d": [
+      {
+        "fecha": "2026-07-04",
+        "doc": "PEG.ELC.04/06/26",
+        "cabezas": 350,
+        "kg_total": 70704.0,
+        "kg_prom": 202.0,
+        "lugar": "CAMPO",
+        "vendedor": "EL DESCANSO",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 103,
+            "kg_prom": 203.6
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 247,
+            "kg_prom": 201.3
+          }
+        ]
+      },
       {
         "fecha": "2026-06-26",
         "doc": "TRB.DAR.26/06/26",
