@@ -1,14 +1,20 @@
 {
   "establecimiento": "El Coloradito",
   "kpis": {
-    "total_cabezas": 474,
-    "total_kg_estimado_hoy": 94028,
-    "total_ton_estimado_hoy": 94.03,
-    "kg_promedio_estimado": 198.4,
-    "dias_promedio_feedlot": 4.3,
+    "total_cabezas": 636,
+    "total_kg_estimado_hoy": 127860,
+    "total_ton_estimado_hoy": 127.86,
+    "kg_promedio_estimado": 201.0,
+    "dias_promedio_feedlot": 6.2,
     "total_establecimientos": 1,
-    "total_propietarios": 1,
+    "total_propietarios": 2,
     "por_categoria": {
+      "VQ": {
+        "cabezas": 162.0,
+        "kg_estimado": 33832,
+        "ton_estimado": 33.83,
+        "kg_promedio": 208.8
+      },
       "TM": {
         "cabezas": 308.0,
         "kg_estimado": 62164,
@@ -23,6 +29,12 @@
       }
     },
     "por_propietario": {
+      "LAS TAPERAS": {
+        "cabezas": 162.0,
+        "kg_estimado": 33832,
+        "ton_estimado": 33.83,
+        "kg_promedio": 208.8
+      },
       "PEGSA": {
         "cabezas": 474.0,
         "kg_estimado": 94028,
@@ -32,38 +44,38 @@
     },
     "por_establecimiento": {
       "El Coloradito": {
-        "cabezas": 474.0,
-        "kg_estimado": 94028,
-        "ton_estimado": 94.03,
-        "kg_promedio": 198.4
+        "cabezas": 636.0,
+        "kg_estimado": 127860,
+        "ton_estimado": 127.86,
+        "kg_promedio": 201.0
       }
     },
     "por_clasificacion": {
+      "Hembra": {
+        "cabezas": 328.0,
+        "kg_estimado": 65695,
+        "ton_estimado": 65.69,
+        "kg_promedio": 200.3
+      },
       "Macho": {
         "cabezas": 308.0,
         "kg_estimado": 62164,
         "ton_estimado": 62.16,
         "kg_promedio": 201.8
-      },
-      "Hembra": {
-        "cabezas": 166.0,
-        "kg_estimado": 31863,
-        "ton_estimado": 31.86,
-        "kg_promedio": 191.9
       }
     },
     "por_categoria_final": {
+      "ternera": {
+        "cabezas": 323.0,
+        "kg_estimado": 64303,
+        "ton_estimado": 64.3,
+        "kg_promedio": 199.1
+      },
       "ternero": {
         "cabezas": 304.0,
         "kg_estimado": 61092,
         "ton_estimado": 61.09,
         "kg_promedio": 201.0
-      },
-      "ternera": {
-        "cabezas": 161.0,
-        "kg_estimado": 30471,
-        "ton_estimado": 30.47,
-        "kg_promedio": 189.3
       },
       "vaquillona": {
         "cabezas": 5.0,
@@ -80,17 +92,17 @@
     },
     "por_establecimiento_categoria": {
       "El Coloradito": {
+        "ternera": {
+          "cabezas": 323.0,
+          "kg_estimado": 64303.0,
+          "ton_estimado": 64.3,
+          "kg_promedio": 199.1
+        },
         "ternero": {
           "cabezas": 304.0,
           "kg_estimado": 61091.5,
           "ton_estimado": 61.09,
           "kg_promedio": 201.0
-        },
-        "ternera": {
-          "cabezas": 161.0,
-          "kg_estimado": 30471.0,
-          "ton_estimado": 30.47,
-          "kg_promedio": 189.3
         },
         "vaquillona": {
           "cabezas": 5.0,
@@ -107,6 +119,30 @@
       }
     },
     "por_categoria_desglose": {
+      "ternera": {
+        "por_establecimiento": {
+          "El Coloradito": {
+            "cabezas": 323.0,
+            "kg_estimado": 64303.0,
+            "ton_estimado": 64.3,
+            "kg_promedio": 199.1
+          }
+        },
+        "por_propietario": {
+          "LAS TAPERAS": {
+            "cabezas": 162.0,
+            "kg_estimado": 33832.0,
+            "ton_estimado": 33.83,
+            "kg_promedio": 208.8
+          },
+          "PEGSA": {
+            "cabezas": 161.0,
+            "kg_estimado": 30471.0,
+            "ton_estimado": 30.47,
+            "kg_promedio": 189.3
+          }
+        }
+      },
       "ternero": {
         "por_establecimiento": {
           "El Coloradito": {
@@ -122,24 +158,6 @@
             "kg_estimado": 61091.5,
             "ton_estimado": 61.09,
             "kg_promedio": 201.0
-          }
-        }
-      },
-      "ternera": {
-        "por_establecimiento": {
-          "El Coloradito": {
-            "cabezas": 161.0,
-            "kg_estimado": 30471.0,
-            "ton_estimado": 30.47,
-            "kg_promedio": 189.3
-          }
-        },
-        "por_propietario": {
-          "PEGSA": {
-            "cabezas": 161.0,
-            "kg_estimado": 30471.0,
-            "ton_estimado": 30.47,
-            "kg_promedio": 189.3
           }
         }
       },
