@@ -556,10 +556,23 @@ async function renderTrazabilidad() {
       + '<div style="font-family:Playfair Display,serif;font-size:24px;font-weight:700;color:#0F1B64">' + fechaTxt + '</div>'
       + '</div></div>'
       + '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-top:8px">Fuente: Google Drive · ' + (meta.archivos || []).join(' · ') + '</div>'
+      // v15.41 — chips de propietario
+      + trazChipsPropietarios(cons)
       + '</div>';
 
+    // v15.41 — dataset del consolidado según filtro de propietario
+    var consConFiltro = (_trazPropSel && cons.por_propietario && cons.por_propietario[_trazPropSel])
+      ? cons.por_propietario[_trazPropSel]
+      : cons;
+    var subtituloCons = _trazPropSel
+      ? 'filtrado por propietario · ' + _trazPropSel
+      : hojas.length + ' hojas';
+
     // Consolidado (destacado)
-    html += trazBloque('Consolidado global', hojas.length + ' hojas', cons, true, 'consolidado');
+    html += trazBloque('Consolidado global', subtituloCons, consConFiltro, true, 'consolidado');
+
+    // v15.41 — timeline al pie del consolidado (agregado global, sin filtro por propietario)
+    html += trazTimeline(cons);
 
     // Por hoja
     hojas.forEach(function(h) {
@@ -588,6 +601,14 @@ async function renderTrazabilidad() {
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
         delete _trazFiltro[btn.dataset.hoja];
+        renderTrazabilidad();
+      });
+    });
+    // v15.41 — listeners de los chips de propietario
+    content.querySelectorAll('.traz-prop-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        var p = chip.dataset.prop;
+        _trazPropSel = (p === '__all__' || _trazPropSel === p) ? null : p;
         renderTrazabilidad();
       });
     });
