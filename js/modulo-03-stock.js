@@ -405,7 +405,8 @@ window.stockTab = function(name, el) {
 //  Lee trazabilidad_resumen.json (generado por el pipeline desde
 //  G:\Mi unidad\Trazabilidad\) y muestra KPIs por hoja + consolidado.
 // ══════════════════════════════════════════════════════════
-var _trazLoaded = false;
+// v15.40 — estado del filtro por bloque (toggle independiente): {claveHoja: '40d'|'90d'}
+var _trazFiltro = {};
 
 function trazCatColor(cat) {
   var c = (cat || '').toUpperCase();
@@ -423,10 +424,24 @@ function trazEstadoColor(est) {
   return 'rgba(26,22,18,.35)';                    // SIN USAR
 }
 
-// Tarjeta KPI grande (número + label)
-function trazKpiCard(label, valor, sub, color) {
-  return '<div style="background:white;border:1px solid var(--border);border-radius:2px;padding:22px 24px;flex:1;min-width:150px">'
-    + '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:10px">' + label + '</div>'
+// v15.40 — devuelve la vista (estado + categorías + subset) según el filtro activo del bloque
+function trazEstadoActual(claveHoja, d) {
+  var f = _trazFiltro[claveHoja];
+  if (f === '40d') return { estado: d.estado_40d || {}, cats: d.categorias_40d || {}, subset: d.cumple_40d, label: 'con 40 días cumplidos' };
+  if (f === '90d') return { estado: d.estado_90d || {}, cats: d.categorias_90d || {}, subset: d.cumple_90d, label: 'con 90 días cumplidos' };
+  return { estado: d.estado || {}, cats: d.categorias || {}, subset: d.activas, label: 'total' };
+}
+
+// v15.40 — tarjeta KPI clickable (para 40d/90d)
+function trazKpiCardBtn(label, valor, sub, color, claveHoja, filtro) {
+  var activo = _trazFiltro[claveHoja] === filtro;
+  var borde = activo ? '2px solid #B8922A' : '1px solid var(--border)';
+  var bg = activo ? '#fbf8ec' : 'white';
+  return '<div data-hoja="' + claveHoja + '" data-filtro="' + filtro + '" class="traz-kpi-btn" '
+    + 'style="background:' + bg + ';border:' + borde + ';border-radius:2px;padding:22px 24px;flex:1;min-width:150px;cursor:pointer;transition:all .15s">'
+    + '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.5);margin-bottom:10px">'
+    +   label + (activo ? ' · <span style="color:#B8922A">FILTRO ACTIVO</span>' : '')
+    + '</div>'
     + '<div style="font-family:Playfair Display,serif;font-size:34px;font-weight:700;line-height:1;color:' + (color || 'var(--ink)') + '">' + valor + '</div>'
     + (sub ? '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.5);margin-top:8px">' + sub + '</div>' : '')
     + '</div>';
@@ -457,70 +472,125 @@ function trazStackedBar(obj, total, colorFn) {
   return bar + leg;
 }
 
-// Bloque de una hoja (o del consolidado)
-function trazBloque(titulo, sub, d, esConsolidado) {
+// Bloque de una hoja (o del consolidado) — v15.40
+function trazBloque(titulo, sub, d, esConsolidado, claveHoja) {
   var pct40 = (d.pct_40d != null ? d.pct_40d : 0).toString().replace('.', ',');
   var pct90 = (d.pct_90d != null ? d.pct_90d : 0).toString().replace('.', ',');
   var borde = esConsolidado ? '2px solid #0F1B64' : '1px solid var(--border)';
-  var html = '<div style="background:' + (esConsolidado ? '#fbfaf7' : 'white') + ';border:' + borde + ';border-radius:2px;padding:26px 28px;margin-bottom:24px">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:18px">';
-  html += '<div><div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700">' + titulo + '</div>'
-        + (sub ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:2px">' + sub + '</div>' : '') + '</div>';
-  html += '<div style="font-family:Playfair Display,serif;font-size:30px;font-weight:700;color:#0F1B64">' + stockFmt(d.activas)
-        + '<span style="font-family:DM Mono,monospace;font-size:12px;font-weight:400;color:rgba(26,22,18,.5);margin-left:8px">activas</span></div>';
+  var vista = trazEstadoActual(claveHoja, d);
+
+  var html = '<div class="traz-bloque" data-clave="' + claveHoja + '" '
+    + 'style="background:' + (esConsolidado ? '#fbfaf7' : 'white') + ';border:' + borde + ';border-radius:2px;padding:26px 28px;margin-bottom:24px">';
+
+  // Header: título + total activas (grande) + tarjeta Sin usar (informativa)
+  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:14px;margin-bottom:22px">';
+  html += '<div>'
+    + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700">' + titulo + '</div>'
+    + (sub ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:2px">' + sub + '</div>' : '')
+    + '</div>';
+  html += '<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">';
+  html += '<div style="text-align:right"><div style="font-family:Playfair Display,serif;font-size:30px;font-weight:700;color:#0F1B64">' + stockFmt(d.activas)
+    + '<span style="font-family:DM Mono,monospace;font-size:12px;font-weight:400;color:rgba(26,22,18,.5);margin-left:8px">activas</span></div></div>';
+  // Tarjeta "Sin usar" al costado (informativa)
+  if ((d.sin_usar || 0) > 0) {
+    html += '<div style="border-left:1px solid var(--border);padding-left:14px">'
+      + '<div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45)">Sin usar</div>'
+      + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:600;color:rgba(26,22,18,.55)">' + stockFmt(d.sin_usar) + '</div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.4)">declaradas</div>'
+      + '</div>';
+  }
+  html += '</div></div>';
+
+  // KPIs 40 / 90 dias — clickables
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px">';
+  html += trazKpiCardBtn('Cumplió 40 días', stockFmt(d.cumple_40d), pct40 + '% de activas', '#2e7d32', claveHoja, '40d');
+  html += trazKpiCardBtn('Cumplió 90 días', stockFmt(d.cumple_90d), pct90 + '% de activas', '#B8922A', claveHoja, '90d');
   html += '</div>';
 
-  // KPIs 40 / 90 dias
-  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px">';
-  html += trazKpiCard('Cumplió 40 días', stockFmt(d.cumple_40d), pct40 + '% del total', '#2e7d32');
-  html += trazKpiCard('Cumplió 90 días', stockFmt(d.cumple_90d), pct90 + '% del total', '#B8922A');
-  html += '</div>';
+  // Nota si hay filtro activo
+  if (_trazFiltro[claveHoja]) {
+    html += '<div style="background:#fbf8ec;border-left:3px solid #B8922A;padding:10px 16px;margin-bottom:16px;font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.7);display:flex;justify-content:space-between;align-items:center">'
+      + '<span>Vista filtrada: solo caravanas ' + vista.label + ' (<b>' + stockFmt(vista.subset) + '</b>)</span>'
+      + '<button data-hoja="' + claveHoja + '" class="traz-reset-btn" style="font-family:DM Mono,monospace;font-size:11px;padding:4px 12px;background:white;border:1px solid #B8922A;color:#B8922A;border-radius:2px;cursor:pointer">Ver todas</button>'
+      + '</div>';
+  }
 
   // Estado de armado
   html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:10px">Estado de armado</div>';
-  html += trazStackedBar(d.estado || {}, d.activas, trazEstadoColor);
+  html += trazStackedBar(vista.estado, vista.subset, trazEstadoColor);
 
   // Categorías
   html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin:22px 0 10px">Por categoría</div>';
-  html += trazStackedBar(d.categorias || {}, d.activas, trazCatColor);
+  html += trazStackedBar(vista.cats, vista.subset, trazCatColor);
 
   html += '</div>';
   return html;
 }
 
 async function renderTrazabilidad() {
-  if (_trazLoaded) return;
   var loading = document.getElementById('trazLoading');
   var content = document.getElementById('trazContent');
   if (!content) return;
   try {
-    var data = await stockGet(STOCK_SB + '/trazabilidad_resumen.json');
+    // Cachear el JSON en window._trazData; cada click de filtro re-renderiza sin re-fetch
+    var data = window._trazData;
+    if (!data) {
+      data = await stockGet(STOCK_SB + '/trazabilidad_resumen.json');
+      window._trazData = data;
+    }
     var meta = data.meta || {};
     var hojas = data.hojas || [];
     var cons  = data.consolidado || {};
-
+    // v15.40: fecha bien visible
     var fechaTxt = meta.hoy ? meta.hoy.split('-').reverse().join('/') : '';
+
     var html = '';
 
-    // Intro / fuente
-    html += '<div style="margin-bottom:28px">'
-      + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;margin-bottom:4px">Resumen de trazabilidad</div>'
-      + '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.5)">Caravanas declaradas · umbrales calculados a ' + fechaTxt
-      + ' · fuente: Google Drive (' + (meta.archivos || []).join(' · ') + ')</div>'
+    // Header con fecha destacada
+    html += '<div style="margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid var(--border-strong)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px">'
+      + '<div><div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:6px">Resumen de trazabilidad</div>'
+      + '<div style="font-family:Playfair Display,serif;font-size:28px;font-weight:700">Caravanas declaradas — consolidado</div></div>'
+      + '<div style="text-align:right">'
+      + '<div style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.5)">Fecha de consulta</div>'
+      + '<div style="font-family:Playfair Display,serif;font-size:24px;font-weight:700;color:#0F1B64">' + fechaTxt + '</div>'
+      + '</div></div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-top:8px">Fuente: Google Drive · ' + (meta.archivos || []).join(' · ') + '</div>'
       + '</div>';
 
-    // Consolidado global primero (destacado)
-    html += trazBloque('Consolidado global', hojas.length + ' hojas', cons, true);
+    // Consolidado (destacado)
+    html += trazBloque('Consolidado global', hojas.length + ' hojas', cons, true, 'consolidado');
 
-    // Cada hoja
-    hojas.forEach(function(h){
-      html += trazBloque(h.titulo, h.archivo + ' · hoja ' + h.hoja, h, false);
+    // Por hoja
+    hojas.forEach(function(h) {
+      html += trazBloque(h.titulo, h.hoja + ' · ' + h.archivo, h, false, h.clave);
     });
 
     content.innerHTML = html;
     if (loading) loading.style.display = 'none';
     content.style.display = 'block';
-    _trazLoaded = true;
+
+    // v15.40 — listeners para el filtro clickable
+    content.querySelectorAll('.traz-kpi-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var hoja = btn.dataset.hoja;
+        var filtro = btn.dataset.filtro;
+        // toggle: si ya está activo, desactivar
+        if (_trazFiltro[hoja] === filtro) {
+          delete _trazFiltro[hoja];
+        } else {
+          _trazFiltro[hoja] = filtro;
+        }
+        renderTrazabilidad();   // re-render con nuevo estado
+      });
+    });
+    content.querySelectorAll('.traz-reset-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        delete _trazFiltro[btn.dataset.hoja];
+        renderTrazabilidad();
+      });
+    });
   } catch (e) {
     if (loading) loading.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:13px;color:#b00">No se pudo cargar la trazabilidad (' + e.message + ')</div>';
   }
