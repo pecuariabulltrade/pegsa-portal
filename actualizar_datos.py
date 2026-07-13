@@ -6678,90 +6678,141 @@ def _traz_as_date(v):
 
 
 def _traz_analizar_hoja(rows, hoy):
-    """Recibe todas las filas de una hoja (fila 0 = headers) y devuelve el dict
-    de KPIs.
-    v15.40:
-      · activa = tiene PROPIETARIO Y no tiene FECHA SALIDA Y BOLSA no está vacía
-      · sin_usar = tiene PROPIETARIO Y no tiene FECHA SALIDA Y BOLSA está vacía
-        (contador informativo — NO se suma a activas)
-      · estado de armado sobre activas: "CLASIFICAR" literal → CLASIFICAR ·
-        cualquier otra cosa (incl. "feedlot") → CON BOLSA
-      · cumple 40d / 90d se cuenta solo sobre activas (excluye sin_usar)
-      · pre-calcula estado_40d, estado_90d, categorias_40d, categorias_90d
-        para que el frontend filtre las barras sin re-computar."""
+    """v15.41: además de los KPIs de v15.40, acumula:
+      · por_propietario: {"PEGSA": {activas, sin_usar, categorias, estado, ...}, ...}
+      · proximas_40d / proximas_90d: [{fecha, cabezas, dias_hasta}] ordenadas cronológicas,
+        solo fechas > hoy (las que YA cumplieron van a los contadores existentes).
+    """
     if not rows:
         return None
     m = _traz_map_headers(rows[0])
     if "caravana" not in m:
         return None
 
+    HORIZONTE_DIAS = 90   # días hacia adelante para el timeline (frontend puede recortar a 30/60)
+
     activas = 0
     sin_usar = 0
     categorias, estado = {}, {"CLASIFICAR": 0, "CON BOLSA": 0}
     c40 = c90 = 0
-
-    # Desgloses filtrados
     estado_40d = {"CLASIFICAR": 0, "CON BOLSA": 0}
     estado_90d = {"CLASIFICAR": 0, "CON BOLSA": 0}
     categorias_40d = {}
     categorias_90d = {}
+
+    # v15.41: agregados por propietario
+    por_prop = {}   # {"PEGSA": {activas, sin_usar, categorias, estado, c40, c90, estado_40d, ...}}
+
+    def _get_or_new_prop(p):
+        if p not in por_prop:
+            por_prop[p] = {
+                "activas": 0, "sin_usar": 0,
+                "categorias": {}, "estado": {"CLASIFICAR": 0, "CON BOLSA": 0},
+                "cumple_40d": 0, "cumple_90d": 0,
+                "estado_40d": {"CLASIFICAR": 0, "CON BOLSA": 0},
+                "estado_90d": {"CLASIFICAR": 0, "CON BOLSA": 0},
+                "categorias_40d": {}, "categorias_90d": {},
+            }
+        return por_prop[p]
+
+    # v15.41: próximas activaciones (fechas futuras)
+    prox_40 = {}   # {date: count}
+    prox_90 = {}
 
     for r in rows[1:]:
         if not any(x is not None for x in r):
             continue
         if m["caravana"] >= len(r) or r[m["caravana"]] is None:
             continue
-        prop = r[m["propietario"]] if "propietario" in m and m["propietario"] < len(r) else None
-        if not prop or str(prop).strip() == "":
+        prop_raw = r[m["propietario"]] if "propietario" in m and m["propietario"] < len(r) else None
+        if not prop_raw or str(prop_raw).strip() == "":
             continue
         fsal = r[m["fsalida"]] if "fsalida" in m and m["fsalida"] < len(r) else None
         if fsal not in (None, ""):
             continue
 
+        prop = _traz_norm(prop_raw)
         bn = _traz_norm(r[m["bolsa"]]) if "bolsa" in m and m["bolsa"] < len(r) else ""
 
-        # v15.40: SIN USAR es un contador informativo aparte — no cuenta como activa
+        # sin usar = tarjeta informativa (no cuenta como activa)
         if bn == "":
             sin_usar += 1
+            _get_or_new_prop(prop)["sin_usar"] += 1
             continue
 
         activas += 1
+        p = _get_or_new_prop(prop)
+        p["activas"] += 1
 
         cat = _traz_norm(r[m["categoria"]]) if "categoria" in m and m["categoria"] < len(r) else ""
         cat = cat or "SIN CATEGORIA"
         categorias[cat] = categorias.get(cat, 0) + 1
+        p["categorias"][cat] = p["categorias"].get(cat, 0) + 1
 
         est_key = "CLASIFICAR" if bn == "CLASIFICAR" else "CON BOLSA"
         estado[est_key] += 1
+        p["estado"][est_key] += 1
 
         d40 = _traz_as_date(r[m["f40"]]) if "f40" in m and m["f40"] < len(r) else None
         d90 = _traz_as_date(r[m["f90"]]) if "f90" in m and m["f90"] < len(r) else None
-        cumple_40 = d40 is not None and d40 <= hoy
-        cumple_90 = d90 is not None and d90 <= hoy
 
-        if cumple_40:
-            c40 += 1
-            estado_40d[est_key] += 1
-            categorias_40d[cat] = categorias_40d.get(cat, 0) + 1
-        if cumple_90:
-            c90 += 1
-            estado_90d[est_key] += 1
-            categorias_90d[cat] = categorias_90d.get(cat, 0) + 1
+        if d40 is not None:
+            if d40 <= hoy:
+                c40 += 1
+                estado_40d[est_key] += 1
+                categorias_40d[cat] = categorias_40d.get(cat, 0) + 1
+                p["cumple_40d"] += 1
+                p["estado_40d"][est_key] += 1
+                p["categorias_40d"][cat] = p["categorias_40d"].get(cat, 0) + 1
+            elif (d40 - hoy).days <= HORIZONTE_DIAS:
+                prox_40[d40] = prox_40.get(d40, 0) + 1
+
+        if d90 is not None:
+            if d90 <= hoy:
+                c90 += 1
+                estado_90d[est_key] += 1
+                categorias_90d[cat] = categorias_90d.get(cat, 0) + 1
+                p["cumple_90d"] += 1
+                p["estado_90d"][est_key] += 1
+                p["categorias_90d"][cat] = p["categorias_90d"].get(cat, 0) + 1
+            elif (d90 - hoy).days <= HORIZONTE_DIAS:
+                prox_90[d90] = prox_90.get(d90, 0) + 1
 
     pct = lambda x: round(100.0 * x / activas, 1) if activas else 0.0
 
+    # Ordenar propietarios por activas desc; propietarios internos ordenados
+    por_prop_out = {}
+    for p_name, p in sorted(por_prop.items(), key=lambda kv: -kv[1]["activas"]):
+        p["categorias"]     = dict(sorted(p["categorias"].items(),     key=lambda kv: -kv[1]))
+        p["categorias_40d"] = dict(sorted(p["categorias_40d"].items(), key=lambda kv: -kv[1]))
+        p["categorias_90d"] = dict(sorted(p["categorias_90d"].items(), key=lambda kv: -kv[1]))
+        por_prop_out[p_name] = p
+
+    # Timeline de próximas activaciones (ordenado cronológico)
+    proximas_40d = [
+        {"fecha": f.isoformat(), "cabezas": n, "dias_hasta": (f - hoy).days}
+        for f, n in sorted(prox_40.items())
+    ]
+    proximas_90d = [
+        {"fecha": f.isoformat(), "cabezas": n, "dias_hasta": (f - hoy).days}
+        for f, n in sorted(prox_90.items())
+    ]
+
     return {
-        "activas":  activas,
-        "sin_usar": sin_usar,      # v15.40 — contador informativo
+        "activas": activas,
+        "sin_usar": sin_usar,
         "categorias": dict(sorted(categorias.items(), key=lambda kv: -kv[1])),
-        "estado":   estado,
-        "cumple_40d": c40,   "pct_40d": pct(c40),
-        "cumple_90d": c90,   "pct_90d": pct(c90),
-        # v15.40 — desgloses filtrados para el filtro clickable
-        "estado_40d":     estado_40d,
-        "estado_90d":     estado_90d,
+        "estado": estado,
+        "cumple_40d": c40,  "pct_40d": pct(c40),
+        "cumple_90d": c90,  "pct_90d": pct(c90),
+        "estado_40d": estado_40d,
+        "estado_90d": estado_90d,
         "categorias_40d": dict(sorted(categorias_40d.items(), key=lambda kv: -kv[1])),
         "categorias_90d": dict(sorted(categorias_90d.items(), key=lambda kv: -kv[1])),
+        # v15.41
+        "por_propietario": por_prop_out,
+        "proximas_40d":    proximas_40d,
+        "proximas_90d":    proximas_90d,
     }
 
 
@@ -6868,16 +6919,20 @@ def procesar_trazabilidad(carpeta_out, log=None):
         log.warning("  ⚠ Trazabilidad: ninguna hoja procesada, no se genera JSON")
         return None
 
-    # Consolidado global (suma de todas las hojas) — v15.40
+    # Consolidado global (suma de todas las hojas) — v15.41
     cons = {
         "activas": 0, "sin_usar": 0,
         "categorias": {}, "estado": {"CLASIFICAR": 0, "CON BOLSA": 0},
         "cumple_40d": 0, "cumple_90d": 0,
         "estado_40d": {"CLASIFICAR": 0, "CON BOLSA": 0},
         "estado_90d": {"CLASIFICAR": 0, "CON BOLSA": 0},
-        "categorias_40d": {},
-        "categorias_90d": {},
+        "categorias_40d": {}, "categorias_90d": {},
+        # v15.41
+        "por_propietario": {},   # merge de todas las hojas
+        "proximas_40d": {},      # dict fecha_iso → count (para deduplicar/mergear)
+        "proximas_90d": {},
     }
+
     for h in hojas:
         cons["activas"]    += h["activas"]
         cons["sin_usar"]   += h["sin_usar"]
@@ -6896,10 +6951,65 @@ def procesar_trazabilidad(carpeta_out, log=None):
         for k, v in h["categorias_90d"].items():
             cons["categorias_90d"][k] = cons["categorias_90d"].get(k, 0) + v
 
+        # v15.41: merge de por_propietario (suma agregados)
+        for p_name, p_data in h["por_propietario"].items():
+            if p_name not in cons["por_propietario"]:
+                cons["por_propietario"][p_name] = {
+                    "activas": 0, "sin_usar": 0,
+                    "categorias": {}, "estado": {"CLASIFICAR": 0, "CON BOLSA": 0},
+                    "cumple_40d": 0, "cumple_90d": 0,
+                    "estado_40d": {"CLASIFICAR": 0, "CON BOLSA": 0},
+                    "estado_90d": {"CLASIFICAR": 0, "CON BOLSA": 0},
+                    "categorias_40d": {}, "categorias_90d": {},
+                }
+            p_cons = cons["por_propietario"][p_name]
+            p_cons["activas"]    += p_data["activas"]
+            p_cons["sin_usar"]   += p_data["sin_usar"]
+            p_cons["cumple_40d"] += p_data["cumple_40d"]
+            p_cons["cumple_90d"] += p_data["cumple_90d"]
+            for k, v in p_data["categorias"].items():
+                p_cons["categorias"][k] = p_cons["categorias"].get(k, 0) + v
+            for k, v in p_data["estado"].items():
+                p_cons["estado"][k] = p_cons["estado"].get(k, 0) + v
+            for k, v in p_data["estado_40d"].items():
+                p_cons["estado_40d"][k] = p_cons["estado_40d"].get(k, 0) + v
+            for k, v in p_data["estado_90d"].items():
+                p_cons["estado_90d"][k] = p_cons["estado_90d"].get(k, 0) + v
+            for k, v in p_data["categorias_40d"].items():
+                p_cons["categorias_40d"][k] = p_cons["categorias_40d"].get(k, 0) + v
+            for k, v in p_data["categorias_90d"].items():
+                p_cons["categorias_90d"][k] = p_cons["categorias_90d"].get(k, 0) + v
+
+        # v15.41: merge de próximas activaciones (por fecha)
+        for item in h["proximas_40d"]:
+            cons["proximas_40d"][item["fecha"]] = cons["proximas_40d"].get(item["fecha"], 0) + item["cabezas"]
+        for item in h["proximas_90d"]:
+            cons["proximas_90d"][item["fecha"]] = cons["proximas_90d"].get(item["fecha"], 0) + item["cabezas"]
+
+    # Ordenar propietarios y sus dicts internos
+    por_prop_cons_out = {}
+    for p_name, p_data in sorted(cons["por_propietario"].items(), key=lambda kv: -kv[1]["activas"]):
+        p_data["categorias"]     = dict(sorted(p_data["categorias"].items(),     key=lambda kv: -kv[1]))
+        p_data["categorias_40d"] = dict(sorted(p_data["categorias_40d"].items(), key=lambda kv: -kv[1]))
+        p_data["categorias_90d"] = dict(sorted(p_data["categorias_90d"].items(), key=lambda kv: -kv[1]))
+        tot_p = p_data["activas"] or 1
+        p_data["pct_40d"] = round(100.0 * p_data["cumple_40d"] / tot_p, 1)
+        p_data["pct_90d"] = round(100.0 * p_data["cumple_90d"] / tot_p, 1)
+        por_prop_cons_out[p_name] = p_data
+    cons["por_propietario"] = por_prop_cons_out
+
+    # Convertir dicts de proximas → lista ordenada cronológica
+    def _sort_prox(d):
+        return [
+            {"fecha": f, "cabezas": n, "dias_hasta": (date.fromisoformat(f) - hoy).days}
+            for f, n in sorted(d.items())
+        ]
+    cons["proximas_40d"] = _sort_prox(cons["proximas_40d"])
+    cons["proximas_90d"] = _sort_prox(cons["proximas_90d"])
+
     cons["categorias"]     = dict(sorted(cons["categorias"].items(),     key=lambda kv: -kv[1]))
     cons["categorias_40d"] = dict(sorted(cons["categorias_40d"].items(), key=lambda kv: -kv[1]))
     cons["categorias_90d"] = dict(sorted(cons["categorias_90d"].items(), key=lambda kv: -kv[1]))
-
     _tot = cons["activas"] or 1
     cons["pct_40d"] = round(100.0 * cons["cumple_40d"] / _tot, 1)
     cons["pct_90d"] = round(100.0 * cons["cumple_90d"] / _tot, 1)
