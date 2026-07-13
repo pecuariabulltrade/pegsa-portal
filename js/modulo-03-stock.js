@@ -407,8 +407,6 @@ window.stockTab = function(name, el) {
 // ══════════════════════════════════════════════════════════
 // v15.40 — estado del filtro por bloque (toggle independiente): {claveHoja: '40d'|'90d'}
 var _trazFiltro = {};
-// v15.41 — propietario seleccionado en el consolidado (null = todos)
-var _trazPropSel = null;
 
 function trazCatColor(cat) {
   var c = (cat || '').toUpperCase();
@@ -525,81 +523,6 @@ function trazBloque(titulo, sub, d, esConsolidado, claveHoja) {
   html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin:22px 0 10px">Por categoría</div>';
   html += trazStackedBar(vista.cats, vista.subset, trazCatColor);
 
-  html += '</div>';
-  return html;
-}
-
-// v15.41 — chips de propietarios en el header (filtro del consolidado)
-function trazChipsPropietarios(cons) {
-  if (!cons.por_propietario) return '';
-  var props = Object.keys(cons.por_propietario);
-  if (!props.length) return '';
-
-  var html = '<div style="margin:14px 0 6px">';
-  html += '<div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:rgba(26,22,18,.5);margin-bottom:8px">Filtrar por propietario</div>';
-  html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
-
-  // Chip "Todos"
-  var activoTodos = _trazPropSel === null;
-  html += '<button data-prop="__all__" class="traz-prop-chip" style="font-family:DM Mono,monospace;font-size:11px;padding:6px 14px;border-radius:2px;cursor:pointer;letter-spacing:.06em;'
-    + 'background:' + (activoTodos ? '#0F1B64' : 'white') + ';color:' + (activoTodos ? 'white' : 'rgba(26,22,18,.7)') + ';border:1px solid ' + (activoTodos ? '#0F1B64' : 'rgba(26,22,18,.2)') + '">Todos <b>' + stockFmt(cons.activas) + '</b></button>';
-
-  props.forEach(function(p){
-    var activo = _trazPropSel === p;
-    var n = cons.por_propietario[p].activas;
-    html += '<button data-prop="' + p + '" class="traz-prop-chip" style="font-family:DM Mono,monospace;font-size:11px;padding:6px 14px;border-radius:2px;cursor:pointer;letter-spacing:.06em;'
-      + 'background:' + (activo ? '#0F1B64' : 'white') + ';color:' + (activo ? 'white' : 'rgba(26,22,18,.7)') + ';border:1px solid ' + (activo ? '#0F1B64' : 'rgba(26,22,18,.2)') + '">' + p + ' <b>' + stockFmt(n) + '</b></button>';
-  });
-  html += '</div></div>';
-  return html;
-}
-
-// v15.41 — timeline de "Próximas activaciones" (agregado global, próximos N días)
-function trazTimeline(cons) {
-  var horizonte = 30;   // días — el backend guarda hasta 90; el frontend recorta acá
-
-  var lista40 = (cons.proximas_40d || []).filter(function(x){ return x.dias_hasta <= horizonte; });
-  var lista90 = (cons.proximas_90d || []).filter(function(x){ return x.dias_hasta <= horizonte; });
-
-  if (!lista40.length && !lista90.length) return '';
-
-  // Merge por fecha para tabla combinada
-  var mapa = {};
-  lista40.forEach(function(x){ mapa[x.fecha] = mapa[x.fecha] || {c40:0, c90:0, dias: x.dias_hasta}; mapa[x.fecha].c40 = x.cabezas; });
-  lista90.forEach(function(x){ mapa[x.fecha] = mapa[x.fecha] || {c40:0, c90:0, dias: x.dias_hasta}; mapa[x.fecha].c90 = x.cabezas; });
-  var fechas = Object.keys(mapa).sort();
-
-  var maxCab = 0;
-  fechas.forEach(function(f){ var v = Math.max(mapa[f].c40, mapa[f].c90); if (v > maxCab) maxCab = v; });
-
-  var html = '<div style="margin-top:36px;padding-top:26px;border-top:1px solid var(--border)">';
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:8px">Próximas activaciones · próximos ' + horizonte + ' días</div>';
-  html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.55);margin-bottom:14px">Cuándo se cumplen los umbrales de 40 y 90 días para las caravanas activas.</div>';
-
-  html += '<table class="data-table" style="width:100%;font-family:DM Mono,monospace">';
-  html += '<thead><tr>'
-        + '<th class="left">Fecha</th>'
-        + '<th class="right">En</th>'
-        + '<th class="right">Cumplen 40 días</th>'
-        + '<th class="right">Cumplen 90 días</th>'
-        + '<th style="width:220px">Volumen</th>'
-        + '</tr></thead><tbody>';
-  fechas.forEach(function(f){
-    var d = mapa[f];
-    var fDMY = f.split('-').reverse().join('/');
-    var bar40 = (d.c40 / (maxCab || 1)) * 100;
-    var bar90 = (d.c90 / (maxCab || 1)) * 100;
-    html += '<tr>';
-    html += '<td class="left"><b>' + fDMY + '</b></td>';
-    html += '<td class="right mono" style="color:rgba(26,22,18,.55)">' + d.dias + 'd</td>';
-    html += '<td class="right mono" style="color:' + (d.c40 ? '#2e7d32' : 'rgba(26,22,18,.3)') + '">' + (d.c40 ? stockFmt(d.c40) : '—') + '</td>';
-    html += '<td class="right mono" style="color:' + (d.c90 ? '#B8922A' : 'rgba(26,22,18,.3)') + '">' + (d.c90 ? stockFmt(d.c90) : '—') + '</td>';
-    html += '<td style="padding:6px 12px">';
-    if (d.c40) html += '<div style="height:6px;background:rgba(46,125,50,.15);border-radius:2px;margin-bottom:3px"><div style="height:100%;width:' + bar40 + '%;background:#2e7d32;border-radius:2px"></div></div>';
-    if (d.c90) html += '<div style="height:6px;background:rgba(184,146,42,.15);border-radius:2px"><div style="height:100%;width:' + bar90 + '%;background:#B8922A;border-radius:2px"></div></div>';
-    html += '</td></tr>';
-  });
-  html += '</tbody></table>';
   html += '</div>';
   return html;
 }
