@@ -6679,19 +6679,33 @@ def _traz_as_date(v):
 
 def _traz_analizar_hoja(rows, hoy):
     """Recibe todas las filas de una hoja (fila 0 = headers) y devuelve el dict
-    de KPIs. Regla de negocio (confirmada 2026-07-13):
-      · activa = tiene PROPIETARIO y NO tiene FECHA SALIDA (BOLSA puede ser lo que sea)
-      · estado de armado: BOLSA vacía → SIN USAR · "CLASIFICAR" literal → CLASIFICAR ·
-        cualquier otra cosa (incl. "feedlot" y bolsas 24-137) → CON BOLSA
-      · cumple 40d / 90d = la fecha respectiva ≤ hoy"""
+    de KPIs.
+    v15.40:
+      · activa = tiene PROPIETARIO Y no tiene FECHA SALIDA Y BOLSA no está vacía
+      · sin_usar = tiene PROPIETARIO Y no tiene FECHA SALIDA Y BOLSA está vacía
+        (contador informativo — NO se suma a activas)
+      · estado de armado sobre activas: "CLASIFICAR" literal → CLASIFICAR ·
+        cualquier otra cosa (incl. "feedlot") → CON BOLSA
+      · cumple 40d / 90d se cuenta solo sobre activas (excluye sin_usar)
+      · pre-calcula estado_40d, estado_90d, categorias_40d, categorias_90d
+        para que el frontend filtre las barras sin re-computar."""
     if not rows:
         return None
     m = _traz_map_headers(rows[0])
     if "caravana" not in m:
         return None
+
     activas = 0
-    categorias, estado = {}, {"SIN USAR": 0, "CLASIFICAR": 0, "CON BOLSA": 0}
+    sin_usar = 0
+    categorias, estado = {}, {"CLASIFICAR": 0, "CON BOLSA": 0}
     c40 = c90 = 0
+
+    # Desgloses filtrados
+    estado_40d = {"CLASIFICAR": 0, "CON BOLSA": 0}
+    estado_90d = {"CLASIFICAR": 0, "CON BOLSA": 0}
+    categorias_40d = {}
+    categorias_90d = {}
+
     for r in rows[1:]:
         if not any(x is not None for x in r):
             continue
@@ -6703,25 +6717,51 @@ def _traz_analizar_hoja(rows, hoy):
         fsal = r[m["fsalida"]] if "fsalida" in m and m["fsalida"] < len(r) else None
         if fsal not in (None, ""):
             continue
+
+        bn = _traz_norm(r[m["bolsa"]]) if "bolsa" in m and m["bolsa"] < len(r) else ""
+
+        # v15.40: SIN USAR es un contador informativo aparte — no cuenta como activa
+        if bn == "":
+            sin_usar += 1
+            continue
+
         activas += 1
+
         cat = _traz_norm(r[m["categoria"]]) if "categoria" in m and m["categoria"] < len(r) else ""
         cat = cat or "SIN CATEGORIA"
         categorias[cat] = categorias.get(cat, 0) + 1
-        bn = _traz_norm(r[m["bolsa"]]) if "bolsa" in m and m["bolsa"] < len(r) else ""
-        if bn == "":              estado["SIN USAR"] += 1
-        elif bn == "CLASIFICAR":  estado["CLASIFICAR"] += 1
-        else:                     estado["CON BOLSA"] += 1
+
+        est_key = "CLASIFICAR" if bn == "CLASIFICAR" else "CON BOLSA"
+        estado[est_key] += 1
+
         d40 = _traz_as_date(r[m["f40"]]) if "f40" in m and m["f40"] < len(r) else None
         d90 = _traz_as_date(r[m["f90"]]) if "f90" in m and m["f90"] < len(r) else None
-        if d40 and d40 <= hoy: c40 += 1
-        if d90 and d90 <= hoy: c90 += 1
+        cumple_40 = d40 is not None and d40 <= hoy
+        cumple_90 = d90 is not None and d90 <= hoy
+
+        if cumple_40:
+            c40 += 1
+            estado_40d[est_key] += 1
+            categorias_40d[cat] = categorias_40d.get(cat, 0) + 1
+        if cumple_90:
+            c90 += 1
+            estado_90d[est_key] += 1
+            categorias_90d[cat] = categorias_90d.get(cat, 0) + 1
+
     pct = lambda x: round(100.0 * x / activas, 1) if activas else 0.0
+
     return {
-        "activas": activas,
+        "activas":  activas,
+        "sin_usar": sin_usar,      # v15.40 — contador informativo
         "categorias": dict(sorted(categorias.items(), key=lambda kv: -kv[1])),
-        "estado": estado,
-        "cumple_40d": c40, "pct_40d": pct(c40),
-        "cumple_90d": c90, "pct_90d": pct(c90),
+        "estado":   estado,
+        "cumple_40d": c40,   "pct_40d": pct(c40),
+        "cumple_90d": c90,   "pct_90d": pct(c90),
+        # v15.40 — desgloses filtrados para el filtro clickable
+        "estado_40d":     estado_40d,
+        "estado_90d":     estado_90d,
+        "categorias_40d": dict(sorted(categorias_40d.items(), key=lambda kv: -kv[1])),
+        "categorias_90d": dict(sorted(categorias_90d.items(), key=lambda kv: -kv[1])),
     }
 
 
@@ -6828,18 +6868,38 @@ def procesar_trazabilidad(carpeta_out, log=None):
         log.warning("  ⚠ Trazabilidad: ninguna hoja procesada, no se genera JSON")
         return None
 
-    # Consolidado global (suma de todas las hojas)
-    cons = {"activas": 0, "categorias": {}, "estado": {"SIN USAR": 0, "CLASIFICAR": 0, "CON BOLSA": 0},
-            "cumple_40d": 0, "cumple_90d": 0}
+    # Consolidado global (suma de todas las hojas) — v15.40
+    cons = {
+        "activas": 0, "sin_usar": 0,
+        "categorias": {}, "estado": {"CLASIFICAR": 0, "CON BOLSA": 0},
+        "cumple_40d": 0, "cumple_90d": 0,
+        "estado_40d": {"CLASIFICAR": 0, "CON BOLSA": 0},
+        "estado_90d": {"CLASIFICAR": 0, "CON BOLSA": 0},
+        "categorias_40d": {},
+        "categorias_90d": {},
+    }
     for h in hojas:
         cons["activas"]    += h["activas"]
+        cons["sin_usar"]   += h["sin_usar"]
         cons["cumple_40d"] += h["cumple_40d"]
         cons["cumple_90d"] += h["cumple_90d"]
         for k, v in h["categorias"].items():
             cons["categorias"][k] = cons["categorias"].get(k, 0) + v
         for k, v in h["estado"].items():
             cons["estado"][k] = cons["estado"].get(k, 0) + v
-    cons["categorias"] = dict(sorted(cons["categorias"].items(), key=lambda kv: -kv[1]))
+        for k, v in h["estado_40d"].items():
+            cons["estado_40d"][k] = cons["estado_40d"].get(k, 0) + v
+        for k, v in h["estado_90d"].items():
+            cons["estado_90d"][k] = cons["estado_90d"].get(k, 0) + v
+        for k, v in h["categorias_40d"].items():
+            cons["categorias_40d"][k] = cons["categorias_40d"].get(k, 0) + v
+        for k, v in h["categorias_90d"].items():
+            cons["categorias_90d"][k] = cons["categorias_90d"].get(k, 0) + v
+
+    cons["categorias"]     = dict(sorted(cons["categorias"].items(),     key=lambda kv: -kv[1]))
+    cons["categorias_40d"] = dict(sorted(cons["categorias_40d"].items(), key=lambda kv: -kv[1]))
+    cons["categorias_90d"] = dict(sorted(cons["categorias_90d"].items(), key=lambda kv: -kv[1]))
+
     _tot = cons["activas"] or 1
     cons["pct_40d"] = round(100.0 * cons["cumple_40d"] / _tot, 1)
     cons["pct_90d"] = round(100.0 * cons["cumple_90d"] / _tot, 1)
