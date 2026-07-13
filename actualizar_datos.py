@@ -4128,6 +4128,22 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["tesoreria_darwash"] = {"ok": False, "error": str(e)}
 
+    # ── TRAZABILIDAD · Caravanas declaradas (Google Drive) ─────
+    # Lee los Excel colaborativos de G:\Mi unidad\Trazabilidad\ y vuelca
+    # trazabilidad_resumen.json (KPIs por hoja + consolidado global).
+    separador("Trazabilidad · Caravanas Declaradas")
+    try:
+        _traz = procesar_trazabilidad(carpeta, log)
+        resumen["modulos"]["trazabilidad"] = {
+            "ok":      _traz is not None,
+            "hojas":   len(_traz["hojas"]) if _traz else 0,
+            "activas": _traz["consolidado"]["activas"] if _traz else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ procesar_trazabilidad falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["trazabilidad"] = {"ok": False, "error": str(e)}
+
     # ── PRECIOS DE INFERENCIA (v8) ─────────────────────────────
     # Lee el Excel del simulador y vuelca precios_inferencia.json +
     # precios_inferencia_historico.json (acumulado semanal por fecha).
@@ -6592,6 +6608,257 @@ def procesar_tesoreria_darwash(carpeta_out, log=None):
     finally:
         try: Path(tmp_path).unlink()
         except Exception: pass
+
+
+# ═══════════════════════════════════════════════════════════
+#  TRAZABILIDAD · Caravanas declaradas (Google Drive)  (v15.x)
+# ═══════════════════════════════════════════════════════════
+# Fuente: carpeta colaborativa de Google Drive sincronizada localmente vía
+# "Google Drive for Desktop" en G:\Mi unidad\Trazabilidad\. Dos Excel que el
+# usuario y sus compañeros mantienen a mano:
+#   · CARAVANAS DECLARADAS.xlsx  → hojas EL HARAS POST BLANQUEO + LAS TAPERAS SIN BLANQUEO
+#   · hilton el descanso *.xlsx   → hoja HILTON  (fecha en el nombre → glob)
+# Cada tick del bot los re-lee, así los cambios de los compañeros se reflejan
+# en el portal cada hora. Genera trazabilidad_resumen.json.
+
+TRAZABILIDAD_DIR_DEFAULT = r"G:\Mi unidad\Trazabilidad"
+
+# Hojas auxiliares que NUNCA se procesan (columnas de apoyo, no caravanas).
+_TRAZ_HOJAS_AUX = ("COINCIDIR", "DECLA", "DECLARACION")
+
+# Definición declarativa de las hojas a exponer.
+_TRAZ_HOJAS_CFG = [
+    {"clave": "el_haras",    "titulo": "El Haras · Post Blanqueo",
+     "archivo": "CARAVANAS DECLARADAS.xlsx",              "match": ("HARAS",)},
+    {"clave": "las_taperas", "titulo": "Las Taperas · Sin Blanqueo",
+     "archivo": "CARAVANAS DECLARADAS.xlsx",              "match": ("TAPERAS",)},
+    {"clave": "hilton",      "titulo": "Hilton · El Descanso",
+     "glob": "hilton*el*descanso*.xlsx",                  "match": ("HILTON",)},
+]
+
+
+def _traz_norm(s):
+    """Normaliza texto: sin tildes, espacios colapsados, MAYÚSCULAS."""
+    import unicodedata, re as _re
+    if s is None:
+        return ""
+    s = str(s).strip()
+    s = "".join(c for c in unicodedata.normalize("NFD", s)
+                if unicodedata.category(c) != "Mn")
+    return _re.sub(r"\s+", " ", s).upper()
+
+
+def _traz_map_headers(hdr):
+    """Mapea la fila de encabezados → índices de columna canónicos.
+    Robusto a typos (FEHCA→FECHA), a "feedlot" como sinónimo de BOLSA y a
+    "100 DIAS"/"90 DIAS" como umbral largo. Primera coincidencia gana (algunas
+    hojas repiten headers en columnas auxiliares a la derecha)."""
+    m = {}
+    def setk(k, i):
+        if k not in m:
+            m[k] = i
+    for idx, h in enumerate(hdr):
+        n = _traz_norm(h).replace("FEHCA", "FECHA")
+        if n == "CARAVANA":                                  setk("caravana", idx)
+        elif n == "PROPIETARIO":                             setk("propietario", idx)
+        elif n in ("BOLSA", "FEEDLOT"):                      setk("bolsa", idx)
+        elif n == "CATEGORIA":                               setk("categoria", idx)
+        elif "FECHA 40" in n:                                setk("f40", idx)
+        elif ("FECHA 90" in n or "FECHA 100" in n or
+              "90 DIAS" in n or "100 DIAS" in n):            setk("f90", idx)
+        elif "FECHA SALIDA" in n:                            setk("fsalida", idx)
+    return m
+
+
+def _traz_as_date(v):
+    from datetime import datetime as _dt, date as _date
+    if isinstance(v, _dt):  return v.date()
+    if isinstance(v, _date): return v
+    return None
+
+
+def _traz_analizar_hoja(rows, hoy):
+    """Recibe todas las filas de una hoja (fila 0 = headers) y devuelve el dict
+    de KPIs. Regla de negocio (confirmada 2026-07-13):
+      · activa = tiene PROPIETARIO y NO tiene FECHA SALIDA (BOLSA puede ser lo que sea)
+      · estado de armado: BOLSA vacía → SIN USAR · "CLASIFICAR" literal → CLASIFICAR ·
+        cualquier otra cosa (incl. "feedlot" y bolsas 24-137) → CON BOLSA
+      · cumple 40d / 90d = la fecha respectiva ≤ hoy"""
+    if not rows:
+        return None
+    m = _traz_map_headers(rows[0])
+    if "caravana" not in m:
+        return None
+    activas = 0
+    categorias, estado = {}, {"SIN USAR": 0, "CLASIFICAR": 0, "CON BOLSA": 0}
+    c40 = c90 = 0
+    for r in rows[1:]:
+        if not any(x is not None for x in r):
+            continue
+        if m["caravana"] >= len(r) or r[m["caravana"]] is None:
+            continue
+        prop = r[m["propietario"]] if "propietario" in m and m["propietario"] < len(r) else None
+        if not prop or str(prop).strip() == "":
+            continue
+        fsal = r[m["fsalida"]] if "fsalida" in m and m["fsalida"] < len(r) else None
+        if fsal not in (None, ""):
+            continue
+        activas += 1
+        cat = _traz_norm(r[m["categoria"]]) if "categoria" in m and m["categoria"] < len(r) else ""
+        cat = cat or "SIN CATEGORIA"
+        categorias[cat] = categorias.get(cat, 0) + 1
+        bn = _traz_norm(r[m["bolsa"]]) if "bolsa" in m and m["bolsa"] < len(r) else ""
+        if bn == "":              estado["SIN USAR"] += 1
+        elif bn == "CLASIFICAR":  estado["CLASIFICAR"] += 1
+        else:                     estado["CON BOLSA"] += 1
+        d40 = _traz_as_date(r[m["f40"]]) if "f40" in m and m["f40"] < len(r) else None
+        d90 = _traz_as_date(r[m["f90"]]) if "f90" in m and m["f90"] < len(r) else None
+        if d40 and d40 <= hoy: c40 += 1
+        if d90 and d90 <= hoy: c90 += 1
+    pct = lambda x: round(100.0 * x / activas, 1) if activas else 0.0
+    return {
+        "activas": activas,
+        "categorias": dict(sorted(categorias.items(), key=lambda kv: -kv[1])),
+        "estado": estado,
+        "cumple_40d": c40, "pct_40d": pct(c40),
+        "cumple_90d": c90, "pct_90d": pct(c90),
+    }
+
+
+def procesar_trazabilidad(carpeta_out, log=None):
+    """Lee los Excel de trazabilidad de G:\\Mi unidad\\Trazabilidad\\ y genera
+    trazabilidad_resumen.json con KPIs por hoja + consolidado global.
+    Tolerante: si la carpeta/archivos no existen → warning + None (no tumba el tick)."""
+    if log is None:
+        log = logging.getLogger("traz")
+    from datetime import date
+
+    # Ruta: config [RUTAS] trazabilidad_dir, si no el default de Google Drive.
+    # Lee config.ini de forma tolerante (no usa cargar_config() porque ese hace
+    # sys.exit si el archivo no existe, p.ej. corriendo desde el repo).
+    ruta_dir = TRAZABILIDAD_DIR_DEFAULT
+    try:
+        _cfg_path = Path(__file__).parent / "config.ini"
+        if _cfg_path.exists():
+            _cfg = configparser.ConfigParser()
+            _cfg.read(_cfg_path, encoding="utf-8")
+            if _cfg.has_section("RUTAS") and _cfg["RUTAS"].get("trazabilidad_dir"):
+                ruta_dir = _cfg["RUTAS"].get("trazabilidad_dir")
+    except Exception:
+        pass
+    base = Path(ruta_dir)
+    if not base.is_dir():
+        log.warning(f"  ⚠ Carpeta trazabilidad no existe: {base}, saltando")
+        return None
+
+    try:
+        import openpyxl
+    except ImportError:
+        log.warning("  ⚠ openpyxl no instalado; saltando trazabilidad")
+        return None
+
+    import shutil, tempfile
+    hoy = date.today()
+
+    def _resolver_archivo(cfg):
+        if "glob" in cfg:
+            cands = sorted(base.glob(cfg["glob"]), key=lambda p: p.stat().st_mtime, reverse=True)
+            return cands[0] if cands else None
+        p = base / cfg["archivo"]
+        return p if p.exists() else None
+
+    def _cargar_rows(ruta_xlsx, match_kws):
+        """Copia a temp (evita lock de Drive) y devuelve las filas de la hoja
+        cuyo nombre normalizado contiene alguno de match_kws (ignora auxiliares)."""
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as _tf:
+                tmp = _tf.name
+            shutil.copy2(str(ruta_xlsx), tmp)
+        except Exception as e:
+            log.warning(f"  ⚠ no pude copiar {ruta_xlsx.name} a temp: {e}")
+            return None
+        try:
+            wb = openpyxl.load_workbook(tmp, data_only=True)
+            hoja = None
+            for sn in wb.sheetnames:
+                nn = _traz_norm(sn)
+                if any(aux in nn for aux in _TRAZ_HOJAS_AUX):
+                    continue
+                if any(kw in nn for kw in match_kws):
+                    hoja = sn
+                    break
+            if hoja is None:
+                wb.close()
+                return None
+            rows = list(wb[hoja].iter_rows(values_only=True))
+            wb.close()
+            return {"hoja": hoja, "rows": rows}
+        except Exception as e:
+            log.warning(f"  ⚠ no pude abrir {ruta_xlsx.name}: {e}")
+            return None
+        finally:
+            try: Path(tmp).unlink()
+            except Exception: pass
+
+    hojas = []
+    for cfg in _TRAZ_HOJAS_CFG:
+        ruta = _resolver_archivo(cfg)
+        if ruta is None:
+            log.warning(f"  ⚠ {cfg['titulo']}: archivo no encontrado en {base}, saltando hoja")
+            continue
+        cargado = _cargar_rows(ruta, cfg["match"])
+        if cargado is None:
+            log.warning(f"  ⚠ {cfg['titulo']}: hoja no encontrada en {ruta.name}, saltando")
+            continue
+        kpis = _traz_analizar_hoja(cargado["rows"], hoy)
+        if kpis is None:
+            log.warning(f"  ⚠ {cfg['titulo']}: sin datos parseables, saltando")
+            continue
+        hojas.append({
+            "clave":   cfg["clave"],
+            "titulo":  cfg["titulo"],
+            "archivo": ruta.name,
+            "hoja":    cargado["hoja"],
+            **kpis,
+        })
+        log.info(f"  ↳ {cfg['titulo']}: {kpis['activas']:,} activas · "
+                 f"40d {kpis['cumple_40d']:,} · 90d {kpis['cumple_90d']:,}")
+
+    if not hojas:
+        log.warning("  ⚠ Trazabilidad: ninguna hoja procesada, no se genera JSON")
+        return None
+
+    # Consolidado global (suma de todas las hojas)
+    cons = {"activas": 0, "categorias": {}, "estado": {"SIN USAR": 0, "CLASIFICAR": 0, "CON BOLSA": 0},
+            "cumple_40d": 0, "cumple_90d": 0}
+    for h in hojas:
+        cons["activas"]    += h["activas"]
+        cons["cumple_40d"] += h["cumple_40d"]
+        cons["cumple_90d"] += h["cumple_90d"]
+        for k, v in h["categorias"].items():
+            cons["categorias"][k] = cons["categorias"].get(k, 0) + v
+        for k, v in h["estado"].items():
+            cons["estado"][k] = cons["estado"].get(k, 0) + v
+    cons["categorias"] = dict(sorted(cons["categorias"].items(), key=lambda kv: -kv[1]))
+    _tot = cons["activas"] or 1
+    cons["pct_40d"] = round(100.0 * cons["cumple_40d"] / _tot, 1)
+    cons["pct_90d"] = round(100.0 * cons["cumple_90d"] / _tot, 1)
+
+    data = {
+        "meta": {
+            "generado": datetime.now().isoformat(),
+            "hoy":      hoy.isoformat(),
+            "fuente":   str(base),
+            "archivos": sorted({h["archivo"] for h in hojas}),
+            "ok":       True,
+        },
+        "hojas":       hojas,
+        "consolidado": cons,
+    }
+    guardar(data, carpeta_out, "trazabilidad_resumen.json")
+    log.info(f"  ✓ trazabilidad_resumen.json · {len(hojas)} hojas · "
+             f"{cons['activas']:,} caravanas activas")
+    return data
 
 
 if __name__ == "__main__":

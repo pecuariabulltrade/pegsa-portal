@@ -383,19 +383,148 @@ window.stockTab = function(name, el) {
   document.getElementById('panelMuertes').style.display      = name === 'muertes'      ? 'block' : 'none';
   document.getElementById('panelProductivo').style.display   = name === 'productivo'   ? 'block' : 'none';
   document.getElementById('panelMateriaSeca').style.display  = name === 'materiaseca'  ? 'block' : 'none';
-  ['stockTabResumen','stockTabPegsa','stockTabGraficos','stockTabMovimientos','stockTabMuertes','stockTabProductivo','stockTabMateriaSeca'].forEach(function(id){
+  var _pTraz = document.getElementById('panelTrazabilidad');
+  if (_pTraz) _pTraz.style.display = name === 'trazabilidad' ? 'block' : 'none';
+  ['stockTabResumen','stockTabPegsa','stockTabGraficos','stockTabMovimientos','stockTabMuertes','stockTabProductivo','stockTabMateriaSeca','stockTabTrazabilidad'].forEach(function(id){
     var t = document.getElementById(id);
     if (t) t.classList.remove('active');
   });
   if (el) el.classList.add('active');
-  if (name === 'graficos')    renderGraficos();
-  if (name === 'pegsa')       renderPegsaTab();
-  if (name === 'movimientos') cargarMovimientos();
-  if (name === 'muertes')     cargarMuertes();
-  if (name === 'productivo')  cargarProductivo();
-  if (name === 'materiaseca') cargarMateriaSeca();
+  if (name === 'graficos')     renderGraficos();
+  if (name === 'pegsa')        renderPegsaTab();
+  if (name === 'movimientos')  cargarMovimientos();
+  if (name === 'muertes')      cargarMuertes();
+  if (name === 'productivo')   cargarProductivo();
+  if (name === 'materiaseca')  cargarMateriaSeca();
+  if (name === 'trazabilidad') renderTrazabilidad();
 };
 
+
+// ══════════════════════════════════════════════════════════
+//  TRAZABILIDAD · Caravanas declaradas (Google Drive)
+//  Lee trazabilidad_resumen.json (generado por el pipeline desde
+//  G:\Mi unidad\Trazabilidad\) y muestra KPIs por hoja + consolidado.
+// ══════════════════════════════════════════════════════════
+var _trazLoaded = false;
+
+function trazCatColor(cat) {
+  var c = (cat || '').toUpperCase();
+  if (c === 'VACA')          return '#0F1B64';
+  if (c === 'MACHO')         return '#FF9027';
+  if (c === 'HEMBRA')        return '#B8922A';
+  if (c === 'TORO')          return '#6b4f2a';
+  if (c.indexOf('/') >= 0)   return '#8a8f6a';   // mixtas (HEMBRA/MACHO, MACHO/HEMBRA)
+  return 'rgba(26,22,18,.28)';                    // sin categoria / otros
+}
+
+function trazEstadoColor(est) {
+  if (est === 'CON BOLSA')  return '#2e7d32';
+  if (est === 'CLASIFICAR') return '#FF9027';
+  return 'rgba(26,22,18,.35)';                    // SIN USAR
+}
+
+// Tarjeta KPI grande (número + label)
+function trazKpiCard(label, valor, sub, color) {
+  return '<div style="background:white;border:1px solid var(--border);border-radius:2px;padding:22px 24px;flex:1;min-width:150px">'
+    + '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:10px">' + label + '</div>'
+    + '<div style="font-family:Playfair Display,serif;font-size:34px;font-weight:700;line-height:1;color:' + (color || 'var(--ink)') + '">' + valor + '</div>'
+    + (sub ? '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.5);margin-top:8px">' + sub + '</div>' : '')
+    + '</div>';
+}
+
+// Barra apilada horizontal a partir de un objeto {clave:valor} + fn color
+function trazStackedBar(obj, total, colorFn) {
+  var t = total || Object.values(obj).reduce(function(a,b){ return a+b; }, 0) || 1;
+  var segs = Object.entries(obj).filter(function(e){ return e[1] > 0; });
+  var bar = '<div style="display:flex;height:22px;border-radius:3px;overflow:hidden;border:1px solid var(--border)">';
+  segs.forEach(function(e){
+    var pct = (100 * e[1] / t);
+    bar += '<div title="' + e[0] + ': ' + stockFmt(e[1]) + '" style="width:' + pct + '%;background:' + colorFn(e[0]) + '"></div>';
+  });
+  bar += '</div>';
+  // Leyenda
+  var leg = '<div style="display:flex;flex-wrap:wrap;gap:12px 18px;margin-top:12px">';
+  segs.forEach(function(e){
+    var pct = (100 * e[1] / t).toFixed(1).replace('.', ',');
+    leg += '<div style="display:flex;align-items:center;gap:7px;font-family:DM Mono,monospace;font-size:12px">'
+      + '<span style="width:11px;height:11px;border-radius:2px;background:' + colorFn(e[0]) + ';display:inline-block"></span>'
+      + '<span style="color:rgba(26,22,18,.75)">' + e[0] + '</span>'
+      + '<b>' + stockFmt(e[1]) + '</b>'
+      + '<span style="color:rgba(26,22,18,.4)">' + pct + '%</span>'
+      + '</div>';
+  });
+  leg += '</div>';
+  return bar + leg;
+}
+
+// Bloque de una hoja (o del consolidado)
+function trazBloque(titulo, sub, d, esConsolidado) {
+  var pct40 = (d.pct_40d != null ? d.pct_40d : 0).toString().replace('.', ',');
+  var pct90 = (d.pct_90d != null ? d.pct_90d : 0).toString().replace('.', ',');
+  var borde = esConsolidado ? '2px solid #0F1B64' : '1px solid var(--border)';
+  var html = '<div style="background:' + (esConsolidado ? '#fbfaf7' : 'white') + ';border:' + borde + ';border-radius:2px;padding:26px 28px;margin-bottom:24px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:18px">';
+  html += '<div><div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700">' + titulo + '</div>'
+        + (sub ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:2px">' + sub + '</div>' : '') + '</div>';
+  html += '<div style="font-family:Playfair Display,serif;font-size:30px;font-weight:700;color:#0F1B64">' + stockFmt(d.activas)
+        + '<span style="font-family:DM Mono,monospace;font-size:12px;font-weight:400;color:rgba(26,22,18,.5);margin-left:8px">activas</span></div>';
+  html += '</div>';
+
+  // KPIs 40 / 90 dias
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px">';
+  html += trazKpiCard('Cumplió 40 días', stockFmt(d.cumple_40d), pct40 + '% del total', '#2e7d32');
+  html += trazKpiCard('Cumplió 90 días', stockFmt(d.cumple_90d), pct90 + '% del total', '#B8922A');
+  html += '</div>';
+
+  // Estado de armado
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:10px">Estado de armado</div>';
+  html += trazStackedBar(d.estado || {}, d.activas, trazEstadoColor);
+
+  // Categorías
+  html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin:22px 0 10px">Por categoría</div>';
+  html += trazStackedBar(d.categorias || {}, d.activas, trazCatColor);
+
+  html += '</div>';
+  return html;
+}
+
+async function renderTrazabilidad() {
+  if (_trazLoaded) return;
+  var loading = document.getElementById('trazLoading');
+  var content = document.getElementById('trazContent');
+  if (!content) return;
+  try {
+    var data = await stockGet(STOCK_SB + '/trazabilidad_resumen.json');
+    var meta = data.meta || {};
+    var hojas = data.hojas || [];
+    var cons  = data.consolidado || {};
+
+    var fechaTxt = meta.hoy ? meta.hoy.split('-').reverse().join('/') : '';
+    var html = '';
+
+    // Intro / fuente
+    html += '<div style="margin-bottom:28px">'
+      + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;margin-bottom:4px">Resumen de trazabilidad</div>'
+      + '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.5)">Caravanas declaradas · umbrales calculados a ' + fechaTxt
+      + ' · fuente: Google Drive (' + (meta.archivos || []).join(' · ') + ')</div>'
+      + '</div>';
+
+    // Consolidado global primero (destacado)
+    html += trazBloque('Consolidado global', hojas.length + ' hojas', cons, true);
+
+    // Cada hoja
+    hojas.forEach(function(h){
+      html += trazBloque(h.titulo, h.archivo + ' · hoja ' + h.hoja, h, false);
+    });
+
+    content.innerHTML = html;
+    if (loading) loading.style.display = 'none';
+    content.style.display = 'block';
+    _trazLoaded = true;
+  } catch (e) {
+    if (loading) loading.innerHTML = '<div style="font-family:DM Mono,monospace;font-size:13px;color:#b00">No se pudo cargar la trazabilidad (' + e.message + ')</div>';
+  }
+}
 
 var _grafCharts = {};
 var _consumoDiarioChart = null;

@@ -1473,6 +1473,7 @@
     <div class="nav-tab"        id="stockTabMuertes"      onclick="stockTab('muertes',this)"     >&#128128; Muertes</div>
     <div class="nav-tab"        id="stockTabProductivo"   onclick="stockTab('productivo',this)"  >&#128200; Productivo</div>
     <div class="nav-tab"        id="stockTabMateriaSeca"  onclick="stockTab('materiaseca',this)" >&#127807; % MS</div>
+    <div class="nav-tab"        id="stockTabTrazabilidad" onclick="stockTab('trazabilidad',this)">&#127991;&#65039; Trazabilidad</div>
   </div>
   <div style="padding:40px 48px">
     <div id="stockLoading" style="text-align:center;padding:80px 0">
@@ -1495,6 +1496,15 @@
         <div id="secCategorias"></div>
         <div id="secPropietarios"    style="border-top:2px solid var(--border-strong);padding-top:36px;margin-top:48px"></div>
         <div id="secEstablecimientos" style="border-top:2px solid var(--border-strong);padding-top:36px;margin-top:48px"></div>
+      </div>
+
+      <!-- TRAZABILIDAD · Caravanas declaradas (Google Drive) -->
+      <div id="panelTrazabilidad" style="display:none">
+        <div id="trazLoading" style="text-align:center;padding:60px 0">
+          <div style="font-size:28px;animation:spin 1.2s linear infinite;display:inline-block">&#8635;</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;margin-top:12px;opacity:.5">Cargando trazabilidad...</div>
+        </div>
+        <div id="trazContent" style="display:none"></div>
       </div>
 
       <!-- MOVIMIENTOS PRODUCTIVOS -->
