@@ -407,9 +407,8 @@ window.stockTab = function(name, el) {
 // ══════════════════════════════════════════════════════════
 // v15.40 — estado del filtro por bloque (toggle independiente): {claveHoja: '40d'|'90d'}
 var _trazFiltro = {};
-// v15.42: propietario seleccionado POR BLOQUE (no global).
-// Ej: { consolidado: null, el_haras: 'PEGSA', las_taperas: null, hilton: null }
-var _trazPropSel = {};
+// v15.41 — propietario seleccionado en el consolidado (null = todos)
+var _trazPropSel = null;
 
 function trazCatColor(cat) {
   var c = (cat || '').toUpperCase();
