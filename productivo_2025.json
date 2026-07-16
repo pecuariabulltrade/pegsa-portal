@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generado": "2026-07-16T18:01:07.213170",
+    "generado": "2026-07-16T19:01:05.384915",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 48138,
-    "registros_filtrados": 12718,
+    "registros_totales": 48166,
+    "registros_filtrados": 12736,
     "excluidos": {
       "motivo": 4720,
-      "rfid": 3756,
+      "rfid": 3763,
       "estadia": 214,
-      "adp": 1578,
+      "adp": 1581,
       "fecha": 25152
     },
     "col_adp": "AdpSinDebaste",
@@ -19,11 +19,11 @@
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 12718,
-    "adp_promedio": 1.43,
+    "cabezas": 12736,
+    "adp_promedio": 1.429,
     "adp_min": 0.015,
     "adp_max": 4.957,
-    "estadia_promedio": 143.3,
+    "estadia_promedio": 143.6,
     "estadia_min": 3,
     "estadia_max": 450
   },
@@ -56,11 +56,11 @@
       "estadia_max": 438
     },
     "TM": {
-      "cabezas": 352,
-      "adp_promedio": 1.196,
+      "cabezas": 355,
+      "adp_promedio": 1.195,
       "adp_min": 0.587,
       "adp_max": 2.783,
-      "estadia_promedio": 267.6,
+      "estadia_promedio": 268.5,
       "estadia_min": 111,
       "estadia_max": 449
     },
@@ -139,16 +139,16 @@
       "adp_max_range": 1.5226
     },
     "TM": {
-      "cabezas": 70,
-      "adp_promedio": 1.109,
+      "cabezas": 73,
+      "adp_promedio": 1.108,
       "adp_min": 0.587,
       "adp_max": 1.854,
-      "estadia_promedio": 280.7,
+      "estadia_promedio": 284.7,
       "estadia_min": 184,
       "estadia_max": 441,
       "adp_teorico": 1.371,
       "adp_calibrado": 1.1653,
-      "variacion_pct": -19.11,
+      "variacion_pct": -19.18,
       "ajustado": true,
       "adp_min_range": 1.1653,
       "adp_max_range": 1.5766
@@ -309,11 +309,11 @@
       "estadia_max": 441
     },
     "2026-07": {
-      "cabezas": 184,
-      "adp_promedio": 1.049,
+      "cabezas": 202,
+      "adp_promedio": 1.044,
       "adp_min": 0.44,
       "adp_max": 1.855,
-      "estadia_promedio": 202.5,
+      "estadia_promedio": 215.3,
       "estadia_min": 19,
       "estadia_max": 427
     }
