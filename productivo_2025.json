@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generado": "2026-07-17T09:01:13.602038",
+    "generado": "2026-07-17T10:01:21.952334",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 47924,
-    "registros_filtrados": 12725,
+    "registros_totales": 47977,
+    "registros_filtrados": 12762,
     "excluidos": {
       "motivo": 4720,
-      "rfid": 3776,
+      "rfid": 3782,
       "estadia": 214,
-      "adp": 1583,
+      "adp": 1593,
       "fecha": 24906
     },
     "col_adp": "AdpSinDebaste",
@@ -19,11 +19,11 @@
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 12725,
-    "adp_promedio": 1.422,
-    "adp_min": 0.015,
+    "cabezas": 12762,
+    "adp_promedio": 1.42,
+    "adp_min": 0.01,
     "adp_max": 4.957,
-    "estadia_promedio": 144.1,
+    "estadia_promedio": 144.5,
     "estadia_min": 3,
     "estadia_max": 450
   },
@@ -38,11 +38,11 @@
       "estadia_max": 348
     },
     "NV": {
-      "cabezas": 782,
-      "adp_promedio": 1.467,
-      "adp_min": 0.026,
+      "cabezas": 786,
+      "adp_promedio": 1.461,
+      "adp_min": 0.01,
       "adp_max": 4.537,
-      "estadia_promedio": 107.0,
+      "estadia_promedio": 107.4,
       "estadia_min": 30,
       "estadia_max": 329
     },
@@ -56,11 +56,11 @@
       "estadia_max": 438
     },
     "TM": {
-      "cabezas": 362,
+      "cabezas": 363,
       "adp_promedio": 1.196,
       "adp_min": 0.587,
       "adp_max": 2.783,
-      "estadia_promedio": 268.0,
+      "estadia_promedio": 268.3,
       "estadia_min": 111,
       "estadia_max": 449
     },
@@ -74,20 +74,20 @@
       "estadia_max": 368
     },
     "VA": {
-      "cabezas": 6092,
-      "adp_promedio": 1.496,
+      "cabezas": 6102,
+      "adp_promedio": 1.495,
       "adp_min": 0.015,
       "adp_max": 4.957,
-      "estadia_promedio": 120.1,
+      "estadia_promedio": 120.2,
       "estadia_min": 31,
       "estadia_max": 350
     },
     "VQ": {
-      "cabezas": 376,
+      "cabezas": 377,
       "adp_promedio": 1.236,
       "adp_min": 0.179,
       "adp_max": 2.872,
-      "estadia_promedio": 138.2,
+      "estadia_promedio": 138.0,
       "estadia_min": 32,
       "estadia_max": 341
     }
@@ -109,16 +109,16 @@
       "adp_max_range": 1.7124
     },
     "NV": {
-      "cabezas": 242,
-      "adp_promedio": 0.849,
-      "adp_min": 0.026,
+      "cabezas": 246,
+      "adp_promedio": 0.838,
+      "adp_min": 0.01,
       "adp_max": 2.221,
-      "estadia_promedio": 125.6,
+      "estadia_promedio": 126.3,
       "estadia_min": 35,
       "estadia_max": 296,
       "adp_teorico": 1.231,
       "adp_calibrado": 1.0464,
-      "variacion_pct": -31.03,
+      "variacion_pct": -31.93,
       "ajustado": true,
       "adp_min_range": 1.0464,
       "adp_max_range": 1.4157
@@ -139,11 +139,11 @@
       "adp_max_range": 1.5226
     },
     "TM": {
-      "cabezas": 79,
+      "cabezas": 80,
       "adp_promedio": 1.122,
       "adp_min": 0.587,
       "adp_max": 1.854,
-      "estadia_promedio": 281.9,
+      "estadia_promedio": 282.8,
       "estadia_min": 184,
       "estadia_max": 441,
       "adp_teorico": 1.371,
@@ -169,31 +169,31 @@
       "adp_max_range": 1.84
     },
     "VA": {
-      "cabezas": 575,
-      "adp_promedio": 0.921,
+      "cabezas": 585,
+      "adp_promedio": 0.923,
       "adp_min": 0.015,
       "adp_max": 3.361,
-      "estadia_promedio": 167.5,
+      "estadia_promedio": 167.3,
       "estadia_min": 34,
       "estadia_max": 349,
       "adp_teorico": 1.399,
       "adp_calibrado": 1.1891,
-      "variacion_pct": -34.17,
+      "variacion_pct": -34.02,
       "ajustado": true,
       "adp_min_range": 1.1891,
       "adp_max_range": 1.6088
     },
     "VQ": {
-      "cabezas": 117,
-      "adp_promedio": 0.907,
+      "cabezas": 118,
+      "adp_promedio": 0.909,
       "adp_min": 0.25,
       "adp_max": 1.974,
-      "estadia_promedio": 179.4,
+      "estadia_promedio": 178.4,
       "estadia_min": 39,
       "estadia_max": 341,
       "adp_teorico": 1.346,
       "adp_calibrado": 1.1441,
-      "variacion_pct": -32.62,
+      "variacion_pct": -32.47,
       "ajustado": true,
       "adp_min_range": 1.1441,
       "adp_max_range": 1.5479
@@ -309,11 +309,11 @@
       "estadia_max": 441
     },
     "2026-07": {
-      "cabezas": 276,
-      "adp_promedio": 1.016,
-      "adp_min": 0.144,
+      "cabezas": 313,
+      "adp_promedio": 0.995,
+      "adp_min": 0.01,
       "adp_max": 1.855,
-      "estadia_promedio": 204.8,
+      "estadia_promedio": 211.6,
       "estadia_min": 19,
       "estadia_max": 427
     }
