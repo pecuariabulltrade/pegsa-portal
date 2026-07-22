@@ -6661,7 +6661,10 @@ def _traz_map_headers(hdr):
         n = _traz_norm(h).replace("FEHCA", "FECHA")
         if n == "CARAVANA":                                  setk("caravana", idx)
         elif n == "PROPIETARIO":                             setk("propietario", idx)
-        elif n in ("BOLSA", "FEEDLOT"):                      setk("bolsa", idx)
+        # v15.44: "PRESENTE" aparece en HILTON-EL DESCANSO.xlsx rearmado
+        # (el usuario renombra la columna "BOLSA" a "PRESENTE"). Aceptamos ambos
+        # nombres para evitar regresiones si el equipo alterna entre convenciones.
+        elif n in ("BOLSA", "FEEDLOT", "PRESENTE"):          setk("bolsa", idx)
         elif n == "CATEGORIA":                               setk("categoria", idx)
         elif "FECHA 40" in n:                                setk("f40", idx)
         elif ("FECHA 90" in n or "FECHA 100" in n or
@@ -6886,7 +6889,18 @@ def procesar_trazabilidad(carpeta_out, log=None):
 
     def _resolver_archivo(cfg):
         if "glob" in cfg:
-            cands = sorted(base.glob(cfg["glob"]), key=lambda p: p.stat().st_mtime, reverse=True)
+            # v15.44: matching case-insensitive. Path.glob() es case-sensitive
+            # aunque estés en Windows — falla si el usuario renombra el archivo
+            # a MAYÚSCULAS (ej: 'HILTON-EL DESCANSO.xlsx' vs glob
+            # 'hilton*el*descanso*.xlsx'). Iteramos la carpeta y matcheamos
+            # con fnmatch sobre nombres en lowercase.
+            import fnmatch
+            pattern = cfg["glob"].lower()
+            cands = [
+                p for p in base.iterdir()
+                if p.is_file() and fnmatch.fnmatch(p.name.lower(), pattern)
+            ]
+            cands.sort(key=lambda p: p.stat().st_mtime, reverse=True)
             return cands[0] if cands else None
         p = base / cfg["archivo"]
         return p if p.exists() else None
