@@ -401,292 +401,292 @@ window.stockTab = function(name, el) {
 
 
 // ══════════════════════════════════════════════════════════
-//  TRAZABILIDAD · Caravanas declaradas (Google Drive)
-//  Lee trazabilidad_resumen.json (generado por el pipeline desde
-//  G:\Mi unidad\Trazabilidad\) y muestra KPIs por hoja + consolidado.
+// TRAZABILIDAD · Navegador drill-down (v15.43)
+// Flujo: inicio (archivos) → archivo → propietario → categoría → cuenta corriente
 // ══════════════════════════════════════════════════════════
-// v15.40 — estado del filtro por bloque (toggle independiente): {claveHoja: '40d'|'90d'}
-var _trazFiltro = {};
-// v15.41 — propietario seleccionado en el consolidado (null = todos)
-var _trazPropSel = null;
 
+// Estado de navegación
+var _trazNav = { archivo: null, propietario: null, categoria: null };
+var _trazData = null;
+
+function trazNavGoTo(archivo, propietario, categoria) {
+  _trazNav = { archivo: archivo || null, propietario: propietario || null, categoria: categoria || null };
+  renderTrazabilidad();
+}
+
+function trazFmt(n) { return Number(n || 0).toLocaleString('es-AR'); }
+function trazFechaDMY(iso) { return iso ? String(iso).split('-').reverse().join('/') : '—'; }
+
+// Colores
 function trazCatColor(cat) {
   var c = (cat || '').toUpperCase();
-  if (c === 'VACA')          return '#0F1B64';
-  if (c === 'MACHO')         return '#FF9027';
-  if (c === 'HEMBRA')        return '#B8922A';
-  if (c === 'TORO')          return '#6b4f2a';
-  if (c.indexOf('/') >= 0)   return '#8a8f6a';   // mixtas (HEMBRA/MACHO, MACHO/HEMBRA)
-  return 'rgba(26,22,18,.28)';                    // sin categoria / otros
+  if (c === 'VACA') return '#0F1B64';
+  if (c === 'MACHO') return '#FF9027';
+  if (c === 'HEMBRA') return '#B8922A';
+  if (c === 'TORO') return '#6b4f2a';
+  if (c.indexOf('/') >= 0) return '#8a8f6a';
+  return 'rgba(26,22,18,.3)';
 }
 
-function trazEstadoColor(est) {
-  if (est === 'CON BOLSA')  return '#2e7d32';
-  if (est === 'CLASIFICAR') return '#FF9027';
-  return 'rgba(26,22,18,.35)';                    // SIN USAR
+// Breadcrumbs (Trazabilidad › Archivo › Propietario › Categoría)
+function trazBreadcrumbs() {
+  var parts = [{ label: 'Trazabilidad', nav: [null, null, null] }];
+  if (_trazNav.archivo) {
+    var labelArch = _trazNav.archivo === 'consolidado' ? 'Consolidado global' : _trazArchivoTitulo(_trazNav.archivo);
+    parts.push({ label: labelArch, nav: [_trazNav.archivo, null, null] });
+  }
+  if (_trazNav.propietario) parts.push({ label: _trazNav.propietario, nav: [_trazNav.archivo, _trazNav.propietario, null] });
+  if (_trazNav.categoria)   parts.push({ label: _trazNav.categoria,   nav: [_trazNav.archivo, _trazNav.propietario, _trazNav.categoria] });
+
+  var html = '<div style="margin-bottom:20px;font-family:DM Mono,monospace;font-size:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">';
+  parts.forEach(function(p, i) {
+    var esUltimo = i === parts.length - 1;
+    if (esUltimo) {
+      html += '<span style="color:#0F1B64;font-weight:700">' + p.label + '</span>';
+    } else {
+      html += '<button class="traz-nav-btn" data-nav="' + JSON.stringify(p.nav).replace(/"/g, '&quot;') + '" '
+        + 'style="background:none;border:none;color:rgba(26,22,18,.55);cursor:pointer;font-family:inherit;font-size:inherit;text-decoration:underline;padding:0">'
+        + p.label + '</button>';
+      html += '<span style="color:rgba(26,22,18,.3)">›</span>';
+    }
+  });
+  html += '</div>';
+  return html;
 }
 
-// v15.40 — devuelve la vista (estado + categorías + subset) según el filtro activo del bloque
-function trazEstadoActual(claveHoja, d) {
-  var f = _trazFiltro[claveHoja];
-  if (f === '40d') return { estado: d.estado_40d || {}, cats: d.categorias_40d || {}, subset: d.cumple_40d, label: 'con 40 días cumplidos' };
-  if (f === '90d') return { estado: d.estado_90d || {}, cats: d.categorias_90d || {}, subset: d.cumple_90d, label: 'con 90 días cumplidos' };
-  return { estado: d.estado || {}, cats: d.categorias || {}, subset: d.activas, label: 'total' };
+function _trazArchivoTitulo(clave) {
+  // Devuelve el título humano según la clave (clave viene del JSON hojas[].clave)
+  var h = (_trazData.hojas || []).find(function(x){ return x.clave === clave; });
+  return h ? h.titulo : clave;
 }
 
-// v15.40 — tarjeta KPI clickable (para 40d/90d)
-function trazKpiCardBtn(label, valor, sub, color, claveHoja, filtro) {
-  var activo = _trazFiltro[claveHoja] === filtro;
-  var borde = activo ? '2px solid #B8922A' : '1px solid var(--border)';
-  var bg = activo ? '#fbf8ec' : 'white';
-  return '<div data-hoja="' + claveHoja + '" data-filtro="' + filtro + '" class="traz-kpi-btn" '
-    + 'style="background:' + bg + ';border:' + borde + ';border-radius:2px;padding:22px 24px;flex:1;min-width:150px;cursor:pointer;transition:all .15s">'
-    + '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.5);margin-bottom:10px">'
-    +   label + (activo ? ' · <span style="color:#B8922A">FILTRO ACTIVO</span>' : '')
-    + '</div>'
-    + '<div style="font-family:Playfair Display,serif;font-size:34px;font-weight:700;line-height:1;color:' + (color || 'var(--ink)') + '">' + valor + '</div>'
-    + (sub ? '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.5);margin-top:8px">' + sub + '</div>' : '')
+// Card KPI compacto (para grillas de resumen)
+function trazMiniKpi(label, valor, sub, color) {
+  return '<div style="font-family:DM Mono,monospace">'
+    + '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(26,22,18,.5)">' + label + '</div>'
+    + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700;color:' + (color || 'var(--ink)') + ';line-height:1.15">' + valor + '</div>'
+    + (sub ? '<div style="font-size:10px;color:rgba(26,22,18,.4)">' + sub + '</div>' : '')
     + '</div>';
 }
 
-// Barra apilada horizontal a partir de un objeto {clave:valor} + fn color
-function trazStackedBar(obj, total, colorFn) {
-  var t = total || Object.values(obj).reduce(function(a,b){ return a+b; }, 0) || 1;
-  var segs = Object.entries(obj).filter(function(e){ return e[1] > 0; });
-  var bar = '<div style="display:flex;height:22px;border-radius:3px;overflow:hidden;border:1px solid var(--border)">';
-  segs.forEach(function(e){
-    var pct = (100 * e[1] / t);
-    bar += '<div title="' + e[0] + ': ' + stockFmt(e[1]) + '" style="width:' + pct + '%;background:' + colorFn(e[0]) + '"></div>';
-  });
-  bar += '</div>';
-  // Leyenda
-  var leg = '<div style="display:flex;flex-wrap:wrap;gap:12px 18px;margin-top:12px">';
-  segs.forEach(function(e){
-    var pct = (100 * e[1] / t).toFixed(1).replace('.', ',');
-    leg += '<div style="display:flex;align-items:center;gap:7px;font-family:DM Mono,monospace;font-size:12px">'
-      + '<span style="width:11px;height:11px;border-radius:2px;background:' + colorFn(e[0]) + ';display:inline-block"></span>'
-      + '<span style="color:rgba(26,22,18,.75)">' + e[0] + '</span>'
-      + '<b>' + stockFmt(e[1]) + '</b>'
-      + '<span style="color:rgba(26,22,18,.4)">' + pct + '%</span>'
-      + '</div>';
-  });
-  leg += '</div>';
-  return bar + leg;
-}
-
-// Bloque de una hoja (o del consolidado) — v15.40
-function trazBloque(titulo, sub, d, esConsolidado, claveHoja) {
+// Bloque "Resumen general" (siempre arriba)
+function trazResumenGeneral(d, titulo) {
   var pct40 = (d.pct_40d != null ? d.pct_40d : 0).toString().replace('.', ',');
   var pct90 = (d.pct_90d != null ? d.pct_90d : 0).toString().replace('.', ',');
-  var borde = esConsolidado ? '2px solid #0F1B64' : '1px solid var(--border)';
-  var vista = trazEstadoActual(claveHoja, d);
+  var html = '<div style="background:#fbfaf7;border:2px solid #0F1B64;border-radius:2px;padding:24px 28px;margin-bottom:28px">';
+  html += '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700;margin-bottom:16px">' + titulo + '</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:24px">';
+  html += trazMiniKpi('Activas', trazFmt(d.activas), null, '#0F1B64');
+  html += trazMiniKpi('Cumplió 40 días', trazFmt(d.cumple_40d), pct40 + '%', '#2e7d32');
+  html += trazMiniKpi('Cumplió 90 días', trazFmt(d.cumple_90d), pct90 + '%', '#B8922A');
+  if (d.sin_usar != null && d.sin_usar > 0)
+    html += trazMiniKpi('Sin usar', trazFmt(d.sin_usar), 'declaradas', 'rgba(26,22,18,.55)');
+  html += '</div>';
 
-  var html = '<div class="traz-bloque" data-clave="' + claveHoja + '" '
-    + 'style="background:' + (esConsolidado ? '#fbfaf7' : 'white') + ';border:' + borde + ';border-radius:2px;padding:26px 28px;margin-bottom:24px">';
+  // Resumen mini por categoría (chips)
+  var cats = d.categorias || {};
+  var catsArr = Object.keys(cats).map(function(k){ return [k, cats[k]]; }).sort(function(a,b){ return b[1] - a[1]; });
+  if (catsArr.length) {
+    html += '<div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(26,22,18,.08)">';
+    html += '<div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:8px">Por categoría</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    catsArr.forEach(function(e){
+      html += '<span style="font-family:DM Mono,monospace;font-size:11px;background:white;border:1px solid var(--border);padding:4px 10px;border-radius:2px">'
+        + '<span style="width:8px;height:8px;display:inline-block;background:' + trazCatColor(e[0]) + ';border-radius:2px;margin-right:6px;vertical-align:middle"></span>'
+        + e[0] + ' <b>' + trazFmt(e[1]) + '</b></span>';
+    });
+    html += '</div></div>';
+  }
+  html += '</div>';
+  return html;
+}
 
-  // Header: título + total activas (grande) + tarjeta Sin usar (informativa)
-  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:14px;margin-bottom:22px">';
-  html += '<div>'
-    + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700">' + titulo + '</div>'
-    + (sub ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:2px">' + sub + '</div>' : '')
+// Card clickable para navegar (usado en grillas de archivos/propietarios/categorías)
+function trazNavCard(titulo, sub, d, navArgs, mostrarCats) {
+  var pct40 = (d.pct_40d != null ? d.pct_40d : 0).toString().replace('.', ',');
+  var pct90 = (d.pct_90d != null ? d.pct_90d : 0).toString().replace('.', ',');
+  var navStr = JSON.stringify(navArgs).replace(/"/g, '&quot;');
+  var html = '<button class="traz-nav-card" data-nav="' + navStr + '" '
+    + 'style="text-align:left;background:white;border:1px solid var(--border);border-radius:2px;padding:22px;cursor:pointer;transition:all .15s;font-family:inherit">'
+    + '<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:700;margin-bottom:2px">' + titulo + '</div>'
+    + (sub ? '<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.45);margin-bottom:14px">' + sub + '</div>' : '<div style="height:14px"></div>')
+    + '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px">'
+    + '<div><div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(26,22,18,.5)">Activas</div>'
+    + '<div style="font-family:Playfair Display,serif;font-size:24px;font-weight:700;color:#0F1B64">' + trazFmt(d.activas) + '</div></div>'
+    + '<div><div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(26,22,18,.5)">40d</div>'
+    + '<div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:600;color:#2e7d32">' + trazFmt(d.cumple_40d) + ' <em style="color:rgba(26,22,18,.4);font-style:normal;font-size:11px">' + pct40 + '%</em></div></div>'
+    + '<div><div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(26,22,18,.5)">90d</div>'
+    + '<div style="font-family:JetBrains Mono,monospace;font-size:14px;font-weight:600;color:#B8922A">' + trazFmt(d.cumple_90d) + ' <em style="color:rgba(26,22,18,.4);font-style:normal;font-size:11px">' + pct90 + '%</em></div></div>'
     + '</div>';
-  html += '<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">';
-  html += '<div style="text-align:right"><div style="font-family:Playfair Display,serif;font-size:30px;font-weight:700;color:#0F1B64">' + stockFmt(d.activas)
-    + '<span style="font-family:DM Mono,monospace;font-size:12px;font-weight:400;color:rgba(26,22,18,.5);margin-left:8px">activas</span></div></div>';
-  // Tarjeta "Sin usar" al costado (informativa)
-  if ((d.sin_usar || 0) > 0) {
-    html += '<div style="border-left:1px solid var(--border);padding-left:14px">'
-      + '<div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45)">Sin usar</div>'
-      + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:600;color:rgba(26,22,18,.55)">' + stockFmt(d.sin_usar) + '</div>'
-      + '<div style="font-family:DM Mono,monospace;font-size:10px;color:rgba(26,22,18,.4)">declaradas</div>'
-      + '</div>';
+
+  // Mini resumen por categoría (opcional)
+  if (mostrarCats && d.categorias) {
+    var top = Object.keys(d.categorias).map(function(k){ return [k, d.categorias[k]]; })
+      .sort(function(a,b){ return b[1] - a[1]; }).slice(0, 5);
+    if (top.length) {
+      html += '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.6);padding-top:10px;border-top:1px solid rgba(26,22,18,.08);line-height:1.7">';
+      top.forEach(function(e, i){
+        html += (i ? ' · ' : '') + '<span style="color:' + trazCatColor(e[0]) + '">■</span> ' + e[0] + ' <b>' + trazFmt(e[1]) + '</b>';
+      });
+      html += '</div>';
+    }
   }
-  html += '</div></div>';
-
-  // KPIs 40 / 90 dias — clickables
-  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px">';
-  html += trazKpiCardBtn('Cumplió 40 días', stockFmt(d.cumple_40d), pct40 + '% de activas', '#2e7d32', claveHoja, '40d');
-  html += trazKpiCardBtn('Cumplió 90 días', stockFmt(d.cumple_90d), pct90 + '% de activas', '#B8922A', claveHoja, '90d');
-  html += '</div>';
-
-  // Nota si hay filtro activo
-  if (_trazFiltro[claveHoja]) {
-    html += '<div style="background:#fbf8ec;border-left:3px solid #B8922A;padding:10px 16px;margin-bottom:16px;font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.7);display:flex;justify-content:space-between;align-items:center">'
-      + '<span>Vista filtrada: solo caravanas ' + vista.label + ' (<b>' + stockFmt(vista.subset) + '</b>)</span>'
-      + '<button data-hoja="' + claveHoja + '" class="traz-reset-btn" style="font-family:DM Mono,monospace;font-size:11px;padding:4px 12px;background:white;border:1px solid #B8922A;color:#B8922A;border-radius:2px;cursor:pointer">Ver todas</button>'
-      + '</div>';
-  }
-
-  // Estado de armado
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:10px">Estado de armado</div>';
-  html += trazStackedBar(vista.estado, vista.subset, trazEstadoColor);
-
-  // Categorías
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin:22px 0 10px">Por categoría</div>';
-  html += trazStackedBar(vista.cats, vista.subset, trazCatColor);
-
-  html += '</div>';
+  html += '<div style="text-align:right;margin-top:14px;font-family:DM Mono,monospace;font-size:11px;color:#B8922A;font-weight:600">Ver detalle →</div>';
+  html += '</button>';
   return html;
 }
 
-// v15.41 — chips de propietarios en el header (filtro del consolidado)
-function trazChipsPropietarios(cons) {
-  if (!cons.por_propietario) return '';
-  var props = Object.keys(cons.por_propietario);
-  if (!props.length) return '';
-
-  var html = '<div style="margin:14px 0 6px">';
-  html += '<div style="font-family:DM Mono,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:rgba(26,22,18,.5);margin-bottom:8px">Filtrar por propietario</div>';
-  html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
-
-  // Chip "Todos"
-  var activoTodos = _trazPropSel === null;
-  html += '<button data-prop="__all__" class="traz-prop-chip" style="font-family:DM Mono,monospace;font-size:11px;padding:6px 14px;border-radius:2px;cursor:pointer;letter-spacing:.06em;'
-    + 'background:' + (activoTodos ? '#0F1B64' : 'white') + ';color:' + (activoTodos ? 'white' : 'rgba(26,22,18,.7)') + ';border:1px solid ' + (activoTodos ? '#0F1B64' : 'rgba(26,22,18,.2)') + '">Todos <b>' + stockFmt(cons.activas) + '</b></button>';
-
-  props.forEach(function(p){
-    var activo = _trazPropSel === p;
-    var n = cons.por_propietario[p].activas;
-    html += '<button data-prop="' + p + '" class="traz-prop-chip" style="font-family:DM Mono,monospace;font-size:11px;padding:6px 14px;border-radius:2px;cursor:pointer;letter-spacing:.06em;'
-      + 'background:' + (activo ? '#0F1B64' : 'white') + ';color:' + (activo ? 'white' : 'rgba(26,22,18,.7)') + ';border:1px solid ' + (activo ? '#0F1B64' : 'rgba(26,22,18,.2)') + '">' + p + ' <b>' + stockFmt(n) + '</b></button>';
-  });
-  html += '</div></div>';
-  return html;
-}
-
-// v15.41 — timeline de "Próximas activaciones" (agregado global, próximos N días)
-function trazTimeline(cons) {
-  var horizonte = 30;   // días — el backend guarda hasta 90; el frontend recorta acá
-
-  var lista40 = (cons.proximas_40d || []).filter(function(x){ return x.dias_hasta <= horizonte; });
-  var lista90 = (cons.proximas_90d || []).filter(function(x){ return x.dias_hasta <= horizonte; });
-
-  if (!lista40.length && !lista90.length) return '';
-
-  // Merge por fecha para tabla combinada
+// Cuenta corriente (nivel 3 · categoría)
+function trazCuentaCorriente(d) {
+  var p40 = d.proximas_40d || [];
+  var p90 = d.proximas_90d || [];
+  if (!p40.length && !p90.length) {
+    return '<div style="background:#fbfaf7;border:1px solid var(--border);border-radius:2px;padding:24px;text-align:center;color:rgba(26,22,18,.5);font-family:DM Mono,monospace;font-size:12px">'
+      + 'No hay activaciones futuras dentro del horizonte configurado.</div>';
+  }
+  // Merge por fecha
   var mapa = {};
-  lista40.forEach(function(x){ mapa[x.fecha] = mapa[x.fecha] || {c40:0, c90:0, dias: x.dias_hasta}; mapa[x.fecha].c40 = x.cabezas; });
-  lista90.forEach(function(x){ mapa[x.fecha] = mapa[x.fecha] || {c40:0, c90:0, dias: x.dias_hasta}; mapa[x.fecha].c90 = x.cabezas; });
+  p40.forEach(function(x){ mapa[x.fecha] = mapa[x.fecha] || {c40:0, c90:0, dias: x.dias_hasta}; mapa[x.fecha].c40 = x.cabezas; });
+  p90.forEach(function(x){ mapa[x.fecha] = mapa[x.fecha] || {c40:0, c90:0, dias: x.dias_hasta}; mapa[x.fecha].c90 = x.cabezas; });
   var fechas = Object.keys(mapa).sort();
+  var acum40 = d.cumple_40d || 0;
+  var acum90 = d.cumple_90d || 0;
 
-  var maxCab = 0;
-  fechas.forEach(function(f){ var v = Math.max(mapa[f].c40, mapa[f].c90); if (v > maxCab) maxCab = v; });
-
-  var html = '<div style="margin-top:36px;padding-top:26px;border-top:1px solid var(--border)">';
-  html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:rgba(26,22,18,.45);margin-bottom:8px">Próximas activaciones · próximos ' + horizonte + ' días</div>';
-  html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.55);margin-bottom:14px">Cuándo se cumplen los umbrales de 40 y 90 días para las caravanas activas.</div>';
-
+  var html = '<div style="margin-top:8px">';
+  html += '<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:700;margin-bottom:4px">Cuenta corriente · próximas activaciones</div>';
+  html += '<div style="font-family:DM Mono,monospace;font-size:12px;color:rgba(26,22,18,.55);margin-bottom:14px">Acumulado parte de las que ya cumplieron el umbral (' + trazFmt(d.cumple_40d) + ' a 40d, ' + trazFmt(d.cumple_90d) + ' a 90d).</div>';
   html += '<table class="data-table" style="width:100%;font-family:DM Mono,monospace">';
   html += '<thead><tr>'
-        + '<th class="left">Fecha</th>'
-        + '<th class="right">En</th>'
-        + '<th class="right">Cumplen 40 días</th>'
-        + '<th class="right">Cumplen 90 días</th>'
-        + '<th style="width:220px">Volumen</th>'
-        + '</tr></thead><tbody>';
+    + '<th class="left">Fecha</th>'
+    + '<th class="right">En</th>'
+    + '<th class="right" style="color:#2e7d32">Cumplen 40d</th>'
+    + '<th class="right">Acumulado 40d</th>'
+    + '<th class="right" style="color:#B8922A">Cumplen 90d</th>'
+    + '<th class="right">Acumulado 90d</th>'
+    + '</tr></thead><tbody>';
   fechas.forEach(function(f){
-    var d = mapa[f];
-    var fDMY = f.split('-').reverse().join('/');
-    var bar40 = (d.c40 / (maxCab || 1)) * 100;
-    var bar90 = (d.c90 / (maxCab || 1)) * 100;
-    html += '<tr>';
-    html += '<td class="left"><b>' + fDMY + '</b></td>';
-    html += '<td class="right mono" style="color:rgba(26,22,18,.55)">' + d.dias + 'd</td>';
-    html += '<td class="right mono" style="color:' + (d.c40 ? '#2e7d32' : 'rgba(26,22,18,.3)') + '">' + (d.c40 ? stockFmt(d.c40) : '—') + '</td>';
-    html += '<td class="right mono" style="color:' + (d.c90 ? '#B8922A' : 'rgba(26,22,18,.3)') + '">' + (d.c90 ? stockFmt(d.c90) : '—') + '</td>';
-    html += '<td style="padding:6px 12px">';
-    if (d.c40) html += '<div style="height:6px;background:rgba(46,125,50,.15);border-radius:2px;margin-bottom:3px"><div style="height:100%;width:' + bar40 + '%;background:#2e7d32;border-radius:2px"></div></div>';
-    if (d.c90) html += '<div style="height:6px;background:rgba(184,146,42,.15);border-radius:2px"><div style="height:100%;width:' + bar90 + '%;background:#B8922A;border-radius:2px"></div></div>';
-    html += '</td></tr>';
+    var r = mapa[f];
+    if (r.c40) acum40 += r.c40;
+    if (r.c90) acum90 += r.c90;
+    html += '<tr>'
+      + '<td class="left"><b>' + trazFechaDMY(f) + '</b></td>'
+      + '<td class="right mono" style="color:rgba(26,22,18,.55)">' + r.dias + 'd</td>'
+      + '<td class="right mono" style="color:' + (r.c40 ? '#2e7d32' : 'rgba(26,22,18,.3)') + '">' + (r.c40 ? '+' + trazFmt(r.c40) : '—') + '</td>'
+      + '<td class="right mono" style="font-weight:700">' + trazFmt(acum40) + '</td>'
+      + '<td class="right mono" style="color:' + (r.c90 ? '#B8922A' : 'rgba(26,22,18,.3)') + '">' + (r.c90 ? '+' + trazFmt(r.c90) : '—') + '</td>'
+      + '<td class="right mono" style="font-weight:700">' + trazFmt(acum90) + '</td>'
+      + '</tr>';
   });
-  html += '</tbody></table>';
-  html += '</div>';
+  html += '</tbody></table></div>';
   return html;
 }
 
+// Render principal — orquesta según nivel del drill-down
 async function renderTrazabilidad() {
   var loading = document.getElementById('trazLoading');
   var content = document.getElementById('trazContent');
   if (!content) return;
   try {
-    // Cachear el JSON en window._trazData; cada click de filtro re-renderiza sin re-fetch
-    var data = window._trazData;
-    if (!data) {
-      data = await stockGet(STOCK_SB + '/trazabilidad_resumen.json');
-      window._trazData = data;
+    if (!_trazData) {
+      _trazData = await stockGet(STOCK_SB + '/trazabilidad_resumen.json');
     }
+    var data = _trazData;
     var meta = data.meta || {};
     var hojas = data.hojas || [];
-    var cons  = data.consolidado || {};
-    // v15.40: fecha bien visible
-    var fechaTxt = meta.hoy ? meta.hoy.split('-').reverse().join('/') : '';
+    var cons = data.consolidado || {};
 
     var html = '';
 
-    // Header con fecha destacada
-    html += '<div style="margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid var(--border-strong)">'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px">'
+    // Header con fecha
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:2px solid var(--border-strong)">'
       + '<div><div style="font-family:DM Mono,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:6px">Resumen de trazabilidad</div>'
-      + '<div style="font-family:Playfair Display,serif;font-size:28px;font-weight:700">Caravanas declaradas — consolidado</div></div>'
+      + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700">Caravanas declaradas</div></div>'
       + '<div style="text-align:right">'
       + '<div style="font-family:DM Mono,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.5)">Fecha de consulta</div>'
-      + '<div style="font-family:Playfair Display,serif;font-size:24px;font-weight:700;color:#0F1B64">' + fechaTxt + '</div>'
-      + '</div></div>'
-      + '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.4);margin-top:8px">Fuente: Google Drive · ' + (meta.archivos || []).join(' · ') + '</div>'
-      // v15.41 — chips de propietario
-      + trazChipsPropietarios(cons)
-      + '</div>';
+      + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700;color:#0F1B64">' + trazFechaDMY(meta.hoy) + '</div>'
+      + '</div></div>';
 
-    // v15.41 — dataset del consolidado según filtro de propietario
-    var consConFiltro = (_trazPropSel && cons.por_propietario && cons.por_propietario[_trazPropSel])
-      ? cons.por_propietario[_trazPropSel]
-      : cons;
-    var subtituloCons = _trazPropSel
-      ? 'filtrado por propietario · ' + _trazPropSel
-      : hojas.length + ' hojas';
+    // Breadcrumbs
+    html += trazBreadcrumbs();
 
-    // Consolidado (destacado)
-    html += trazBloque('Consolidado global', subtituloCons, consConFiltro, true, 'consolidado');
-
-    // v15.41 — timeline al pie del consolidado (agregado global, sin filtro por propietario)
-    html += trazTimeline(cons);
-
-    // Por hoja
-    hojas.forEach(function(h) {
-      html += trazBloque(h.titulo, h.hoja + ' · ' + h.archivo, h, false, h.clave);
-    });
+    // ── NIVEL 0: inicio (sin archivo elegido) ──
+    if (!_trazNav.archivo) {
+      html += trazResumenGeneral(cons, 'Consolidado global');
+      html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:rgba(26,22,18,.5);margin:8px 0 12px">Elegir archivo</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">';
+      // Card "Consolidado" primero
+      html += trazNavCard('Consolidado global', hojas.length + ' hojas', cons, ['consolidado', null, null], true);
+      hojas.forEach(function(h){
+        html += trazNavCard(h.titulo, h.hoja + ' · ' + h.archivo, h, [h.clave, null, null], true);
+      });
+      html += '</div>';
+    }
+    // ── NIVEL 1: archivo elegido, sin propietario ──
+    else if (!_trazNav.propietario) {
+      var arch = _trazNav.archivo === 'consolidado' ? cons : hojas.find(function(h){ return h.clave === _trazNav.archivo; });
+      if (!arch) { html += '<div>Archivo no encontrado</div>'; }
+      else {
+        var titArch = _trazNav.archivo === 'consolidado' ? 'Consolidado global' : arch.titulo;
+        html += trazResumenGeneral(arch, titArch);
+        html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:rgba(26,22,18,.5);margin:8px 0 12px">Elegir propietario</div>';
+        var props = arch.por_propietario || {};
+        var propsArr = Object.keys(props).sort(function(a,b){ return props[b].activas - props[a].activas; });
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">';
+        propsArr.forEach(function(p){
+          html += trazNavCard(p, null, props[p], [_trazNav.archivo, p, null], true);
+        });
+        html += '</div>';
+      }
+    }
+    // ── NIVEL 2: propietario elegido, sin categoría ──
+    else if (!_trazNav.categoria) {
+      var arch2 = _trazNav.archivo === 'consolidado' ? cons : hojas.find(function(h){ return h.clave === _trazNav.archivo; });
+      var prop = arch2 && arch2.por_propietario && arch2.por_propietario[_trazNav.propietario];
+      if (!prop) { html += '<div>Propietario no encontrado</div>'; }
+      else {
+        html += trazResumenGeneral(prop, _trazNav.propietario);
+        html += '<div style="font-family:DM Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:rgba(26,22,18,.5);margin:8px 0 12px">Elegir categoría</div>';
+        var cats = prop.por_categoria || {};
+        var catsArr = Object.keys(cats).sort(function(a,b){ return cats[b].activas - cats[a].activas; });
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">';
+        catsArr.forEach(function(c){
+          html += trazNavCard(c, null, cats[c], [_trazNav.archivo, _trazNav.propietario, c], false);
+        });
+        html += '</div>';
+      }
+    }
+    // ── NIVEL 3: categoría elegida (drill final con cuenta corriente) ──
+    else {
+      var arch3 = _trazNav.archivo === 'consolidado' ? cons : hojas.find(function(h){ return h.clave === _trazNav.archivo; });
+      var prop2 = arch3 && arch3.por_propietario && arch3.por_propietario[_trazNav.propietario];
+      var cat  = prop2 && prop2.por_categoria && prop2.por_categoria[_trazNav.categoria];
+      if (!cat) { html += '<div>Categoría no encontrada</div>'; }
+      else {
+        // Resumen simplificado (sin barras de categoría porque ya estamos en una)
+        var pct40 = (cat.pct_40d != null ? cat.pct_40d : 0).toString().replace('.', ',');
+        var pct90 = (cat.pct_90d != null ? cat.pct_90d : 0).toString().replace('.', ',');
+        html += '<div style="background:#fbfaf7;border:2px solid #0F1B64;border-radius:2px;padding:24px 28px;margin-bottom:28px">'
+          + '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700;margin-bottom:16px">' + _trazNav.categoria + '</div>'
+          + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:24px">'
+          + trazMiniKpi('Activas', trazFmt(cat.activas), null, '#0F1B64')
+          + trazMiniKpi('Cumplió 40 días', trazFmt(cat.cumple_40d), pct40 + '%', '#2e7d32')
+          + trazMiniKpi('Cumplió 90 días', trazFmt(cat.cumple_90d), pct90 + '%', '#B8922A')
+          + '</div></div>';
+        html += trazCuentaCorriente(cat);
+      }
+    }
 
     content.innerHTML = html;
     if (loading) loading.style.display = 'none';
     content.style.display = 'block';
 
-    // v15.40 — listeners para el filtro clickable
-    content.querySelectorAll('.traz-kpi-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var hoja = btn.dataset.hoja;
-        var filtro = btn.dataset.filtro;
-        // toggle: si ya está activo, desactivar
-        if (_trazFiltro[hoja] === filtro) {
-          delete _trazFiltro[hoja];
-        } else {
-          _trazFiltro[hoja] = filtro;
-        }
-        renderTrazabilidad();   // re-render con nuevo estado
-      });
-    });
-    content.querySelectorAll('.traz-reset-btn').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        delete _trazFiltro[btn.dataset.hoja];
-        renderTrazabilidad();
-      });
-    });
-    // v15.41 — listeners de los chips de propietario
-    content.querySelectorAll('.traz-prop-chip').forEach(function(chip) {
-      chip.addEventListener('click', function() {
-        var p = chip.dataset.prop;
-        _trazPropSel = (p === '__all__' || _trazPropSel === p) ? null : p;
-        renderTrazabilidad();
+    // Listeners de nav (cards y breadcrumbs)
+    content.querySelectorAll('.traz-nav-card, .traz-nav-btn').forEach(function(el){
+      el.addEventListener('click', function(){
+        try {
+          var nav = JSON.parse(el.dataset.nav);
+          trazNavGoTo(nav[0], nav[1], nav[2]);
+        } catch(e) { console.error('trazNav error', e); }
       });
     });
   } catch (e) {
