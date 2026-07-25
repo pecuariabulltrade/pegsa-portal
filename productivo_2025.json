@@ -1,29 +1,29 @@
 {
   "meta": {
-    "generado": "2026-07-24T23:01:19.294620",
+    "generado": "2026-07-25T00:01:15.480733",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
     "registros_totales": 47718,
-    "registros_filtrados": 12676,
+    "registros_filtrados": 12584,
     "excluidos": {
       "motivo": 4828,
-      "rfid": 3823,
+      "rfid": 3821,
       "estadia": 216,
-      "adp": 1588,
-      "fecha": 24587
+      "adp": 1575,
+      "fecha": 24694
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 12676,
-    "adp_promedio": 1.414,
+    "cabezas": 12584,
+    "adp_promedio": 1.413,
     "adp_min": 0.01,
     "adp_max": 4.957,
-    "estadia_promedio": 145.3,
+    "estadia_promedio": 145.6,
     "estadia_min": 3,
     "estadia_max": 450
   },
@@ -56,12 +56,12 @@
       "estadia_max": 438
     },
     "TM": {
-      "cabezas": 356,
-      "adp_promedio": 1.186,
+      "cabezas": 350,
+      "adp_promedio": 1.182,
       "adp_min": 0.587,
       "adp_max": 2.783,
-      "estadia_promedio": 276.7,
-      "estadia_min": 113,
+      "estadia_promedio": 279.5,
+      "estadia_min": 128,
       "estadia_max": 449
     },
     "TO": {
@@ -74,11 +74,11 @@
       "estadia_max": 368
     },
     "VA": {
-      "cabezas": 5994,
-      "adp_promedio": 1.487,
+      "cabezas": 5909,
+      "adp_promedio": 1.485,
       "adp_min": 0.015,
       "adp_max": 4.957,
-      "estadia_promedio": 120.6,
+      "estadia_promedio": 120.9,
       "estadia_min": 31,
       "estadia_max": 350
     },
@@ -201,12 +201,12 @@
   },
   "por_mes": {
     "2025-07": {
-      "cabezas": 189,
-      "adp_promedio": 1.474,
+      "cabezas": 97,
+      "adp_promedio": 1.358,
       "adp_min": 0.037,
-      "adp_max": 3.188,
-      "estadia_promedio": 118.4,
-      "estadia_min": 28,
+      "adp_max": 2.66,
+      "estadia_promedio": 132.7,
+      "estadia_min": 73,
       "estadia_max": 312
     },
     "2025-08": {
