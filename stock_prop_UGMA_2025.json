@@ -1,78 +1,108 @@
 {
   "propietario": "UGMA",
   "kpis": {
-    "total_cabezas": 10,
-    "total_kg_estimado_hoy": 6500,
-    "total_ton_estimado_hoy": 6.5,
-    "kg_promedio_estimado": 650.0,
-    "dias_promedio_feedlot": 250.0,
+    "total_cabezas": 68,
+    "total_kg_estimado_hoy": 30230,
+    "total_ton_estimado_hoy": 30.23,
+    "kg_promedio_estimado": 444.6,
+    "dias_promedio_feedlot": 4.0,
     "total_establecimientos": 1,
     "total_propietarios": 1,
     "por_categoria": {
       "VA": {
-        "cabezas": 10.0,
-        "kg_estimado": 6500,
-        "ton_estimado": 6.5,
-        "kg_promedio": 650.0
+        "cabezas": 68.0,
+        "kg_estimado": 30230,
+        "ton_estimado": 30.23,
+        "kg_promedio": 444.6
       }
     },
     "por_propietario": {
       "UGMA": {
-        "cabezas": 10.0,
-        "kg_estimado": 6500,
-        "ton_estimado": 6.5,
-        "kg_promedio": 650.0
+        "cabezas": 68.0,
+        "kg_estimado": 30230,
+        "ton_estimado": 30.23,
+        "kg_promedio": 444.6
       }
     },
     "por_establecimiento": {
       "El Haras": {
-        "cabezas": 10.0,
-        "kg_estimado": 6500,
-        "ton_estimado": 6.5,
-        "kg_promedio": 650.0
+        "cabezas": 68.0,
+        "kg_estimado": 30230,
+        "ton_estimado": 30.23,
+        "kg_promedio": 444.6
       }
     },
     "por_clasificacion": {
       "Vaca": {
-        "cabezas": 10.0,
-        "kg_estimado": 6500,
-        "ton_estimado": 6.5,
-        "kg_promedio": 650.0
+        "cabezas": 68.0,
+        "kg_estimado": 30230,
+        "ton_estimado": 30.23,
+        "kg_promedio": 444.6
       }
     },
     "por_categoria_final": {
+      "vaca": {
+        "cabezas": 66.0,
+        "kg_estimado": 28930,
+        "ton_estimado": 28.93,
+        "kg_promedio": 438.3
+      },
       "vaca mayor a 650 kg": {
-        "cabezas": 10.0,
-        "kg_estimado": 6500,
-        "ton_estimado": 6.5,
+        "cabezas": 2.0,
+        "kg_estimado": 1300,
+        "ton_estimado": 1.3,
         "kg_promedio": 650.0
       }
     },
     "por_establecimiento_categoria": {
       "El Haras": {
+        "vaca": {
+          "cabezas": 66.0,
+          "kg_estimado": 28929.600000000002,
+          "ton_estimado": 28.93,
+          "kg_promedio": 438.3
+        },
         "vaca mayor a 650 kg": {
-          "cabezas": 10.0,
-          "kg_estimado": 6500.0,
-          "ton_estimado": 6.5,
+          "cabezas": 2.0,
+          "kg_estimado": 1300.0,
+          "ton_estimado": 1.3,
           "kg_promedio": 650.0
         }
       }
     },
     "por_categoria_desglose": {
+      "vaca": {
+        "por_establecimiento": {
+          "El Haras": {
+            "cabezas": 66.0,
+            "kg_estimado": 28929.600000000002,
+            "ton_estimado": 28.93,
+            "kg_promedio": 438.3
+          }
+        },
+        "por_propietario": {
+          "UGMA": {
+            "cabezas": 66.0,
+            "kg_estimado": 28929.600000000002,
+            "ton_estimado": 28.93,
+            "kg_promedio": 438.3
+          }
+        }
+      },
       "vaca mayor a 650 kg": {
         "por_establecimiento": {
           "El Haras": {
-            "cabezas": 10.0,
-            "kg_estimado": 6500.0,
-            "ton_estimado": 6.5,
+            "cabezas": 2.0,
+            "kg_estimado": 1300.0,
+            "ton_estimado": 1.3,
             "kg_promedio": 650.0
           }
         },
         "por_propietario": {
           "UGMA": {
-            "cabezas": 10.0,
-            "kg_estimado": 6500.0,
-            "ton_estimado": 6.5,
+            "cabezas": 2.0,
+            "kg_estimado": 1300.0,
+            "ton_estimado": 1.3,
             "kg_promedio": 650.0
           }
         }
