@@ -1,44 +1,44 @@
 {
   "meta": {
-    "generado": "2026-07-28T23:01:34.275421",
+    "generado": "2026-07-29T00:01:21.721669",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
     "filtros": "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
-    "registros_totales": 47769,
-    "registros_filtrados": 12654,
+    "registros_totales": 47731,
+    "registros_filtrados": 12599,
     "excluidos": {
       "motivo": 4863,
       "rfid": 3822,
-      "estadia": 216,
-      "adp": 1595,
-      "fecha": 24619
+      "estadia": 215,
+      "adp": 1586,
+      "fecha": 24646
     },
     "col_adp": "AdpSinDebaste",
     "col_estadia": "Estadia",
     "col_rfid": "RFID"
   },
   "general": {
-    "cabezas": 12654,
-    "adp_promedio": 1.41,
+    "cabezas": 12599,
+    "adp_promedio": 1.411,
     "adp_min": 0.003,
     "adp_max": 4.957,
-    "estadia_promedio": 145.6,
+    "estadia_promedio": 145.5,
     "estadia_min": 3,
     "estadia_max": 450
   },
   "por_categoria": {
     "NT": {
-      "cabezas": 644,
-      "adp_promedio": 1.215,
+      "cabezas": 618,
+      "adp_promedio": 1.217,
       "adp_min": 0.238,
       "adp_max": 4.915,
-      "estadia_promedio": 175.3,
+      "estadia_promedio": 175.5,
       "estadia_min": 32,
       "estadia_max": 348
     },
     "NV": {
-      "cabezas": 788,
+      "cabezas": 778,
       "adp_promedio": 1.459,
       "adp_min": 0.01,
       "adp_max": 4.537,
@@ -56,20 +56,20 @@
       "estadia_max": 438
     },
     "TM": {
-      "cabezas": 350,
-      "adp_promedio": 1.182,
+      "cabezas": 348,
+      "adp_promedio": 1.183,
       "adp_min": 0.587,
       "adp_max": 2.783,
-      "estadia_promedio": 279.5,
+      "estadia_promedio": 279.3,
       "estadia_min": 128,
       "estadia_max": 449
     },
     "TO": {
-      "cabezas": 27,
-      "adp_promedio": 1.265,
+      "cabezas": 26,
+      "adp_promedio": 1.284,
       "adp_min": 0.06,
       "adp_max": 2.271,
-      "estadia_promedio": 151.7,
+      "estadia_promedio": 147.4,
       "estadia_min": 77,
       "estadia_max": 368
     },
@@ -201,13 +201,13 @@
   },
   "por_mes": {
     "2025-07": {
-      "cabezas": 97,
-      "adp_promedio": 1.358,
+      "cabezas": 42,
+      "adp_promedio": 1.513,
       "adp_min": 0.037,
       "adp_max": 2.66,
-      "estadia_promedio": 132.7,
-      "estadia_min": 73,
-      "estadia_max": 312
+      "estadia_promedio": 93.8,
+      "estadia_min": 75,
+      "estadia_max": 109
     },
     "2025-08": {
       "cabezas": 1138,
