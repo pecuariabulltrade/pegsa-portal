@@ -1,49 +1,48 @@
 {
-  "generado": "2026-07-29T20:00:03.687752",
+  "generado": "2026-07-30T22:00:03.478014",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
-      "ok": true,
-      "registros": 9548,
-      "cabezas": 9548
+      "ok": false,
+      "error": "ReadTimeout: HTTPSConnectionPool(host='elgarabi-api.wincampo.com', port=443): Read timed out. (read timeout=90)"
     },
     "stock_insumos": {
       "ok": true,
       "registros": 7,
-      "total_kg": 13944340.61
+      "total_kg": 14029649.61
     },
     "movimientos": {
       "ok": true
     },
     "muertes": {
       "ok": true,
-      "total_anio": 275,
+      "total_anio": 251,
       "total_mes_ant": 19,
-      "tasa_mensual_pct": 1.151
+      "tasa_mensual_pct": 1.42
     },
     "muertes_30d": {
       "ok": true,
       "total_30d": 19,
-      "tasa_mensual_pct": 0.276
+      "tasa_mensual_pct": 2.718
     },
     "productivo": {
       "ok": true,
-      "adp_promedio": 1.411,
-      "estadia_promedio": 145.5,
-      "cabezas": 12599
+      "adp_promedio": 1.409,
+      "estadia_promedio": 145.6,
+      "cabezas": 12612
     },
     "consumo": {
       "ok": true,
-      "total_anual_kg": 40436181.0,
-      "promedio_diario_kg": 81195.0
+      "total_anual_kg": 40427201.0,
+      "promedio_diario_kg": 77195.0
     },
     "indicadores": {
       "ok": true,
-      "denominador": "El Haras",
-      "pct_peso_vivo": 1.84,
-      "consumo_cab_tc": 13.09,
-      "consumo_cab_ms": 9.37,
-      "conversion": 8.98
+      "denominador": "PEGSA total",
+      "pct_peso_vivo": null,
+      "consumo_cab_tc": null,
+      "consumo_cab_ms": null,
+      "conversion": null
     },
     "tesoreria": {
       "ok": true,
@@ -65,10 +64,8 @@
       "periodos": 18
     },
     "stock_diario": {
-      "ok": true,
-      "dias": 91,
-      "ultima_fecha": "2026-07-29",
-      "metodo": "running_balance"
+      "ok": false,
+      "error": "stock_hacienda no disponible este run"
     },
     "tesoreria_darwash": {
       "ok": true,
@@ -78,7 +75,7 @@
     "trazabilidad": {
       "ok": true,
       "hojas": 3,
-      "activas": 12686
+      "activas": 12921
     },
     "precios_inferencia": {
       "ok": true,
