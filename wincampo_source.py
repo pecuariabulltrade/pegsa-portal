@@ -28,6 +28,12 @@ API_BASE = "https://elgarabi-api.wincampo.com/api/"
 RATE_LIMIT_SLEEP = 0.3
 TIMEOUT_DEFAULT = 90  # el endpoint de stock puede tardar — animal por animal
 
+# v15.46: corrales que NO representan stock productivo real y se excluyen de
+# todos los KPIs. El corral 10000 es un corral virtual de WinCampo: al
+# 2026-07-30 tenía 179 cabezas de la tropa PEG.DES.19/02/26 que el usuario
+# decidió NO contabilizar. Si aparece otro corral virtual, agregarlo acá.
+CORRALES_EXCLUIDOS = {"10000"}
+
 
 # v15.16 · Consolidación de hoteleros para reportes de hacienda.
 # BULLTRADE SRL forma parte del mismo grupo PEGSA a fines productivos
@@ -129,61 +135,76 @@ class WinCampoAPI:
         """
         Reemplazo de SELECT * FROM V_STOCK_HACIENDA.
 
-        Devuelve detalle individual: una fila por cada cabeza (RFID único).
-        El endpoint trae ~9974 cabezas con caravana asignada al día de hoy.
+        v15.46 — Migrado de `lst_stock_de_hacienda` (reporte_elegido=detallado_caravana)
+        a `caravanas_stock`.
+
+        MOTIVO: el 2026-07-29 WinCampo movió el reporte "Stock detallado de Caravanas"
+        a una cola asincrónica. El camino sincrónico viejo quedó colgado
+        indefinidamente (ReadTimeout con 90s y con 300s) y el portal se congeló 24h.
+        El submit asincrónico tampoco encola desde un cliente HTTP plano.
+
+        `caravanas_stock` es el endpoint que alimenta la pantalla
+        "Explorador de Caravanas en Stock" (#/grafico_stock_caravanas). Devuelve
+        EL MISMO dataset caravana por caravana, sincrónico, en ~5-7 segundos,
+        sin query params.
+
+        Verificado 2026-07-30: 9491 filas, paridad exacta por propietario y por
+        establecimiento contra el último stock_kpis bueno del 2026-07-29.
 
         Args:
-            fecha: ISO date string. Por default hoy.
+            fecha: ignorado. El endpoint devuelve el stock ACTUAL (no acepta fecha).
+                   Se mantiene en la firma por compatibilidad con los llamadores.
 
         Returns:
-            list[dict] con keys que necesita el pipeline:
-                NRO_CORRAL    (str)
-                HOTELERO      (str)
-                CATEGORIA     (str)
-                KG_INGRESO    (float)
-                FECHA_INGRESO (str ISO date) — directo del endpoint
-                RFID          (str) — único por animal
-                NRO_CARAVANA  (str)
-                NRO_TROPA     (str)
-                SEXO          (str, "M" o "H")
-                RAZA          (str/None)
+            list[dict] — mismo shape que antes (ver _normalizar_row).
         """
-        fecha_iso = fecha or date.today().isoformat()
-        params = {
-            "fecha_desde": fecha_iso,
-            "fecha_hasta": fecha_iso,
-            "descripcion_corral_sino": "N",
-            "descripcion_categoria_sino": "N",
-            "tropa_trazada": "N",
-            "tropa_no_trazada": "N",
-            "agrupado": "N",                      # DETALLE INDIVIDUAL (no agregado)
-            "desbastado_sino": "N",
-            "cabezas_sino": "N",
-            "reporte_elegido": "detallado_caravana",
-        }
-        data = self._get("lst_stock_de_hacienda", params=params)
+        # El endpoint no acepta query params: devuelve el stock vivo completo.
+        # _get usa TIMEOUT_DEFAULT (90s); el endpoint responde en 5-7s.
+        data = self._get("caravanas_stock", params=None)
 
-        # Shape verificado: { "lst_stock_hacienda": { "cabecera": [...], "detalle": [...] } }
-        root = data.get("lst_stock_hacienda") if isinstance(data, dict) else None
-        if not isinstance(root, dict):
-            raise RuntimeError(f"Response sin lst_stock_hacienda. Keys top: {list(data.keys()) if isinstance(data, dict) else type(data)}")
-        arr = root.get("detalle", [])
+        if not isinstance(data, dict):
+            raise RuntimeError(f"Response de caravanas_stock no es dict: {type(data)}")
+
+        arr = data.get("data", [])
         if not isinstance(arr, list):
-            raise RuntimeError(f"detalle no es lista. Keys de root: {list(root.keys())}")
+            raise RuntimeError(
+                f"caravanas_stock: 'data' no es lista. Keys top: {list(data.keys())}"
+            )
+
+        total = data.get("total")
+        if total is not None and total != len(arr):
+            log.warning(f"caravanas_stock: total={total} pero data trae {len(arr)} filas")
 
         if not arr:
-            log.warning("WinCampo devolvió 0 cabezas en stock_hacienda")
+            log.warning("WinCampo devolvió 0 cabezas en caravanas_stock")
             return []
 
-        log.info(f"Stock hacienda: {len(arr)} cabezas individuales")
+        # v15.46: excluir corrales que no son stock real (ver CORRALES_EXCLUIDOS)
+        antes = len(arr)
+        arr = [x for x in arr
+               if str(x.get("NRO_CORRAL") or "").strip() not in CORRALES_EXCLUIDOS]
+        excluidas = antes - len(arr)
+        if excluidas:
+            log.info(f"  Excluidas {excluidas} cabezas de corrales no productivos "
+                     f"({', '.join(sorted(CORRALES_EXCLUIDOS))})")
 
-        salida = [self._normalizar_row(x) for x in arr]
-        return salida
+        log.info(f"Stock hacienda (caravanas_stock): {len(arr)} cabezas individuales")
+
+        return [self._normalizar_row(x) for x in arr]
 
     def _normalizar_row(self, x):
         """
-        Normaliza una fila al shape esperado por el pipeline.
-        Verificado con response real al 2026-06-06.
+        Normaliza una fila de `caravanas_stock` al shape esperado por el pipeline.
+
+        v15.46: los nombres de campo del endpoint nuevo difieren en 3 casos
+        respecto de `lst_stock_de_hacienda`:
+            CATEGORIA  ← CATEGORIA_ACTUAL   (== CATEGORIA_INGRESO en 9491/9491 filas)
+            RAZA       ← RAZA               (antes DESC_RAZA; viene null siempre,
+                                             el pipeline no la consume)
+            ORIGEN     ← CARAVANA_ORIGEN    (el pipeline no consume ORIGEN en stock;
+                                             ORIGEN sí se usa pero en el módulo de
+                                             ingresos, que tiene su propio adapter)
+        Todo el resto conserva el mismo nombre.
         """
         kg_ing = x.get("KG_INGRESO")
         try:
@@ -191,32 +212,32 @@ class WinCampoAPI:
         except (TypeError, ValueError):
             kg_ing = None
 
+        # "2026-05-06 00:00:00.000" → "2026-05-06"
         fecha = x.get("FECHA_INGRESO")
         if hasattr(fecha, "isoformat"):
             fecha = fecha.isoformat()
         elif fecha is not None:
-            fecha = str(fecha)
+            fecha = str(fecha).strip()[:10] or None
+
+        categoria = x.get("CATEGORIA_ACTUAL") or x.get("CATEGORIA_INGRESO")
 
         return {
             # 5 críticos del pipeline (mismas keys que V_STOCK_HACIENDA del SQL viejo)
             "NRO_CORRAL":    str(x.get("NRO_CORRAL") or "").strip() or None,
             # v15.16: BULLTRADE SRL → PEGSA en hacienda
             "HOTELERO":      consolidar_hotelero(x.get("HOTELERO")),
-            "CATEGORIA":     x.get("CATEGORIA"),
+            "CATEGORIA":     categoria,
             "KG_INGRESO":    kg_ing,
             "FECHA_INGRESO": fecha,
-            # v15.4.1 HOTFIX: el SQL viejo traía CANTIDAD por cabeza, el adapter no
-            # la incluía y eso rompía calcular_kpis() (línea 407) que multiplica por
-            # cantidad → total_cabezas, total_kg_estimado_hoy quedaban en 0.
-            # Cada cabeza individual del adapter = 1 cabeza.
+            # v15.4.1: cada cabeza individual = 1 cabeza (calcular_kpis multiplica por esto)
             "CANTIDAD":      1,
-            # Extras útiles que ahora podemos preservar (el SQL viejo no los traía o no los exponía)
+            # Extras preservados
             "RFID":          str(x.get("RFID") or "").strip() or None,
             "NRO_CARAVANA":  x.get("NRO_CARAVANA"),
             "NRO_TROPA":     x.get("NRO_TROPA"),
             "SEXO":          x.get("SEXO"),
-            "RAZA":          x.get("DESC_RAZA"),
-            "ORIGEN":        x.get("ORIGEN"),
+            "RAZA":          x.get("RAZA"),
+            "ORIGEN":        x.get("CARAVANA_ORIGEN"),
         }
 
     # ════════════════════════════════════════════════════════════════
