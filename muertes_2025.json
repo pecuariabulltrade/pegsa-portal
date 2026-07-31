@@ -1,30 +1,30 @@
 {
   "meta": {
-    "generado": "2026-07-30T23:04:54.663501",
+    "generado": "2026-07-31T00:04:22.895588",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "mes_actual": "2026-07",
     "nombre_mes": "Julio 2026",
-    "mes_anterior": "2026-06-30",
-    "nombre_mes_ant": "Últimos 30 días (30/06/2026 – 30/07/2026)",
-    "desde_anio": "2025-07-30",
-    "hasta": "2026-07-30",
+    "mes_anterior": "2026-07-01",
+    "nombre_mes_ant": "Últimos 30 días (01/07/2026 – 31/07/2026)",
+    "desde_anio": "2025-07-31",
+    "hasta": "2026-07-31",
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_anio": 251,
-    "ingresos_anio": 17681,
+    "muertes_anio": 241,
+    "ingresos_anio": 17620,
     "stock_haras_hoy": 5966,
-    "denominador": 23647,
-    "tasa_mensual_pct": 1.061,
+    "denominador": 23586,
+    "tasa_mensual_pct": 1.022,
     "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
     "por_grupo": {
       "Vacas": {
-        "muertes": 137,
-        "ingresos": 6611,
+        "muertes": 127,
+        "ingresos": 6550,
         "stock": 2379,
-        "denominador": 8990,
-        "tasa_mensual_pct": 1.524
+        "denominador": 8929,
+        "tasa_mensual_pct": 1.422
       },
       "Machos": {
         "muertes": 78,
@@ -43,9 +43,9 @@
     }
   },
   "anio": {
-    "total_muertes": 251,
+    "total_muertes": 241,
     "por_categoria": {
-      "VA": 137,
+      "VA": 127,
       "TM": 57,
       "TH": 28,
       "NV": 13,
@@ -54,12 +54,11 @@
       "TO": 1
     },
     "por_grupo": {
-      "Vacas": 137,
+      "Vacas": 127,
       "Machos": 78,
       "Hembras": 36
     },
     "por_mes": {
-      "2025-07": 10,
       "2025-08": 12,
       "2025-09": 20,
       "2025-10": 18,
@@ -75,18 +74,18 @@
     }
   },
   "mes_anterior": {
-    "nombre": "Últimos 30 días (30/06/2026 – 30/07/2026)",
-    "mes": "2026-06-30",
-    "total_muertes": 19,
+    "nombre": "Últimos 30 días (01/07/2026 – 31/07/2026)",
+    "mes": "2026-07-01",
+    "total_muertes": 9,
     "por_categoria": {
-      "VA": 10,
-      "TM": 6,
+      "VA": 4,
+      "TM": 2,
       "TH": 2,
       "NT": 1
     },
     "por_grupo": {
-      "Vacas": 10,
-      "Machos": 7,
+      "Vacas": 4,
+      "Machos": 3,
       "Hembras": 2
     }
   }
