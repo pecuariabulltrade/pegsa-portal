@@ -3139,13 +3139,30 @@ def main():
     # v15.10: única fuente WinCampo Web. extraer() aplica las transformaciones
     # (DIAS_EN_FEEDLOT, CLASIFICACION, etc.) sobre el DataFrame del adapter.
     import pandas as pd
-    stock_data = wcampo.fetch_stock_hacienda()
-    df_stock = pd.DataFrame(stock_data)
-    log.info(f"  + WinCampo Web devolvio {len(df_stock):,} cabezas")
-    regs, cols = extraer(tabla, df_override=df_stock)
-    # Guardar referencia al stock actual para el recálculo diario posterior
-    _regs_stock_hoy = regs
-    _cols_stock_hoy = cols
+    # v15.45: degradación elegante. WinCampo migró el stock a una cola asincrónica
+    # y puede fallar (cola rota, API caída, timeout). Si el fetch falla NO matamos
+    # todo el pipeline — los módulos independientes (tesorería, mixer, trazabilidad,
+    # precios) siguen; los JSONs de stock del run anterior quedan como
+    # last-known-good. Defaults vacíos para que los módulos intermedios que leen
+    # regs/kpis/kpis_haras (muertes, indicadores) degraden sin NameError. Patrón v15.32.
+    stock_data = None
+    regs, cols = [], []
+    kpis = {}
+    kpis_haras = {}
+    _regs_stock_hoy = None
+    _cols_stock_hoy = None
+    try:
+        stock_data = wcampo.fetch_stock_hacienda()
+        df_stock = pd.DataFrame(stock_data)
+        log.info(f"  + WinCampo Web devolvio {len(df_stock):,} cabezas")
+        regs, cols = extraer(tabla, df_override=df_stock)
+        # Guardar referencia al stock actual para el recálculo diario posterior
+        _regs_stock_hoy = regs
+        _cols_stock_hoy = cols
+    except Exception as e:
+        log.error(f"  x Stock de Hacienda falló: {type(e).__name__}: {e}")
+        log.error("  x Continuando con los módulos independientes (stock queda con datos del run anterior)")
+        resumen["modulos"]["stock_hacienda"] = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}"}
 
     if regs:
         kpis = calcular_kpis(regs, cols)
@@ -4092,24 +4109,31 @@ def main():
     # Recalcula el historial completo desde movimientos reales,
     # incorporando automáticamente cargas retroactivas de compras/ventas.
     separador("Stock Diario · Running Balance")
-    try:
-        _diario = recalcular_stock_diario_desde_movimientos(
-            _regs_stock_hoy, _cols_stock_hoy,
-            regs_ing,        cols_ing,
-            regs_egr,        cols_egr,
-            carpeta,         periodo,
-            dias=90
-        )
-        resumen["modulos"]["stock_diario"] = {
-            "ok":          True,
-            "dias":        _diario["dias"],
-            "ultima_fecha": datetime.now().strftime("%Y-%m-%d"),
-            "metodo":      "running_balance",
-        }
-    except Exception as e:
-        log.warning(f"  ⚠ Running balance diario falló: {e}")
-        import traceback; log.warning(traceback.format_exc())
-        resumen["modulos"]["stock_diario"] = {"ok": False, "error": str(e)}
+    if _regs_stock_hoy is None:
+        # v15.45: el stock de hoy no está disponible (fetch falló). NO recalculamos
+        # el running balance con baseline 0 — eso pisaría stock_diario.json con una
+        # caída a cero. Se conserva el JSON del run anterior (last-known-good).
+        log.warning("  ⚠ Stock de hoy no disponible — se conserva stock_diario.json del run anterior")
+        resumen["modulos"]["stock_diario"] = {"ok": False, "error": "stock_hacienda no disponible este run"}
+    else:
+        try:
+            _diario = recalcular_stock_diario_desde_movimientos(
+                _regs_stock_hoy, _cols_stock_hoy,
+                regs_ing,        cols_ing,
+                regs_egr,        cols_egr,
+                carpeta,         periodo,
+                dias=90
+            )
+            resumen["modulos"]["stock_diario"] = {
+                "ok":          True,
+                "dias":        _diario["dias"],
+                "ultima_fecha": datetime.now().strftime("%Y-%m-%d"),
+                "metodo":      "running_balance",
+            }
+        except Exception as e:
+            log.warning(f"  ⚠ Running balance diario falló: {e}")
+            import traceback; log.warning(traceback.format_exc())
+            resumen["modulos"]["stock_diario"] = {"ok": False, "error": str(e)}
 
     # ── TESORERÍA DARWASH (v11) ─────────────────────────────
     # Análisis financiero independiente de Darwash. Lee el XLSX más
