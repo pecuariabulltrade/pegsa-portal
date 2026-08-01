@@ -1,53 +1,61 @@
 {
   "meta": {
-    "generado": "2026-07-31T23:05:25.778890",
+    "generado": "2026-08-01T00:04:57.392887",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-07-31",
+    "hoy_parcial": "2026-08-01",
     "ultimo_completo": "2026-07-30",
     "ventana_3d": [
       "2026-07-28",
       "2026-07-29",
       "2026-07-30"
     ],
-    "dias_descartados": [],
+    "dias_descartados": [
+      {
+        "fecha": "2026-07-31",
+        "kg": 40490.0,
+        "avg_prev": 77731.7,
+        "ratio": 0.521,
+        "razon": "caida 48% vs prom 3 dias previos"
+      }
+    ],
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 40408106.0,
-    "total_kg_ms": 29149527.7,
+    "total_kg": 40344451.0,
+    "total_kg_ms": 29101676.7,
     "por_insumo": [
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12478901.0,
+        "kg": 12461141.0,
         "ms_pct": 53.0,
-        "kg_ms": 6613817.5
+        "kg_ms": 6604404.7
       },
       {
         "desc": "MAIZ GRANO",
-        "kg": 12337325.0,
+        "kg": 12319025.0,
         "ms_pct": 89.0,
-        "kg_ms": 10980219.2
+        "kg_ms": 10963932.2
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9424522.0,
+        "kg": 9411997.0,
         "ms_pct": 58.0,
-        "kg_ms": 5466222.8
+        "kg_ms": 5458958.3
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4525734.0,
+        "kg": 4513924.0,
         "ms_pct": 99.0,
-        "kg_ms": 4480476.7
+        "kg_ms": 4468784.8
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1641624.0,
+        "kg": 1638364.0,
         "ms_pct": 98.0,
-        "kg_ms": 1608791.5
+        "kg_ms": 1605596.7
       }
     ]
   },
