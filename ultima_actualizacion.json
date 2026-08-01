@@ -1,11 +1,11 @@
 {
-  "generado": "2026-07-31T20:00:03.510619",
+  "generado": "2026-07-31T21:00:03.649415",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
       "ok": true,
-      "registros": 9215,
-      "cabezas": 9215
+      "registros": 9214,
+      "cabezas": 9214
     },
     "stock_insumos": {
       "ok": true,
@@ -41,15 +41,22 @@
       "ok": true,
       "denominador": "El Haras",
       "pct_peso_vivo": 1.88,
-      "consumo_cab_tc": 13.24,
+      "consumo_cab_tc": 13.25,
       "consumo_cab_ms": 9.57,
       "conversion": 9.2
     },
     "tesoreria": {
       "ok": true,
-      "cortes": 17,
-      "ultimo_corte": "2026-07-27",
-      "saldo_disp": -237374196.88
+      "cortes": 16,
+      "ultimo_corte": "2026-07-18",
+      "saldo_disp": -10456020.200000107,
+      "warnings": [
+        {
+          "archivo": "2026-07-31_financiero.xlsx",
+          "motivo": "oserror_13: [Errno 13] Permission denied: 'C:\\\\Users\\\\USER\\\\OneDrive - pecuaria el garabi sa\\\\PEGSA_Portal\\\\datos\\\\financiero\\\\2026-07-31_financiero.xlsx'"
+        }
+      ],
+      "warning_count": 1
     },
     "historico": {
       "ok": true,
