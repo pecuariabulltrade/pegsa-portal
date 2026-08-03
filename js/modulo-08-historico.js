@@ -129,8 +129,49 @@ function _totalesArribaPlugin(fmt, totalesFijos){
 }
 
 /**
+ * v15.50 — marca horizontal en el TOTAL NETO de la barra.
+ * En una barra divergente el tope de la pila positiva NO es el patrimonio: hay
+ * que restarle el segmento negativo. Sin esta marca, el label de arriba (que sí
+ * muestra el neto) parece estar rotulando el tope de los positivos. Solo se
+ * dibuja en las barras que TIENEN un componente negativo.
+ */
+function _netoDivergentePlugin(){
+  return {
+    id: 'netoDivergente',
+    afterDatasetsDraw: function(chart){
+      var ctx = chart.ctx, esc = chart.scales.y;
+      var n = chart.data.labels.length;
+      ctx.save();
+      ctx.setLineDash([4,3]);
+      ctx.strokeStyle = 'rgba(26,22,18,.7)';
+      ctx.lineWidth = 1.5;
+      for(var i=0;i<n;i++){
+        var neto = 0, hayNeg = false, el = null;
+        chart.data.datasets.forEach(function(ds, di){
+          if(!chart.isDatasetVisible(di)) return;
+          var v = ds.data[i];
+          if(v == null) return;
+          neto += v;
+          if(v < 0) hayNeg = true;
+          var e = chart.getDatasetMeta(di).data[i];
+          if(e) el = e;
+        });
+        if(!hayNeg || !el) continue;
+        var py = esc.getPixelForValue(neto);
+        var w  = (el.width || 24) / 2 + 3;
+        ctx.beginPath();
+        ctx.moveTo(el.x - w, py);
+        ctx.lineTo(el.x + w, py);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  };
+}
+
+/**
  * v15.47: barras apiladas con el look del portal (Playfair/DM Mono/HIST_COLORS).
- * opts: { porcentaje:bool, totalFmt:function|false, horizontal:bool, totalesFijos:array }
+ * opts: { porcentaje:bool, totalFmt:function|false, horizontal:bool, totalesFijos:array, marcarNeto:bool }
  */
 function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
   opts = opts || {};
@@ -141,6 +182,7 @@ function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
 
   var plugins = [];
   if(opts.totalFmt !== false) plugins.push(_totalesArribaPlugin(opts.totalFmt || yFmt, opts.totalesFijos));
+  if(opts.marcarNeto) plugins.push(_netoDivergentePlugin());
 
   _histCharts[canvasId] = new Chart(ctx, {
     type: 'bar',
@@ -634,7 +676,7 @@ function _renderHistReal(){
       data: snaps.map(function(s){ return s.financiero ? -Math.round((s.financiero.pagar_hacienda||0)/1000000) : 0; }) }
   ];
   // El "total" de arriba es la POSICIÓN NETA del mes (positivos − pagar).
-  _mkStackedBarChart('chartRealFinanciero', labels, dsFin, fM, { totalFmt: fM });
+  _mkStackedBarChart('chartRealFinanciero', labels, dsFin, fM, { totalFmt: fM, marcarNeto: true });
   // Línea de cero marcada para leer la divergencia
   var chFin = _histCharts['chartRealFinanciero'];
   if(chFin){
@@ -772,83 +814,43 @@ function _renderValuacion(){
     financiero: { bg: 'rgba(45,106,138,.75)', border: '#2d6a8a' },
     usd:        { bg: 'rgba(138,45,138,.7)',  border: '#8a2d8a' },
   };
-  // v15.25: absorber Pos. Financiera negativa en Hacienda PEGSA para que la
-  // altura apilada coincida con el total neto. Sin esto, una pos. financiera
-  // negativa se renderiza debajo del cero y la altura "visible" de positivos
-  // engaña (mayo 2026 con fin=-$2.276M parece más alto que marzo con fin>0,
-  // cuando los totales netos son similares). Los datos ORIGINALES se preservan
-  // para el tooltip + la tabla + el JSON. Identidad garantizada:
-  //   hac_show + ins + fin_show + usd === hac + ins + fin + usd === total_neto.
-  function _ajustarV1525(s){
-    var c = s.componentes || {};
-    var hac = c.hacienda_pesos, ins = c.insumos_pesos, fin = c.financiero_pesos, usd = c.usd_pesos;
-    var hac_show = hac, fin_show = fin;
-    if (fin != null && fin < 0 && hac != null && hac > 0) {
-      var absorber = Math.min(hac, -fin);
-      hac_show = hac - absorber;
-      fin_show = fin + absorber;  // 0 si hac alcanzó, sino el resto negativo
-    }
-    return { hac_show: hac_show, ins: ins, fin_show: fin_show, usd: usd,
-             hac_orig: hac, fin_orig: fin };
-  }
-  var ajustados = snaps.map(_ajustarV1525);
-
+  // v15.50: se revierte la absorción de v15.25. Aquel fix movía la Pos.
+  // Financiera negativa dentro de Hacienda para que la barra no cruzara el
+  // cero, a costa de dibujar Hacienda más chica de lo real (mayo 2026:
+  // -$2.276M respecto de la tabla y del propio tooltip). Ahora se usan barras
+  // divergentes: cada segmento mide su valor real, el negativo va abajo del
+  // cero y el neto se marca explícitamente. NO volver a absorber.
   var dsStack = [
     { label: 'Hacienda PEGSA',
-      data: ajustados.map(function(a){ return a.hac_show!=null ? Math.round(a.hac_show/1e6) : null; }),
-      backgroundColor: colores.hacienda.bg, borderColor: colores.hacienda.border, borderWidth:1, borderRadius:2,
-      _origData: ajustados.map(function(a){ return { orig: a.hac_orig, absorbido: (a.hac_orig!=null && a.hac_show!=null) ? a.hac_orig - a.hac_show : 0 }; }) },
+      data: snaps.map(function(s){ var v=(s.componentes||{}).hacienda_pesos;  return v!=null?Math.round(v/1e6):null; }),
+      backgroundColor: colores.hacienda.bg,   borderColor: colores.hacienda.border,   borderWidth:1, borderRadius:2 },
     { label: 'Insumos (M+S)',
-      data: ajustados.map(function(a){ return a.ins!=null ? Math.round(a.ins/1e6) : null; }),
-      backgroundColor: colores.insumos.bg, borderColor: colores.insumos.border, borderWidth:1, borderRadius:2 },
+      data: snaps.map(function(s){ var v=(s.componentes||{}).insumos_pesos;   return v!=null?Math.round(v/1e6):null; }),
+      backgroundColor: colores.insumos.bg,    borderColor: colores.insumos.border,    borderWidth:1, borderRadius:2 },
     { label: 'Pos. Financiera',
-      data: ajustados.map(function(a){ return a.fin_show!=null ? Math.round(a.fin_show/1e6) : null; }),
-      backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2,
-      _origData: ajustados.map(function(a){ return { orig: a.fin_orig, absorbido: (a.fin_orig!=null && a.fin_show!=null) ? a.fin_show - a.fin_orig : 0 }; }) },
+      data: snaps.map(function(s){ var v=(s.componentes||{}).financiero_pesos;return v!=null?Math.round(v/1e6):null; }),
+      backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2 },
     { label: 'USD (en $)',
-      data: ajustados.map(function(a){ return a.usd!=null ? Math.round(a.usd/1e6) : null; }),
-      backgroundColor: colores.usd.bg, borderColor: colores.usd.border, borderWidth:1, borderRadius:2 },
+      data: snaps.map(function(s){ var v=(s.componentes||{}).usd_pesos;       return v!=null?Math.round(v/1e6):null; }),
+      backgroundColor: colores.usd.bg,        borderColor: colores.usd.border,        borderWidth:1, borderRadius:2 }
   ];
-  _destroyChart('chartValStack');
-  var ctxS = document.getElementById('chartValStack');
-  if(ctxS){
-    _histCharts['chartValStack'] = new Chart(ctxS, {
-      type: 'bar',
-      data: { labels: labels, datasets: dsStack },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode:'index', intersect:false },
-        plugins: {
-          legend: { position:'bottom', labels:{ font:{family:'DM Mono',size:11}, boxWidth:12, padding:14 } },
-          tooltip: { callbacks: { label: function(ctx){
-            // v15.25: mostrar el valor ORIGINAL (no el ajustado por absorción)
-            // + nota cuando hubo absorción de Pos. Financiera negativa.
-            var ds = ctx.dataset, i = ctx.dataIndex, shown = ctx.parsed.y;
-            if (ds._origData && ds._origData[i]) {
-              var od = ds._origData[i];
-              var orig = od.orig != null ? Math.round(od.orig/1e6) : shown;
-              var absorbido = Math.round((od.absorbido || 0)/1e6);
-              if (Math.abs(absorbido) > 1) {
-                var nota = ds.label === 'Pos. Financiera'
-                  ? ' (absorbida en Hacienda)'
-                  : ' (incluye absorción de Pos. Fin: $'+Math.abs(absorbido).toLocaleString('es-AR')+'M)';
-                return ' '+ds.label+': $'+orig.toLocaleString('es-AR')+'M'+nota;
-              }
-            }
-            return ' '+ds.label+': $'+shown.toLocaleString('es-AR')+'M';
-          } } }
-        },
-        scales: {
-          x: { stacked:true, ticks:{ font:{family:'DM Mono',size:10}, maxRotation:0 }, grid:{ display:false } },
-          y: { stacked:true, ticks:{ font:{family:'DM Mono',size:10}, callback:function(v){ return '$'+v.toLocaleString('es-AR')+'M'; } }, grid:{color:'rgba(0,0,0,.06)'} }
-        }
-      }
-    });
+  var fM = function(v){
+    var a = Math.abs(v);
+    return (v<0?'−':'') + '$ ' + Math.round(a).toLocaleString('es-AR') + 'M';
+  };
+  // v15.50: reusa el helper de v15.47 (divergente + total neto encima + tooltip).
+  _mkStackedBarChart('chartValStack', labels, dsStack, fM, { totalFmt: fM, marcarNeto: true });
+  var chVS = _histCharts['chartValStack'];
+  if(chVS){
+    // Línea de cero marcada (mismo tratamiento que chartRealFinanciero en v15.47)
+    chVS.options.scales.y.grid.color = function(c){ return c.tick.value === 0 ? 'rgba(26,22,18,.35)' : 'rgba(0,0,0,.06)'; };
+    chVS.options.scales.y.grid.lineWidth = function(c){ return c.tick.value === 0 ? 1.5 : 1; };
+    chVS.update();
   }
 
   // ── Gráfico total línea ──
-  // v15.48: composición en kg de novillo (deflactada por MAG)
-  _renderValNovillo(snaps, labels, colores, ajustados);
+  // v15.48/v15.50: composición en kg de novillo (deflactada por MAG)
+  _renderValNovillo(snaps, labels, colores);
 
   var dsTotal = [{
     label: 'Patrimonio total ($M)',
@@ -935,10 +937,11 @@ function _renderValuacion(){
  * v15.48 — Valuación en kg de novillo. Divide cada componente por el índice
  * MAG ($/kg de novillo) del mes → "cuántos kilos de novillo vale el patrimonio"
  * (medida REAL, sin inflación). Espeja chartValStack: mismas 4 series, colores
- * y orden, y el MISMO ajuste v15.25 (usa hac_show/fin_show). La identidad se
- * conserva porque dividir por una constante del mes es lineal.
+ * y orden. v15.50: lee los componentes ORIGINALES del JSON (se revirtió la
+ * absorción de v15.25) y es divergente — la serie Hacienda vuelve a ser
+ * exactamente hacienda_kg_pegsa/1000 en los 20 meses.
  */
-function _renderValNovillo(snaps, labels, colores, ajustados){
+function _renderValNovillo(snaps, labels, colores){
   var ctx = document.getElementById('chartValNovillo');
   if(!ctx) return;
 
@@ -955,25 +958,26 @@ function _renderValNovillo(snaps, labels, colores, ajustados){
     return +(pesos / mags[i] / 1000).toFixed(1);
   }
 
+  function comp(s, k, i){ return aTon((s.componentes || {})[k], i); }
   var dsNov = [
     { label: 'Hacienda PEGSA',
-      data: ajustados.map(function(a,i){ return aTon(a.hac_show, i); }),
+      data: snaps.map(function(s,i){ return comp(s,'hacienda_pesos', i); }),
       backgroundColor: colores.hacienda.bg,   borderColor: colores.hacienda.border,   borderWidth:1, borderRadius:2 },
     { label: 'Insumos (M+S)',
-      data: ajustados.map(function(a,i){ return aTon(a.ins, i); }),
+      data: snaps.map(function(s,i){ return comp(s,'insumos_pesos', i); }),
       backgroundColor: colores.insumos.bg,    borderColor: colores.insumos.border,    borderWidth:1, borderRadius:2 },
     { label: 'Pos. Financiera',
-      data: ajustados.map(function(a,i){ return aTon(a.fin_show, i); }),
+      data: snaps.map(function(s,i){ return comp(s,'financiero_pesos', i); }),
       backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2 },
     { label: 'USD (en $)',
-      data: ajustados.map(function(a,i){ return aTon(a.usd, i); }),
+      data: snaps.map(function(s,i){ return comp(s,'usd_pesos', i); }),
       backgroundColor: colores.usd.bg,        borderColor: colores.usd.border,        borderWidth:1, borderRadius:2 }
   ];
 
   var fT = function(v){ return Math.round(v).toLocaleString('es-AR')+' t'; };
 
-  // Reusa el helper de v15.47 (apiladas + total encima + tooltip con Total).
-  _mkStackedBarChart('chartValNovillo', labels, dsNov, fT, { totalFmt: fT });
+  // Reusa el helper de v15.47 (divergente + total neto encima + tooltip con Total).
+  _mkStackedBarChart('chartValNovillo', labels, dsNov, fT, { totalFmt: fT, marcarNeto: true });
 
   // El tooltip dice con qué MAG se dividió (para poder auditar el número).
   var ch = _histCharts['chartValNovillo'];
@@ -986,14 +990,14 @@ function _renderValNovillo(snaps, labels, colores, ajustados){
     ch.update();
   }
 
-  _renderValNovilloBrecha(snaps, mags, ajustados);
+  _renderValNovilloBrecha(snaps, mags);
 }
 
 /**
  * v15.48 — tarjeta con la brecha nominal vs real punta a punta. Se calcula en
  * runtime desde el primer y último snapshot: NO hardcodear los porcentajes.
  */
-function _renderValNovilloBrecha(snaps, mags, ajustados){
+function _renderValNovilloBrecha(snaps, mags){
   var box = document.getElementById('valNovilloBrecha');
   if(!box || snaps.length < 2) return;
 
