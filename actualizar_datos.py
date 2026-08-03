@@ -2150,10 +2150,17 @@ def procesar_consumo(regs, cols, periodo):
 # ═══════════════════════════════════════════════════════════
 
 def _ar_num(s):
-    """Convierte número formato argentino '1.234.567,89' a float."""
+    """Convierte número formato argentino '1.234.567,89' a float.
+
+    v15.49: se limpia también el signo '$'. BCR agregó el símbolo de moneda a
+    la celda de promedio de la pizarra alrededor de 2026-05 ('$272.348,05'), y
+    float('$272.348,05') tiraba ValueError → _scrap_bcr_precio devolvía None →
+    forward-fill silencioso de precios viejos durante 3 meses. La página seguía
+    respondiendo 200 con el dato: el bug era de parseo, no de transporte.
+    """
     if s is None:
         return None
-    s = str(s).strip().replace('\xa0', '').replace(' ', '')
+    s = str(s).strip().replace('\xa0', '').replace(' ', '').replace('$', '')
     if not s or s == '-' or s == '—':
         return None
     try:
@@ -2275,7 +2282,9 @@ def _scrap_bcr_precio(product_id, nombre, periodo_str):
         with urllib.request.urlopen(req, timeout=20) as resp:
             raw = resp.read()
     except Exception as e:
-        log.warning(f'    BCR {nombre} request error ({periodo_str}): {e}')
+        # v15.49: loguear el TIPO de excepción, no solo el mensaje — permite
+        # distinguir timeout / 403 / problema de certificado de un vistazo.
+        log.warning(f'    BCR {nombre} request error ({periodo_str}): {type(e).__name__}: {e}')
         return None
 
     filas = _html_tabla(raw, encoding='utf-8')
@@ -2287,8 +2296,100 @@ def _scrap_bcr_precio(product_id, nombre, periodo_str):
             if val:
                 log.info(f'    BCR {nombre} {periodo_str}: {val:,.2f} $/ton')
                 return val
-    log.warning(f'    BCR {nombre} {periodo_str}: sin datos')
+    # v15.49: dumpear lo que se recibió para que el próximo diagnóstico no
+    # arranque de cero (así se detecta al toque si BCR vuelve a cambiar el
+    # formato de la tabla, como el signo $ agregado en 2026-05).
+    log.warning(f'    BCR {nombre} {periodo_str}: sin datos en la tabla. '
+                f'Filas parseadas: {len(filas)} · primeras 3: {filas[:3]}')
     return None
+
+
+_BCR_EXCEL_CACHE = None   # {'maiz': {'YYYY-MM': prom}, 'soja': {...}}
+
+def _cargar_precios_bcr_excel(carpeta):
+    """
+    v15.49 — Fallback local para precios de pizarra BCR.
+
+    Lee TODOS los .xlsx de datos/precios_bcr/ y arma promedios mensuales por
+    producto. Red de contención por si el scraping vuelve a fallar (BCR ya
+    cambió el acceso/formato dos veces: v14.2 y el signo $ de v15.49).
+
+    El producto se identifica por el CONTENIDO de la celda A4 ('Maíz'/'Soja'),
+    NO por el nombre del archivo — el usuario los baja de BCR con nombres
+    arbitrarios. Verificado: el promedio mensual de estos diarios coincide al
+    centavo con el promedio mensual que publica BCR (julio 2026 maíz 272.348,05).
+
+    Returns: {'maiz': {'2026-07': 272348.05, ...}, 'soja': {...}}
+    """
+    global _BCR_EXCEL_CACHE
+    if _BCR_EXCEL_CACHE is not None:
+        return _BCR_EXCEL_CACHE
+
+    import unicodedata, fnmatch
+    from collections import defaultdict
+
+    def _norm(s):
+        s = unicodedata.normalize('NFKD', str(s or ''))
+        return ''.join(c for c in s if not unicodedata.combining(c)).strip().lower()
+
+    base = Path(carpeta) / 'precios_bcr'
+    acum = {'maiz': defaultdict(list), 'soja': defaultdict(list)}
+
+    if not base.exists():
+        log.info('    precios_bcr/ no existe — sin fallback de Excel')
+        _BCR_EXCEL_CACHE = {'maiz': {}, 'soja': {}}
+        return _BCR_EXCEL_CACHE
+
+    # v15.44: matching case-insensitive (Path.glob es case-sensitive en Python
+    # aunque estés en Windows)
+    archivos = [p for p in base.iterdir()
+                if p.is_file() and fnmatch.fnmatch(p.name.lower(), '*.xlsx')
+                and not p.name.startswith('~$')]
+
+    import openpyxl as _oxl
+    for ruta in archivos:
+        try:
+            wb = _oxl.load_workbook(str(ruta), read_only=True, data_only=True)
+            ws = wb.active
+
+            # Identificar el producto: buscar 'maiz'/'soja' en las primeras 10
+            # filas de la col A (normalmente A4, pero no lo damos por sentado)
+            prod = None
+            for r in range(1, 11):
+                v = _norm(ws.cell(r, 1).value)
+                if v == 'maiz': prod = 'maiz'; break
+                if v == 'soja': prod = 'soja'; break
+            if not prod:
+                log.warning(f'    precios_bcr: {ruta.name} — no se pudo identificar el producto, se omite')
+                wb.close(); continue
+
+            n = 0
+            for row in ws.iter_rows(min_row=1, max_col=2, values_only=True):
+                fecha, precio = row[0], row[1]
+                if not hasattr(fecha, 'strftime'):
+                    continue                      # header o fila vacía
+                try:
+                    precio = float(precio)
+                except (TypeError, ValueError):
+                    continue
+                if precio <= 0:
+                    continue
+                acum[prod][fecha.strftime('%Y-%m')].append(precio)
+                n += 1
+            wb.close()
+            log.info(f'    precios_bcr: {ruta.name} -> {prod}, {n} precios diarios')
+        except Exception as e:
+            log.warning(f'    precios_bcr: error leyendo {ruta.name}: {type(e).__name__}: {e}')
+
+    out = {}
+    for prod, meses in acum.items():
+        out[prod] = {m: round(sum(v)/len(v), 2) for m, v in meses.items() if v}
+        if out[prod]:
+            ks = sorted(out[prod])
+            log.info(f'    precios_bcr {prod}: {len(ks)} meses ({ks[0]} a {ks[-1]})')
+
+    _BCR_EXCEL_CACHE = out
+    return out
 
 
 def _scrap_bna_tc_historico(periodo):
@@ -2631,13 +2732,30 @@ def actualizar_valuacion(carpeta, snaps_historico):
         if mag_indice is None:
             mag_indice = _scrap_mag_indice(periodo)
 
+        # v15.49: cadena de fuentes — cache → scraping BCR → Excel local. El
+        # scraping va PRIMERO para que el sistema se auto-sane cuando BCR vuelva,
+        # sin depender de que el usuario mantenga los archivos. El Excel es red de
+        # contención. El forward-fill (más abajo) queda como último recurso pero
+        # ahora casi nunca debería activarse. Un valor que viene del Excel es el
+        # dato real del mes (no forward-fill): se captura antes de bcr_*_scraped,
+        # así heredado queda en False.
+        _bcr_xls = _cargar_precios_bcr_excel(carpeta)
+
         bcr_maiz = cached.get('bcr_maiz_ton')
         if bcr_maiz is None:
             bcr_maiz = _scrap_bcr_precio(3, 'Maíz', periodo)
+        if bcr_maiz is None:
+            bcr_maiz = _bcr_xls.get('maiz', {}).get(periodo)
+            if bcr_maiz:
+                log.info(f'    BCR maíz {periodo}: ${bcr_maiz:,.2f}/ton (Excel local)')
 
         bcr_soja = cached.get('bcr_soja_ton')
         if bcr_soja is None:
             bcr_soja = _scrap_bcr_precio(13, 'Soja', periodo)
+        if bcr_soja is None:
+            bcr_soja = _bcr_xls.get('soja', {}).get(periodo)
+            if bcr_soja:
+                log.info(f'    BCR soja {periodo}: ${bcr_soja:,.2f}/ton (Excel local)')
 
         # ── 1b. TC Dólar MEP: caché real → Ambito MEP → BNA histórico → aprox tabla ──
         # Las empresas argentinas usan dólar MEP como referencia de valuación.
@@ -2822,10 +2940,24 @@ def actualizar_valuacion(carpeta, snaps_historico):
 
     nuevos_snaps.sort(key=lambda x: x.get('periodo', ''))
 
+    # v15.49: alertar cuando los precios de commodities quedan heredados
+    # (forward-fill). El scraping de BCR estuvo roto de 2026-05 a 2026-08 sin que
+    # nadie lo notara porque el forward-fill lo tapaba. Miramos los últimos 2
+    # meses; si maíz o soja vinieron heredados, se avisa en el log y en el JSON.
+    _stale = []
+    for _s in nuevos_snaps[-2:]:
+        _her = (_s.get('precios_efectivos', {}) or {}).get('heredado', {}) or {}
+        if _her.get('bcr_maiz_ton') or _her.get('bcr_soja_ton'):
+            _stale.append(_s.get('periodo'))
+    if _stale:
+        log.warning(f'  ⚠ Precios BCR heredados en: {", ".join(_stale)} — '
+                    f'revisar scraping o actualizar datos/precios_bcr/')
+
     resultado = {
         'generado':  datetime.now().isoformat(),
         'metodo':    'scraping_mag_bcr_bna',
         'snapshots': nuevos_snaps,
+        'precios_stale': _stale,
     }
     guardar(resultado, carpeta, 'valuacion_historica.json')
     log.info(f'  ✓ valuacion_historica.json — {len(nuevos_snaps)} períodos')

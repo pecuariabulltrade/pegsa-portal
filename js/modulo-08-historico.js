@@ -746,6 +746,25 @@ function _renderValuacion(){
   }).join('');
   document.getElementById('valKpis').innerHTML = kpiHtml;
 
+  // v15.49: avisar cuando los insumos se valúan con precios BCR viejos
+  // (heredados por forward-fill). El scraping estuvo roto 3 meses en silencio.
+  var _aviso = document.getElementById('valAvisoPrecios');
+  if(_aviso){
+    var _h = (ult.precios_efectivos && ult.precios_efectivos.heredado) || {};
+    if(_h.bcr_maiz_ton || _h.bcr_soja_ton){
+      var _cuales = [];
+      if(_h.bcr_maiz_ton) _cuales.push('maíz');
+      if(_h.bcr_soja_ton) _cuales.push('soja');
+      _aviso.innerHTML = '<div style="background:#fdf6e3;border:1px solid #d4a84b;border-radius:2px;'
+        + 'padding:10px 14px;font-family:\'DM Mono\',monospace;font-size:12px;color:#7a5c14">'
+        + '⚠ Precio de ' + _cuales.join(' y ') + ' heredado del mes anterior — '
+        + 'los insumos pueden estar subvaluados. Actualizar <code>datos/precios_bcr/</code>.'
+        + '</div>';
+    } else {
+      _aviso.innerHTML = '';   // limpiar si no hay problema (no queda pegado)
+    }
+  }
+
   // ── Gráfico stacked barras ──
   var colores = {
     hacienda:   { bg: 'rgba(184,146,42,.8)',  border: '#b8922a' },
