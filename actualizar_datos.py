@@ -5736,8 +5736,30 @@ def _parse_listado_caravanas_html(ruta):
             'kg_proyectado': round(float(grp['_peso'].sum()), 0),
         }
 
+    # v15.52: desglose por campo del GRUPO COMPLETO + cruce campo × hotelero.
+    # El feedlot hotelea a terceros: "cuántas cabezas hay en El Haras" no es lo
+    # mismo que "cuántas cabezas de PEGSA hay en El Haras". df['_campo'] ya
+    # estaba calculado para todas las filas — antes solo se usaba el subset de
+    # PEGSA y el resto se descartaba.
+    por_campo_grupo = {}
+    for campo, grp in df.groupby('_campo'):
+        detalle = {}
+        for hot, g2 in grp.groupby('_hotelero'):
+            if not hot or hot in ('NAN', 'NONE', ''):
+                continue
+            detalle[hot] = {
+                'cabezas':       int(len(g2)),
+                'kg_proyectado': round(float(g2['_peso'].sum()), 0),
+            }
+        por_campo_grupo[campo] = {
+            'cabezas':       int(len(grp)),
+            'kg_proyectado': round(float(grp['_peso'].sum()), 0),
+            'por_hotelero':  detalle,
+        }
+
     log.info(f"  ✓ {nombre} — total {total_cab:,} cab / {total_kg:,.0f} kg | "
-             f"PEGSA {peg_cab:,} cab / {peg_kg:,.0f} kg")
+             f"PEGSA {peg_cab:,} cab / {peg_kg:,.0f} kg | "
+             f"campos grupo: {len(por_campo_grupo)}")
 
     return {
         'fecha':          fecha_str,
@@ -5745,6 +5767,7 @@ def _parse_listado_caravanas_html(ruta):
         'total_cabezas':  total_cab,
         'total_kg':       float(total_kg),
         'por_hotelero':   por_hotelero,
+        'por_campo':      por_campo_grupo,   # v15.52 (nivel superior: grupo por campo)
         'pegsa': {
             'cabezas':       peg_cab,
             'kg_proyectado': float(peg_kg),
@@ -6119,6 +6142,34 @@ def parse_financiero_historico(ruta):
         return _parse_financiero_viejo(hoja, fecha_str)
 
 
+def _normalizar_por_campo(por_campo, total_kg_sellado):
+    """
+    v15.52: escala los kg del desglose para que sumen EXACTO al total sellado.
+
+    Las CABEZAS no se tocan — son un conteo puro del Excel, siempre exacto y
+    reproducible. Los kg sí, porque el re-parseo usa los parámetros de ADP
+    actuales mientras que el mes sellado se calculó con los de su momento. La
+    diferencia es marginal, pero romper la identidad
+    suma(desglose) == total_sellado sería peor que un redondeo.
+    """
+    if not por_campo:
+        return por_campo
+    suma = sum((v.get('kg_proyectado') or 0) for v in por_campo.values())
+    if not suma or not total_kg_sellado:
+        return por_campo
+    f = float(total_kg_sellado) / float(suma)
+    if abs(f - 1.0) < 1e-9:
+        return por_campo
+    if abs(f - 1.0) > 0.0001:
+        log.warning(f"    ⚠ _normalizar_por_campo: factor {f:.5f} (>0.01%) — "
+                    f"los parámetros de ADP cambiaron bastante; conviene mirarlo")
+    for v in por_campo.values():
+        v['kg_proyectado'] = round((v.get('kg_proyectado') or 0) * f, 0)
+        for h in (v.get('por_hotelero') or {}).values():
+            h['kg_proyectado'] = round((h.get('kg_proyectado') or 0) * f, 0)
+    return por_campo
+
+
 def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
     """
     MÓDULO 9: construye/actualiza comportamiento_historico.json.
@@ -6328,6 +6379,29 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
             # Mes cerrado ya sellado → congelar: reutilizar hacienda_masa tal cual.
             masa = hm_cache
             fecha_snap = masa.get('fecha', fecha_nom)
+
+            # v15.52: injerto NO destructivo del desglose por campo del grupo.
+            # Los meses sellados por v15.19 no lo tienen. Se re-parsea el
+            # Listado_Caravanas SOLO para extraer ese bloque nuevo; ningún valor
+            # preexistente se modifica. Los kg se normalizan al total sellado
+            # para conservar la identidad suma(desglose) == total. Corre una sola
+            # vez por mes (después 'por_campo' ya está y no se re-parsea).
+            if 'por_campo' not in masa:
+                try:
+                    _fresh = _parse_listado_caravanas_html(ruta_c)
+                    if _fresh and _fresh.get('por_campo'):
+                        masa['por_campo'] = _normalizar_por_campo(
+                            _fresh['por_campo'], masa.get('total_kg'))
+                        masa['por_campo_origen'] = 'injertado_v15.52'
+                        log.info(f"    → {periodo}: por_campo injertado "
+                                 f"({len(masa['por_campo'])} campos, totales sellados intactos)")
+                    else:
+                        log.warning(f"    ⚠ {periodo}: no se pudo injertar por_campo "
+                                    f"(re-parseo sin datos)")
+                except Exception as _e:
+                    log.warning(f"    ⚠ {periodo}: error injertando por_campo: "
+                                f"{type(_e).__name__}: {_e}")
+
             log.info(f"  → {nombre_c} · {periodo} CERRADO — hacienda_masa congelado "
                      f"(parametros_calc {masa.get('parametros_calc', {}).get('version', '?')})")
         else:

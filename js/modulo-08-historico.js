@@ -1,14 +1,15 @@
 /* modulo-08-historico.js — Histórico & Evolución · 2026-04-25 */
 
-var _histData      = null;  // stock_historico.json  (mensual)
+// v15.52: se eliminó _histData (stock_historico.json) — nunca se le hacía fetch,
+// _renderHistHacienda apuntaba a canvas inexistentes en index.html (código huérfano).
 var _histDiario    = null;  // stock_diario.json     (diario)
 var _histFinData   = null;  // financiero_historico.json
 var _histRealData  = null;  // comportamiento_historico.json (módulo 9)
 var _valData       = null;  // valuacion_historica.json (módulo 10)
-var _histFiltroAct = 'total';
 var _histDiarioPer = 30;    // días mostrados por defecto
 var _histDiarioFil = 'total';
 var _histDiarioAmb = 'pegsa';  // v15.51: 'pegsa' | 'grupo' (solo en modo mensual)
+var _mensualMesIdx = null;     // v15.52: mes elegido en el detalle campo×propietario (null = último)
 var _histCharts    = {};
 var _histInited    = false;
 
@@ -74,13 +75,6 @@ function histTab(name, el){
   });
   document.querySelectorAll('#screenHistorico .nav-tab').forEach(function(t){t.classList.remove('active');});
   if(el) el.classList.add('active');
-}
-
-function histFiltro(tipo, el){
-  _histFiltroAct = tipo;
-  document.querySelectorAll('.hist-filter').forEach(function(b){b.classList.remove('active');});
-  if(el) el.classList.add('active');
-  _renderHistHacienda(tipo);
 }
 
 function _destroyChart(id){
@@ -294,10 +288,12 @@ function histDiarioPeriodo(dias){
 }
 function histDiarioFiltro(tipo){
   _histDiarioFil = tipo;
+  _mensualMesIdx = null;   // v15.52: reset del mes del detalle al cambiar de desglose
   _renderHistDiario(_histDiarioPer, _histDiarioFil);
 }
 function histDiarioAmbito(v){   // v15.51
   _histDiarioAmb = v;
+  _mensualMesIdx = null;   // v15.52
   _renderHistDiario(_histDiarioPer, _histDiarioFil);
 }
 
@@ -322,6 +318,7 @@ function _renderHistMensual(filtro){
     if(noDataEl) noDataEl.style.display = 'block';
     if(noDataMsg) noDataMsg.innerHTML = msg;
     if(resumenEl) resumenEl.style.display = 'none';
+    var _d = document.getElementById('histMensualDetalle'); if(_d) _d.style.display = 'none';   // v15.52
     _destroyChart('chartDiarioCabezas'); _destroyChart('chartDiarioKg');
   }
 
@@ -334,11 +331,14 @@ function _renderHistMensual(filtro){
   var amb    = _histDiarioAmb;
 
   // Combinaciones no disponibles
+  // v15.52: el desglose por campo del grupo ya existe (hacienda_masa.por_campo).
+  // Guard defensivo por si algún mes quedó sin injertar.
   if(amb === 'grupo' && filtro === 'establecimiento'){
-    return noData('El desglose por <strong>establecimiento</strong> solo está disponible para '
-      + '<strong>PEGSA propio</strong>.<br><br>Para el grupo completo el JSON trae el desglose '
-      + 'por propietario. Cambiá el selector de Hacienda a "PEGSA propio", o el Desglose a '
-      + '"Por propietario / Hotelero".');
+    var _conCampo = snaps.filter(function(s){ return (s.hacienda_masa || {}).por_campo; }).length;
+    if(!_conCampo){
+      return noData('El desglose por establecimiento del grupo todavía no se generó.<br><br>'
+        + 'Se crea en la próxima ejecución del actualizador (v15.52).');
+    }
   }
   if(amb === 'pegsa' && filtro === 'propietario'){
     return noData('PEGSA propio <strong>es</strong> un único propietario — no hay desglose posible.'
@@ -394,6 +394,87 @@ function _renderHistMensual(filtro){
   var b = document.getElementById('dSubKg');  if(b) b.textContent = sub;
 
   _renderHistMensualResumen(snaps, totalCab, totalKg);
+
+  // v15.52: detalle campo × propietario (solo en grupo + establecimiento)
+  if(amb === 'grupo' && filtro === 'establecimiento'){
+    var chM = _histCharts['chartDiarioCabezas'];
+    if(chM){
+      chM.options.onClick = function(evt, elems){
+        if(!elems || !elems.length) return;
+        _mensualMesIdx = elems[0].index;
+        _renderMensualDetalle(snaps, _mensualMesIdx, EXCLUIR_CAMPOS);
+      };
+      chM.update();
+    }
+    _renderMensualDetalle(snaps, _mensualMesIdx == null ? snaps.length-1 : _mensualMesIdx, EXCLUIR_CAMPOS);
+  } else {
+    var _det = document.getElementById('histMensualDetalle');
+    if(_det) _det.style.display = 'none';
+  }
+}
+
+/**
+ * v15.52 — tabla campo × propietario de un mes.
+ * En un feedlot que hotelea, "cuántas cabezas hay en El Haras" se compone de
+ * PEGSA + terceros. Esta tabla abre esa composición.
+ */
+function _renderMensualDetalle(snaps, idx, excluir){
+  var box = document.getElementById('histMensualDetalle');
+  if(!box) return;
+  var s = snaps[idx];
+  var pc = (s && s.hacienda_masa && s.hacienda_masa.por_campo) || null;
+  if(!pc){ box.style.display = 'none'; return; }
+
+  var campos = Object.keys(pc).filter(function(k){ return !(excluir||{})[k]; })
+                             .sort(function(a,b){ return pc[b].cabezas - pc[a].cabezas; });
+
+  // Set de hoteleros presentes, ordenados por volumen total
+  var hset = {};
+  campos.forEach(function(c){
+    Object.keys(pc[c].por_hotelero || {}).forEach(function(h){
+      hset[h] = (hset[h] || 0) + (pc[c].por_hotelero[h].cabezas || 0);
+    });
+  });
+  var hots = Object.keys(hset).sort(function(a,b){ return hset[b]-hset[a]; });
+
+  var thL = 'style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap"';
+  var thR = thL.replace('nowrap"', 'nowrap;text-align:right"');
+  var tdL = 'style="font-family:\'DM Mono\',monospace;font-size:13px;padding:8px 10px;white-space:nowrap"';
+  var tdR = 'style="font-family:\'DM Mono\',monospace;font-size:13px;padding:8px 10px;text-align:right"';
+  // v15.52: variantes bien formadas (el snippet del PROMPT concatenaba mal ;font-weight adentro del "")
+  var tdRB = tdR.replace(/"$/, ';font-weight:600"');
+  function tdRcolor(col){ return tdR.replace(/"$/, ';color:'+col+'"'); }
+
+  var html = '<div class="panel" style="display:block">'
+    + '<div class="section-header">'
+    + '<span class="section-title">Ocupación por establecimiento — ' + s.periodo + '</span>'
+    + '<span class="section-sub">Cabezas por propietario · clic en una barra del gráfico para cambiar de mes</span>'
+    + '</div><div style="overflow-x:auto"><table class="data-table" style="width:100%;border-collapse:collapse">'
+    + '<thead><tr><th ' + thL + '>Establecimiento</th>';
+  hots.forEach(function(h){ html += '<th ' + thR + '>' + h + '</th>'; });
+  html += '<th ' + thR + '>Total cab.</th><th ' + thR + '>Total kg</th><th ' + thR + '>% terceros</th></tr></thead><tbody>';
+
+  campos.forEach(function(c){
+    var e = pc[c], det = e.por_hotelero || {};
+    var pegsa = (det['PEGSA'] || {}).cabezas || 0;
+    var terceros = (e.cabezas || 0) - pegsa;
+    var pct = e.cabezas ? (terceros / e.cabezas * 100) : 0;
+    html += '<tr style="border-bottom:1px solid var(--border)">'
+      + '<td ' + tdL + '><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'
+      + _colorCampo(c) + ';margin-right:8px"></span>' + c + '</td>';
+    hots.forEach(function(h){
+      var v = (det[h] || {}).cabezas;
+      html += '<td ' + tdR + '>' + (v ? v.toLocaleString('es-AR') : '—') + '</td>';
+    });
+    html += '<td ' + tdRB + '>' + (e.cabezas||0).toLocaleString('es-AR') + '</td>'
+      + '<td ' + tdR + '>' + Math.round((e.kg_proyectado||0)/1000).toLocaleString('es-AR') + ' t</td>'
+      + '<td ' + tdRcolor(pct > 0 ? '#2d6a8a' : 'rgba(26,22,18,.35)') + '>'
+      + (pct > 0 ? pct.toFixed(1).replace('.',',') + '%' : '—') + '</td></tr>';
+  });
+
+  html += '</tbody></table></div></div>';
+  box.innerHTML = html;
+  box.style.display = 'block';
 }
 
 /**
@@ -447,6 +528,8 @@ function _renderHistDiario(dias, filtro){
   if(dias === -1) return _renderHistMensual(filtro);
   var _resM = document.getElementById('histMensualResumen');
   if(_resM) _resM.style.display = 'none';
+  var _detM = document.getElementById('histMensualDetalle');   // v15.52
+  if(_detM) _detM.style.display = 'none';
   var chartsEl  = document.getElementById('histDiarioCharts');
   var noDataEl  = document.getElementById('histDiarioNoData');
   var noDataMsg = document.getElementById('histDiarioNoDataMsg');
@@ -604,68 +687,6 @@ function _renderHistDiario(dias, filtro){
       }
     }
   });
-}
-
-// ── MENSUAL ──────────────────────────────────────────────────
-function _renderHistHacienda(tipo){
-  if(!_histData || !_histData.snapshots || !_histData.snapshots.length){
-    document.getElementById('chartHistCabezas').parentElement.innerHTML='<div style="text-align:center;padding:60px 0;font-family:\'DM Mono\',monospace;font-size:13px;color:rgba(26,22,18,.4)">Sin datos históricos aún. Se acumularán con cada ejecución mensual del actualizador.</div>';
-    return;
-  }
-  var snaps  = _histData.snapshots;
-  var labels = snaps.map(function(s){ return s.periodo; });
-
-  // Actualizar subtítulo
-  var subtitulos = {total:'total',propietario:'por propietario',establecimiento:'por establecimiento',categoria:'por categoría'};
-  var sub = document.getElementById('histHacSub');
-  if(sub) sub.textContent = 'Evolución mensual · ' + (subtitulos[tipo]||tipo);
-
-  if(tipo === 'total'){
-    var dsCab = [{
-      label: 'Cabezas totales',
-      data: snaps.map(function(s){ return s.hacienda.total_cabezas||0; }),
-      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.1)',
-      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7
-    }];
-    var dsKg = [{
-      label: 'Kg estimado total',
-      data: snaps.map(function(s){ return s.hacienda.total_kg_estimado||0; }),
-      borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.1)',
-      tension: .3, fill: true, pointRadius: 5, pointHoverRadius: 7
-    }];
-    _mkLineChart('chartHistCabezas', labels, dsCab, null, 'cabezas');
-    _mkLineChart('chartHistKg', labels, dsKg, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
-
-  } else {
-    // Recolectar todas las claves del grupo
-    var claveSet = {};
-    snaps.forEach(function(s){
-      var grupo = s.hacienda['por_'+tipo] || {};
-      Object.keys(grupo).forEach(function(k){ claveSet[k]=1; });
-    });
-    var claves = Object.keys(claveSet);
-
-    var dsCab = claves.map(function(k, i){
-      return {
-        label: k,
-        data: snaps.map(function(s){ return (s.hacienda['por_'+tipo]||{})[k] ? (s.hacienda['por_'+tipo][k].cabezas||0) : null; }),
-        borderColor: HIST_COLORS[i%HIST_COLORS.length],
-        backgroundColor: 'transparent',
-        tension: .3, pointRadius: 4, spanGaps: true
-      };
-    });
-    var dsKg = claves.map(function(k, i){
-      return {
-        label: k,
-        data: snaps.map(function(s){ return (s.hacienda['por_'+tipo]||{})[k] ? (s.hacienda['por_'+tipo][k].kg_estimado||0) : null; }),
-        borderColor: HIST_COLORS[i%HIST_COLORS.length],
-        backgroundColor: 'transparent',
-        tension: .3, pointRadius: 4, spanGaps: true
-      };
-    });
-    _mkLineChart('chartHistCabezas', labels, dsCab, null, 'cabezas');
-    _mkLineChart('chartHistKg', labels, dsKg, function(v){ return (v/1000).toFixed(0)+'t'; }, 'toneladas');
-  }
 }
 
 function _renderHistInsumos(){
