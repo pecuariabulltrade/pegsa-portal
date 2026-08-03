@@ -5646,6 +5646,18 @@ def _parse_listado_caravanas_html(ruta):
     df['_corral_n'] = pd.to_numeric(df[col_corral], errors='coerce')
     df['_hotelero'] = df[col_hotelero].astype(str).str.strip().str.upper()
 
+    # v15.54 (decisión usuario 2026-08-03): excluir el corral 10000 (virtual de
+    # WinCampo, tropa PEG.DES.19/02/26) también del histórico mensual, con el
+    # mismo criterio que v15.46 aplicó al stock diario. Sin esto los totales
+    # mensuales incluían 179 cabezas que el diario no cuenta y las dos series
+    # (PEGSA 7.853 diario vs 8.032 mensual) no eran comparables. Se filtra ANTES
+    # de todas las agregaciones para que total/PEGSA/por_campo/por_hotelero
+    # queden todos consistentes.
+    _n_pre = len(df)
+    df = df[df['_corral_n'] != 10000].copy()
+    if len(df) < _n_pre:
+        log.info(f"    Excluidas {_n_pre - len(df)} cabezas del corral 10000 (virtual)")
+
     # v15.18 Op 3 (decisión usuario 2026-06-11) · kg consistente con módulo Stock.
     # La masa de kg deja de salir de 'Peso Proyectado' (lo que calcula WinCampo) y
     # se recalcula con la MISMA lógica del Stock vivo (v15.13):
@@ -6379,6 +6391,33 @@ def actualizar_comportamiento_historico(carpeta, carpeta_stock_mensuales):
             # Mes cerrado ya sellado → congelar: reutilizar hacienda_masa tal cual.
             masa = hm_cache
             fecha_snap = masa.get('fecha', fecha_nom)
+
+            # v15.54: sacar el corral 10000 (virtual) de los meses sellados que lo
+            # tenían baked-in (jun/jul 2026), con el criterio de v15.46. Resta
+            # EXACTA usando los valores 'Otro' ya sellados (todo el corral 10000 es
+            # PEGSA) — no recomputa parámetros, así que ningún otro valor se mueve.
+            # Self-terminante: una vez removido 'Otro' no vuelve a activarse, y el
+            # parser (v15.54) ya evita que reingrese en re-parseos/meses futuros.
+            _otro = ((masa.get('pegsa') or {}).get('por_campo') or {}).get('Otro')
+            if _otro and _otro.get('cabezas'):
+                _oc = _otro.get('cabezas') or 0
+                _ok = _otro.get('kg_proyectado') or 0
+                masa['pegsa']['cabezas']       = (masa['pegsa'].get('cabezas') or 0) - _oc
+                masa['pegsa']['kg_proyectado'] = (masa['pegsa'].get('kg_proyectado') or 0) - _ok
+                masa['total_cabezas']          = (masa.get('total_cabezas') or 0) - _oc
+                masa['total_kg']               = (masa.get('total_kg') or 0) - _ok
+                masa['pegsa']['por_campo'].pop('Otro', None)
+                _ph = (masa.get('por_hotelero') or {}).get('PEGSA')
+                if _ph:
+                    _ph['cabezas']       = (_ph.get('cabezas') or 0) - _oc
+                    _ph['kg_proyectado'] = (_ph.get('kg_proyectado') or 0) - _ok
+                # Forzar re-injerto del por_campo del grupo sobre los totales ya
+                # limpios (el bloque v15.52 de abajo lo re-arma y re-normaliza).
+                masa.pop('por_campo', None)
+                masa.pop('por_campo_origen', None)
+                masa['corral10000_excluido'] = 'v15.54'
+                log.info(f"    → {periodo}: excluido corral 10000 sellado "
+                         f"(−{int(_oc)} cab / −{_ok:,.0f} kg)")
 
             # v15.52: injerto NO destructivo del desglose por campo del grupo.
             # Los meses sellados por v15.19 no lo tienen. Se re-parsea el
