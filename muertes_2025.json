@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-08-02T20:05:29.064992",
+    "generado": "2026-08-02T21:05:15.879861",
     "periodo": "2025",
     "tabla": "V_MUERTES",
     "mes_actual": "2026-08",
@@ -12,11 +12,11 @@
     "filtro_dias": ">30 días de encierre"
   },
   "mortandad": {
-    "muertes_anio": 243,
+    "muertes_anio": 255,
     "ingresos_anio": 17564,
-    "stock_haras_hoy": 5867,
-    "denominador": 23431,
-    "tasa_mensual_pct": 1.037,
+    "stock_haras_hoy": 5848,
+    "denominador": 23412,
+    "tasa_mensual_pct": 1.089,
     "formula": "tasa_mensual = muertes_año / (ingresos_año + stock_hoy)",
     "por_grupo": {
       "Vacas": {
@@ -27,36 +27,36 @@
         "tasa_mensual_pct": 1.446
       },
       "Machos": {
-        "muertes": 80,
+        "muertes": 91,
         "ingresos": 8060,
-        "stock": 2462,
-        "denominador": 10522,
-        "tasa_mensual_pct": 0.76
+        "stock": 2444,
+        "denominador": 10504,
+        "tasa_mensual_pct": 0.866
       },
       "Hembras": {
-        "muertes": 36,
+        "muertes": 37,
         "ingresos": 3010,
-        "stock": 1114,
-        "denominador": 4124,
-        "tasa_mensual_pct": 0.873
+        "stock": 1113,
+        "denominador": 4123,
+        "tasa_mensual_pct": 0.897
       }
     }
   },
   "anio": {
-    "total_muertes": 243,
+    "total_muertes": 255,
     "por_categoria": {
       "VA": 127,
-      "TM": 59,
-      "TH": 28,
-      "NV": 13,
+      "TM": 65,
+      "TH": 29,
+      "NV": 18,
       "VQ": 8,
       "NT": 7,
       "TO": 1
     },
     "por_grupo": {
       "Vacas": 127,
-      "Machos": 80,
-      "Hembras": 36
+      "Machos": 91,
+      "Hembras": 37
     },
     "por_mes": {
       "2025-08": 12,
@@ -70,24 +70,25 @@
       "2026-04": 23,
       "2026-05": 23,
       "2026-06": 16,
-      "2026-07": 10,
+      "2026-07": 22,
       "2026-08": 1
     }
   },
   "mes_anterior": {
     "nombre": "Últimos 30 días (03/07/2026 – 02/08/2026)",
     "mes": "2026-07-03",
-    "total_muertes": 10,
+    "total_muertes": 22,
     "por_categoria": {
-      "TM": 4,
+      "TM": 10,
+      "NV": 5,
+      "TH": 3,
       "VA": 3,
-      "TH": 2,
       "NT": 1
     },
     "por_grupo": {
       "Vacas": 3,
-      "Machos": 5,
-      "Hembras": 2
+      "Machos": 16,
+      "Hembras": 3
     }
   }
 }
