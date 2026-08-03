@@ -8,6 +8,7 @@ var _valData       = null;  // valuacion_historica.json (módulo 10)
 var _histFiltroAct = 'total';
 var _histDiarioPer = 30;    // días mostrados por defecto
 var _histDiarioFil = 'total';
+var _histDiarioAmb = 'pegsa';  // v15.51: 'pegsa' | 'grupo' (solo en modo mensual)
 var _histCharts    = {};
 var _histInited    = false;
 
@@ -286,14 +287,166 @@ function _mkLineChart(canvasId, labels, datasets, yFmt, yTitle){
 // ── DIARIO ──────────────────────────────────────────────────
 function histDiarioPeriodo(dias){
   _histDiarioPer = dias;
+  // v15.51: el selector de ámbito (PEGSA/grupo) solo aplica al modo mensual
+  var w = document.getElementById('wrapDiarioAmbito');
+  if(w) w.style.display = (dias === -1) ? 'flex' : 'none';
   _renderHistDiario(_histDiarioPer, _histDiarioFil);
 }
 function histDiarioFiltro(tipo){
   _histDiarioFil = tipo;
   _renderHistDiario(_histDiarioPer, _histDiarioFil);
 }
+function histDiarioAmbito(v){   // v15.51
+  _histDiarioAmb = v;
+  _renderHistDiario(_histDiarioPer, _histDiarioFil);
+}
+
+/**
+ * v15.51 — vista MENSUAL de la pestaña Diario.
+ * El desglose por establecimiento del stock diario solo puede acumularse hacia
+ * adelante (el running balance reconstruye totales, no desgloses), así que
+ * tardaría ~3 meses en poblarse. comportamiento_historico ya tiene 20 meses
+ * completos con cabezas Y kg por establecimiento.
+ * Fuente: _histRealData.snapshots[].hacienda_masa
+ */
+function _renderHistMensual(filtro){
+  var chartsEl = document.getElementById('histDiarioCharts');
+  var noDataEl = document.getElementById('histDiarioNoData');
+  var noDataMsg= document.getElementById('histDiarioNoDataMsg');
+  var resumenEl= document.getElementById('histMensualResumen');
+  var kpisEl   = document.getElementById('histDiarioKpis');
+  if(kpisEl) kpisEl.innerHTML = '';   // v15.51: los KPIs diarios no aplican en mensual
+
+  function noData(msg){
+    if(chartsEl) chartsEl.style.display = 'none';
+    if(noDataEl) noDataEl.style.display = 'block';
+    if(noDataMsg) noDataMsg.innerHTML = msg;
+    if(resumenEl) resumenEl.style.display = 'none';
+    _destroyChart('chartDiarioCabezas'); _destroyChart('chartDiarioKg');
+  }
+
+  if(!_histRealData || !_histRealData.snapshots || !_histRealData.snapshots.length){
+    return noData('Sin datos mensuales. Se generan al procesar los archivos Listado_Caravanas.');
+  }
+
+  var snaps  = _histRealData.snapshots.slice().sort(function(a,b){ return a.periodo<b.periodo?-1:1; });
+  var labels = snaps.map(function(s){ return s.periodo; });
+  var amb    = _histDiarioAmb;
+
+  // Combinaciones no disponibles
+  if(amb === 'grupo' && filtro === 'establecimiento'){
+    return noData('El desglose por <strong>establecimiento</strong> solo está disponible para '
+      + '<strong>PEGSA propio</strong>.<br><br>Para el grupo completo el JSON trae el desglose '
+      + 'por propietario. Cambiá el selector de Hacienda a "PEGSA propio", o el Desglose a '
+      + '"Por propietario / Hotelero".');
+  }
+  if(amb === 'pegsa' && filtro === 'propietario'){
+    return noData('PEGSA propio <strong>es</strong> un único propietario — no hay desglose posible.'
+      + '<br><br>Elegí "Por establecimiento" para ver los campos, o cambiá la Hacienda a "Grupo completo".');
+  }
+
+  if(chartsEl) chartsEl.style.display = 'block';
+  if(noDataEl) noDataEl.style.display = 'none';
+
+  // v15.51: "Otro" = corral 10000 (tropa PEG.DES.19/02/26, 179 cabezas). El
+  // usuario decidió en v15.46 no contabilizarlo. Aparece solo en 2026-06/07.
+  var EXCLUIR_CAMPOS = { 'Otro': 1 };
+
+  function bloque(s){ var hm = s.hacienda_masa || {}; return amb === 'pegsa' ? (hm.pegsa || {}) : hm; }
+  function totalCab(s){ var hm = s.hacienda_masa || {}; return amb === 'pegsa' ? ((hm.pegsa||{}).cabezas || 0) : (hm.total_cabezas || 0); }
+  function totalKg(s){ var hm = s.hacienda_masa || {}; return amb === 'pegsa' ? ((hm.pegsa||{}).kg_proyectado || 0) : (hm.total_kg || 0); }
+
+  var dsCab, dsKg;
+
+  if(filtro === 'total'){
+    var nom = amb === 'pegsa' ? 'PEGSA propio' : 'Grupo completo';
+    dsCab = [{ label: nom, data: snaps.map(totalCab), backgroundColor: '#b8922a' }];
+    dsKg  = [{ label: nom, data: snaps.map(function(s){ return Math.round(totalKg(s)/1000); }), backgroundColor: '#27613d' }];
+  } else {
+    var key = (filtro === 'establecimiento') ? 'por_campo' : 'por_hotelero';
+    var set = {};
+    snaps.forEach(function(s){
+      var b = bloque(s)[key] || {};
+      Object.keys(b).forEach(function(k){ if(!EXCLUIR_CAMPOS[k]) set[k]=1; });
+    });
+    var claves = Object.keys(set).sort();
+    if(!claves.length) return noData('Sin desglose disponible para esta combinación.');
+
+    dsCab = claves.map(function(k){
+      return { label: k, backgroundColor: _colorCampo(k),
+        data: snaps.map(function(s){ var e = (bloque(s)[key]||{})[k]; return e ? e.cabezas : 0; }) };
+    });
+    dsKg = claves.map(function(k){
+      return { label: k, backgroundColor: _colorCampo(k),
+        data: snaps.map(function(s){ var e = (bloque(s)[key]||{})[k]; return e ? Math.round(e.kg_proyectado/1000) : 0; }) };
+    });
+  }
+
+  var fCab = function(v){ return Math.round(v).toLocaleString('es-AR'); };
+  var fKg  = function(v){ return Math.round(v).toLocaleString('es-AR')+' t'; };
+
+  _mkStackedBarChart('chartDiarioCabezas', labels, dsCab, fCab, { totalFmt: fCab });
+  _mkStackedBarChart('chartDiarioKg',      labels, dsKg,  fKg,  { totalFmt: fKg  });
+
+  var nomF = { total:'total', propietario:'por propietario', establecimiento:'por establecimiento' };
+  var sub = 'histórico mensual · ' + (amb==='pegsa'?'PEGSA propio':'grupo completo') + ' · ' + (nomF[filtro]||filtro);
+  var a = document.getElementById('dSubCab'); if(a) a.textContent = sub;
+  var b = document.getElementById('dSubKg');  if(b) b.textContent = sub;
+
+  _renderHistMensualResumen(snaps, totalCab, totalKg);
+}
+
+/**
+ * v15.51 — tarjetas de promedio mensual + flujo punta a punta.
+ */
+function _renderHistMensualResumen(snaps, totalCab, totalKg){
+  var box = document.getElementById('histMensualResumen');
+  if(!box) return;
+
+  var cabs = snaps.map(totalCab);
+  var kgs  = snaps.map(totalKg);
+  var n    = snaps.length;
+  if(!n){ box.style.display='none'; return; }
+
+  var promCab   = cabs.reduce(function(a,b){return a+b;},0) / n;
+  var promKg    = kgs.reduce(function(a,b){return a+b;},0) / n;
+  var promKgCab = promKg / Math.max(promCab,1);
+
+  var dCab = cabs[n-1] - cabs[0];
+  var dKg  = kgs[n-1]  - kgs[0];
+
+  var iMax = cabs.indexOf(Math.max.apply(null, cabs));
+  var iMin = cabs.indexOf(Math.min.apply(null, cabs));
+
+  function card(lbl, val, sub, col){
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:14px 18px">'
+      +'<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-bottom:6px">'+lbl+'</div>'
+      +'<div style="font-family:\'Playfair Display\',serif;font-size:21px;font-weight:700;color:'+(col||'var(--ink)')+'">'+val+'</div>'
+      +'<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.5);margin-top:4px">'+sub+'</div>'
+      +'</div>';
+  }
+  var sg = function(v){ return v>=0?'#27613d':'#c0392b'; };
+  var fN = function(v){ return Math.round(v).toLocaleString('es-AR'); };
+
+  box.style.display = 'block';
+  box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">'
+    + card('Promedio cabezas', fN(promCab), n+' meses')
+    + card('Promedio masa',    fN(promKg/1000)+' t', n+' meses')
+    + card('Kg por cabeza',    fN(promKgCab), 'promedio del período')
+    + card('Flujo cabezas',    (dCab>=0?'+':'−')+fN(Math.abs(dCab)),
+           snaps[0].periodo+' → '+snaps[n-1].periodo, sg(dCab))
+    + card('Flujo masa',       (dKg>=0?'+':'−')+fN(Math.abs(dKg)/1000)+' t',
+           snaps[0].periodo+' → '+snaps[n-1].periodo, sg(dKg))
+    + card('Pico / piso',      fN(cabs[iMax])+' / '+fN(cabs[iMin]),
+           snaps[iMax].periodo+' · '+snaps[iMin].periodo)
+    + '</div>';
+}
 
 function _renderHistDiario(dias, filtro){
+  // v15.51: modo mensual usa otra fuente (comportamiento_historico)
+  if(dias === -1) return _renderHistMensual(filtro);
+  var _resM = document.getElementById('histMensualResumen');
+  if(_resM) _resM.style.display = 'none';
   var chartsEl  = document.getElementById('histDiarioCharts');
   var noDataEl  = document.getElementById('histDiarioNoData');
   var noDataMsg = document.getElementById('histDiarioNoDataMsg');

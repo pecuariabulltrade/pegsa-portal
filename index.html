@@ -2406,6 +2406,7 @@
             <option value="90">Últimos 90 días</option>
             <option value="180">Últimos 6 meses</option>
             <option value="0">Todo el historial</option>
+            <option value="-1">Histórico mensual completo</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:220px">
@@ -2415,6 +2416,15 @@
             <option value="total">Total general</option>
             <option value="propietario">Por propietario / Hotelero</option>
             <option value="establecimiento">Por establecimiento</option>
+            <option value="categoria">Por categoría</option>
+          </select>
+        </div>
+        <div id="wrapDiarioAmbito" style="display:none;align-items:center;gap:10px;flex:1;min-width:180px">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.4);white-space:nowrap">Hacienda</span>
+          <select id="selDiarioAmbito" onchange="histDiarioAmbito(this.value)"
+            style="font-family:'DM Mono',monospace;font-size:12px;padding:7px 12px;border:1px solid var(--border-strong);border-radius:2px;background:#faf8f4;color:var(--ink);cursor:pointer;width:100%">
+            <option value="pegsa" selected>PEGSA propio</option>
+            <option value="grupo">Grupo completo</option>
           </select>
         </div>
         <div id="histDiarioGenLabel" style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.35);white-space:nowrap"></div>
@@ -2422,6 +2432,9 @@
 
       <!-- KPIs rápidos -->
       <div id="histDiarioKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
+
+      <!-- v15.51: promedios/flujo del modo mensual -->
+      <div id="histMensualResumen" style="display:none;margin-bottom:20px"></div>
 
       <!-- Contenedor dinámico (charts o no-data) -->
       <div id="histDiarioCharts">
@@ -2623,7 +2636,7 @@
 <script src="js/modulo-06-tesoreria.js"></script>
 
 <!-- ══ MÓDULO 08 · HISTÓRICO JS ══ -->
-<script src="js/modulo-08-historico.js?v=1550"></script>
+<script src="js/modulo-08-historico.js?v=1551"></script>
 
 
 <!-- Panel Principal — React + Babel -->

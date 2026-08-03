@@ -3003,8 +3003,24 @@ def recalcular_stock_diario_desde_movimientos(
         for p, v in kpis_hoy.get("por_propietario", {}).items()
     }
 
+    # v15.51: mismo tratamiento que por_propietario para establecimiento y
+    # categoría. Antes se escribían siempre {} y el desglose del panel Diario
+    # nunca tuvo datos.
+    est_hoy = {
+        e: {"cabezas": int(v.get("cabezas", 0)),
+            "kg_estimado": int(v.get("kg_estimado", 0))}
+        for e, v in kpis_hoy.get("por_establecimiento", {}).items()
+    }
+    cat_hoy = {
+        c: {"cabezas": int(v.get("cabezas", 0)),
+            "kg_estimado": int(v.get("kg_estimado", 0))}
+        for c, v in kpis_hoy.get("por_categoria", {}).items()
+    }
+
     log.info(f"  Baseline hoy ({hoy}): {total_cab_hoy:,} cab · {total_kg_hoy/1000:,.0f} t")
     log.info(f"  Propietarios baseline: {list(prop_hoy.keys())}")
+    log.info(f"  Establecimientos baseline: {list(est_hoy.keys())}")
+    log.info(f"  Categorías baseline: {list(cat_hoy.keys())}")
 
     # ── 2. Resolución de columnas ─────────────────────────────
     def _fc(cols, *keys):
@@ -3084,29 +3100,36 @@ def recalcular_stock_diario_desde_movimientos(
     log.info(f"  Ingresos últimas 5 fechas: {_sample_ing}")
     log.info(f"  Egresos  últimas 5 fechas: {_sample_egr}")
 
-    # ── 5. Cargar historial acumulado de por_propietario ──────
-    # por_propietario se acumula día a día desde ejecuciones anteriores.
-    # No se reconstruye hacia atrás (el campo Hotelero en las vistas de
-    # movimientos puede no coincidir con los nombres en V_STOCK_HACIENDA).
-    # Estrategia: conservar histórico guardado; hoy se sobreescribe con la
-    # vista actual (siempre correcta).
+    # ── 5. Cargar historial acumulado de los tres desgloses ──────
+    # v15.51: además de por_propietario (v15.21) ahora se acumulan también
+    # por_establecimiento y por_categoria, con el mismo patrón. Se acumulan día
+    # a día desde ejecuciones anteriores; NO se reconstruyen hacia atrás (el
+    # running balance opera sobre totales, no sobre desgloses). Estrategia:
+    # conservar histórico guardado; hoy se sobreescribe con la vista actual.
     _diario_path = Path(carpeta) / "stock_diario.json"
-    _hist_prop   = {}   # {fecha_str: {propietario: {cabezas, kg_estimado}}}
+    _hist = {"por_propietario": {}, "por_establecimiento": {}, "por_categoria": {}}
     if _diario_path.exists():
         try:
             with open(_diario_path, encoding="utf-8") as _fh:
                 _old = json.load(_fh)
             for _s in _old.get("snapshots", []):
                 _fs2 = _s.get("fecha", "")
-                _pp  = (_s.get("hacienda") or {}).get("por_propietario")
-                if _fs2 and _pp:
-                    _hist_prop[_fs2] = _pp
+                if not _fs2:
+                    continue
+                _h = _s.get("hacienda") or {}
+                for _k in _hist:
+                    _v = _h.get(_k)
+                    if _v:
+                        _hist[_k][_fs2] = _v
         except Exception:
             pass
     # Hoy siempre desde la vista actual (dato fidedigno)
     _hoy_str = hoy.strftime("%Y-%m-%d")
-    _hist_prop[_hoy_str] = prop_hoy
-    log.info(f"  por_propietario acumulado: {len(_hist_prop)} fechas con datos")
+    _hist["por_propietario"][_hoy_str]     = prop_hoy
+    _hist["por_establecimiento"][_hoy_str] = est_hoy
+    _hist["por_categoria"][_hoy_str]       = cat_hoy
+    for _k, _v in _hist.items():
+        log.info(f"  {_k} acumulado: {len(_v)} fechas con datos")
 
     # ── 6. Running balance hacia atrás desde hoy ──────────────
     snapshots = []
@@ -3123,46 +3146,48 @@ def recalcular_stock_diario_desde_movimientos(
             egr_n   = egr_total.get(fs_next, 0)
             cab_d   = max(0, cab_d - ing_n + egr_n)
 
-        kg_d      = int(cab_d * avg_kg_hoy)
-        prop_snap = _hist_prop.get(fs, {})   # datos reales si existen
+        kg_d = int(cab_d * avg_kg_hoy)
 
         snapshots.append({
             "fecha": fs,
             "hacienda": {
                 "total_cabezas":       int(cab_d),
                 "total_kg_estimado":   kg_d,
-                "por_propietario":     prop_snap,
-                "por_establecimiento": {},
-                "por_categoria":       {}
+                "por_propietario":     _hist["por_propietario"].get(fs, {}),
+                "por_establecimiento": _hist["por_establecimiento"].get(fs, {}),
+                "por_categoria":       _hist["por_categoria"].get(fs, {})
             }
         })
 
     # Ordenar ascendente (más antiguo primero)
     snapshots.sort(key=lambda s: s["fecha"])
 
-    # ── 7. v15.21 · Forward-fill de por_propietario corrupto ──────────
-    # Bug detectado 2026-06-18: ciertos snapshots tienen total_cabezas correcto
-    # pero por_propietario vacío ({}) o con todos los hoteleros en 0 (la vista
-    # WinCampo del día devolvió ceros y se arrastró, o nunca se acumuló el día).
-    # Eso rompe el gráfico Evolución Diaria del módulo Histórico que renderiza
-    # stacked por propietario → cae a 0 visual aunque el total esté OK.
-    # Defense-in-depth: pasada ASC heredando el desglose del último día sano.
-    # Los totales (total_cabezas/total_kg_estimado) se mantienen como están.
-    _ult_pp_sano = None
-    _n_filled = 0
-    for _snap in snapshots:
-        _h    = _snap.get("hacienda", {})
-        _pp_d = _h.get("por_propietario") or {}
-        _suma = sum((v.get("cabezas", 0) or 0) for v in _pp_d.values())
-        if not _pp_d or _suma == 0:
-            if _ult_pp_sano:
-                _h["por_propietario"] = {p: dict(d) for p, d in _ult_pp_sano.items()}
-                _h["_pp_origen"]      = "forward-fill día anterior"
+    # ── 7. Forward-fill defensivo de los desgloses ──────────────
+    # v15.21: bug detectado 2026-06-18 — ciertos snapshots tienen total_cabezas
+    # correcto pero el desglose vacío ({}) o con todos en 0 (la vista WinCampo
+    # del día devolvió ceros y se arrastró, o nunca se acumuló). Eso rompe el
+    # gráfico Evolución Diaria (stacked) → cae a 0 visual aunque el total esté OK.
+    # Defense-in-depth: pasada ASC heredando el desglose del último día sano; los
+    # totales se mantienen como están.
+    # v15.51: la misma defensa se aplica a los tres desgloses. Como
+    # por_establecimiento/por_categoria recién arrancan a poblarse desde hoy
+    # hacia adelante, los días previos al primer día sano quedan vacíos (no hay
+    # de dónde copiar) — es esperado; para el histórico completo está la vista
+    # mensual.
+    for _key in ("por_propietario", "por_establecimiento", "por_categoria"):
+        _ult_sano = None
+        _n_filled = 0
+        for _snap in snapshots:
+            _h = _snap.get("hacienda", {})
+            _d = _h.get(_key) or {}
+            _sano = bool(_d) and any((v or {}).get("cabezas", 0) > 0 for v in _d.values())
+            if _sano:
+                _ult_sano = _d
+            elif _ult_sano:
+                _h[_key] = _ult_sano
                 _n_filled += 1
-        else:
-            _ult_pp_sano = _pp_d
-    if _n_filled:
-        log.info(f"  por_propietario: {_n_filled} día(s) heredados del día anterior (forward-fill v15.21)")
+        if _n_filled:
+            log.info(f"  v15.51 forward-fill {_key}: {_n_filled} día(s) heredados")
 
     diario = {
         "generado":  datetime.now().isoformat(),
