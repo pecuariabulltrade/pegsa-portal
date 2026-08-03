@@ -13,6 +13,42 @@ var _histInited    = false;
 
 var HIST_COLORS = ['#b8922a','#27613d','#2d6a8a','#8a2d6a','#6a8a2d','#6a2d2d','#2d6a6a','#8a6a2d'];
 
+// v15.47: color FIJO por establecimiento. Antes se asignaba por índice y el
+// color de un campo cambiaba según qué campos tuvieran datos ese mes.
+// Los establecimientos son un set cerrado (tabla CORRALES del pipeline).
+var HIST_COLOR_CAMPO = {
+  'El Haras':      '#27613d',
+  'El Coloradito': '#6a2d2d',
+  'Don Pedro':     '#b8922a',
+  'El Descanso':   '#8a2d6a',
+  'Campo Medel':   '#2d6a8a',
+  'El Morrón':     '#6a8a2d',
+  'La Panchita':   '#8a6a2d',
+  'La Cucuca':     '#2d6a6a',
+  'El Durazno':    '#a86a2d',
+  'Recepción':     '#7a7a70'
+};
+
+// v15.47: color fijo por insumo (los nombres vienen de STOCK DE INSUMOS.xlsx)
+var HIST_COLOR_INSUMO = {
+  'SILO DE MAIZ':      '#b8922a',
+  'MAIZ GRANO':        '#c9a94a',
+  'GLUTEN DE MAIZ':    '#6a8a2d',
+  'NUCLEO CONC 5% LDB':'#2d6a8a',
+  'HARINA GERMEN':     '#8a6a2d',
+  'SOJA':              '#27613d',
+  'DIESEL':            '#6a2d2d'
+};
+
+// Fallback determinístico para nombres no previstos: hash simple del nombre
+// sobre HIST_COLORS (mismo nombre → siempre mismo color, sin depender del orden).
+function _colorCampo(nombre){
+  if(HIST_COLOR_CAMPO[nombre]) return HIST_COLOR_CAMPO[nombre];
+  var h = 0;
+  for(var i=0;i<nombre.length;i++) h = (h*31 + nombre.charCodeAt(i)) & 0x7fffffff;
+  return HIST_COLORS[h % HIST_COLORS.length];
+}
+
 function initHistorico(){
   if(_histInited) return;
   _histInited = true;
@@ -48,6 +84,131 @@ function histFiltro(tipo, el){
 
 function _destroyChart(id){
   if(_histCharts[id]){try{_histCharts[id].destroy();}catch(e){} _histCharts[id]=null;}
+}
+
+/**
+ * v15.47: plugin inline que dibuja el TOTAL encima de cada barra apilada.
+ * Mismo patrón que el _labelsPlugin de modulo-06-tesoreria.js.
+ * Suma solo los datasets VISIBLES (respeta el filtro de leyenda). Si recibe
+ * `totalesFijos` (array), usa ese valor por barra en vez de sumar — necesario
+ * en modo 100%, donde la suma de datasets da 100 pero queremos mostrar el
+ * total absoluto real en toneladas.
+ */
+function _totalesArribaPlugin(fmt, totalesFijos){
+  return {
+    id: 'totalesArriba',
+    afterDatasetsDraw: function(chart){
+      var ctx = chart.ctx;
+      var nBars = chart.data.labels.length;
+      // Con barras muy finas el label se pisa → ocultarlo (guard del handoff)
+      if(chart.chartArea && (chart.chartArea.width / Math.max(nBars,1)) < 34) return;
+      ctx.save();
+      ctx.font = '700 11px "DM Mono",monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = 'rgba(26,22,18,.75)';
+      for(var i=0;i<nBars;i++){
+        var total = 0, topY = null, x = null, vis = false;
+        chart.data.datasets.forEach(function(ds, di){
+          if(!chart.isDatasetVisible(di)) return;
+          var v = ds.data[i];
+          if(v == null) return;
+          vis = true;
+          total += v;
+          var el = chart.getDatasetMeta(di).data[i];
+          if(el){ x = el.x; if(topY === null || el.y < topY) topY = el.y; }
+        });
+        if(topY === null || !vis) continue;
+        var mostrado = (totalesFijos && totalesFijos[i] != null) ? totalesFijos[i] : total;
+        if(!mostrado) continue;
+        ctx.fillText(fmt ? fmt(mostrado) : Math.round(mostrado).toLocaleString('es-AR'), x, topY - 6);
+      }
+      ctx.restore();
+    }
+  };
+}
+
+/**
+ * v15.47: barras apiladas con el look del portal (Playfair/DM Mono/HIST_COLORS).
+ * opts: { porcentaje:bool, totalFmt:function|false, horizontal:bool, totalesFijos:array }
+ */
+function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
+  opts = opts || {};
+  _destroyChart(canvasId);
+  var ctx = document.getElementById(canvasId);
+  if(!ctx) return;
+  var vAxis = opts.horizontal ? 'x' : 'y';
+
+  var plugins = [];
+  if(opts.totalFmt !== false) plugins.push(_totalesArribaPlugin(opts.totalFmt || yFmt, opts.totalesFijos));
+
+  _histCharts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      indexAxis: opts.horizontal ? 'y' : 'x',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 22 } },   // espacio para el label del total
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 14, usePointStyle: false }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(26,22,18,.94)',
+          titleFont: { family: 'DM Mono', size: 12, weight: '700' },
+          bodyFont:  { family: 'DM Mono', size: 11 },
+          padding: 10, cornerRadius: 4, boxPadding: 4,
+          callbacks: {
+            label: function(c){
+              if(c.parsed[vAxis] == null) return null;
+              var v = c.parsed[vAxis];
+              return ' ' + c.dataset.label + ': ' + (yFmt ? yFmt(v) : v.toLocaleString('es-AR'));
+            },
+            footer: function(items){
+              if(!items.length) return '';
+              var f = opts.totalFmt || yFmt;
+              if(opts.porcentaje){
+                // en % la suma es 100 → mostrar el total absoluto real del mes
+                var idx = items[0].dataIndex;
+                var tot = (opts.totalesFijos && opts.totalesFijos[idx] != null)
+                        ? opts.totalesFijos[idx]
+                        : items.reduce(function(a,c){ return a + (c.parsed[vAxis]||0); }, 0);
+                return 'Total: ' + (f ? f(tot) : tot.toLocaleString('es-AR'));
+              }
+              var t = items.reduce(function(a,c){ return a + (c.parsed[vAxis]||0); }, 0);
+              return 'Total: ' + (f ? f(t) : t.toLocaleString('es-AR'));
+            }
+          },
+          footerFont: { family: 'DM Mono', size: 11, weight: '700' },
+          footerColor: '#e8dcc0'
+        }
+      },
+      // El eje de VALOR (tons/%) es y en vertical y x en horizontal; el de
+      // CATEGORÍA (los meses) va al revés. Sin este swap, en horizontal los
+      // meses salían formateados como "0t..19t".
+      scales: (function(){
+        var valueScale = {
+          stacked: true,
+          ticks: {
+            font: { family: 'DM Mono', size: 10 },
+            callback: opts.porcentaje ? function(v){ return v+'%'; } : (yFmt || function(v){ return v.toLocaleString('es-AR'); })
+          },
+          grid: { color: 'rgba(0,0,0,.06)' },
+          max: opts.porcentaje ? 100 : undefined
+        };
+        var catScale = {
+          stacked: true,
+          ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: opts.horizontal?0:45, minRotation: 0 },
+          grid: { display: false }
+        };
+        return opts.horizontal ? { x: valueScale, y: catScale } : { x: catScale, y: valueScale };
+      })(),
+      datasets: { bar: { borderRadius: 2, borderSkipped: false, maxBarThickness: 46 } }
+    },
+    plugins: plugins
+  });
 }
 
 function _mkLineChart(canvasId, labels, datasets, yFmt, yTitle){
@@ -447,36 +608,8 @@ function _renderHistReal(){
   }).join('');
   document.getElementById('histRealKpis').innerHTML = kpiHtml;
 
-  // ── Gráfico masa kg PEGSA por campo ──
-  var camposSet = {};
-  snaps.forEach(function(s){
-    var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
-    Object.keys(pc).forEach(function(c){ camposSet[c]=1; });
-  });
-  var campos = Object.keys(camposSet);
-  var dsKg;
-  if(campos.length > 1){
-    dsKg = campos.map(function(campo, i){
-      return {
-        label: campo,
-        data: snaps.map(function(s){
-          var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
-          return pc[campo] ? Math.round(pc[campo].kg_proyectado/1000) : 0;
-        }),
-        borderColor: HIST_COLORS[i%HIST_COLORS.length],
-        backgroundColor: 'rgba('+[184,146,42,39,97,61,45,106,138][i*3%9]+','+[184,146,42,39,97,61,45,106,138][i*3%9+1]+','+[184,146,42,39,97,61,45,106,138][i*3%9+2]+',.1)',
-        tension: .3, fill: i===0, pointRadius: 4, spanGaps: true
-      };
-    });
-  } else {
-    dsKg = [{
-      label: 'Masa PEGSA total (t)',
-      data: snaps.map(function(s){ return s.hacienda_masa && s.hacienda_masa.pegsa ? Math.round(s.hacienda_masa.pegsa.kg_proyectado/1000) : 0; }),
-      borderColor: '#b8922a', backgroundColor: 'rgba(184,146,42,.1)',
-      tension: .3, fill: true, pointRadius: 5
-    }];
-  }
-  _mkLineChart('chartRealKgPegsa', labels, dsKg, function(v){ return v.toFixed(0)+'t'; }, 'toneladas');
+  // ── Gráfico masa kg PEGSA por campo — v15.47 barras apiladas ──
+  _renderMasaPegsa();
 
   // ── Valuación en pesos ──
   _renderValuacion();
@@ -487,26 +620,28 @@ function _renderHistReal(){
   // ── Gráficos insumos ──
   _renderRealInsumos(snaps, labels);
 
-  // ── Gráfico financiero ──
-  var dsDisp = {
-    label: 'Disponible ($M)',
-    data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.disponible||0)/1000000) : null; }),
-    borderColor: '#27613d', backgroundColor: 'rgba(39,97,61,.08)',
-    tension: .3, fill: true, pointRadius: 5, spanGaps: true
+  // ── Gráfico financiero — v15.47 barras divergentes ──
+  var fM = function(v){
+    var a = Math.abs(v);
+    return (v < 0 ? '−' : '') + '$ ' + a.toFixed(0) + 'M';
   };
-  var dsCobrar = {
-    label: 'Cobrar Hacienda ($M)',
-    data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.cobrar_hacienda||0)/1000000) : null; }),
-    borderColor: '#2d6a8a', backgroundColor: 'transparent',
-    tension: .3, pointRadius: 4, spanGaps: true
-  };
-  var dsPagar = {
-    label: 'Pagar Hacienda ($M)',
-    data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.pagar_hacienda||0)/1000000)*-1 : null; }),
-    borderColor: '#c0392b', backgroundColor: 'transparent',
-    tension: .3, pointRadius: 4, spanGaps: true
-  };
-  _mkLineChart('chartRealFinanciero', labels, [dsDisp, dsCobrar, dsPagar], function(v){ return (v>=0?'':'−')+'$\u00a0'+Math.abs(v).toFixed(0)+'M'; }, '$ millones');
+  var dsFin = [
+    { label: 'Disponible',      backgroundColor: '#27613d',
+      data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.disponible||0)/1000000) : 0; }) },
+    { label: 'Cobrar Hacienda', backgroundColor: '#2d6a8a',
+      data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.cobrar_hacienda||0)/1000000) : 0; }) },
+    { label: 'Pagar Hacienda',  backgroundColor: '#c0392b',
+      data: snaps.map(function(s){ return s.financiero ? -Math.round((s.financiero.pagar_hacienda||0)/1000000) : 0; }) }
+  ];
+  // El "total" de arriba es la POSICIÓN NETA del mes (positivos − pagar).
+  _mkStackedBarChart('chartRealFinanciero', labels, dsFin, fM, { totalFmt: fM });
+  // Línea de cero marcada para leer la divergencia
+  var chFin = _histCharts['chartRealFinanciero'];
+  if(chFin){
+    chFin.options.scales.y.grid.color = function(c){ return c.tick.value === 0 ? 'rgba(26,22,18,.35)' : 'rgba(0,0,0,.06)'; };
+    chFin.options.scales.y.grid.lineWidth = function(c){ return c.tick.value === 0 ? 1.5 : 1; };
+    chFin.update();
+  }
 
   // ── Tabla completa ──
   var thStyle = 'style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap;text-align:right"';
@@ -774,89 +909,145 @@ function _renderValuacion(){
   document.getElementById('valTablaPrecios').innerHTML = html+'</tbody></table>';
 }
 
-// ── INSUMOS (Real Mensual) ───────────────────────────────────
+// ── MASA PEGSA (Real Mensual) · v15.47 barras apiladas ───────
+// Estado del gráfico Masa PEGSA
+var _masaModo = 'apiladas';   // 'apiladas' | 'porcentaje' | 'horizontal'
+var _masaSolo = null;         // nombre del campo aislado, null = todos
+
+function _setModoMasaPegsa(modo, el){
+  _masaModo = modo;
+  var cont = document.getElementById('realKgPegsaModos');
+  if(cont) cont.querySelectorAll('.hist-filter').forEach(function(b){ b.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  _renderMasaPegsa();
+}
+
+function _masaSetAlto(n){
+  var wrap = document.getElementById('realKgPegsaWrap');
+  if(wrap) wrap.style.height = (_masaModo==='horizontal' ? Math.max(300, n*26) : 300) + 'px';
+}
+
+function _renderMasaPegsa(){
+  if(!_histRealData || !_histRealData.snapshots || !_histRealData.snapshots.length) return;
+  var snaps  = _histRealData.snapshots.slice().sort(function(a,b){ return a.fecha < b.fecha ? -1 : 1; });
+  var labels = snaps.map(function(s){ return s.periodo; });
+
+  var camposSet = {};
+  snaps.forEach(function(s){
+    var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+    Object.keys(pc).forEach(function(c){ camposSet[c] = 1; });
+  });
+  var campos = Object.keys(camposSet).sort();
+  var fmtT = function(v){ return Math.round(v).toLocaleString('es-AR')+'t'; };
+
+  // Fallback: sin desglose por campo → una sola serie con el total
+  if(!campos.length){
+    _mkStackedBarChart('chartRealKgPegsa', labels, [{
+      label: 'Masa PEGSA total',
+      data: snaps.map(function(s){ return s.hacienda_masa && s.hacienda_masa.pegsa ? Math.round(s.hacienda_masa.pegsa.kg_proyectado/1000) : 0; }),
+      backgroundColor: '#b8922a'
+    }], fmtT, { horizontal: _masaModo==='horizontal', totalFmt: fmtT });
+    _masaSetAlto(labels.length);
+    return;
+  }
+
+  var datasets = campos.map(function(campo){
+    return {
+      label: campo,
+      data: snaps.map(function(s){
+        var pc = (s.hacienda_masa && s.hacienda_masa.pegsa && s.hacienda_masa.pegsa.por_campo) || {};
+        return pc[campo] ? Math.round(pc[campo].kg_proyectado/1000) : 0;
+      }),
+      backgroundColor: _colorCampo(campo),
+      // Aislamiento: con un campo "solo" el resto queda oculto pero sigue en la
+      // leyenda (permite cambiar el aislamiento a otra serie).
+      hidden: _masaSolo ? (campo !== _masaSolo) : false
+    };
+  });
+
+  // Totales reales por mes (t) — label absoluto aun en modo %
+  var totalesReales = labels.map(function(_, i){
+    return datasets.reduce(function(a, ds){ return a + (ds.data[i]||0); }, 0);
+  });
+
+  var yFmt, opts;
+  if(_masaModo === 'porcentaje'){
+    datasets = datasets.map(function(ds){
+      return {
+        label: ds.label, backgroundColor: ds.backgroundColor, hidden: ds.hidden,
+        data: ds.data.map(function(v, i){ return totalesReales[i] ? +(v / totalesReales[i] * 100).toFixed(1) : 0; })
+      };
+    });
+    yFmt = function(v){ return v.toFixed(1).replace('.',',')+'%'; };
+    opts = { porcentaje: true, totalFmt: fmtT, totalesFijos: totalesReales };
+  } else {
+    yFmt = fmtT;
+    opts = { horizontal: _masaModo === 'horizontal', totalFmt: fmtT };
+  }
+
+  _mkStackedBarChart('chartRealKgPegsa', labels, datasets, yFmt, opts);
+  _masaSetAlto(labels.length);
+
+  // Filtro "solo" al clickear la leyenda (aislamiento, no el toggle-hide default)
+  var ch = _histCharts['chartRealKgPegsa'];
+  if(ch){
+    ch.options.plugins.legend.onClick = function(e, item){
+      var nombre = item.text;
+      _masaSolo = (_masaSolo === nombre) ? null : nombre;
+      _renderMasaPegsa();
+    };
+    ch.update();
+  }
+}
+
+// ── INSUMOS (Real Mensual) · v15.47 barras apiladas por tipo ──
 function _renderRealInsumos(snaps, labels){
   if(!snaps || !snaps.length) return;
 
-  // ── Total en toneladas ──
-  _destroyChart('chartRealInsuTotal');
-  var ctxT = document.getElementById('chartRealInsuTotal');
-  if(ctxT){
-    _histCharts['chartRealInsuTotal'] = new Chart(ctxT, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Stock total insumos',
-          data: snaps.map(function(s){ return s.insumos ? +(s.insumos.total_kg/1000).toFixed(1) : 0; }),
-          backgroundColor: 'rgba(184,146,42,.75)',
-          borderColor: '#b8922a',
-          borderWidth: 1,
-          borderRadius: 2
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { display: false } },
-          y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toFixed(0)+'t'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
-        }
-      }
-    });
-  }
-
-  // ── Desglose por tipo de insumo ──
-  // items es un objeto {nombre: kg} — no un array
+  // Set de insumos presentes en cualquier mes (items es {nombre: kg} o array)
   var insuSet = {};
   snaps.forEach(function(s){
     if(s.insumos && s.insumos.items){
       var it = s.insumos.items;
-      if(Array.isArray(it)){
-        // Compatibilidad futura: si algún día fuera array
-        it.forEach(function(x){ insuSet[x.nombre]=1; });
-      } else {
-        Object.keys(it).forEach(function(nom){ insuSet[nom]=1; });
-      }
+      if(Array.isArray(it)) it.forEach(function(x){ insuSet[x.nombre] = 1; });
+      else Object.keys(it).forEach(function(nom){ insuSet[nom] = 1; });
     }
   });
-  var insumos = Object.keys(insuSet).sort();
 
-  var dsDetalle = insumos.map(function(nom, i){
+  // v15.47: limpiar sufijo de unidad — (KG) y también (LTS)
+  function _limpio(nom){ return nom.replace(/\s*\((KG|LTS)\)\s*$/i,'').trim(); }
+
+  // Orden por volumen DESC → el silo (~82%) queda abajo de la pila
+  var vol = {};
+  Object.keys(insuSet).forEach(function(nom){
+    vol[nom] = snaps.reduce(function(a, s){
+      var it = (s.insumos && s.insumos.items) || {};
+      var kg = Array.isArray(it)
+        ? (function(){ var x = it.find(function(y){ return y.nombre===nom; }); return x ? x.stock_kg : 0; })()
+        : (it[nom] || 0);
+      return a + (kg || 0);
+    }, 0);
+  });
+  var insumos = Object.keys(insuSet).sort(function(a,b){ return vol[b] - vol[a]; });
+
+  var datasets = insumos.map(function(nom){
+    var limpio = _limpio(nom);
     return {
-      label: nom.replace(/\s*\(KG\)/i,'').trim(),
+      label: limpio,
       data: snaps.map(function(s){
-        if(!s.insumos || !s.insumos.items) return null;
-        var it = s.insumos.items;
+        var it = (s.insumos && s.insumos.items) || {};
         var kg = Array.isArray(it)
-          ? (function(){ var x=it.find(function(x){ return x.nombre===nom; }); return x?x.stock_kg:null; })()
+          ? (function(){ var x = it.find(function(y){ return y.nombre===nom; }); return x ? x.stock_kg : null; })()
           : (it[nom] != null ? it[nom] : null);
-        return kg != null ? +(kg/1000).toFixed(1) : null;
+        // Negativos residuales del Excel (ej. SOJA "-0") → 0, no rompen la pila
+        return kg != null ? Math.max(0, +(kg/1000).toFixed(1)) : 0;
       }),
-      borderColor: HIST_COLORS[i % HIST_COLORS.length],
-      backgroundColor: 'transparent',
-      tension: .3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: true
+      backgroundColor: HIST_COLOR_INSUMO[limpio] || _colorCampo(limpio)
     };
   });
 
-  _destroyChart('chartRealInsuDetalle');
-  var ctxD = document.getElementById('chartRealInsuDetalle');
-  if(ctxD){
-    _histCharts['chartRealInsuDetalle'] = new Chart(ctxD, {
-      type: 'line',
-      data: { labels: labels, datasets: dsDetalle },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 11 }, boxWidth: 12, padding: 14 } } },
-        scales: {
-          x: { ticks: { font: { family: 'DM Mono', size: 10 }, maxRotation: 0 }, grid: { color: 'rgba(0,0,0,.04)' } },
-          y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function(v){ return v.toFixed(0)+'t'; } }, grid: { color: 'rgba(0,0,0,.06)' } }
-        }
-      }
-    });
-  }
+  var fmtT = function(v){ return Math.round(v).toLocaleString('es-AR')+'t'; };
+  _mkStackedBarChart('chartRealInsuDetalle', labels, datasets, fmtT, { totalFmt: fmtT });
 }
 
 // ── KG POR CABEZA (Real Mensual) ─────────────────────────────
@@ -883,7 +1074,7 @@ function _renderRealKgCab(tipo){
           if(!d || !d.cabezas || d.cabezas===0) return null;
           return Math.round(d.kg_proyectado / d.cabezas);
         }),
-        borderColor: HIST_COLORS[i%HIST_COLORS.length],
+        borderColor: _colorCampo(campo),
         backgroundColor: 'transparent',
         tension: .3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, spanGaps: true
       };
