@@ -828,6 +828,9 @@ function _renderValuacion(){
   }
 
   // ── Gráfico total línea ──
+  // v15.48: composición en kg de novillo (deflactada por MAG)
+  _renderValNovillo(snaps, labels, colores, ajustados);
+
   var dsTotal = [{
     label: 'Patrimonio total ($M)',
     data: snaps.map(function(s){ return s.componentes.total_pesos!=null ? Math.round(s.componentes.total_pesos/1e6) : null; }),
@@ -907,6 +910,113 @@ function _renderValuacion(){
       +'</tr>';
   });
   document.getElementById('valTablaPrecios').innerHTML = html+'</tbody></table>';
+}
+
+/**
+ * v15.48 — Valuación en kg de novillo. Divide cada componente por el índice
+ * MAG ($/kg de novillo) del mes → "cuántos kilos de novillo vale el patrimonio"
+ * (medida REAL, sin inflación). Espeja chartValStack: mismas 4 series, colores
+ * y orden, y el MISMO ajuste v15.25 (usa hac_show/fin_show). La identidad se
+ * conserva porque dividir por una constante del mes es lineal.
+ */
+function _renderValNovillo(snaps, labels, colores, ajustados){
+  var ctx = document.getElementById('chartValNovillo');
+  if(!ctx) return;
+
+  // MAG efectivo por mes (precios_efectivos tiene el fallback resuelto).
+  var mags = snaps.map(function(s){
+    var pe = s.precios_efectivos || s.precios || {};
+    return pe.mag_indice || null;
+  });
+
+  // $ → toneladas de novillo (los valores van de ~3.500 a ~5.100 t; en kg
+  // serían millones y el eje quedaría ilegible).
+  function aTon(pesos, i){
+    if(pesos == null || !mags[i]) return null;
+    return +(pesos / mags[i] / 1000).toFixed(1);
+  }
+
+  var dsNov = [
+    { label: 'Hacienda PEGSA',
+      data: ajustados.map(function(a,i){ return aTon(a.hac_show, i); }),
+      backgroundColor: colores.hacienda.bg,   borderColor: colores.hacienda.border,   borderWidth:1, borderRadius:2 },
+    { label: 'Insumos (M+S)',
+      data: ajustados.map(function(a,i){ return aTon(a.ins, i); }),
+      backgroundColor: colores.insumos.bg,    borderColor: colores.insumos.border,    borderWidth:1, borderRadius:2 },
+    { label: 'Pos. Financiera',
+      data: ajustados.map(function(a,i){ return aTon(a.fin_show, i); }),
+      backgroundColor: colores.financiero.bg, borderColor: colores.financiero.border, borderWidth:1, borderRadius:2 },
+    { label: 'USD (en $)',
+      data: ajustados.map(function(a,i){ return aTon(a.usd, i); }),
+      backgroundColor: colores.usd.bg,        borderColor: colores.usd.border,        borderWidth:1, borderRadius:2 }
+  ];
+
+  var fT = function(v){ return Math.round(v).toLocaleString('es-AR')+' t'; };
+
+  // Reusa el helper de v15.47 (apiladas + total encima + tooltip con Total).
+  _mkStackedBarChart('chartValNovillo', labels, dsNov, fT, { totalFmt: fT });
+
+  // El tooltip dice con qué MAG se dividió (para poder auditar el número).
+  var ch = _histCharts['chartValNovillo'];
+  if(ch){
+    ch.options.plugins.tooltip.callbacks.title = function(items){
+      if(!items.length) return '';
+      var i = items[0].dataIndex;
+      return labels[i] + (mags[i] ? '  ·  MAG $'+Math.round(mags[i]).toLocaleString('es-AR')+'/kg' : '');
+    };
+    ch.update();
+  }
+
+  _renderValNovilloBrecha(snaps, mags, ajustados);
+}
+
+/**
+ * v15.48 — tarjeta con la brecha nominal vs real punta a punta. Se calcula en
+ * runtime desde el primer y último snapshot: NO hardcodear los porcentajes.
+ */
+function _renderValNovilloBrecha(snaps, mags, ajustados){
+  var box = document.getElementById('valNovilloBrecha');
+  if(!box || snaps.length < 2) return;
+
+  var i0 = 0, i1 = snaps.length - 1;
+  while(i0 < i1 && !mags[i0]) i0++;   // primer mes con MAG válido (defensivo)
+  if(!mags[i0] || !mags[i1]) { box.innerHTML = ''; return; }
+
+  var p0 = (snaps[i0].componentes||{}).total_pesos || 0;
+  var p1 = (snaps[i1].componentes||{}).total_pesos || 0;
+  if(!p0){ box.innerHTML = ''; return; }
+
+  var n0 = p0 / mags[i0] / 1000;   // toneladas de novillo
+  var n1 = p1 / mags[i1] / 1000;
+
+  var varPesos   = (p1/p0 - 1) * 100;
+  var varNovillo = (n1/n0 - 1) * 100;
+
+  function pct(v){ return (v>=0?'+':'−') + Math.abs(v).toFixed(1).replace('.',',') + '%'; }
+  function col(v){ return v >= 0 ? '#27613d' : '#c0392b'; }
+
+  var lbl = 'desde ' + snaps[i0].periodo + ' hasta ' + snaps[i1].periodo;
+
+  box.innerHTML =
+      '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:stretch">'
+    +   '<div style="flex:1;min-width:190px;background:#fff;border:1px solid var(--border);border-radius:2px;padding:12px 16px">'
+    +     '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-bottom:5px">En pesos (nominal)</div>'
+    +     '<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:'+col(varPesos)+'">'+pct(varPesos)+'</div>'
+    +     '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.5);margin-top:3px">'+lbl+'</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:190px;background:#fff;border:1px solid var(--border);border-radius:2px;padding:12px 16px">'
+    +     '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.45);margin-bottom:5px">En novillo (real)</div>'
+    +     '<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:'+col(varNovillo)+'">'+pct(varNovillo)+'</div>'
+    +     '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.5);margin-top:3px">'
+    +       Math.round(n0).toLocaleString('es-AR')+' t → '+Math.round(n1).toLocaleString('es-AR')+' t'
+    +     '</div>'
+    +   '</div>'
+    +   '<div style="flex:1.4;min-width:230px;background:var(--ink);border:1px solid var(--border);border-radius:2px;padding:12px 16px">'
+    +     '<div style="font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:5px">Brecha</div>'
+    +     '<div style="font-family:\'Playfair Display\',serif;font-size:22px;font-weight:700;color:#d4a84b">'+pct(varPesos - varNovillo)+'</div>'
+    +     '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(255,255,255,.4);margin-top:3px">del crecimiento nominal fue inflación</div>'
+    +   '</div>'
+    + '</div>';
 }
 
 // ── MASA PEGSA (Real Mensual) · v15.47 barras apiladas ───────
