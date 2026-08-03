@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist, stockEstHaras, stockEstCucuca, stockEstDescanso, stockEstPanchita] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist, stockEstHaras] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -126,12 +126,25 @@ window.PEGSA_DATA = {
     fetchJson('precios_inferencia_historico.json'),
     fetchJson('tesoreria_darwash.json'),
     fetchJson('tesoreria_darwash_historico.json'),
-    // v12.2: 4 establecimientos para desglose Stock terminados del PDF
+    // El Haras se carga acá (se usa aparte para "Stock terminados" y su tarjeta).
+    // El resto de los establecimientos se cargan dinámicamente abajo.
     fetchJson('stock_est_El_Haras_2025.json'),
-    fetchJson('stock_est_La_Cucuca_2025.json'),
-    fetchJson('stock_est_El_Descanso_2025.json'),
-    fetchJson('stock_est_La_Panchita_2025.json'),
   ]);
+
+  // v15.52 (auditoría 03/08): cargar TODOS los establecimientos (menos El Haras)
+  // derivando la lista de stock_kpis.por_establecimiento, en vez de una lista fija
+  // de 3. El pipeline genera 6 stock_est_*.json y antes solo se cargaban 4: la
+  // tarjeta "Otros campos" y la columna "Otros" del desglose por categoría omitían
+  // El Coloradito y El Durazno (~1.368 cab / 334.166 kg, el 41% del rodeo fuera del
+  // Haras). Dinámico → no vuelve a pasar cuando se agregue un establecimiento nuevo.
+  let stockEstOtros = [];
+  {
+    const _porEst = stockKpis?.kpis?.por_establecimiento || {};
+    const _nombres = Object.keys(_porEst).filter(function(n){ return n && n.trim().toUpperCase() !== 'EL HARAS'; });
+    const _archivos = _nombres.map(function(n){ return 'stock_est_' + n.replace(/[^a-zA-Z0-9_]/g, '_') + '_2025.json'; });
+    const _cargados = await Promise.all(_archivos.map(fetchJson));
+    stockEstOtros = _cargados.filter(Boolean);
+  }
 
   // Última actualización del pipeline (Sprint 5 — B.2)
   if (ultimaAct?.generado) window.PEGSA_DATA.lastUpdate = ultimaAct.generado;
@@ -249,7 +262,7 @@ window.PEGSA_DATA = {
   // categoría (Map → array) para que el PDF muestre "OTROS" agregado.
   {
     const agg = new Map();
-    [stockEstCucuca, stockEstDescanso, stockEstPanchita].forEach(est => {
+    stockEstOtros.forEach(est => {
       const cats = _extractCats(est);
       if (!cats) return;
       cats.forEach(c => {
@@ -279,7 +292,7 @@ window.PEGSA_DATA = {
     };
   }
   {
-    const ests = [stockEstCucuca, stockEstDescanso, stockEstPanchita].filter(Boolean);
+    const ests = stockEstOtros;
     if (ests.length) {
       D.haciendaOtrosTotal = {
         cabezas: ests.reduce((s, e) => s + (e.kpis?.total_cabezas || 0), 0),
