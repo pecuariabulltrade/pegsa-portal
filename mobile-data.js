@@ -727,21 +727,75 @@
       if (betterWhen === "down") return delta < 0 ? "good" : "bad";
       /* up */ return delta > 0 ? "good" : "bad";
     }
+    // v15.55: KPIs que se colorean por ZONAS ABSOLUTAS (mismo criterio que el
+    // desktop, semaforo5 de modulo-03-stock.js) en vez de por variación vs el
+    // anual. Antes el móvil y el desktop podían mostrar colores distintos para
+    // el mismo valor: con % PV = 2,22 el desktop daba amarillo (zona 2,1–2,4) y
+    // el móvil rojo (Δ −15,6% vs anual 2,63). Los 3 KPIs de esta lista son los
+    // únicos que tienen umbrales definidos; el resto sigue por variación.
+    var KPI_POR_ZONAS = { pctPV: 1, consumoPorCabeza: 1, conversion: 1 };
+
+    // Etiqueta que muestra el chip en los KPIs por zona (reemplaza al % de
+    // variación, que ya no explica el color). El delta sigue visible en el
+    // sub-valor "vs anual".
+    var ZONA_LABEL = { good: "Óptimo", warn: "Normal", bad: "Fuera" };
+
+    /**
+     * v15.55 — semáforo de 5 zonas, espejo de semaforo5() del desktop.
+     * rojo < normalMin · amarillo [normalMin, optMin) · verde [optMin, optMax]
+     * · amarillo (optMax, normalMax] · rojo > normalMax
+     * @returns 'good' | 'warn' | 'bad' | null (sin umbrales o sin valor)
+     */
+    function zonaDe(valor, u) {
+      if (valor == null || !u) return null;
+      var nMin = u.ref_normal_min, oMin = u.ref_opt_min,
+          oMax = u.ref_opt_max,    nMax = u.ref_normal_max;
+      if (nMin == null || oMin == null || oMax == null || nMax == null) return null;
+      if (valor >= oMin && valor <= oMax) return "good";
+      if (valor >= nMin && valor <= nMax) return "warn";
+      return "bad";
+    }
+
     function classifyProd(id, p, delta) {
       var betterWhen = KPI_BETTER_WHEN[id] || (p.mejorEs === "menor" ? "down" : p.mejorEs === "rango" ? "flat" : "up");
-      var intent = intentForDelta(betterWhen, delta);
       var abs = delta == null ? 0 : Math.abs(delta);
+
+      // v15.55: los KPIs con umbrales se colorean por zona absoluta.
+      var zona = KPI_POR_ZONAS[id]
+        ? zonaDe(p.actual && p.actual.v, p.umbrales)
+        : null;
+
+      if (zona) {
+        // 'warn' es un tono propio (amarillo). El chip y la tarjeta usan la
+        // misma zona: el color deja de depender de cuánto se movió y pasa a
+        // depender de dónde CAE el valor.
+        return {
+          tone: zona, intent: zona, betterWhen: betterWhen,
+          severity: zona === "good" ? "neutro" : (zona === "warn" ? "moderado" : "severo"),
+          chipTone: zona,
+          cardTone: zona === "bad" ? "bad" : "neutral",
+          deltaAbs: abs,
+          porZona: true,
+          zonaLabel: ZONA_LABEL[zona]
+        };
+      }
+
+      // Resto: comportamiento histórico por variación vs el anual.
+      var intent = intentForDelta(betterWhen, delta);
       var severity = abs > 20 ? "severo" : (abs >= 10 ? "moderado" : "neutro");
       var chipTone = (severity === "neutro" || intent === "neutral") ? "neutral" : intent;
       var cardTone = (severity === "severo" && intent !== "neutral") ? intent : "neutral";
-      return { tone: intent, intent: intent, betterWhen: betterWhen, severity: severity, chipTone: chipTone, cardTone: cardTone, deltaAbs: abs };
+      return { tone: intent, intent: intent, betterWhen: betterWhen, severity: severity,
+               chipTone: chipTone, cardTone: cardTone, deltaAbs: abs,
+               porZona: false, zonaLabel: null };
     }
     function mkProd(id, titulo) {
       var p = prod[id];
       if (!p || p.actual == null) {
         return { id: id, title: titulo, kpi: "—", unit: "", subVal: "N/D",
                  subLabel: "", delta: null, severity: "neutro",
-                 tone: "neutral", chipTone: "neutral", cardTone: "neutral" };
+                 tone: "neutral", chipTone: "neutral", cardTone: "neutral",
+                 porZona: false, zonaLabel: null };
       }
       var a = p.actual || {}, h = p.historico || {};
       var aFmt = fmtProd(a.v, a.unit, a.decimals);
@@ -765,10 +819,14 @@
           ? (delta >= 0 ? "+" : "−") + Math.abs(delta).toFixed(Math.abs(delta) < 10 ? 1 : 0).replace(".", ",") + "%"
           : null,
         // v7: clases nuevas para el rediseño escalonado.
-        tone:      c.tone,         // good|bad|neutral según mejorEs + signo
-        severity:  c.severity,     // severo|moderado|neutro según |delta|
+        tone:      c.tone,         // good|warn|bad|neutral
+        severity:  c.severity,     // severo|moderado|neutro
         chipTone:  c.chipTone,     // qué color usa el chip
         cardTone:  c.cardTone,     // qué color usa el fondo de la tarjeta
+        // v15.55: true → el color sale de la zona absoluta, no del delta. El
+        // chip muestra zonaLabel en vez del %.
+        porZona:   c.porZona,
+        zonaLabel: c.zonaLabel,
         mejorEs:   p.mejorEs || "mayor",
         descripcion: p.descripcion || ""
       };
