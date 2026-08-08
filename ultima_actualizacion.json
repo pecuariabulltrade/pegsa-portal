@@ -1,5 +1,5 @@
 {
-  "generado": "2026-08-08T12:00:03.707389",
+  "generado": "2026-08-08T13:00:03.403934",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
@@ -47,9 +47,16 @@
     },
     "tesoreria": {
       "ok": true,
-      "cortes": 18,
-      "ultimo_corte": "2026-08-08",
-      "saldo_disp": -230648029.68
+      "cortes": 17,
+      "ultimo_corte": "2026-07-31",
+      "saldo_disp": -170163168.28,
+      "warnings": [
+        {
+          "archivo": "2026-08-08_financiero.xlsx",
+          "motivo": "oserror_13: [Errno 13] Permission denied: 'C:\\\\Users\\\\USER\\\\OneDrive - pecuaria el garabi sa\\\\PEGSA_Portal\\\\datos\\\\financiero\\\\2026-08-08_financiero.xlsx'"
+        }
+      ],
+      "warning_count": 1
     },
     "historico": {
       "ok": true,
