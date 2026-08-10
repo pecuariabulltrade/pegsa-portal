@@ -776,10 +776,12 @@ window.PEGSA_DATA = {
       actual:    { v: pvActualAj,   unit: '%', label: 'hoy',   decimals: 2 },
       historico: { v: anuales.pctPV, unit: '%', label: 'anual', decimals: 2 },
       mejorEs: 'mayor',
-      // v15.20: rangos de 5 zonas (alineado con desktop). El coloreo del mobile
-      // es por delta-vs-histórico, así que estos umbrales son de referencia.
-      umbrales: { esc_min: 1.5, esc_max: 3.5, ref_normal_min: 2.3, ref_normal_max: 2.9, ref_opt_min: 2.4, ref_opt_max: 2.8 },
-      descripcion: 'Consumo MS como % del peso vivo (El Haras). Hoy = (kg MS/día ÷ kg PV El Haras × 100) ÷ 0,92 — ajuste del módulo. Rango óptimo 2,4-2,8 · normal 2,3-2,9.'
+      // v15.55: estos umbrales YA NO son decorativos — mobile-data.js los
+      // consume en zonaDe() para colorear por zona absoluta (mismo criterio que
+      // semaforo5 del desktop). Aplica a pctPV, consumoPorCabeza y conversion.
+      // Banda amarilla ensanchada a 2,1–3,0; el óptimo verde no cambia.
+      umbrales: { esc_min: 1.5, esc_max: 3.5, ref_normal_min: 2.1, ref_normal_max: 3.0, ref_opt_min: 2.4, ref_opt_max: 2.8 },
+      descripcion: 'Consumo MS como % del peso vivo (El Haras). Hoy = (kg MS/día ÷ kg PV El Haras × 100) ÷ 0,92 — ajuste del módulo. Rango óptimo 2,4-2,8 · normal 2,1-3,0.'
     };
   }
 

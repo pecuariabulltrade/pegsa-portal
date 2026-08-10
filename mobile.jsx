@@ -1355,7 +1355,9 @@ function ProductivosGrid() {
             role="button"
             tabIndex={0}
             aria-expanded={isOpen}
-            aria-label={p.title + ": " + p.kpi + " " + (p.unit || "") + (p.deltaFmt ? " (" + p.deltaFmt + ")" : "")}
+            aria-label={p.title + ": " + p.kpi + " " + (p.unit || "")
+              + (p.porZona && p.zonaLabel ? " (" + p.zonaLabel + ")" : "")
+              + (p.deltaFmt ? " (" + p.deltaFmt + " vs " + (p.subLabel || "histórico").replace(/^vs /, "") + ")" : "")}
             onClick={() => setOpenK(isOpen ? null : p.id)}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenK(isOpen ? null : p.id); } }}
           >
@@ -1369,12 +1371,23 @@ function ProductivosGrid() {
               <span className="prod-foot-lab">{p.subLabel}</span>
               <span className="prod-foot-val">{p.subVal}</span>
             </div>
-            {p.deltaFmt && (
+            {/* v15.55: en los KPIs por zona el chip muestra la etiqueta de zona
+                (Óptimo / Normal / Fuera) en lugar del %, porque el color ya no
+                sale de cuánto varió sino de dónde cae el valor — un chip rojo
+                al lado de "−15,6%" sobre un valor que el sistema considera
+                normal se leía como contradictorio. El delta no se pierde: sigue
+                en el pie de la tarjeta ("vs anual"). Sin flecha, que sólo tiene
+                sentido para una variación. */}
+            {p.porZona && p.zonaLabel ? (
+              <span className={"prod-chip chip-tone-" + (p.chipTone || "neutral")}>
+                {p.zonaLabel}
+              </span>
+            ) : p.deltaFmt ? (
               <span className={"prod-chip chip-tone-" + (p.chipTone || "neutral")}>
                 <span className="prod-chip-arr">{arrow(p)}</span>
                 {p.deltaFmt}
               </span>
-            )}
+            ) : null}
             {isOpen && (
               <div className="prod-expand">
                 <button

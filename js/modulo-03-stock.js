@@ -1208,9 +1208,11 @@ function renderIndicadores(data) {
       +'<span>8</span><span style="color:rgba(39,97,61,.6)">óptimo 13–18</span><span>23</span></div>';
   }
 
-  // v15.20: 5 zonas. % PV escala 1,5–3,5 (normal 2,3–2,9, óptimo 2,4–2,8);
-  // conversión simétrica escala 5–13 (normal 6–10, óptimo 7–9).
-  var sPv   = semaforo5(pv.valor,   2.3, 2.4, 2.8, 2.9);
+  // v15.55: % PV escala 1,5–3,5 · rojo <2,1 · amarillo 2,1–2,4 · verde 2,4–2,8
+  // · amarillo 2,8–3,0 · rojo >3,0. Se ensancha la banda amarilla respecto de
+  // v15.20 (era 2,3–2,9); el óptimo verde NO cambia.
+  // Conversión simétrica escala 5–13 (normal 6–10, óptimo 7–9) — sin cambios.
+  var sPv   = semaforo5(pv.valor,   2.1, 2.4, 2.8, 3.0);
   var sCab  = semaforoCab(cab.valor_tc);
   var sConv = semaforo5(conv.valor, 6.0, 7.0, 9.0, 10.0);
 
@@ -1288,10 +1290,10 @@ function renderIndicadores(data) {
     '% Consumo de Peso Vivo',
     fmtD(pv.valor, 2) + '<span style="font-size:18px;margin-left:4px">% PV</span>',
     'kg MS/día sobre el peso vivo — '+denominador,
-    '1,5 – 3,5 % PV  ·  normal 2,3 – 2,9  ·  óptimo 2,4 – 2,8',
+    '1,5 – 3,5 % PV  ·  normal 2,1 – 3,0  ·  óptimo 2,4 – 2,8',
     '(kg MS/día ÷ kg PV '+denominador+' × 100) ÷ 0,92',
     sPv,
-    barraRef5(pv.valor, 1.5, 2.3, 2.4, 2.8, 2.9, 3.5, false)
+    barraRef5(pv.valor, 1.5, 2.1, 2.4, 2.8, 3.0, 3.5, false)
   ));
 
   // Card 2 — Consumo por cabeza

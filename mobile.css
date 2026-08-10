@@ -1528,11 +1528,23 @@ button.ins-all-row:active { background: var(--surface-alt); }
      card-tone-neutral → fondo blanco
      chip-tone-bad     → chip rojo
      chip-tone-good    → chip verde
+     chip-tone-warn    → chip dorado  (v15.55)
      chip-tone-neutral → chip gris
 
    Las reglas .lvl-* + .card-tone-* se combinan en el JSX para que
    sólo cuando severity = severo el fondo se pinte (las otras
    severidades dejan card-tone-* sin efecto por especificidad).
+
+   v15.55: pctPV / consumoPorCabeza / conversion ya NO derivan su color
+   del |Δ| sino de la ZONA en la que cae el valor (zonaDe() en
+   mobile-data.js, espejo de semaforo5() del desktop). Para esos 3,
+   classifyProd mapea zona → severity de modo que la cascada de arriba
+   siga valiendo sin reglas nuevas de tarjeta:
+     zona good → chip verde   · severity neutro   → tarjeta blanca
+     zona warn → chip dorado  · severity moderado → tarjeta blanca
+     zona bad  → chip rojo    · severity severo   → tarjeta rosa
+   Por eso no existe .card-tone-warn: la zona amarilla deja la tarjeta
+   blanca a propósito, igual que el desktop, que sólo tiñe el chip.
    ============================================================ */
 .prod-grid {
   display: grid;
@@ -1684,6 +1696,14 @@ button.ins-all-row:active { background: var(--surface-alt); }
 .prod-chip.chip-tone-bad {
   background: var(--neg-soft);
   color: oklch(0.42 0.14 25);
+}
+/* v15.55: tono dorado para la zona "normal" (amarilla) de los KPIs que se
+   colorean por zona absoluta — pctPV, consumo/cab y conversión. Mismo par de
+   oklch que .prinf-margen-chip.chip-tone-warn, el equivalente mobile del
+   dorado #b8922a que usa semaforo5() en el desktop. */
+.prod-chip.chip-tone-warn {
+  background: oklch(0.95 0.08 75);
+  color: oklch(0.42 0.13 75);
 }
 .prod-chip-arr {
   font-size: 9px;
