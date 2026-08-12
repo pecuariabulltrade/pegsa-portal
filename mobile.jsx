@@ -523,7 +523,13 @@ const DONUT_PALETTE = [
   "oklch(0.50 0.12 200)",
   "oklch(0.55 0.14 320)",
   "oklch(0.60 0.10 280)",
-  "oklch(0.55 0.16 30)"
+  "oklch(0.55 0.16 30)",
+  // v15.56: margen para nuevos establecimientos. Con San Antonio el grupo
+  // llega a 7 = el largo exacto de la paleta anterior; al octavo se repetían
+  // colores (el índice es i % length) y el donut se volvía ilegible.
+  "oklch(0.48 0.11 130)",
+  "oklch(0.65 0.13 350)",
+  "oklch(0.45 0.09 230)"
 ];
 function EstabDonut({ items }) {
   if (!items || !items.length) return null;

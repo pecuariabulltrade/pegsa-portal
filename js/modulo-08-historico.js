@@ -28,6 +28,10 @@ var HIST_COLOR_CAMPO = {
   'La Panchita':   '#8a6a2d',
   'La Cucuca':     '#2d6a6a',
   'El Durazno':    '#a86a2d',
+  'San Antonio':   '#4a4a8a',   // v15.56: índigo apagado — el hueco libre de
+                                // la paleta; no choca con el teal de Campo
+                                // Medel (#2d6a8a) ni el magenta de El
+                                // Descanso (#8a2d6a).
   'Recepción':     '#7a7a70'
 };
 

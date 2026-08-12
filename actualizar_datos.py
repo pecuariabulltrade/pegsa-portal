@@ -191,6 +191,7 @@ CORRALES = [
     (800, 899, "La Cucuca"),
     (900, 999, "El Durazno"),
     (1000, 1099, "Recepción"),
+    (1100, 1199, "San Antonio"),   # v15.56
 ]
 
 TECHO_KG_FEEDLOT = 650   # DEPRECADO v15.13 (reemplazado por TECHO_KG_POR_CAT); techo único viejo El Haras
