@@ -1,14 +1,20 @@
 {
   "propietario": "EL SAGUAIPE SAS",
   "kpis": {
-    "total_cabezas": 95,
-    "total_kg_estimado_hoy": 35578,
-    "total_ton_estimado_hoy": 35.58,
-    "kg_promedio_estimado": 374.5,
-    "dias_promedio_feedlot": 89.0,
-    "total_establecimientos": 1,
+    "total_cabezas": 300,
+    "total_kg_estimado_hoy": 110254,
+    "total_ton_estimado_hoy": 110.25,
+    "kg_promedio_estimado": 367.5,
+    "dias_promedio_feedlot": 65.2,
+    "total_establecimientos": 2,
     "total_propietarios": 1,
     "por_categoria": {
+      "VA": {
+        "cabezas": 205.0,
+        "kg_estimado": 74677,
+        "ton_estimado": 74.68,
+        "kg_promedio": 364.3
+      },
       "TM": {
         "cabezas": 95.0,
         "kg_estimado": 35578,
@@ -18,13 +24,19 @@
     },
     "por_propietario": {
       "EL SAGUAIPE SAS": {
-        "cabezas": 95.0,
-        "kg_estimado": 35578,
-        "ton_estimado": 35.58,
-        "kg_promedio": 374.5
+        "cabezas": 300.0,
+        "kg_estimado": 110254,
+        "ton_estimado": 110.25,
+        "kg_promedio": 367.5
       }
     },
     "por_establecimiento": {
+      "Sin asignar": {
+        "cabezas": 205.0,
+        "kg_estimado": 74677,
+        "ton_estimado": 74.68,
+        "kg_promedio": 364.3
+      },
       "El Durazno": {
         "cabezas": 95.0,
         "kg_estimado": 35578,
@@ -33,6 +45,12 @@
       }
     },
     "por_clasificacion": {
+      "Vaca": {
+        "cabezas": 205.0,
+        "kg_estimado": 74677,
+        "ton_estimado": 74.68,
+        "kg_promedio": 364.3
+      },
       "Macho": {
         "cabezas": 95.0,
         "kg_estimado": 35578,
@@ -41,6 +59,12 @@
       }
     },
     "por_categoria_final": {
+      "vaca": {
+        "cabezas": 205.0,
+        "kg_estimado": 74677,
+        "ton_estimado": 74.68,
+        "kg_promedio": 364.3
+      },
       "novillo": {
         "cabezas": 95.0,
         "kg_estimado": 35578,
@@ -49,6 +73,14 @@
       }
     },
     "por_establecimiento_categoria": {
+      "Sin asignar": {
+        "vaca": {
+          "cabezas": 205.0,
+          "kg_estimado": 74677.0,
+          "ton_estimado": 74.68,
+          "kg_promedio": 364.3
+        }
+      },
       "El Durazno": {
         "novillo": {
           "cabezas": 95.0,
@@ -59,6 +91,24 @@
       }
     },
     "por_categoria_desglose": {
+      "vaca": {
+        "por_establecimiento": {
+          "Sin asignar": {
+            "cabezas": 205.0,
+            "kg_estimado": 74677.0,
+            "ton_estimado": 74.68,
+            "kg_promedio": 364.3
+          }
+        },
+        "por_propietario": {
+          "EL SAGUAIPE SAS": {
+            "cabezas": 205.0,
+            "kg_estimado": 74677.0,
+            "ton_estimado": 74.68,
+            "kg_promedio": 364.3
+          }
+        }
+      },
       "novillo": {
         "por_establecimiento": {
           "El Durazno": {
