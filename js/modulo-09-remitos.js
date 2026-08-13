@@ -80,14 +80,9 @@ function remVentaInput(nro, campo, valor) {
    El informe SOLO LEE lo que el módulo ya tiene calculado.
    ════════════════════════════════════════════════════════════ */
 
-// Millones con 1 decimal es-AR ("$ 45,2M"). Debajo de 1M va en miles.
-function _remMM(n) {
-  if (n == null || isNaN(n)) return '—';
-  var s = n < 0 ? '−' : '', a = Math.abs(n);
-  if (a >= 1e6) return s + '$ ' + (a / 1e6).toFixed(1).replace('.', ',') + 'M';
-  if (a >= 1e3) return s + '$ ' + Math.round(a / 1e3) + 'k';
-  return s + '$ ' + Math.round(a);
-}
+// v15.60.1: montos SIEMPRE enteros en formato es-AR ("$ 45.152.141"), nunca
+// abreviados a millones. Preferencia explícita del usuario.
+function _remMM(n) { return _remM(n); }
 
 /* Puente (waterfall) en SVG inline.
    pasos: [{lbl, val, tipo:'total'|'baja'|'final', color}]
@@ -109,17 +104,29 @@ function _remPuenteSVG(pasos) {
   var span = (hi - lo) || 1;
   var y = function (v) { return PAD_T + (hi - v) / span * (H - PAD_T - PAD_B); };
 
-  var s = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="DM Mono, monospace">';
+  var s = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="DM Mono, monospace" style="font-variant-numeric:tabular-nums">';
   s += '<line x1="8" y1="' + y(0) + '" x2="' + (W - 8) + '" y2="' + y(0) + '" stroke="#d8d6ce" stroke-width="1"/>';
+  var prev = null;   // última etiqueta dibujada, para escalonar si se pisan
   pasos.forEach(function (p, i) {
     var t = tramos[i], x = 14 + i * (bw + gap);
     var yTop = Math.min(y(t.de), y(t.a)), hBar = Math.max(Math.abs(y(t.a) - y(t.de)), 2);
     s += '<rect x="' + x + '" y="' + yTop + '" width="' + bw + '" height="' + hBar + '" fill="' + p.color + '" rx="1"/>';
-    // valor: arriba de la barra (o abajo si el tramo cae bajo el eje)
-    var bajoEje = t.a < 0;
-    s += '<text x="' + (x + bw / 2) + '" y="' + (bajoEje ? yTop + hBar + 13 : yTop - 6) + '" text-anchor="middle" font-size="13" font-weight="700" fill="'
-      + (p.tipo === 'baja' ? '#6b6560' : (t.a < 0 ? '#c0392b' : '#1a1612')) + '">'
-      + (p.tipo === 'baja' ? '−' : '') + _remMM(Math.abs(p.val)) + '</text>';
+    // v15.60.1: con los montos enteros ("−$ 15.044.501") las etiquetas no entran
+    // adentro de las caidas angostas, asi que van SIEMPRE AFUERA: arriba del
+    // segmento, o abajo cuando el tramo termina bajo el eje. Si una se pisa con
+    // la anterior, se le corre la altura un renglon.
+    var FS = 9.5;
+    var txt = (p.tipo === 'baja' ? '−' : '') + _remM(Math.abs(p.val));
+    var wTxt = txt.length * FS * 0.62;          // DM Mono ~0.62em de ancho
+    var cx = x + bw / 2, x1 = cx - wTxt / 2, x2 = cx + wTxt / 2;
+    var bajo = t.a < 0;
+    var yTxt = bajo ? (yTop + hBar + 12) : (yTop - 5);
+    if (prev && !(x1 > prev.x2 + 2 || x2 < prev.x1 - 2) && Math.abs(yTxt - prev.y) < 11) {
+      yTxt = bajo ? prev.y + 11 : prev.y - 11;
+    }
+    prev = { x1: x1, x2: x2, y: yTxt };
+    s += '<text x="' + cx + '" y="' + yTxt + '" text-anchor="middle" font-size="' + FS + '" font-weight="700" fill="'
+      + (p.tipo === 'baja' ? '#6b6560' : (t.a < 0 ? '#c0392b' : '#1a1612')) + '">' + txt + '</text>';
     // etiqueta al pie, en dos líneas si hace falta
     var partes = String(p.lbl).split(' ');
     var l1 = partes.slice(0, 2).join(' '), l2 = partes.slice(2).join(' ');
@@ -187,7 +194,7 @@ function remInformePDF() {
     + '@page{size:A4 portrait;margin:12mm}'
     // los fondos oscuros tienen que imprimirse: sin esto Chrome los descarta
     + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + 'body{margin:0;font-family:"DM Mono",monospace;color:#1a1612;font-size:11px}'
+    + 'body{margin:0;font-family:"DM Mono",monospace;color:#1a1612;font-size:11px;font-variant-numeric:tabular-nums}'
     + '.t{font-family:"Playfair Display",serif;font-weight:700}'
     + '.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1612;padding-bottom:8px}'
     + '.hd .n{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#8a827a}'
@@ -199,7 +206,8 @@ function remInformePDF() {
     + '.kc .u{font-size:9px;color:#8a827a}'
     + '.big{background:#1a1612;border-color:#1a1612}.big .l{color:rgba(255,255,255,.5)}'
     + '.big .v{color:#d4a84b}.big .u{color:rgba(255,255,255,.45)}'
-    + '.repo{background:#faf6ea;border:1px solid ' + GOLD + ';border-radius:2px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:center}'
+    + '.repo{background:#faf6ea;border:1px solid ' + GOLD + ';border-radius:2px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:center}'
+    + '.rl{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
     + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8.5px;color:#8a827a;line-height:1.55}'
     + '.neg{color:' + RED + '}'
     + '</style></head><body>';
@@ -245,23 +253,28 @@ function remInformePDF() {
   });
   h += '</div>';
 
-  // 5 · Reposición
+  // 5 · Reposición — el resultado va destacado, con el mismo peso visual que el
+  // RESULTADO histórico (tarjeta oscura y número grande).
   h += '<div class="sec">Resultado a reposición</div><div class="repo">'
-    + '<div><div class="l" style="font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a">Costo total reposición</div>'
-    + '<div class="t" style="font-size:19px">' + _remMM(RP.total) + '</div>'
-    + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(RP.por_kg_vendido) + ' / kg · hist $ ' + _remN(C.por_kg_vendido) + '</div></div>'
-    + '<div><div class="l" style="font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a">Resultado a reposición</div>'
+    + '<div><div class="rl">Costo total reposición</div>'
+    + '<div class="t" style="font-size:20px">' + _remM(RP.total) + '</div>'
+    + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(RP.por_kg_vendido) + ' / kg vendido · hist $ ' + _remN(C.por_kg_vendido) + '</div>'
+    + '<div style="font-size:9px;color:#6b6560;margin-top:4px">' + RP.fuente_precio + ' $ ' + _remN(RP.precio_kg)
+    + '/kg · MS ' + RP.mes_ms + ' $ ' + _remN(RP.precio_kg_ms, 2) + '</div></div>'
     + (hayVenta
-        ? '<div class="t" style="font-size:19px;color:' + (resRepo >= 0 ? GREEN : RED) + '">' + _remMM(resRepo) + '</div>'
-          + '<div style="font-size:9px;color:#8a827a">' + _remN(resRepo / RP.total * 100, 1) + ' % s/costo repo · hist ' + _remMM(res) + ' · dif ' + _remMM(resRepo - res) + '</div>'
-        : '<div class="t" style="font-size:19px;color:#8a827a">—</div><div style="font-size:9px;color:#8a827a">sin venta cargada</div>')
-    + '</div>'
-    + '<div style="font-size:9.5px;color:#6b6560;line-height:1.5">Comprando y alimentando a <strong>precios de hoy</strong>'
-    + '<br>' + RP.fuente_precio + ' $ ' + _remN(RP.precio_kg) + '/kg · MS $ ' + _remN(RP.precio_kg_ms, 2) + '</div>'
+        ? '<div class="kc big" style="text-align:right"><div class="l">Resultado a reposición</div>'
+          + '<div class="v" style="font-size:24px;color:' + (resRepo >= 0 ? '#d4a84b' : '#ff8b7d') + '">' + _remM(resRepo) + '</div>'
+          + '<div class="u">' + _remN(resRepo / RP.total * 100, 1) + ' % s/costo repo</div>'
+          + '<div class="u">histórico ' + _remM(res) + ' · dif ' + (resRepo - res >= 0 ? '+' : '') + _remM(resRepo - res) + '</div>'
+          + '<div class="u" style="margin-top:3px">comprando y alimentando a precios de hoy</div></div>'
+        : '<div class="kc" style="text-align:right"><div class="rl">Resultado a reposición</div>'
+          + '<div class="t" style="font-size:20px;color:#8a827a">—</div>'
+          + '<div style="font-size:9px;color:#8a827a">sin venta cargada</div>'
+          + '<div style="font-size:9px;color:#8a827a;margin-top:3px">comprando y alimentando a precios de hoy</div></div>')
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.60 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.60.1 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (nSin ? ' · ' + nSin + ' tropa(s) sin precio estimadas al promedio de las compañeras' : '')
