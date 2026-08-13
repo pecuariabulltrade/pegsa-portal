@@ -131,6 +131,15 @@ def procesar_consumo_mixer(mixer_path=None, periodo=None, dias_diario=30, log=No
     # El umbral de 30% era demasiado laxo — el 23/06/2026 cayó 24% (67k vs
     # promedio 89k de los 3 días previos) y no se detectaba.
     UMBRAL_CAIDA = 0.85
+    # v15.58.2: el corte MENSUAL usa su propio umbral, mas laxo. UMBRAL_CAIDA
+    # compara contra los 3 dias previos (niveles parecidos) y 0.85 esta bien ahi;
+    # contra la mediana de un mes entero se comia dias buenos — la variacion
+    # normal es +-20%. Con 0.85 se descartaban 128 dias en 50 meses (2025-05
+    # quedaba con 20 validos de 31) y eso sesgaba kg_ms_dia hacia arriba (+3,6%
+    # en may-26). La anomalia real es un mixer que no subio datos = mitad de los
+    # kilos, o sea ~50% de la mediana: 0.60 la sigue cazando (ago-26 09/10/11)
+    # sin comerse los dias legitimos.
+    UMBRAL_CAIDA_MES = 0.60
     PRIORES      = 3
     MAX_SKIP     = 5
     fechas_completas = [f for f in fechas_con_datos if f < hoy]
@@ -282,14 +291,14 @@ def procesar_consumo_mixer(mixer_path=None, periodo=None, dias_diario=30, log=No
     meses_out    = {}
     for mes in sorted(dias_por_mes):
         dias_mes = sorted(dias_por_mes[mes])
-        # v15.58: un dia es VALIDO si kg_dia >= 0.85 * mediana(kg_dia del mes).
-        # Mismo espiritu que UMBRAL_CAIDA de la ventana 3d (v15.36), pero contra
-        # la mediana del mes — es robusta a los propios dias caidos, cosa que un
-        # promedio no seria (los dias malos arrastrarian el umbral hacia abajo).
+        # v15.58: un dia es VALIDO si kg_dia >= UMBRAL_CAIDA_MES * mediana(mes).
+        # La mediana es robusta a los propios dias caidos, cosa que un promedio
+        # no seria (los dias malos arrastrarian el umbral hacia abajo).
         # Hay 2 mixers: cuando uno no sube datos el dia queda con la mitad de
         # los kilos y contamina el promedio del mes.
+        # v15.58.2: umbral propio del corte mensual (0.60), ver arriba.
         mediana = _statistics.median([kg_por_dia[f] for f in dias_mes])
-        piso    = UMBRAL_CAIDA * mediana
+        piso    = UMBRAL_CAIDA_MES * mediana
         validos, descartados_mes = [], []
         for f in dias_mes:
             if mediana > 0 and kg_por_dia[f] < piso:
@@ -376,9 +385,10 @@ def procesar_consumo_mixer(mixer_path=None, periodo=None, dias_diario=30, log=No
         # v15.58: corte mensual de toda la historia, insumo de pct_pv_mensual.json.
         "por_mes": {
             "nota": ("MS_PCT vigente (2026-05) aplicado retroactivamente a toda la "
-                     "historia. Dia valido si kg >= 0.85 * mediana del mes. "
+                     "historia. Dia valido si kg >= 0.60 * mediana del mes (v15.58.2; "
+                     "el 0.85 de la ventana 3d se comia dias legitimos). "
                      "Hoy (parcial) excluido. kg_ms_dia divide por dias CON REGISTRO."),
-            "umbral_caida": UMBRAL_CAIDA,
+            "umbral_caida": UMBRAL_CAIDA_MES,
             "meses": meses_out,
         },
     }
