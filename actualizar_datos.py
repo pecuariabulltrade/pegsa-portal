@@ -6763,6 +6763,124 @@ def _norm_cat_compra(s):
     return ' '.join(s.split())
 
 
+def _norm_tropa(s):
+    """v15.59: clave de match de tropa entre WinCampo y el Excel de compras.
+
+    Los formatos difieren: la API trae 'PEG-MYA-05-03-2026', 'PECMAR 11/03/2026',
+    'BULLHUIN15/05/2026'; el Excel 'PEG.MYA.05/03/26'. Se saca todo lo que no sea
+    alfanumérico, se pasa a mayúscula y se homogeneiza el año final a 2 dígitos.
+    """
+    import re
+    k = re.sub(r'[^A-Za-z0-9]', '', str(s or '')).upper()
+    return re.sub(r'20(\d{2})$', r'\1', k)
+
+
+def procesar_precios_racion(carpeta_out, log=None):
+    """v15.59: lee 'preico de racion feelot.xlsx' (sí, 'preico' — el nombre del
+    archivo del usuario está así y NO se corrige) y devuelve los precios
+    mensuales del feedlot:
+
+        {'2026-07': {'tc': 237.37, 'ms': 0.6676, 'dia': 450, 'san': 7500}, ...}
+
+    tc  = $/kg tal cual · ms = % materia seca (decimal) · dia = $/día-animal de
+    estructura · san = $/cabeza de sanidad al ingreso.
+    El $/kg de MS se calcula como tc / ms (jul-26: 237,37 / 0,6676 = 355,56).
+    ⚠ El 'Costo Alimentación' de WinCampo NO sirve (da $3,6/kg MS contra $355).
+
+    Devuelve {} si no encuentra el archivo — el caller degrada.
+    """
+    if log is None:
+        log = logging.getLogger("racion")
+
+    SUBDIR = Path("archivos de pecuaria compartidos") / "haras"
+    ruta_dir = None
+    cand = Path(carpeta_out).resolve()
+    for base in [cand] + list(cand.parents):
+        if (base / SUBDIR).is_dir():
+            ruta_dir = base / SUBDIR
+            break
+    if ruta_dir is None:
+        log.warning(f"  ⚠ Carpeta de haras no encontrada desde {carpeta_out}, sin precios de ración")
+        return {}
+
+    import fnmatch
+    cands = [p for p in Path(ruta_dir).iterdir()
+             if p.is_file() and fnmatch.fnmatch(p.name.lower(), '*racion*feelot*.xlsx')]
+    cands.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    if not cands:
+        log.warning(f"  ⚠ Excel de ración no encontrado en {ruta_dir}, saltando")
+        return {}
+    xl = cands[0]
+
+    try:
+        import openpyxl
+    except ImportError:
+        log.warning("  ⚠ openpyxl no instalado; sin precios de ración")
+        return {}
+
+    import shutil, tempfile
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as _tf:
+            tmp_path = _tf.name
+        shutil.copy2(str(xl), tmp_path)
+        wb = openpyxl.load_workbook(tmp_path, data_only=True, read_only=True)
+        filas = list(wb[wb.sheetnames[0]].iter_rows(values_only=True))
+        try: wb.close()
+        except Exception: pass
+    except Exception as e:
+        log.warning(f"  ⚠ no pude leer {xl.name}: {e}")
+        return {}
+    finally:
+        if tmp_path:
+            try: Path(tmp_path).unlink()
+            except Exception: pass
+
+    if len(filas) < 2:
+        log.warning(f"  ⚠ {xl.name} vacío, sin precios de ración")
+        return {}
+
+    # Headers por nombre (mes · TC precio · % ms · costo dia animal · costo ingreso sanidad)
+    hdr = [_norm_cat_compra(c) if c is not None else "" for c in filas[0]]
+    def _idx(*nombres):
+        for n in nombres:
+            if n in hdr:
+                return hdr.index(n)
+        return None
+    i_mes = _idx("mes")
+    i_tc  = _idx("tc precio", "tc")
+    i_ms  = _idx("% ms", "ms")
+    i_dia = _idx("costo dia animal", "dia")
+    i_san = _idx("costo ingreso sanidad", "sanidad")
+    if None in (i_mes, i_tc, i_ms, i_dia, i_san):
+        log.warning(f"  ⚠ headers inesperados en {xl.name}: {hdr}, saltando ración")
+        return {}
+
+    out = {}
+    for r in filas[1:]:
+        f = r[i_mes]
+        if f is None:
+            continue
+        if isinstance(f, datetime):
+            mes = f"{f.year:04d}-{f.month:02d}"
+        else:
+            mes = str(f)[:7].replace("/", "-")
+        try:
+            out[mes] = {
+                "tc":  float(r[i_tc]),
+                "ms":  float(r[i_ms]),
+                "dia": float(r[i_dia]),
+                "san": float(r[i_san]),
+            }
+        except (TypeError, ValueError):
+            log.warning(f"  ⚠ fila de ración no numérica en {mes}, salteada")
+    if out:
+        _u = max(out)
+        log.info(f"  ✓ Precios de ración: {len(out)} meses ({min(out)} → {_u}) · "
+                 f"$/kg MS {_u} = {out[_u]['tc']/out[_u]['ms']:,.2f}")
+    return out
+
+
 def procesar_compras_reales(carpeta_out, log=None):
     """v15.57: lee 'compras de hacienda.xlsx' (hoja OK) y genera
     precios_compra_real.json con el precio REALMENTE pagado por categoría,
@@ -6864,6 +6982,8 @@ def procesar_compras_reales(carpeta_out, log=None):
             i_cant  = hdr.index("cantidad")
             i_prec  = hdr.index("precio compra")
             i_kg    = hdr.index("kg")
+            # v15.59: comisión fila por fila (no un % fijo). Puede no existir.
+            i_com   = hdr.index("comision") if "comision" in hdr else None
         except ValueError as e:
             log.warning(f"  ⚠ headers inesperados en hoja OK ({hdr}): {e}, saltando")
             return None
@@ -6871,6 +6991,7 @@ def procesar_compras_reales(carpeta_out, log=None):
         hoy   = date.today()
         desde = hoy - timedelta(days=COMPRAS_VENTANA_DIAS)
         acc_v, acc_t = {}, {}          # ventana / histórico completo
+        acc_tropa    = {}              # v15.59: índice por tropa normalizada
         n_filas = 0
         desc = {}
         grafias_desconocidas = {}
@@ -6931,6 +7052,38 @@ def procesar_compras_reales(carpeta_out, log=None):
                 _descartar("categoria_desconocida", f"{tropa} · {g!r}")
                 continue
 
+            # ── v15.59 · índice POR TROPA (para Resultado por Remito) ──
+            # ⚠ split por '+': hay filas con
+            #   'PEG.VIL.25/07/2026 + PEG.VIL.24/07/2026 + …' (84 de 221).
+            # Sin indexar CADA tropa por separado la cobertura de precios cae
+            # de ~90% a ~50% — fue el bug más caro del prototipo.
+            _com = None
+            if i_com is not None:
+                try:
+                    _com = float(r[i_com])
+                except (TypeError, ValueError):
+                    _com = None
+            for _t in str(tropa).split("+"):
+                _t = _t.strip()
+                if not _t:
+                    continue
+                _k = _norm_tropa(_t)
+                if not _k:
+                    continue
+                a = acc_tropa.setdefault(_k, {
+                    "tropa": _t, "categorias": {}, "kg": 0.0, "plata": 0.0,
+                    "comision": _com, "cabezas": 0, "filas": 0,
+                })
+                a["kg"]     += cab * kg_cab
+                a["plata"]  += cab * kg_cab * precio
+                a["cabezas"] += cab
+                a["filas"]  += 1
+                if a["comision"] is None:
+                    a["comision"] = _com
+                _c = a["categorias"].setdefault(cat, {"kg": 0.0, "plata": 0.0})
+                _c["kg"]    += cab * kg_cab
+                _c["plata"] += cab * kg_cab * precio
+
             _add(acc_t, cat, cab, kg_cab, precio)
             if f >= desde:
                 _add(acc_v, cat, cab, kg_cab, precio)
@@ -6964,6 +7117,23 @@ def procesar_compras_reales(carpeta_out, log=None):
             },
             "por_categoria":       _cerrar(acc_v),
             "por_categoria_total": _cerrar(acc_t),
+            # v15.59: índice por tropa para el módulo Resultado por Remito.
+            # NO cambia nada de lo que consumen las tarjetas de indiferencia.
+            "por_tropa": {
+                k: {
+                    "tropa":       a["tropa"],
+                    "precio_kg":   round(a["plata"] / a["kg"], 2) if a["kg"] > 0 else None,
+                    "kg":          round(a["kg"], 1),
+                    "cabezas":     a["cabezas"],
+                    "comision":    a["comision"],
+                    "filas":       a["filas"],
+                    "por_categoria": {
+                        c: round(v["plata"] / v["kg"], 2)
+                        for c, v in a["categorias"].items() if v["kg"] > 0
+                    },
+                }
+                for k, a in sorted(acc_tropa.items()) if a["kg"] > 0
+            },
         }
         if grafias_desconocidas:
             salida["meta"]["categorias_desconocidas"] = grafias_desconocidas
