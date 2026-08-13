@@ -4385,6 +4385,23 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["pct_pv_mensual"] = {"ok": False, "error": str(e)}
 
+    # ── RESULTADO POR REMITO (v15.59) ──────────────────────────
+    # Costo completo de cada venta con remito. Va acá, al final, porque necesita
+    # pct_pv_mensual.json y precios_compra_real.json ya guardados en disco.
+    # Reusa los egresos del pre-step (no vuelve a pegarle a la API).
+    separador("Resultado por Remito")
+    try:
+        _rr = generar_resultado_remitos(carpeta, periodo, egresos_data, log)
+        resumen["modulos"]["resultado_remitos"] = {
+            "ok":        _rr is not None,
+            "remitos":   _rr["meta"]["remitos"] if _rr else 0,
+            "cobertura": _rr["meta"]["cobertura_global_pct"] if _rr else None,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_resultado_remitos falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["resultado_remitos"] = {"ok": False, "error": str(e)}
+
     # ── v15.14: Smoke test post-pipeline ──
     # Valida que los JSONs tengan números razonables. Si falla, queda registrado
     # en modulos.smoke_test → el banner stale v15.12 lo detecta como módulo con
@@ -6992,6 +7009,7 @@ def procesar_compras_reales(carpeta_out, log=None):
         desde = hoy - timedelta(days=COMPRAS_VENTANA_DIAS)
         acc_v, acc_t = {}, {}          # ventana / histórico completo
         acc_tropa    = {}              # v15.59: índice por tropa normalizada
+        acc_cat_mes  = {}              # v15.59: categoría → mes → kg/plata
         n_filas = 0
         desc = {}
         grafias_desconocidas = {}
@@ -7094,6 +7112,15 @@ def procesar_compras_reales(carpeta_out, log=None):
                 # que es lo que realmente se pago. Ver bitacora v15.59.
                 _c["ultimo"] = precio
 
+            # v15.59: por categoría y MES de compra — lo usa el precio de
+            # reposición (promedio ponderado del último mes con compras de la
+            # categoría).
+            _m = acc_cat_mes.setdefault(cat, {}).setdefault(f"{f.year:04d}-{f.month:02d}",
+                                                            {"kg": 0.0, "plata": 0.0, "cabezas": 0})
+            _m["kg"]     += cab * kg_cab
+            _m["plata"]  += cab * kg_cab * precio
+            _m["cabezas"] += cab
+
             _add(acc_t, cat, cab, kg_cab, precio)
             if f >= desde:
                 _add(acc_v, cat, cab, kg_cab, precio)
@@ -7149,6 +7176,15 @@ def procesar_compras_reales(carpeta_out, log=None):
                     },
                 }
                 for k, a in sorted(acc_tropa.items()) if a["kg"] > 0
+            },
+            # v15.59: categoría → mes → precio ponderado (precio de reposición).
+            "por_categoria_mes": {
+                c: {
+                    m: {"precio_kg": round(v["plata"] / v["kg"], 2),
+                        "kg": round(v["kg"], 1), "cabezas": v["cabezas"]}
+                    for m, v in sorted(meses.items()) if v["kg"] > 0
+                }
+                for c, meses in sorted(acc_cat_mes.items())
             },
         }
         if grafias_desconocidas:
@@ -7334,6 +7370,347 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
     for mes, crudo, kgms, kgpv in fuera_de_rango:
         log.warning(f"  ⚠ %PV fuera de rango [1,0-3,5] en {mes}: {crudo}% "
                     f"(kg_ms_dia={kgms:,} · kg_pv={kgpv:,})")
+    return salida
+
+
+# ═══════════════════════════════════════════════════════════
+#  v15.59 · RESULTADO POR REMITO
+# ═══════════════════════════════════════════════════════════
+# Port 1:1 del motor calc() del prototipo v2.5 validado por el usuario
+# (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
+RR_DESDE          = "2026-07-01"   # alcance: ventas con remito desde acá
+RR_PV_MIN         = 2.0            # límites de negocio del % consumo MS…
+RR_PV_MAX         = 3.0            # …los meses fuera se acotan al límite
+RR_FACTOR_VACA    = 1.30           # la vaca come +30% (decisión de prudencia)
+RR_COMISION_DEF   = 0.03           # fallback si el Excel no trae comisión
+# Categoría → grupo de mortandad de muertes_2025.json
+RR_GRUPO_MORT = {
+    "Vaca": "Vacas", "Toro": "Machos", "Novillo": "Machos",
+    "Novillito": "Machos", "Ternero": "Machos",
+    "Vaquillona": "Hembras", "Ternera": "Hembras",
+}
+
+
+def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
+    """v15.59: resultado económico por remito de venta.
+
+    Costo = compra (Excel de compras, por tropa+categoría) + comisión (fila por
+    fila) + alimento (%PV mensual real × peso interpolado × $/kg MS del mes) +
+    estructura ($/día-animal) + sanidad (mes de ingreso) + mortandad (tasa del
+    portal × costo de compra). La VENTA no se calcula acá: se carga en el portal.
+
+    Lee todo de disco salvo los egresos, que ya vienen del pre-step de main
+    (no se re-consulta la API).
+
+    Devuelve el dict volcado o None. NO levanta excepción.
+    """
+    if log is None:
+        log = logging.getLogger("remitos")
+    from datetime import date as _date, timedelta as _td
+
+    base = Path(carpeta_out)
+
+    def _load(nombre):
+        try:
+            with (base / nombre).open(encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            log.warning(f"  ⚠ no pude leer {nombre}: {e}")
+            return None
+
+    _compras = _load("precios_compra_real.json") or {}
+    por_tropa = _compras.get("por_tropa") or {}
+    cat_mes   = _compras.get("por_categoria_mes") or {}
+    if not por_tropa:
+        log.warning("  ⚠ sin índice de compras por tropa, saltando resultado por remito")
+        return None
+
+    _pctpv = _load("pct_pv_mensual.json") or {}
+    PCTPV  = {m: v.get("pct_pv_ajustado") for m, v in (_pctpv.get("meses") or {}).items()
+              if v.get("pct_pv_ajustado")}
+    if not PCTPV:
+        log.warning("  ⚠ sin pct_pv_mensual, saltando resultado por remito")
+        return None
+    PV_FALLBACK = round(sum(PCTPV.values()) / len(PCTPV), 2)
+
+    PRECIOS = procesar_precios_racion(carpeta_out, log)
+    if not PRECIOS:
+        log.warning("  ⚠ sin precios de ración, saltando resultado por remito")
+        return None
+    _meses_prec = sorted(PRECIOS)
+
+    # Tasas de mortandad del portal (las mismas que muestra el módulo).
+    _muertes = _load(f"muertes_{periodo}.json") or {}
+    _grupos  = ((_muertes.get("mortandad") or {}).get("por_grupo")) or {}
+    MORT_PCT = {c: (_grupos.get(g, {}).get("tasa_mensual_pct") or 0.0)
+                for c, g in RR_GRUPO_MORT.items()}
+
+    def _mk(ym):
+        """Mes de precios más cercano disponible (acota a los extremos)."""
+        if ym in PRECIOS:
+            return ym
+        return _meses_prec[0] if ym < _meses_prec[0] else _meses_prec[-1]
+
+    def _d(s):
+        """Fecha ISO o dd/mm/yyyy → date."""
+        if not s:
+            return None
+        s = str(s)[:10]
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+            try:
+                return datetime.strptime(s, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    # ── Filtrar egresos: solo VENTA, con remito, desde RR_DESDE ──
+    desde = _d(RR_DESDE)
+    grupos = {}
+    n_venta = 0
+    for e in (egresos_data or []):
+        motivo = str(e.get("MotivoSalida") or "").upper()
+        if "VENTA" not in motivo:
+            continue          # muertes, traslados y consumo quedan afuera
+        fe = _d(e.get("FechaSalida"))
+        if fe is None or fe < desde:
+            continue
+        rem = str(e.get("NRO_TRANSACCION") or "").strip()
+        if not rem:
+            continue
+        n_venta += 1
+        fi = _d(e.get("FechaIngreso"))
+        k = (rem, str(e.get("NRO_TROPA") or ""), str(e.get("Categoria") or ""),
+             str(e.get("NRO_CORRAL") or ""), fi, fe)
+        g = grupos.setdefault(k, {
+            "remito": rem, "tropa": e.get("NRO_TROPA"), "cat": e.get("Categoria"),
+            "corral": e.get("NRO_CORRAL"), "fi": fi, "fe": fe,
+            "hotelero": e.get("HOTELERO"), "comprador": e.get("Destino") or e.get("Consignatario"),
+            "cab": 0, "kgi": 0.0, "kge": 0.0, "dias": e.get("Estadia"),
+        })
+        g["cab"] += 1
+        g["kgi"] += float(e.get("KgIngreso") or 0)
+        g["kge"] += float(e.get("KgEgreso") or 0)
+
+    if not grupos:
+        log.warning(f"  ⚠ sin egresos de venta con remito desde {RR_DESDE}")
+        return None
+
+    # ── Precio de reposición por categoría: promedio ponderado del ÚLTIMO mes
+    #    con compras de esa categoría (del Excel de compras).
+    repo_cat = {}
+    for c, meses in cat_mes.items():
+        if meses:
+            _u = max(meses)
+            repo_cat[c] = {"precio_kg": meses[_u]["precio_kg"], "mes": _u}
+    _ultp = _meses_prec[-1]
+    repo_ms = PRECIOS[_ultp]["tc"] / PRECIOS[_ultp]["ms"]
+
+    # ── Cálculo por remito ────────────────────────────────────
+    remitos_out = {}
+    sin_precio_global, con_precio_global = set(), set()
+    for rem in sorted({g["remito"] for g in grupos.values()}):
+        filas_g = [g for g in grupos.values() if g["remito"] == rem]
+
+        # Precio de cada fila: tropa+categoría; si no está, promedio ponderado
+        # de las compañeras del MISMO remito (y se marca estimado).
+        def _precio(g):
+            t = por_tropa.get(_norm_tropa(g["tropa"]))
+            if not t:
+                return None, None
+            pc = (t.get("por_categoria") or {}).get(g["cat"])
+            com = t.get("comision")
+            if pc and pc.get("precio_kg"):
+                return pc["precio_kg"], com
+            # tropa conocida pero sin esa categoría → promedio de la tropa
+            return t.get("precio_kg"), com
+
+        kg_con, imp_con = 0.0, 0.0
+        for g in filas_g:
+            p, _ = _precio(g)
+            if p:
+                kg_con += g["kgi"]
+                imp_con += g["kgi"] * p
+        prom = imp_con / kg_con if kg_con else 0.0
+
+        compra = comision = ali = est = san = mort = 0.0
+        cab = kgi = kge = ms_tot = pv_den = a_dias = kg_sin = kgi_mort = 0.0
+        n_sin = 0
+        clamped, sin_pv = {}, 0
+        filas_out, tropas_sin = [], []
+
+        for g in sorted(filas_g, key=lambda x: (-x["kgi"],)):
+            p_real, com_tropa = _precio(g)
+            estimado = p_real is None
+            p = p_real if p_real else prom
+            com_pct = com_tropa if com_tropa is not None else RR_COMISION_DEF
+            c = g["kgi"] * p
+            kgp = (g["kgi"] + g["kge"]) / 2
+            fcat = RR_FACTOR_VACA if str(g["cat"]).strip().lower() == "vaca" else 1.0
+            mpct = (MORT_PCT.get(g["cat"], 0.0)) / 100
+
+            fi, fe = g["fi"], g["fe"]
+            total_d = max((fe - fi).days, 1)
+            a = s = ms = 0.0
+            dtot = elap = 0
+            lim = False
+            cur = fi
+            while cur < fe:
+                ym = f"{cur.year:04d}-{cur.month:02d}"
+                pp = PRECIOS[_mk(ym)]
+                pv_raw = PCTPV.get(ym)
+                if pv_raw is None:
+                    pv_raw = PV_FALLBACK
+                    sin_pv += 1
+                pv_c = min(RR_PV_MAX, max(RR_PV_MIN, pv_raw))
+                if pv_c != pv_raw:
+                    clamped[ym] = pv_raw
+                    lim = True
+                pv = pv_c / 100 * fcat          # el factor va DESPUÉS del límite
+                nx = _date(cur.year + (cur.month // 12), (cur.month % 12) + 1, 1)
+                if nx > fe:
+                    nx = fe
+                dd = (nx - cur).days
+                # peso interpolado: el animal va de kgi a kge linealmente y cada
+                # tramo usa el peso en su punto medio
+                kgm = g["kgi"] + (g["kge"] - g["kgi"]) * ((elap + dd / 2) / total_d)
+                m = kgm * pv * dd
+                ms += m
+                a  += m * (pp["tc"] / pp["ms"])
+                s  += g["cab"] * dd * pp["dia"]
+                dtot += dd
+                elap += dd
+                cur = nx
+
+            # sanidad: ÚNICA por cabeza, al precio del MES DE INGRESO
+            sa = g["cab"] * PRECIOS[_mk(f"{fi.year:04d}-{fi.month:02d}")]["san"]
+
+            compra += c
+            comision += c * com_pct
+            ali += a
+            est += s
+            san += sa
+            mort += c * mpct
+            kgi_mort += g["kgi"] * mpct
+            cab += g["cab"]
+            kgi += g["kgi"]
+            kge += g["kge"]
+            ms_tot += ms
+            pv_den += kgp * dtot
+            a_dias += g["cab"] * dtot
+            if estimado:
+                kg_sin += g["kgi"]
+                n_sin += 1
+                tropas_sin.append({
+                    "tropa": g["tropa"], "categoria": g["cat"], "cabezas": g["cab"],
+                    "kg_ingreso": round(g["kgi"], 1),
+                    "fecha_ingreso": fi.isoformat(), "estimado_a": round(p, 2),
+                })
+                sin_precio_global.add(g["tropa"])
+            else:
+                con_precio_global.add(g["tropa"])
+
+            filas_out.append({
+                "tropa": g["tropa"], "categoria": g["cat"], "corral": g["corral"],
+                "hotelero": g["hotelero"], "comprador": g["comprador"],
+                "cabezas": g["cab"],
+                "fecha_ingreso": fi.isoformat(), "fecha_egreso": fe.isoformat(),
+                "dias": dtot,
+                "kg_ingreso": round(g["kgi"], 1), "kg_egreso": round(g["kge"], 1),
+                "precio_kg": round(p, 2), "estimado": estimado,
+                "comision_pct": round(com_pct * 100, 2),
+                "costo_compra": round(c, 2), "kg_ms": round(ms, 1),
+                "pct_ms": round(ms / (kgp * dtot) * 100, 2) if dtot and kgp else None,
+                "acotado": lim,
+                "alimento": round(a, 2), "estructura": round(s, 2), "sanidad": round(sa, 2),
+                "mortandad": round(c * mpct, 2),
+            })
+
+        costo = compra + comision + ali + est + san + mort
+        kg_prod = kge - kgi
+
+        # Reposición: mismos kg de entrada y mismos kg MS a precio de hoy.
+        cats = {f["categoria"] for f in filas_out}
+        if len(cats) == 1 and list(cats)[0] in repo_cat:
+            _rc = repo_cat[list(cats)[0]]
+            rp, rp_lbl = _rc["precio_kg"], f"prom. {list(cats)[0]} {_rc['mes']}"
+        else:
+            rp, rp_lbl = prom, "prom. histórico del remito"
+        compra_repo = kgi * rp
+        com_repo = compra_repo * RR_COMISION_DEF
+        ali_repo = ms_tot * repo_ms
+        mort_repo = kgi_mort * rp
+        costo_repo = compra_repo + com_repo + ali_repo + mort_repo + est + san
+
+        remitos_out[rem] = {
+            "filas": filas_out,
+            "cabezas": int(cab), "tropas": len(filas_out),
+            "kg_ingreso": round(kgi, 1), "kg_egreso": round(kge, 1),
+            "kg_producidos": round(kg_prod, 1), "kg_ms": round(ms_tot, 1),
+            "fecha_egreso": max(f["fecha_egreso"] for f in filas_out),
+            "comprador": next((f["comprador"] for f in filas_out if f["comprador"]), None),
+            "costos": {
+                "compra": round(compra, 2), "comision": round(comision, 2),
+                "alimento": round(ali, 2), "estructura": round(est, 2),
+                "sanidad": round(san, 2), "mortandad": round(mort, 2),
+                "total": round(costo, 2),
+                "por_kg_vendido": round(costo / kge, 2) if kge else None,
+            },
+            "indicadores": {
+                "kg_prom_ingreso": round(kgi / cab, 1) if cab else None,
+                "kg_prom_salida": round(kge / cab, 1) if cab else None,
+                "estadia_prom": round(a_dias / cab) if cab else None,
+                "adp": round(kg_prod / a_dias, 3) if a_dias else None,
+                "pct_ms": round(ms_tot / pv_den * 100, 2) if pv_den else None,
+                "conversion_ms": round(ms_tot / kg_prod, 2) if kg_prod > 0 else None,
+                "costo_kg_producido": round((ali + est + san) / kg_prod, 2) if kg_prod > 0 else None,
+                "precio_prom_pagado": round(compra / kgi, 2) if kgi else None,
+            },
+            "reposicion": {
+                "precio_kg": round(rp, 2), "fuente_precio": rp_lbl,
+                "precio_kg_ms": round(repo_ms, 2), "mes_ms": _ultp,
+                "compra": round(compra_repo, 2), "comision": round(com_repo, 2),
+                "alimento": round(ali_repo, 2), "mortandad": round(mort_repo, 2),
+                "total": round(costo_repo, 2),
+                "por_kg_vendido": round(costo_repo / kge, 2) if kge else None,
+            },
+            "cobertura_pct": round((kgi - kg_sin) / kgi * 100, 1) if kgi else None,
+            "tropas_sin_precio": tropas_sin,
+            "precio_estimado": round(prom, 2),
+            "meses_pv_acotados": {m: round(v, 2) for m, v in sorted(clamped.items())},
+            "dias_sin_pv": sin_pv,
+        }
+
+    _kg_tot = sum(r["kg_ingreso"] for r in remitos_out.values())
+    _kg_sin = sum(sum(t["kg_ingreso"] for t in r["tropas_sin_precio"])
+                  for r in remitos_out.values())
+    salida = {
+        "meta": {
+            "generado": datetime.now().isoformat(),
+            "desde": RR_DESDE,
+            "remitos": len(remitos_out),
+            "egresos_venta": n_venta,
+            "cobertura_global_pct": round((_kg_tot - _kg_sin) / _kg_tot * 100, 1) if _kg_tot else None,
+            "pv_min": RR_PV_MIN, "pv_max": RR_PV_MAX,
+            "factor_vaca": RR_FACTOR_VACA,
+            "comision_default": RR_COMISION_DEF,
+            "pv_fallback": PV_FALLBACK,
+            "tasas_mortandad": MORT_PCT,
+            "fuentes": {
+                "egresos": "WinCampo lst_egresos_hacienda (MOTIVO=VENTA, NRO_TRANSACCION=remito)",
+                "compras": "compras de hacienda.xlsx -> precios_compra_real.json (por_tropa)",
+                "racion":  "preico de racion feelot.xlsx",
+                "pct_pv":  "pct_pv_mensual.json (pct_pv_ajustado, limites 2-3%)",
+                "mortandad": f"muertes_{periodo}.json (tasa por grupo)",
+            },
+        },
+        "remitos": remitos_out,
+    }
+    guardar(salida, carpeta_out, "resultado_remitos.json")
+    log.info(f"  ✓ Resultado por remito: {len(remitos_out)} remitos desde {RR_DESDE} · "
+             f"{n_venta} egresos de venta · cobertura {salida['meta']['cobertura_global_pct']}%")
+    for rem, r in sorted(remitos_out.items()):
+        log.info(f"      {rem}: {r['cabezas']:>3} cab · costo $ {r['costos']['total']:,.0f} "
+                 f"· $ {r['costos']['por_kg_vendido']:,.0f}/kg · cobertura {r['cobertura_pct']}%")
     return salida
 
 
