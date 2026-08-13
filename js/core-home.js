@@ -4,8 +4,8 @@
 const USERS={
   'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA', modules:['stock','insumos']},
   'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA', modules:['tesoreria']},
-  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','baseparams']},
-  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','baseparams']},
+  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','baseparams']},
+  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','baseparams']},
 };
 const PERIODS={'2025':{available:true},'2024':{available:false}};
 let currentUser=null, selectedPeriod='2025', chartsInited=false;
@@ -87,6 +87,14 @@ function openModule(mod){
     document.body.style.background='';
     window.scrollTo(0,0);
     initHistorico();
+    return;
+  }
+  // v15.59: Resultado por Remito
+  if(mod==='remitos'){
+    showScreen('screenRemitos');
+    document.body.style.background='';
+    window.scrollTo(0,0);
+    initRemitos();
     return;
   }
   if(mod==='baseparams'){

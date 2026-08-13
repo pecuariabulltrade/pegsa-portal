@@ -63,6 +63,9 @@
     <a class="sb-item" data-target="historico" onclick="sbNavigate('historico')">
       <span class="sb-num">06</span><span class="sb-text">Histórico &amp; Evolución</span>
     </a>
+    <a class="sb-item" data-target="remitos" onclick="sbNavigate('remitos')">
+      <span class="sb-num">07</span><span class="sb-text">Resultado por Remito</span>
+    </a>
   </div>
 
   <div class="sb-section sb-section-divider">
@@ -2368,6 +2371,26 @@
 <!-- ══════════════════════════════════════════
      MÓDULO 06 — HISTÓRICO & EVOLUCIÓN
 ══════════════════════════════════════════ -->
+<!-- ═══ MÓDULO 09 · RESULTADO POR REMITO (v15.59) ═══ -->
+<div id="screenRemitos" class="screen" style="display:none">
+  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">M&oacute;dulo 09 &middot; Ventas</div>
+        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">RESULTADO POR REMITO</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(212,168,75,.5);margin-top:6px">Costo de compra + costo productivo vs venta &middot; hist&oacute;rico y a reposici&oacute;n</div>
+      </div>
+      <div style="text-align:right">
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;">&#8592; Panel Principal</button>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1180px;margin:0 auto;padding:24px 32px 60px">
+    <div id="remLoading" style="padding:60px;text-align:center;font-family:'DM Mono',monospace;opacity:.5">Cargando&hellip;</div>
+    <div id="remContent" style="display:none"></div>
+  </div>
+</div>
+
 <div id="screenHistorico" class="screen" style="display:none">
   <!-- Header -->
   <div style="background:var(--ink);color:var(--cream);padding:24px 40px 20px">
@@ -2640,6 +2663,7 @@
 
 <!-- ══ MÓDULO 08 · HISTÓRICO JS ══ -->
 <script src="js/modulo-08-historico.js?v=1556"></script>
+<script src="js/modulo-09-remitos.js?v=1559"></script>
 
 
 <!-- Panel Principal — React + Babel -->
