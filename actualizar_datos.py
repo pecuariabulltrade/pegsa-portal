@@ -7078,11 +7078,21 @@ def procesar_compras_reales(carpeta_out, log=None):
                 a["plata"]  += cab * kg_cab * precio
                 a["cabezas"] += cab
                 a["filas"]  += 1
-                if a["comision"] is None:
-                    a["comision"] = _com
-                _c = a["categorias"].setdefault(cat, {"kg": 0.0, "plata": 0.0})
+                a["comision"] = _com          # última fila de la tropa manda
+                _c = a["categorias"].setdefault(cat, {"kg": 0.0, "plata": 0.0,
+                                                      "ultimo": None, "filas": 0,
+                                                      "precios": set()})
                 _c["kg"]    += cab * kg_cab
                 _c["plata"] += cab * kg_cab * precio
+                _c["filas"] += 1
+                _c["precios"].add(round(precio, 2))
+                # ⚠ v15.59: una misma tropa+categoria puede tener VARIAS filas con
+                # precios distintos (lotes distintos dentro de la misma compra):
+                # PECHUIN17/04/2026 tiene vaca a $2.851,93 y vaca a $2.004,69.
+                # Se toma la ULTIMA para reproducir exacto el prototipo validado,
+                # pero se guarda tambien el ponderado por kilos (precio_kg_pond),
+                # que es lo que realmente se pago. Ver bitacora v15.59.
+                _c["ultimo"] = precio
 
             _add(acc_t, cat, cab, kg_cab, precio)
             if f >= desde:
@@ -7121,14 +7131,20 @@ def procesar_compras_reales(carpeta_out, log=None):
             # NO cambia nada de lo que consumen las tarjetas de indiferencia.
             "por_tropa": {
                 k: {
-                    "tropa":       a["tropa"],
-                    "precio_kg":   round(a["plata"] / a["kg"], 2) if a["kg"] > 0 else None,
-                    "kg":          round(a["kg"], 1),
-                    "cabezas":     a["cabezas"],
-                    "comision":    a["comision"],
-                    "filas":       a["filas"],
+                    "tropa":         a["tropa"],
+                    "precio_kg":     round(a["plata"] / a["kg"], 2) if a["kg"] > 0 else None,
+                    "kg":            round(a["kg"], 1),
+                    "cabezas":       a["cabezas"],
+                    "comision":      a["comision"],
+                    "filas":         a["filas"],
                     "por_categoria": {
-                        c: round(v["plata"] / v["kg"], 2)
+                        c: {
+                            "precio_kg":      round(v["ultimo"], 2),
+                            "precio_kg_pond": round(v["plata"] / v["kg"], 2),
+                            "kg":             round(v["kg"], 1),
+                            "filas":          v["filas"],
+                            "multiprecio":    len(v["precios"]) > 1,
+                        }
                         for c, v in a["categorias"].items() if v["kg"] > 0
                     },
                 }
