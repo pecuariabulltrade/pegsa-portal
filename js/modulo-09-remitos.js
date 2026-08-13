@@ -72,6 +72,213 @@ function remVentaInput(nro, campo, valor) {
   renderRemitos(true);
 }
 
+/* ════════════════════════════════════════════════════════════
+   v15.60 · INFORME PDF DE UNA PÁGINA (para compartir por WhatsApp)
+   ────────────────────────────────────────────────────────────
+   Ventana nueva autocontenida + window.print() → el usuario elige
+   "Guardar como PDF". Sin librerías: ni jsPDF ni html2canvas.
+   El informe SOLO LEE lo que el módulo ya tiene calculado.
+   ════════════════════════════════════════════════════════════ */
+
+// Millones con 1 decimal es-AR ("$ 45,2M"). Debajo de 1M va en miles.
+function _remMM(n) {
+  if (n == null || isNaN(n)) return '—';
+  var s = n < 0 ? '−' : '', a = Math.abs(n);
+  if (a >= 1e6) return s + '$ ' + (a / 1e6).toFixed(1).replace('.', ',') + 'M';
+  if (a >= 1e3) return s + '$ ' + Math.round(a / 1e3) + 'k';
+  return s + '$ ' + Math.round(a);
+}
+
+/* Puente (waterfall) en SVG inline.
+   pasos: [{lbl, val, tipo:'total'|'baja'|'final', color}]
+   'total' arranca del piso, 'baja' resta del acumulado, 'final' es el saldo. */
+function _remPuenteSVG(pasos) {
+  var W = 660, H = 250, PAD_B = 46, PAD_T = 26;
+  var n = pasos.length, bw = Math.floor((W - 20) / n) - 14, gap = 14;
+
+  // Recorrido para conocer el rango (el resultado puede ser negativo)
+  var run = 0, hi = 0, lo = 0, tramos = [];
+  pasos.forEach(function (p) {
+    var t;
+    if (p.tipo === 'total') { t = { de: 0, a: p.val }; run = p.val; }
+    else if (p.tipo === 'baja') { t = { de: run, a: run - p.val }; run = run - p.val; }
+    else { t = { de: 0, a: p.val }; run = p.val; }
+    hi = Math.max(hi, t.de, t.a); lo = Math.min(lo, t.de, t.a);
+    tramos.push(t);
+  });
+  var span = (hi - lo) || 1;
+  var y = function (v) { return PAD_T + (hi - v) / span * (H - PAD_T - PAD_B); };
+
+  var s = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="DM Mono, monospace">';
+  s += '<line x1="8" y1="' + y(0) + '" x2="' + (W - 8) + '" y2="' + y(0) + '" stroke="#d8d6ce" stroke-width="1"/>';
+  pasos.forEach(function (p, i) {
+    var t = tramos[i], x = 14 + i * (bw + gap);
+    var yTop = Math.min(y(t.de), y(t.a)), hBar = Math.max(Math.abs(y(t.a) - y(t.de)), 2);
+    s += '<rect x="' + x + '" y="' + yTop + '" width="' + bw + '" height="' + hBar + '" fill="' + p.color + '" rx="1"/>';
+    // Valor: adentro de la barra si entra (evita que las bajas choquen con las
+    // etiquetas del eje cuando el acumulado va por debajo de cero); si la barra
+    // es finita, arriba — o abajo cuando el tramo cae bajo el eje.
+    var adentro = hBar >= 26;
+    var yTxt = adentro ? (yTop + hBar / 2 + 4) : (t.a < 0 ? yTop + hBar + 13 : yTop - 6);
+    var col = adentro ? '#fff' : (p.tipo === 'baja' ? '#6b6560' : (t.a < 0 ? '#c0392b' : '#1a1612'));
+    s += '<text x="' + (x + bw / 2) + '" y="' + yTxt + '" text-anchor="middle" font-size="13" font-weight="700" fill="' + col + '">'
+      + (p.tipo === 'baja' ? '−' : '') + _remMM(Math.abs(p.val)) + '</text>';
+    // etiqueta al pie, en dos líneas si hace falta
+    var partes = String(p.lbl).split(' ');
+    var l1 = partes.slice(0, 2).join(' '), l2 = partes.slice(2).join(' ');
+    s += '<text x="' + (x + bw / 2) + '" y="' + (H - 26) + '" text-anchor="middle" font-size="10.5" letter-spacing="0.06em" fill="#6b6560">' + l1 + '</text>';
+    if (l2) s += '<text x="' + (x + bw / 2) + '" y="' + (H - 14) + '" text-anchor="middle" font-size="10.5" letter-spacing="0.06em" fill="#6b6560">' + l2 + '</text>';
+    // conector punteado al siguiente
+    if (i < n - 1) {
+      var yc = y(t.a);
+      s += '<line x1="' + (x + bw) + '" y1="' + yc + '" x2="' + (x + bw + gap) + '" y2="' + yc + '" stroke="#b9b4ac" stroke-width="1" stroke-dasharray="2,2"/>';
+    }
+  });
+  s += '</svg>';
+  return s;
+}
+
+function remInformePDF() {
+  if (!_remData || !_remSel) return;
+  var r = _remData.remitos[_remSel], meta = _remData.meta || {};
+  var C = r.costos, I = r.indicadores, RP = r.reposicion;
+  var venta = remVentaGet(_remSel);
+  var kgc = venta.kg_carne || 0, pkg = venta.precio_kg || 0;
+  var gastos = (venta.flete || 0) + (venta.pesada || 0) + (venta.guia_senasa || 0) + (venta.guia_comuna || 0);
+  var bruto = kgc * pkg, neto = bruto - gastos, hayVenta = bruto > 0;
+  var res = neto - C.total, resRepo = neto - RP.total;
+  var GOLD = '#b8922a', GREEN = '#27613d', BLUE = '#2d6a8a', RED = '#c0392b', NAVY = '#0F1B64';
+
+  var pasos = hayVenta
+    ? [{ lbl: 'VENTA NETA', val: neto, tipo: 'total', color: NAVY },
+       { lbl: 'COMPRA + COM', val: C.compra + C.comision, tipo: 'baja', color: GOLD },
+       { lbl: 'ALIMENTO', val: C.alimento, tipo: 'baja', color: GREEN },
+       { lbl: 'ESTR + SAN', val: C.estructura + C.sanidad, tipo: 'baja', color: BLUE },
+       { lbl: 'MORTANDAD', val: C.mortandad, tipo: 'baja', color: RED },
+       { lbl: 'RESULTADO', val: res, tipo: 'final', color: res >= 0 ? GOLD : RED }]
+    : [{ lbl: 'COSTO TOTAL', val: C.total, tipo: 'total', color: '#1a1612' },
+       { lbl: 'COMPRA + COM', val: C.compra + C.comision, tipo: 'baja', color: GOLD },
+       { lbl: 'ALIMENTO', val: C.alimento, tipo: 'baja', color: GREEN },
+       { lbl: 'ESTR + SAN', val: C.estructura + C.sanidad, tipo: 'baja', color: BLUE },
+       { lbl: 'MORTANDAD', val: C.mortandad, tipo: 'baja', color: RED }];
+
+  var w = function (x) { return C.total > 0 ? x / C.total * 100 : 0; };
+  var comp = 'compra ' + _remN(w(C.compra + C.comision), 1) + ' % · alimento ' + _remN(w(C.alimento), 1)
+    + ' % · estr+san ' + _remN(w(C.estructura + C.sanidad), 1) + ' % · mortandad ' + _remN(w(C.mortandad), 1) + ' %';
+
+  var IND = [
+    ['Kg prom. ingreso', _remN(I.kg_prom_ingreso, 1), 'kg/cab'],
+    ['Kg prom. salida', _remN(I.kg_prom_salida, 1), 'kg/cab'],
+    ['Estadía promedio', _remN(I.estadia_prom), 'días/cab'],
+    ['Engorde diario', _remN(I.adp, 3), 'kg/cab/día'],
+    ['% MS s/ kg vivo', _remN(I.pct_ms, 2) + ' %', 'consumo'],
+    ['Conversión MS', _remN(I.conversion_ms, 2), 'kg MS/kg prod'],
+    ['Costo kg producido', _remM(I.costo_kg_producido), 'alim+estr+san'],
+    ['Precio prom. pagado', '$ ' + _remN(I.precio_prom_pagado), 'por kg entrada']
+  ];
+
+  var tas = meta.tasas_mortandad || {};
+  var nSin = (r.tropas_sin_precio || []).length;
+  var ahora = new Date();
+  var fh = ('0' + ahora.getDate()).slice(-2) + '/' + ('0' + (ahora.getMonth() + 1)).slice(-2) + '/' + ahora.getFullYear()
+    + ' ' + ('0' + ahora.getHours()).slice(-2) + ':' + ('0' + ahora.getMinutes()).slice(-2);
+
+  var h = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    + '<title>Resultado Remito ' + _remSel + ' · PEGSA &amp; Bulltrade</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">'
+    + '<style>'
+    + '@page{size:A4 portrait;margin:12mm}'
+    // los fondos oscuros tienen que imprimirse: sin esto Chrome los descarta
+    + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{margin:0;font-family:"DM Mono",monospace;color:#1a1612;font-size:11px}'
+    + '.t{font-family:"Playfair Display",serif;font-weight:700}'
+    + '.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1612;padding-bottom:8px}'
+    + '.hd .n{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#8a827a}'
+    + '.sec{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8a827a;margin:13px 0 6px;border-bottom:1px solid #e3e1da;padding-bottom:3px}'
+    + '.k{display:grid;gap:7px}'
+    + '.kc{border:1px solid #e3e1da;border-radius:2px;padding:8px 10px}'
+    + '.kc .l{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
+    + '.kc .v{font-family:"Playfair Display",serif;font-weight:700;font-size:19px;line-height:1.25}'
+    + '.kc .u{font-size:9px;color:#8a827a}'
+    + '.big{background:#1a1612;border-color:#1a1612}.big .l{color:rgba(255,255,255,.5)}'
+    + '.big .v{color:#d4a84b}.big .u{color:rgba(255,255,255,.45)}'
+    + '.repo{background:#faf6ea;border:1px solid ' + GOLD + ';border-radius:2px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:center}'
+    + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8.5px;color:#8a827a;line-height:1.55}'
+    + '.neg{color:' + RED + '}'
+    + '</style></head><body>';
+
+  // 1 · Encabezado
+  h += '<div class="hd"><div>'
+    + '<div class="n">PEGSA &amp; Bulltrade · Resultado por Remito</div>'
+    + '<div class="t" style="font-size:27px;line-height:1.1">Remito ' + _remSel + '</div>'
+    + '<div style="font-size:10px;color:#6b6560;margin-top:3px">'
+    + (r.fecha_egreso ? r.fecha_egreso.split('-').reverse().join('/') + ' · ' : '')
+    + r.cabezas + ' cabezas · ' + r.tropas + ' tropas · ' + _remN(r.kg_ingreso) + ' → ' + _remN(r.kg_egreso) + ' kg'
+    + ' · cobertura precios ' + _remN(r.cobertura_pct, 1) + ' %</div>'
+    + (r.comprador ? '<div style="font-size:9.5px;color:#8a827a;margin-top:2px">' + r.comprador + '</div>' : '')
+    + '</div><div style="text-align:right">'
+    + '<div class="l" style="font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a">Costo total</div>'
+    + '<div class="t" style="font-size:22px">' + _remM(C.total) + '</div>'
+    + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(C.por_kg_vendido) + ' / kg vendido</div>'
+    + '</div></div>';
+
+  // 2 · Puente
+  h += '<div class="sec">' + (hayVenta ? 'De la venta al resultado' : 'Composición del costo') + '</div>';
+  h += _remPuenteSVG(pasos);
+  h += '<div style="text-align:center;font-size:9.5px;color:#6b6560;margin-top:-4px">Composición del costo · ' + comp + '</div>';
+
+  // 3 · Resultado económico
+  h += '<div class="sec">Resultado económico</div>';
+  if (hayVenta) {
+    h += '<div class="k" style="grid-template-columns:repeat(4,1fr)">'
+      + '<div class="kc"><div class="l">Venta bruta</div><div class="v">' + _remMM(bruto) + '</div><div class="u">' + _remN(kgc) + ' kg × $ ' + _remN(pkg, 2) + '</div></div>'
+      + '<div class="kc"><div class="l">Gastos de venta</div><div class="v neg">' + _remMM(-gastos) + '</div><div class="u">$ ' + _remN(gastos / kgc, 2) + '/kg carne</div></div>'
+      + '<div class="kc"><div class="l">Venta neta</div><div class="v">' + _remMM(neto) + '</div><div class="u">rinde ' + _remN(kgc / r.kg_egreso * 100, 2) + ' %</div></div>'
+      + '<div class="kc big"><div class="l">Resultado</div><div class="v">' + _remMM(res) + '</div><div class="u">'
+      + _remN(res / C.total * 100, 1) + ' % s/costo · ' + _remM(res / r.cabezas) + '/cab</div></div>'
+      + '</div>';
+  } else {
+    h += '<div class="kc" style="text-align:center;color:#8a827a;padding:14px">Sin venta cargada — el informe muestra el costo y los indicadores.</div>';
+  }
+
+  // 4 · Indicadores
+  h += '<div class="sec">Indicadores</div><div class="k" style="grid-template-columns:repeat(4,1fr)">';
+  IND.forEach(function (t) {
+    h += '<div class="kc"><div class="l">' + t[0] + '</div><div class="v" style="font-size:16px">' + t[1] + '</div><div class="u">' + t[2] + '</div></div>';
+  });
+  h += '</div>';
+
+  // 5 · Reposición
+  h += '<div class="sec">Resultado a reposición</div><div class="repo">'
+    + '<div><div class="l" style="font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a">Costo total reposición</div>'
+    + '<div class="t" style="font-size:19px">' + _remMM(RP.total) + '</div>'
+    + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(RP.por_kg_vendido) + ' / kg · hist $ ' + _remN(C.por_kg_vendido) + '</div></div>'
+    + '<div><div class="l" style="font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a">Resultado a reposición</div>'
+    + (hayVenta
+        ? '<div class="t" style="font-size:19px;color:' + (resRepo >= 0 ? GREEN : RED) + '">' + _remMM(resRepo) + '</div>'
+          + '<div style="font-size:9px;color:#8a827a">' + _remN(resRepo / RP.total * 100, 1) + ' % s/costo repo · hist ' + _remMM(res) + ' · dif ' + _remMM(resRepo - res) + '</div>'
+        : '<div class="t" style="font-size:19px;color:#8a827a">—</div><div style="font-size:9px;color:#8a827a">sin venta cargada</div>')
+    + '</div>'
+    + '<div style="font-size:9.5px;color:#6b6560;line-height:1.5">Comprando y alimentando a <strong>precios de hoy</strong>'
+    + '<br>' + RP.fuente_precio + ' $ ' + _remN(RP.precio_kg) + '/kg · MS $ ' + _remN(RP.precio_kg_ms, 2) + '</div>'
+    + '</div>';
+
+  // 6 · Pie — los supuestos salen de meta, no hardcodeados
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.60 · Supuestos: %PV real por mes (límites '
+    + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
+    + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
+    + (nSin ? ' · ' + nSin + ' tropa(s) sin precio estimadas al promedio de las compañeras' : '')
+    + '</div></body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
+  win.document.open();
+  win.document.write(h);
+  win.document.close();
+  // Dar tiempo a que bajen las fuentes antes de abrir el diálogo de impresión
+  win.onload = function () { setTimeout(function () { win.focus(); win.print(); }, 550); };
+}
+
 function renderRemitos(soloResultado) {
   var el = document.getElementById('remContent');
   if (!el || !_remData) return;
@@ -127,6 +334,10 @@ function renderRemitos(soloResultado) {
       + '<input value="' + (venta[c[0]] != null ? venta[c[0]] : '') + '" style="' + INP + '" '
       + 'onchange="remVentaInput(\'' + _remSel + '\',\'' + c[0] + '\',this.value)"></div>';
   });
+  // v15.60: informe de una página para compartir
+  h += '<div style="margin-left:auto;display:flex;flex-direction:column;gap:5px">'
+    + '<button onclick="remInformePDF()" style="padding:8px 16px;background:var(--ink);border:1px solid var(--ink);border-radius:2px;'
+    + 'color:#d4a84b;font-family:\'DM Mono\',monospace;font-size:12px;cursor:pointer;white-space:nowrap">&#128196; Informe PDF</button></div>';
   h += '</div>';
   h += '<div style="' + SUB + ';margin:0 0 16px">Carga local en este navegador — se migrará a base de datos.</div>';
 
