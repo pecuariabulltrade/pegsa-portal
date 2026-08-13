@@ -7038,13 +7038,32 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
         return None
 
     # kg PV de El Haras a fin de cada mes (el snapshot es del último día).
+    # v15.58.1: el mixer alimenta a TODOS los animales de El Haras, propios y de
+    # hoteleros (Bulltrade, Darwash, Las Taperas, Tercio Bravo, Saguaipé, UGMA…) —
+    # confirmado por el usuario. El denominador es El Haras pegsa + hoteleros.
+    # Con pegsa solo, 2025 daba 3,1-3,9% de %PV, imposible: en 2025 los hoteleros
+    # pesaban 0,8-1,3M kg (30-50% extra), en 2026 bajaron a 0,3-0,4M.
+    # ⚠ por_hotelero trae una clave 'PEGSA' que duplica la hacienda propia (y además
+    # es de TODOS los campos, no solo El Haras): hay que excluirla.
+    # Limitación conocida: por_hotelero no abre por campo. Si algún hotelero tuviera
+    # hacienda fuera de El Haras, esto sobreestima un poco el denominador (contra la
+    # serie diaria: ±1% en abr/may-26, +5/+9% en jun/jul-26).
     kg_fin_mes = {}
+    kg_hoteleros_fin_mes = {}
     for s in _snaps:
         per = s.get("periodo")
-        kg = (((s.get("hacienda_masa") or {}).get("pegsa") or {})
+        _hm = s.get("hacienda_masa") or {}
+        kg = ((_hm.get("pegsa") or {})
               .get("por_campo", {}).get("El Haras", {}).get("kg_proyectado"))
-        if per and kg:
-            kg_fin_mes[per] = float(kg)
+        if not (per and kg):
+            continue
+        _hot = sum(
+            float((v or {}).get("kg_proyectado") or 0)
+            for k, v in (_hm.get("por_hotelero") or {}).items()
+            if str(k).strip().upper() != "PEGSA"
+        )
+        kg_fin_mes[per]           = float(kg) + _hot
+        kg_hoteleros_fin_mes[per] = _hot
 
     def _mes_anterior(mes):
         y, m = int(mes[:4]), int(mes[5:7])
@@ -7084,6 +7103,9 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
             "dias_calendario":   c.get("dias_calendario"),
             "dias_con_registro": n_dias,
             "kg_pv_fin_mes":     round(fin) if fin is not None else None,
+            # v15.58.1: cuánto de kg_pv_fin_mes son hoteleros (para auditar el aporte).
+            "kg_pv_hoteleros_fin_mes": (round(kg_hoteleros_fin_mes[mes])
+                                        if mes in kg_hoteleros_fin_mes else None),
             "kg_pv_haras":       round(kg_pv),
             "fuente_kg_pv":      fuente,
             "pct_pv_crudo":      round(crudo, 2),
@@ -7107,8 +7129,8 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
             "formula":         "(kg_ms_mes / dias_con_registro) / kg_pv_promedio_mes / 0.92 * 100",
             "ajuste_ms":       AJUSTE_MS_PCT_PV,
             "fuente_consumo":  f"consumo_{periodo}.json -> por_mes (mixer Dropbox, dias validos)",
-            "fuente_kg_pv":    ("comportamiento_historico.json -> El Haras kg_proyectado, "
-                                "promedio (fin mes ant + fin mes)/2"),
+            "fuente_kg_pv":    ("comportamiento_historico.json -> El Haras pegsa + hoteleros "
+                                "(kg_proyectado), promedio (fin mes ant + fin mes)/2"),
             "desde":           min(meses_out),
             "hasta":           max(meses_out),
             "meses":           len(meses_out),
