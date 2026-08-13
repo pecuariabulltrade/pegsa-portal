@@ -1453,6 +1453,22 @@ function PreciosInferenciaGrid() {
               <span className="prinf-big-num">{it.precioCompNum}</span>
               <span className="prinf-big-unit">/kg</span>
             </div>
+            {/* v15.57: por espacio, en el card colapsado va una sola línea con
+                el precio real pagado y el desvío; el kg real (que no coincide
+                con el teórico) queda en el expand. */}
+            {it.realDisponible && (
+              it.hayReal ? (
+                <div className="prinf-real-line">
+                  <span className="prinf-real-line-lbl">real {it.realVentana}d</span>
+                  <span className="prinf-real-line-val">{it.realPrecioFmt}</span>
+                  {it.realDesvFmt ? (
+                    <span className={"prinf-real-desv is-" + it.realTone}>{it.realDesvFmt}</span>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="prinf-real-line is-empty">sin compras en {it.realVentana} días</div>
+              )
+            )}
             {isOpen && (
               <div className="prinf-expand">
                 <div className="prinf-divider" />
@@ -1466,6 +1482,15 @@ function PreciosInferenciaGrid() {
                   {/* v15.34: engorde diario y eficiencia engorde */}
                   <div><span>Engorde</span><strong>{it.engordeFmt}</strong></div>
                   <div><span>Eficiencia</span><strong className={it.eficienciaEngordeNeg ? "neg" : ""}>{it.eficienciaEngordeFmt}</strong></div>
+                  {/* v15.57: el kg REAL de compra al lado del modelado — el
+                      tope de indiferencia depende del peso de entrada y los
+                      dos no coinciden. */}
+                  {it.realDisponible && it.hayReal ? (
+                    <div><span>Compra real</span><strong>{it.realKgCabFmt}</strong></div>
+                  ) : null}
+                  {it.realDisponible && it.hayReal ? (
+                    <div><span>Cabezas {it.realVentana}d</span><strong>{it.realCabezasFmt}</strong></div>
+                  ) : null}
                 </div>
                 {/* v12.3: bloque .prinf-margen eliminado del panel.
                     El cálculo de margen sigue en mobile-data.js porque

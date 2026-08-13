@@ -848,6 +848,19 @@
     var PRECIOS_INFERENCIA_META = { fecha: null, fechaLabel: "—" };
     var pInf = Array.isArray(D.preciosInferencia) ? D.preciosInferencia : [];
     var pInfMeta = D.preciosInferenciaMeta || {};
+    // v15.57: mapeo por NOMBRE (decisión del usuario). Espejo del
+    // PRINF_CAT_REAL de app.jsx. Los pesos de compra NO coinciden entre el
+    // modelo y la realidad (Novillo: teórico 300 kg vs real 435 kg), por eso
+    // se expone el kg real además del teórico.
+    var PRINF_CAT_REAL = {
+      vaca_100:   "Vaca",
+      vaca_60:    "Vaca",
+      novillo:    "Novillo",
+      vaquillona: "Vaquillona"
+    };
+    var pReal     = D.preciosCompraReal || null;
+    var pRealMeta = D.preciosCompraRealMeta || {};
+    var pRealVentana = pRealMeta.ventana_dias || 90;
     // v9: split del nombre en "categoría base + sub" para layout de
     // dos líneas del card minimal ("Vaca" / "· 100 días").
     function splitNombre(n) {
@@ -897,6 +910,17 @@
           margen = ingreso - costoCompra - costoEngorde;
           if (ingreso > 0) margenPct = margen / ingreso * 100;
         }
+        // v15.57: precio real pagado en la ventana + desvío contra el tope.
+        // Umbral de significancia 2%: por debajo va gris (neutral), no
+        // rojo/verde — vaquillona ronda ±2% y pintarla de rojo sería alarmista.
+        var rCat  = PRINF_CAT_REAL[it.id];
+        var rDato = (pReal && rCat) ? pReal[rCat] : null;
+        var realPrecio = rDato ? rDato.precio_kg : null;
+        var realDesv = null;
+        if (realPrecio != null && pc) realDesv = (realPrecio / pc - 1) * 100;
+        var realTone = "flat";
+        if (realDesv != null && Math.abs(realDesv) >= 2) realTone = realDesv > 0 ? "over" : "under";
+
         var margenTone = "neutral";
         if (margenPct != null) {
           if (margenPct > 15)      margenTone = "good";
@@ -949,6 +973,25 @@
                                   ? ((ef >= 0 ? "+" : "−") + Math.abs(ef * 100).toFixed(0) + " %")
                                   : "—",
           eficienciaEngordeNeg: ef != null && ef < 0,
+          // v15.57 · precio REAL pagado (ventana 90d) vs tope de indiferencia.
+          // hayReal=false → la card muestra "sin compras en N días" (que no
+          // haya compras es información: no se oculta ni se muestra $0).
+          // realDisponible distingue "no hay JSON" (Excel ausente → no se
+          // muestra el bloque) de "hay JSON pero 0 compras de esa categoría".
+          realDisponible: pReal != null,
+          hayReal:        rDato != null,
+          realVentana:    pRealVentana,
+          realPrecio:     realPrecio,
+          realPrecioFmt:  realPrecio != null ? "$ " + Math.round(realPrecio).toLocaleString("es-AR") : "—",
+          realKgCab:      rDato ? rDato.kg_cab : null,
+          realKgCabFmt:   rDato ? Math.round(rDato.kg_cab) + " kg/cab" : "—",
+          realCabezas:    rDato ? rDato.cabezas : null,
+          realCabezasFmt: rDato ? rDato.cabezas.toLocaleString("es-AR") + " cab" : "—",
+          realDesv:       realDesv,
+          realDesvFmt:    realDesv != null
+                            ? ((realDesv >= 0 ? "+" : "−") + Math.abs(realDesv).toFixed(1).replace(".", ",") + "%")
+                            : null,
+          realTone:       realTone,
           // Margen calculado
           margen:         margen,
           margenFmt:      margenFmt,

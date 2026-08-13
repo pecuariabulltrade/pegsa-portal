@@ -4342,6 +4342,24 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["precios_inferencia"] = {"ok": False, "error": str(e)}
 
+    # ── COMPRAS REALES (v15.57) ────────────────────────────────
+    # Lee el Excel de compras del OneDrive compartido y vuelca
+    # precios_compra_real.json — el precio REAL pagado por categoría, que las
+    # tarjetas de indiferencia muestran al lado del tope teórico.
+    separador("Compras reales · precio pagado")
+    try:
+        _compras = procesar_compras_reales(carpeta, log)
+        resumen["modulos"]["compras_reales"] = {
+            "ok":           _compras is not None,
+            "filas":        _compras["meta"]["filas_totales"] if _compras else 0,
+            "descartadas":  _compras["meta"]["filas_descartadas"] if _compras else 0,
+            "categorias":   len(_compras["por_categoria"]) if _compras else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ procesar_compras_reales falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["compras_reales"] = {"ok": False, "error": str(e)}
+
     # ── v15.14: Smoke test post-pipeline ──
     # Valida que los JSONs tengan números razonables. Si falla, queda registrado
     # en modulos.smoke_test → el banner stale v15.12 lo detecta como módulo con
@@ -6691,6 +6709,255 @@ def procesar_precios_inferencia(carpeta_out, log=None):
     finally:
         try: Path(tmp_path).unlink()
         except Exception: pass
+
+
+# v15.57: el Excel de compras se carga a mano y las categorías vienen con
+# mayúsculas/minúsculas mezcladas y variantes ('Ternero overo', 'Vaca Directo',
+# 'vaca holando'). 16 grafías distintas para 7 categorías reales. Se normaliza
+# sin acentos y en minúscula, con mapa explícito — NO por coincidencia parcial:
+# 'ternera' y 'ternero' comparten prefijo y un startswith/in las mezclaría.
+_CAT_COMPRAS = {
+    'vaca': 'Vaca', 'vaca directo': 'Vaca', 'vaca holando': 'Vaca',
+    'vaquillona': 'Vaquillona',
+    'novillo': 'Novillo',
+    'novillito': 'Novillito',
+    'toro': 'Toro',
+    'ternero': 'Ternero', 'ternero overo': 'Ternero',
+    'ternera': 'Ternera', 'ternera overa': 'Ternera',
+}
+
+COMPRAS_VENTANA_DIAS = 90
+
+
+def _norm_cat_compra(s):
+    """Minúscula, sin acentos, espacios colapsados."""
+    import unicodedata
+    s = str(s).strip().lower()
+    s = ''.join(c for c in unicodedata.normalize('NFD', s)
+                if unicodedata.category(c) != 'Mn')
+    return ' '.join(s.split())
+
+
+def procesar_compras_reales(carpeta_out, log=None):
+    """v15.57: lee 'compras de hacienda.xlsx' (hoja OK) y genera
+    precios_compra_real.json con el precio REALMENTE pagado por categoría,
+    para contrastarlo contra el tope de indiferencia del simulador.
+
+    El archivo lo mantiene el usuario a mano y vive FUERA de la carpeta de
+    datos, en el OneDrive compartido:
+      <OneDrive>\\archivos de pecuaria compartidos\\haras\\compras de hacienda.xlsx
+
+    Estructura de la hoja OK (se lee POR NOMBRE de header, no por posición —
+    las columnas Cab WinCampo/Dif cantidad se corrieron cuando agregaron
+    'comision' y una columna vacía en el medio):
+      tropa · Fecha · Categoria · Origen · Cantidad · Precio Compra ($/kg) ·
+      kg (kg/cabeza) · comision · <vacía> · Cab WinCampo · Dif cantidad
+    Hay filas separadoras vacías entre tropas; Cab WinCampo/Dif cantidad sólo
+    vienen en la primera fila de cada tropa y NO se usan.
+
+    La hoja 'VER WIN' (conciliación contra WinCampo) queda fuera de alcance.
+
+    Devuelve el dict volcado, o None si no hay archivo / error.
+    NO levanta excepción — sólo loguea warning (igual que trazabilidad).
+    """
+    if log is None:
+        log = logging.getLogger("compras")
+    from datetime import date, timedelta
+
+    # ── Resolución de la ruta ────────────────────────────────
+    # carpeta_out es <OneDrive>\PEGSA_Portal\datos (config 'auto'), pero el
+    # archivo cuelga de la RAÍZ del OneDrive. En vez de contar .parent a ciegas
+    # (que se rompe si carpeta_out fuese PEGSA_Portal, o si corre desde el repo)
+    # subimos buscando la carpeta compartida. Override por config.ini.
+    SUBDIR = Path("archivos de pecuaria compartidos") / "haras"
+    ruta_dir = None
+    try:
+        _cfg_path = Path(__file__).parent / "config.ini"
+        if _cfg_path.exists():
+            _cfg = configparser.ConfigParser()
+            _cfg.read(_cfg_path, encoding="utf-8")
+            if _cfg.has_section("RUTAS") and _cfg["RUTAS"].get("compras_dir"):
+                ruta_dir = Path(_cfg["RUTAS"].get("compras_dir"))
+    except Exception:
+        pass
+    if ruta_dir is None:
+        cand = Path(carpeta_out).resolve()
+        for base in [cand] + list(cand.parents):
+            if (base / SUBDIR).is_dir():
+                ruta_dir = base / SUBDIR
+                break
+    if ruta_dir is None or not Path(ruta_dir).is_dir():
+        log.warning(f"  ⚠ Carpeta de compras no encontrada desde {carpeta_out}, saltando")
+        return None
+
+    # v15.44: matching case-insensitive — Path.glob() es case-sensitive aun en
+    # Windows y el usuario puede renombrar el archivo con otra caja.
+    import fnmatch
+    cands = [p for p in Path(ruta_dir).iterdir()
+             if p.is_file() and fnmatch.fnmatch(p.name.lower(), 'compras de hacienda*.xlsx')]
+    cands.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    xl = cands[0] if cands else None
+    log.info(f"  compras: {ruta_dir} · archivo={xl.name if xl else None}")
+    if xl is None:
+        log.warning(f"  ⚠ 'compras de hacienda.xlsx' no está en {ruta_dir}, saltando")
+        return None
+
+    try:
+        import openpyxl
+    except ImportError:
+        log.warning("  ⚠ openpyxl no instalado; saltando compras reales")
+        return None
+
+    # Copiar a temp — OneDrive a veces bloquea la lectura directa.
+    import shutil, tempfile
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as _tf:
+            tmp_path = _tf.name
+        shutil.copy2(str(xl), tmp_path)
+    except Exception as e:
+        log.warning(f"  ⚠ no pude copiar {xl.name} a temp: {e}")
+        return None
+
+    try:
+        wb = openpyxl.load_workbook(tmp_path, data_only=True, read_only=True)
+        if "OK" not in wb.sheetnames:
+            log.warning(f"  ⚠ {xl.name} no tiene hoja 'OK' (tiene {wb.sheetnames}), saltando")
+            return None
+        filas = list(wb["OK"].iter_rows(values_only=True))
+        try: wb.close()
+        except Exception: pass
+        if len(filas) < 2:
+            log.warning(f"  ⚠ hoja OK vacía en {xl.name}, saltando")
+            return None
+
+        hdr = [_norm_cat_compra(c) if c is not None else "" for c in filas[0]]
+        try:
+            i_tropa = hdr.index("tropa")
+            i_fecha = hdr.index("fecha")
+            i_cat   = hdr.index("categoria")
+            i_cant  = hdr.index("cantidad")
+            i_prec  = hdr.index("precio compra")
+            i_kg    = hdr.index("kg")
+        except ValueError as e:
+            log.warning(f"  ⚠ headers inesperados en hoja OK ({hdr}): {e}, saltando")
+            return None
+
+        hoy   = date.today()
+        desde = hoy - timedelta(days=COMPRAS_VENTANA_DIAS)
+        acc_v, acc_t = {}, {}          # ventana / histórico completo
+        n_filas = 0
+        desc = {}
+        grafias_desconocidas = {}
+
+        def _add(d, cat, cab, kg_cab, precio):
+            a = d.setdefault(cat, {"cabezas": 0, "kg": 0.0, "plata": 0.0, "operaciones": 0})
+            a["cabezas"]     += cab
+            a["kg"]          += cab * kg_cab      # kilos totales de la operación
+            a["plata"]       += cab * kg_cab * precio
+            a["operaciones"] += 1
+
+        def _descartar(motivo, detalle):
+            desc[motivo] = desc.get(motivo, 0) + 1
+            log.warning(f"  ⚠ compra descartada ({motivo}): {detalle}")
+
+        for r in filas[1:]:
+            # filas separadoras entre tropas
+            if r[i_cat] is None or r[i_fecha] is None:
+                continue
+            n_filas += 1
+            tropa = r[i_tropa] or "?"
+            f = r[i_fecha]
+            f = f.date() if isinstance(f, datetime) else f
+            if not isinstance(f, date):
+                _descartar("fecha_invalida", f"{tropa} · fecha={r[i_fecha]!r}")
+                continue
+            try:
+                cab    = int(float(r[i_cant]))
+                precio = float(r[i_prec])
+                kg_cab = float(r[i_kg])
+            except (TypeError, ValueError):
+                _descartar("fila_incompleta", f"{tropa} · cant/precio/kg no numéricos")
+                continue
+
+            # v15.57: filtros defensivos y genéricos (no hardcodean filas).
+            # Dos filas malas confirmadas en el archivo al 2026-08-12:
+            #  1) 'BUL.HVG.02/01/2026' cargada con fecha 2026-12-29 (el nombre
+            #     dice 02/01). Rompería la ventana de 90 días.
+            #  2) 1 cabeza a $13.333/kg con 60 kg/cab — un ternero de 60 kg no
+            #     existe; es error de carga.
+            if f > hoy:
+                _descartar("fecha_futura", f"{tropa} · {f}")
+                continue
+            if precio > 10000 or precio <= 0:
+                _descartar("precio_fuera_rango", f"{tropa} · ${precio:,.0f}/kg · {kg_cab:.0f} kg")
+                continue
+            if kg_cab < 100 or kg_cab > 800:
+                _descartar("peso_implausible", f"{tropa} · {kg_cab:.0f} kg/cab")
+                continue
+            if cab <= 0:
+                _descartar("cantidad_invalida", f"{tropa} · {cab} cab")
+                continue
+
+            cat = _CAT_COMPRAS.get(_norm_cat_compra(r[i_cat]))
+            if cat is None:
+                g = str(r[i_cat]).strip()
+                grafias_desconocidas[g] = grafias_desconocidas.get(g, 0) + 1
+                _descartar("categoria_desconocida", f"{tropa} · {g!r}")
+                continue
+
+            _add(acc_t, cat, cab, kg_cab, precio)
+            if f >= desde:
+                _add(acc_v, cat, cab, kg_cab, precio)
+
+        def _cerrar(d):
+            """Promedio PONDERADO POR KILOS, no simple: una compra de 1 cabeza
+            no puede pesar lo mismo que una de 115."""
+            out = {}
+            for cat, a in sorted(d.items(), key=lambda x: -x[1]["cabezas"]):
+                if a["cabezas"] <= 0 or a["kg"] <= 0:
+                    continue
+                out[cat] = {
+                    "cabezas":     a["cabezas"],
+                    "kg_cab":      round(a["kg"] / a["cabezas"], 1),
+                    "precio_kg":   round(a["plata"] / a["kg"]),
+                    "operaciones": a["operaciones"],
+                }
+            return out
+
+        n_desc = sum(desc.values())
+        salida = {
+            "meta": {
+                "generado":         datetime.now().isoformat(),
+                "archivo":          xl.name,
+                "ventana_dias":     COMPRAS_VENTANA_DIAS,
+                "desde":            desde.isoformat(),
+                "hasta":            hoy.isoformat(),
+                "filas_totales":    n_filas,
+                "filas_descartadas": n_desc,
+                "motivos_descarte": desc,
+            },
+            "por_categoria":       _cerrar(acc_v),
+            "por_categoria_total": _cerrar(acc_t),
+        }
+        if grafias_desconocidas:
+            salida["meta"]["categorias_desconocidas"] = grafias_desconocidas
+
+        out_path = Path(carpeta_out) / "precios_compra_real.json"
+        with out_path.open("w", encoding="utf-8") as f:
+            json.dump(salida, f, ensure_ascii=False, indent=2, default=str)
+
+        # Si mañana el archivo trae 30 descartes en vez de 2, hay que enterarse.
+        log.info(f"  ✓ Compras reales: {n_filas} filas · {n_desc} descartadas {desc or ''} · "
+                 f"{len(salida['por_categoria'])} categorías en {COMPRAS_VENTANA_DIAS}d "
+                 f"(desde {desde.isoformat()})")
+        for cat, v in salida["por_categoria"].items():
+            log.info(f"      {cat:<12} {v['cabezas']:>5} cab · {v['kg_cab']:>6.1f} kg/cab · $ {v['precio_kg']:,}/kg")
+        return salida
+    finally:
+        if tmp_path:
+            try: Path(tmp_path).unlink()
+            except Exception: pass
 
 
 def procesar_tesoreria_darwash(carpeta_out, log=None):

@@ -105,7 +105,7 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, tesoreriaDW, tesoreriaDWHist, stockEstHaras] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, preciosCompraReal, tesoreriaDW, tesoreriaDWHist, stockEstHaras] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
@@ -124,6 +124,8 @@ window.PEGSA_DATA = {
     fetchJson('comportamiento_historico.json'),
     fetchJson('precios_inferencia.json'),
     fetchJson('precios_inferencia_historico.json'),
+    // v15.57: precio REAL pagado por categoría (Excel de compras, 90 días).
+    fetchJson('precios_compra_real.json'),
     fetchJson('tesoreria_darwash.json'),
     fetchJson('tesoreria_darwash_historico.json'),
     // El Haras se carga acá (se usa aparte para "Stock terminados" y su tarjeta).
@@ -828,6 +830,16 @@ window.PEGSA_DATA = {
   }
   if (preciosInfHist && Array.isArray(preciosInfHist.semanas)) {
     D.preciosInferenciaHist = preciosInfHist.semanas;
+  }
+
+  // v15.57 · Precio REAL pagado por categoría (Excel de compras, ventana 90d).
+  // Se muestra al lado del tope de indiferencia en las 4 tarjetas. Si el JSON
+  // no está (Excel ausente o bloqueado por OneDrive) queda undefined y las
+  // tarjetas siguen mostrando el tope sin romperse.
+  if (preciosCompraReal?.por_categoria) {
+    D.preciosCompraReal      = preciosCompraReal.por_categoria;
+    D.preciosCompraRealTotal = preciosCompraReal.por_categoria_total || {};
+    D.preciosCompraRealMeta  = preciosCompraReal.meta || {};
   }
 
   // 6. Kg repartidos · último día de mixer

@@ -353,6 +353,14 @@ function ProductivosSection({ D }) {
    "Ver en Mercado →" (módulo "mercado", tab interna "inferencia"
    agregada en v8).
    ============================================================ */
+// v15.57: tarjeta de indiferencia → categoría del Excel de compras.
+var PRINF_CAT_REAL = {
+  vaca_100:   'Vaca',
+  vaca_60:    'Vaca',
+  novillo:    'Novillo',
+  vaquillona: 'Vaquillona'
+};
+
 function PreciosInferenciaSection({ D }) {
   // v12.3: multi-open en lugar de acordeón exclusivo. Cada card abre/cierra
   // independiente y el usuario puede dejar las 4 expandidas a la vez.
@@ -361,6 +369,15 @@ function PreciosInferenciaSection({ D }) {
   const items = Array.isArray(D.preciosInferencia) ? D.preciosInferencia : [];
   const meta  = D.preciosInferenciaMeta || {};
   if (!items.length) return null;
+
+  // v15.57: mapeo por NOMBRE (decisión del usuario). Los pesos de compra NO
+  // coinciden entre el modelo y la realidad (Novillo: teórico 300 kg vs real
+  // 435 kg), por eso la tarjeta muestra los DOS pesos — sin ese dato la
+  // comparación induce a error. No se recalcula el tope al peso real ni se
+  // buscan equivalencias por peso.
+  const real     = D.preciosCompraReal || null;
+  const realMeta = D.preciosCompraRealMeta || {};
+  const ventana  = realMeta.ventana_dias || 90;
 
   const fechaLabel = meta.fecha ? meta.fecha.split("-").reverse().join("/") : "—";
   const fmtMoney = (n) => n != null ? "$ " + Math.round(n).toLocaleString("es-AR") : "—";
@@ -425,6 +442,54 @@ function PreciosInferenciaSection({ D }) {
                 <span className="prinf-big-num">{it.precio_comp != null ? Math.round(it.precio_comp).toLocaleString("es-AR") : "—"}</span>
                 <span className="prinf-big-unit">/kg</span>
               </div>
+              {/* v15.57: tope teórico (el número grande de arriba) vs precio
+                  real pagado en la ventana. Los dos pesos a la vista. */}
+              {real && (() => {
+                const catReal = PRINF_CAT_REAL[it.id];
+                const r = catReal ? real[catReal] : null;
+                // Desvío del real contra el tope: >0 = compraste por encima.
+                let desv = null;
+                if (r && r.precio_kg != null && it.precio_comp) {
+                  desv = (r.precio_kg / it.precio_comp - 1) * 100;
+                }
+                // Umbral de significancia: bajo 2% va gris, no rojo/verde.
+                const tone = desv == null ? "is-flat"
+                  : Math.abs(desv) < 2 ? "is-flat"
+                  : desv > 0 ? "is-over" : "is-under";
+                return (
+                  <div className="prinf-real">
+                    <div className="prinf-real-col">
+                      <span className="prinf-real-lbl">Tope de compra</span>
+                      <div className="prinf-real-sub">
+                        {it.kg_compra != null ? "modelado a " + Math.round(it.kg_compra) + " kg" : "—"}
+                      </div>
+                    </div>
+                    <div className="prinf-real-col">
+                      <span className="prinf-real-lbl">Real pagado · {ventana}d</span>
+                      {r ? (
+                        <>
+                          <div className="prinf-real-val">
+                            <span>{"$ " + Math.round(r.precio_kg).toLocaleString("es-AR")}</span>
+                            {desv != null && (
+                              <span className={"prinf-real-desv " + tone}>
+                                {(desv >= 0 ? "+" : "−") + Math.abs(desv).toFixed(1).replace(".", ",") + "%"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="prinf-real-sub">
+                            {Math.round(r.kg_cab) + " kg/cab · " + r.cabezas.toLocaleString("es-AR") + " cab"}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="prinf-real-val"><span>—</span></div>
+                          <div className="prinf-real-sub is-empty">sin compras en {ventana} días</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
               {isOpen && (
                 <div className="prinf-expand">
                   <div className="prinf-divider" />
