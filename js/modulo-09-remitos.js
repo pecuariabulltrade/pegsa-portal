@@ -115,13 +115,10 @@ function _remPuenteSVG(pasos) {
     var t = tramos[i], x = 14 + i * (bw + gap);
     var yTop = Math.min(y(t.de), y(t.a)), hBar = Math.max(Math.abs(y(t.a) - y(t.de)), 2);
     s += '<rect x="' + x + '" y="' + yTop + '" width="' + bw + '" height="' + hBar + '" fill="' + p.color + '" rx="1"/>';
-    // Valor: adentro de la barra si entra (evita que las bajas choquen con las
-    // etiquetas del eje cuando el acumulado va por debajo de cero); si la barra
-    // es finita, arriba — o abajo cuando el tramo cae bajo el eje.
-    var adentro = hBar >= 26;
-    var yTxt = adentro ? (yTop + hBar / 2 + 4) : (t.a < 0 ? yTop + hBar + 13 : yTop - 6);
-    var col = adentro ? '#fff' : (p.tipo === 'baja' ? '#6b6560' : (t.a < 0 ? '#c0392b' : '#1a1612'));
-    s += '<text x="' + (x + bw / 2) + '" y="' + yTxt + '" text-anchor="middle" font-size="13" font-weight="700" fill="' + col + '">'
+    // valor: arriba de la barra (o abajo si el tramo cae bajo el eje)
+    var bajoEje = t.a < 0;
+    s += '<text x="' + (x + bw / 2) + '" y="' + (bajoEje ? yTop + hBar + 13 : yTop - 6) + '" text-anchor="middle" font-size="13" font-weight="700" fill="'
+      + (p.tipo === 'baja' ? '#6b6560' : (t.a < 0 ? '#c0392b' : '#1a1612')) + '">'
       + (p.tipo === 'baja' ? '−' : '') + _remMM(Math.abs(p.val)) + '</text>';
     // etiqueta al pie, en dos líneas si hace falta
     var partes = String(p.lbl).split(' ');
