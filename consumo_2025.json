@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generado": "2026-08-12T23:05:30.938521",
+    "generado": "2026-08-13T00:05:37.812628",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-08-12",
+    "hoy_parcial": "2026-08-13",
     "ultimo_completo": "2026-08-08",
     "ventana_3d": [
       "2026-08-06",
@@ -38,38 +38,38 @@
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 40062879.0,
-    "total_kg_ms": 28886445.1,
+    "total_kg": 39940524.0,
+    "total_kg_ms": 28797445.3,
     "por_insumo": [
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12363836.0,
+        "kg": 12324156.0,
         "ms_pct": 53.0,
-        "kg_ms": 6552833.1
+        "kg_ms": 6531802.7
       },
       {
         "desc": "MAIZ GRANO",
-        "kg": 12246473.0,
+        "kg": 12211938.0,
         "ms_pct": 89.0,
-        "kg_ms": 10899361.0
+        "kg_ms": 10868624.8
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9384357.0,
+        "kg": 9359052.0,
         "ms_pct": 58.0,
-        "kg_ms": 5442927.1
+        "kg_ms": 5428250.2
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4447514.0,
+        "kg": 4429719.0,
         "ms_pct": 99.0,
-        "kg_ms": 4403038.9
+        "kg_ms": 4385421.8
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1620699.0,
+        "kg": 1615659.0,
         "ms_pct": 98.0,
-        "kg_ms": 1588285.0
+        "kg_ms": 1583345.8
       }
     ]
   },
@@ -555,5 +555,627 @@
         }
       }
     ]
+  },
+  "por_mes": {
+    "nota": "MS_PCT vigente (2026-05) aplicado retroactivamente a toda la historia. Dia valido si kg >= 0.85 * mediana del mes. Hoy (parcial) excluido. kg_ms_dia divide por dias CON REGISTRO.",
+    "umbral_caida": 0.85,
+    "meses": {
+      "2022-07": {
+        "kg_total": 305280.0,
+        "kg_ms_total": 228404.4,
+        "kg_ms_dia": 76134.8,
+        "dias_calendario": 31,
+        "dias_con_registro": 3,
+        "dias_descartados": [
+          "2022-07-25",
+          "2022-07-26",
+          "2022-07-28"
+        ],
+        "parcial": true
+      },
+      "2022-08": {
+        "kg_total": 2667360.0,
+        "kg_ms_total": 1947245.9,
+        "kg_ms_dia": 72120.2,
+        "dias_calendario": 31,
+        "dias_con_registro": 27,
+        "dias_descartados": [
+          "2022-08-03",
+          "2022-08-04",
+          "2022-08-06",
+          "2022-08-07"
+        ],
+        "parcial": false
+      },
+      "2022-09": {
+        "kg_total": 2726825.0,
+        "kg_ms_total": 1984753.8,
+        "kg_ms_dia": 68439.8,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2022-09-29"
+        ],
+        "parcial": false
+      },
+      "2022-10": {
+        "kg_total": 3123885.0,
+        "kg_ms_total": 2296690.2,
+        "kg_ms_dia": 74086.8,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2022-11": {
+        "kg_total": 2773190.0,
+        "kg_ms_total": 2073914.9,
+        "kg_ms_dia": 71514.3,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2022-11-27"
+        ],
+        "parcial": false
+      },
+      "2022-12": {
+        "kg_total": 2498210.0,
+        "kg_ms_total": 1844796.0,
+        "kg_ms_dia": 65885.6,
+        "dias_calendario": 31,
+        "dias_con_registro": 28,
+        "dias_descartados": [
+          "2022-12-05",
+          "2022-12-06",
+          "2022-12-11"
+        ],
+        "parcial": false
+      },
+      "2023-01": {
+        "kg_total": 2413185.0,
+        "kg_ms_total": 1760417.5,
+        "kg_ms_dia": 60704.1,
+        "dias_calendario": 31,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2023-01-01",
+          "2023-01-29"
+        ],
+        "parcial": false
+      },
+      "2023-02": {
+        "kg_total": 2086205.0,
+        "kg_ms_total": 1519299.6,
+        "kg_ms_dia": 69059.1,
+        "dias_calendario": 28,
+        "dias_con_registro": 22,
+        "dias_descartados": [
+          "2023-02-09",
+          "2023-02-10",
+          "2023-02-11",
+          "2023-02-12",
+          "2023-02-23",
+          "2023-02-24"
+        ],
+        "parcial": false
+      },
+      "2023-03": {
+        "kg_total": 2605900.0,
+        "kg_ms_total": 1887816.1,
+        "kg_ms_dia": 67422.0,
+        "dias_calendario": 31,
+        "dias_con_registro": 28,
+        "dias_descartados": [
+          "2023-03-03",
+          "2023-03-04",
+          "2023-03-05"
+        ],
+        "parcial": false
+      },
+      "2023-04": {
+        "kg_total": 2821305.0,
+        "kg_ms_total": 2041592.6,
+        "kg_ms_dia": 70399.7,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2023-04-09"
+        ],
+        "parcial": false
+      },
+      "2023-05": {
+        "kg_total": 3654375.0,
+        "kg_ms_total": 2681077.9,
+        "kg_ms_dia": 86486.4,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2023-06": {
+        "kg_total": 3374220.0,
+        "kg_ms_total": 2500847.9,
+        "kg_ms_dia": 86236.1,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2023-06-04"
+        ],
+        "parcial": false
+      },
+      "2023-07": {
+        "kg_total": 3157030.0,
+        "kg_ms_total": 2365253.9,
+        "kg_ms_dia": 76298.5,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2023-08": {
+        "kg_total": 2942275.0,
+        "kg_ms_total": 2136570.8,
+        "kg_ms_dia": 76306.1,
+        "dias_calendario": 31,
+        "dias_con_registro": 28,
+        "dias_descartados": [
+          "2023-08-09",
+          "2023-08-10",
+          "2023-08-26"
+        ],
+        "parcial": false
+      },
+      "2023-09": {
+        "kg_total": 3361435.0,
+        "kg_ms_total": 2450200.2,
+        "kg_ms_dia": 81673.3,
+        "dias_calendario": 30,
+        "dias_con_registro": 30,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2023-10": {
+        "kg_total": 3659365.0,
+        "kg_ms_total": 2701337.1,
+        "kg_ms_dia": 90044.6,
+        "dias_calendario": 31,
+        "dias_con_registro": 30,
+        "dias_descartados": [
+          "2023-10-01"
+        ],
+        "parcial": false
+      },
+      "2023-11": {
+        "kg_total": 3431910.0,
+        "kg_ms_total": 2526098.2,
+        "kg_ms_dia": 87106.8,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2023-11-30"
+        ],
+        "parcial": false
+      },
+      "2023-12": {
+        "kg_total": 3522580.0,
+        "kg_ms_total": 2552304.4,
+        "kg_ms_dia": 82332.4,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2024-01": {
+        "kg_total": 2231965.0,
+        "kg_ms_total": 1612767.2,
+        "kg_ms_dia": 70120.3,
+        "dias_calendario": 31,
+        "dias_con_registro": 23,
+        "dias_descartados": [
+          "2024-01-12",
+          "2024-01-13",
+          "2024-01-15",
+          "2024-01-18",
+          "2024-01-19",
+          "2024-01-20",
+          "2024-01-28"
+        ],
+        "parcial": false
+      },
+      "2024-02": {
+        "kg_total": 2270665.0,
+        "kg_ms_total": 1608230.8,
+        "kg_ms_dia": 69923.1,
+        "dias_calendario": 29,
+        "dias_con_registro": 23,
+        "dias_descartados": [
+          "2024-02-03",
+          "2024-02-04",
+          "2024-02-07",
+          "2024-02-08",
+          "2024-02-09",
+          "2024-02-10"
+        ],
+        "parcial": false
+      },
+      "2024-03": {
+        "kg_total": 3343530.0,
+        "kg_ms_total": 2426629.9,
+        "kg_ms_dia": 78278.4,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2024-04": {
+        "kg_total": 2979760.0,
+        "kg_ms_total": 2157055.5,
+        "kg_ms_dia": 77037.7,
+        "dias_calendario": 30,
+        "dias_con_registro": 28,
+        "dias_descartados": [
+          "2024-04-07",
+          "2024-04-21"
+        ],
+        "parcial": false
+      },
+      "2024-05": {
+        "kg_total": 3030835.0,
+        "kg_ms_total": 2199550.3,
+        "kg_ms_dia": 70953.2,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2024-06": {
+        "kg_total": 2705135.0,
+        "kg_ms_total": 1978270.6,
+        "kg_ms_dia": 70652.5,
+        "dias_calendario": 30,
+        "dias_con_registro": 28,
+        "dias_descartados": [
+          "2024-06-09",
+          "2024-06-15"
+        ],
+        "parcial": false
+      },
+      "2024-07": {
+        "kg_total": 3064410.0,
+        "kg_ms_total": 2215302.4,
+        "kg_ms_dia": 71461.4,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2024-08": {
+        "kg_total": 2508590.0,
+        "kg_ms_total": 1870102.1,
+        "kg_ms_dia": 71927.0,
+        "dias_calendario": 31,
+        "dias_con_registro": 26,
+        "dias_descartados": [
+          "2024-08-04",
+          "2024-08-17",
+          "2024-08-18",
+          "2024-08-30",
+          "2024-08-31"
+        ],
+        "parcial": false
+      },
+      "2024-09": {
+        "kg_total": 2335240.0,
+        "kg_ms_total": 1717129.4,
+        "kg_ms_dia": 68685.2,
+        "dias_calendario": 30,
+        "dias_con_registro": 25,
+        "dias_descartados": [
+          "2024-09-14",
+          "2024-09-21",
+          "2024-09-25",
+          "2024-09-27",
+          "2024-09-28"
+        ],
+        "parcial": false
+      },
+      "2024-10": {
+        "kg_total": 2783350.0,
+        "kg_ms_total": 2043661.9,
+        "kg_ms_dia": 81746.5,
+        "dias_calendario": 31,
+        "dias_con_registro": 25,
+        "dias_descartados": [
+          "2024-10-05",
+          "2024-10-12",
+          "2024-10-13",
+          "2024-10-14",
+          "2024-10-20",
+          "2024-10-26"
+        ],
+        "parcial": false
+      },
+      "2024-11": {
+        "kg_total": 3141682.0,
+        "kg_ms_total": 2268595.7,
+        "kg_ms_dia": 78227.4,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2024-11-29"
+        ],
+        "parcial": false
+      },
+      "2024-12": {
+        "kg_total": 3166702.0,
+        "kg_ms_total": 2277837.3,
+        "kg_ms_dia": 73478.6,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2025-01": {
+        "kg_total": 2985528.0,
+        "kg_ms_total": 2184562.0,
+        "kg_ms_dia": 80909.7,
+        "dias_calendario": 31,
+        "dias_con_registro": 27,
+        "dias_descartados": [
+          "2025-01-09",
+          "2025-01-10",
+          "2025-01-14",
+          "2025-01-15"
+        ],
+        "parcial": false
+      },
+      "2025-02": {
+        "kg_total": 3221957.0,
+        "kg_ms_total": 2369673.5,
+        "kg_ms_dia": 91141.3,
+        "dias_calendario": 28,
+        "dias_con_registro": 26,
+        "dias_descartados": [
+          "2025-02-22",
+          "2025-02-23"
+        ],
+        "parcial": false
+      },
+      "2025-03": {
+        "kg_total": 3215642.0,
+        "kg_ms_total": 2361698.1,
+        "kg_ms_dia": 90834.5,
+        "dias_calendario": 31,
+        "dias_con_registro": 26,
+        "dias_descartados": [
+          "2025-03-03",
+          "2025-03-04",
+          "2025-03-08",
+          "2025-03-09",
+          "2025-03-13"
+        ],
+        "parcial": false
+      },
+      "2025-04": {
+        "kg_total": 3387625.0,
+        "kg_ms_total": 2484320.5,
+        "kg_ms_dia": 95550.8,
+        "dias_calendario": 30,
+        "dias_con_registro": 26,
+        "dias_descartados": [
+          "2025-04-01",
+          "2025-04-02",
+          "2025-04-03",
+          "2025-04-27"
+        ],
+        "parcial": false
+      },
+      "2025-05": {
+        "kg_total": 2644640.0,
+        "kg_ms_total": 1939665.4,
+        "kg_ms_dia": 96983.3,
+        "dias_calendario": 31,
+        "dias_con_registro": 20,
+        "dias_descartados": [
+          "2025-05-02",
+          "2025-05-03",
+          "2025-05-04",
+          "2025-05-05",
+          "2025-05-06",
+          "2025-05-07",
+          "2025-05-08",
+          "2025-05-10",
+          "2025-05-15",
+          "2025-05-16"
+        ],
+        "parcial": false
+      },
+      "2025-06": {
+        "kg_total": 3795366.0,
+        "kg_ms_total": 2790736.0,
+        "kg_ms_dia": 96232.3,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2025-06-05"
+        ],
+        "parcial": false
+      },
+      "2025-07": {
+        "kg_total": 3141605.0,
+        "kg_ms_total": 2323011.2,
+        "kg_ms_dia": 101000.5,
+        "dias_calendario": 31,
+        "dias_con_registro": 23,
+        "dias_descartados": [
+          "2025-07-12",
+          "2025-07-14",
+          "2025-07-24",
+          "2025-07-26",
+          "2025-07-27",
+          "2025-07-28",
+          "2025-07-31"
+        ],
+        "parcial": false
+      },
+      "2025-08": {
+        "kg_total": 3130314.0,
+        "kg_ms_total": 2284139.6,
+        "kg_ms_dia": 78763.4,
+        "dias_calendario": 31,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2025-08-23",
+          "2025-08-24"
+        ],
+        "parcial": false
+      },
+      "2025-09": {
+        "kg_total": 2643775.0,
+        "kg_ms_total": 1908446.9,
+        "kg_ms_dia": 86747.6,
+        "dias_calendario": 30,
+        "dias_con_registro": 22,
+        "dias_descartados": [
+          "2025-09-04",
+          "2025-09-05",
+          "2025-09-06",
+          "2025-09-07",
+          "2025-09-08",
+          "2025-09-13",
+          "2025-09-14",
+          "2025-09-15"
+        ],
+        "parcial": false
+      },
+      "2025-10": {
+        "kg_total": 4061695.0,
+        "kg_ms_total": 2965968.4,
+        "kg_ms_dia": 98865.6,
+        "dias_calendario": 31,
+        "dias_con_registro": 30,
+        "dias_descartados": [
+          "2025-10-15"
+        ],
+        "parcial": false
+      },
+      "2025-11": {
+        "kg_total": 3462065.0,
+        "kg_ms_total": 2493277.9,
+        "kg_ms_dia": 92343.6,
+        "dias_calendario": 30,
+        "dias_con_registro": 27,
+        "dias_descartados": [
+          "2025-11-27",
+          "2025-11-29",
+          "2025-11-30"
+        ],
+        "parcial": false
+      },
+      "2025-12": {
+        "kg_total": 3785986.0,
+        "kg_ms_total": 2728958.4,
+        "kg_ms_dia": 88030.9,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2026-01": {
+        "kg_total": 3752197.0,
+        "kg_ms_total": 2726499.4,
+        "kg_ms_dia": 87951.6,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2026-02": {
+        "kg_total": 3161115.0,
+        "kg_ms_total": 2275741.1,
+        "kg_ms_dia": 91029.6,
+        "dias_calendario": 28,
+        "dias_con_registro": 25,
+        "dias_descartados": [
+          "2026-02-01",
+          "2026-02-10",
+          "2026-02-11"
+        ],
+        "parcial": false
+      },
+      "2026-03": {
+        "kg_total": 3095962.0,
+        "kg_ms_total": 2211810.9,
+        "kg_ms_dia": 78993.2,
+        "dias_calendario": 31,
+        "dias_con_registro": 28,
+        "dias_descartados": [
+          "2026-03-24",
+          "2026-03-25",
+          "2026-03-31"
+        ],
+        "parcial": false
+      },
+      "2026-04": {
+        "kg_total": 2616021.0,
+        "kg_ms_total": 1866354.2,
+        "kg_ms_dia": 69124.2,
+        "dias_calendario": 30,
+        "dias_con_registro": 27,
+        "dias_descartados": [
+          "2026-04-01",
+          "2026-04-26",
+          "2026-04-27"
+        ],
+        "parcial": false
+      },
+      "2026-05": {
+        "kg_total": 3023386.0,
+        "kg_ms_total": 2162006.6,
+        "kg_ms_dia": 80074.3,
+        "dias_calendario": 31,
+        "dias_con_registro": 27,
+        "dias_descartados": [
+          "2026-05-01",
+          "2026-05-04",
+          "2026-05-06",
+          "2026-05-13"
+        ],
+        "parcial": false
+      },
+      "2026-06": {
+        "kg_total": 2781835.0,
+        "kg_ms_total": 2000445.1,
+        "kg_ms_dia": 68980.9,
+        "dias_calendario": 30,
+        "dias_con_registro": 29,
+        "dias_descartados": [
+          "2026-06-01"
+        ],
+        "parcial": false
+      },
+      "2026-07": {
+        "kg_total": 2445110.0,
+        "kg_ms_total": 1757310.1,
+        "kg_ms_dia": 56687.4,
+        "dias_calendario": 31,
+        "dias_con_registro": 31,
+        "dias_descartados": [],
+        "parcial": false
+      },
+      "2026-08": {
+        "kg_total": 701868.0,
+        "kg_ms_total": 503391.9,
+        "kg_ms_dia": 62924.0,
+        "dias_calendario": 31,
+        "dias_con_registro": 8,
+        "dias_descartados": [
+          "2026-08-09",
+          "2026-08-10",
+          "2026-08-11"
+        ],
+        "parcial": true
+      }
+    }
   }
 }
