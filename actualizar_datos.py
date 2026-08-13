@@ -4360,6 +4360,31 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["compras_reales"] = {"ok": False, "error": str(e)}
 
+    # ── %PV MENSUAL HISTÓRICO (v15.58) ─────────────────────────
+    # La serie diaria de pct_pv (eficiencia_historico) solo cubre desde
+    # 2026-04-30 y el módulo Resultado por Remito costea animales con hasta
+    # 360 días de estadía → esto reconstruye el %PV mes a mes.
+    #   - numerador:   consumo_{periodo}.json → por_mes (mixer, días válidos)
+    #   - denominador: comportamiento_historico → El Haras kg_proyectado,
+    #                  PROMEDIO del mes = (fin mes anterior + fin mes) / 2
+    #   - ÷ 0.92: mismo ajuste que el indicador del portal (data.js ~L761)
+    # Va acá y NO en la sección 9 porque comportamiento_historico.json se
+    # genera en el Módulo 9 (más arriba) y se lee desde DISCO, no de memoria:
+    # así funciona igual si algún módulo intermedio falló.
+    separador("%PV mensual histórico")
+    try:
+        _pct = generar_pct_pv_mensual(carpeta, periodo, log)
+        resumen["modulos"]["pct_pv_mensual"] = {
+            "ok":     _pct is not None,
+            "meses":  len(_pct["meses"]) if _pct else 0,
+            "desde":  _pct["meta"]["desde"] if _pct else None,
+            "hasta":  _pct["meta"]["hasta"] if _pct else None,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_pct_pv_mensual falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["pct_pv_mensual"] = {"ok": False, "error": str(e)}
+
     # ── v15.14: Smoke test post-pipeline ──
     # Valida que los JSONs tengan números razonables. Si falla, queda registrado
     # en modulos.smoke_test → el banner stale v15.12 lo detecta como módulo con
@@ -6958,6 +6983,150 @@ def procesar_compras_reales(carpeta_out, log=None):
         if tmp_path:
             try: Path(tmp_path).unlink()
             except Exception: pass
+
+
+# v15.58: mismo ajuste que aplica el portal en el indicador de %PV
+# (data.js ~L761: pct_peso_vivo.valor / 0.92). Se guardan crudo y ajustado.
+AJUSTE_MS_PCT_PV = 0.92
+
+
+def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
+    """v15.58: cruza el consumo mensual del mixer con los kg PV de El Haras y
+    vuelca pct_pv_mensual.json — el %PV mes a mes de toda la historia.
+
+    Lo consume el módulo Resultado por Remito, que hoy usa un 2,63% de
+    referencia (un objetivo anual, no el consumo real) que sobreestima el
+    alimento 30-40%.
+
+        pct_pv_crudo    = (kg_ms_mes / dias_con_registro) / kg_pv_promedio * 100
+        pct_pv_ajustado = pct_pv_crudo / 0.92
+
+    Denominador = PROMEDIO del mes (fin mes anterior + fin mes) / 2, no fin de
+    mes: el snapshot es del último día y el stock se mueve mucho adentro del mes
+    (jun-26 arrancó en 3,57M y terminó en 2,99M kg → fin de mes inflaría el %PV
+    ~9%).
+
+    Devuelve el dict volcado, o None si falta alguna fuente.
+    NO levanta excepción — sólo loguea warning y no pisa el JSON existente.
+    """
+    if log is None:
+        log = logging.getLogger("pctpv")
+
+    base = Path(carpeta_out)
+
+    # ── Fuentes (ambas desde disco) ──────────────────────────
+    try:
+        with (base / f"consumo_{periodo}.json").open(encoding="utf-8") as f:
+            _consumo = json.load(f)
+    except Exception as e:
+        log.warning(f"  ⚠ no pude leer consumo_{periodo}.json ({e}), saltando %PV mensual")
+        return None
+    _meses_consumo = ((_consumo.get("por_mes") or {}).get("meses")) or {}
+    if not _meses_consumo:
+        log.warning("  ⚠ consumo sin bloque por_mes (mixer caído?), saltando %PV mensual")
+        return None
+
+    try:
+        with (base / "comportamiento_historico.json").open(encoding="utf-8") as f:
+            _comp = json.load(f)
+    except Exception as e:
+        log.warning(f"  ⚠ no pude leer comportamiento_historico.json ({e}), saltando %PV mensual")
+        return None
+    _snaps = _comp.get("snapshots") or []
+    if not _snaps:
+        log.warning("  ⚠ comportamiento_historico sin snapshots, saltando %PV mensual")
+        return None
+
+    # kg PV de El Haras a fin de cada mes (el snapshot es del último día).
+    kg_fin_mes = {}
+    for s in _snaps:
+        per = s.get("periodo")
+        kg = (((s.get("hacienda_masa") or {}).get("pegsa") or {})
+              .get("por_campo", {}).get("El Haras", {}).get("kg_proyectado"))
+        if per and kg:
+            kg_fin_mes[per] = float(kg)
+
+    def _mes_anterior(mes):
+        y, m = int(mes[:4]), int(mes[5:7])
+        return f"{y-1:04d}-12" if m == 1 else f"{y:04d}-{m-1:02d}"
+
+    meses_out         = {}
+    meses_sin_kg_pv   = []
+    meses_sin_consumo = []
+    fuera_de_rango    = []
+
+    for mes in sorted(_meses_consumo):
+        c = _meses_consumo[mes]
+        kg_ms_mes = c.get("kg_ms_total")
+        n_dias    = c.get("dias_con_registro") or 0
+        if not kg_ms_mes or n_dias <= 0:
+            continue
+
+        prev = kg_fin_mes.get(_mes_anterior(mes))
+        fin  = kg_fin_mes.get(mes)
+        if fin is not None and prev is not None:
+            kg_pv, fuente = (prev + fin) / 2, "promedio_snapshots"
+        elif fin is not None:
+            # Primer mes de la serie de snapshots: no hay mes anterior.
+            kg_pv, fuente = fin, "fin_mes"
+        elif prev is not None:
+            # Mes en curso: todavía no hay snapshot propio.
+            kg_pv, fuente = prev, "fin_mes_anterior"
+        else:
+            meses_sin_kg_pv.append(mes)
+            continue
+
+        kg_ms_dia = kg_ms_mes / n_dias
+        crudo     = kg_ms_dia / kg_pv * 100
+        meses_out[mes] = {
+            "kg_ms_mes":         round(kg_ms_mes, 1),
+            "kg_ms_dia":         round(kg_ms_dia, 1),
+            "dias_calendario":   c.get("dias_calendario"),
+            "dias_con_registro": n_dias,
+            "kg_pv_fin_mes":     round(fin) if fin is not None else None,
+            "kg_pv_haras":       round(kg_pv),
+            "fuente_kg_pv":      fuente,
+            "pct_pv_crudo":      round(crudo, 2),
+            "pct_pv_ajustado":   round(crudo / AJUSTE_MS_PCT_PV, 2),
+            "parcial":           bool(c.get("parcial")),
+        }
+        if not (1.0 <= crudo <= 3.5):
+            fuera_de_rango.append((mes, round(crudo, 2), round(kg_ms_dia), round(kg_pv)))
+
+    for mes in sorted(kg_fin_mes):
+        if mes not in _meses_consumo:
+            meses_sin_consumo.append(mes)
+
+    if not meses_out:
+        log.warning("  ⚠ ningún mes con consumo Y kg PV, no se genera pct_pv_mensual.json")
+        return None
+
+    salida = {
+        "meta": {
+            "generado":        datetime.now().isoformat(),
+            "formula":         "(kg_ms_mes / dias_con_registro) / kg_pv_promedio_mes / 0.92 * 100",
+            "ajuste_ms":       AJUSTE_MS_PCT_PV,
+            "fuente_consumo":  f"consumo_{periodo}.json -> por_mes (mixer Dropbox, dias validos)",
+            "fuente_kg_pv":    ("comportamiento_historico.json -> El Haras kg_proyectado, "
+                                "promedio (fin mes ant + fin mes)/2"),
+            "desde":           min(meses_out),
+            "hasta":           max(meses_out),
+            "meses":           len(meses_out),
+            "meses_sin_kg_pv":   meses_sin_kg_pv,
+            "meses_sin_consumo": meses_sin_consumo,
+        },
+        "meses": meses_out,
+    }
+    guardar(salida, carpeta_out, "pct_pv_mensual.json")
+
+    log.info(f"  ✓ %PV mensual: {len(meses_out)} meses ({min(meses_out)} → {max(meses_out)})")
+    if meses_sin_kg_pv:
+        log.info(f"    {len(meses_sin_kg_pv)} mes(es) con consumo pero sin kg PV "
+                 f"(mixer más viejo que los snapshots): {meses_sin_kg_pv[0]} → {meses_sin_kg_pv[-1]}")
+    for mes, crudo, kgms, kgpv in fuera_de_rango:
+        log.warning(f"  ⚠ %PV fuera de rango [1,0-3,5] en {mes}: {crudo}% "
+                    f"(kg_ms_dia={kgms:,} · kg_pv={kgpv:,})")
+    return salida
 
 
 def procesar_tesoreria_darwash(carpeta_out, log=None):
