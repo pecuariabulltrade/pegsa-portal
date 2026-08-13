@@ -7389,6 +7389,20 @@ RR_GRUPO_MORT = {
     "Novillito": "Machos", "Ternero": "Machos",
     "Vaquillona": "Hembras", "Ternera": "Hembras",
 }
+# ⚠ La API devuelve la categoría como código de 2 letras (v15.5.1) y el motivo
+# como 1 letra (V=venta, T=traslado, M=muerte) — NO como los strings largos del
+# SQL viejo. Se mapea al nombre largo del Excel de compras (_CAT_COMPRAS).
+RR_CAT_CODE = {
+    "TM": "Ternero", "TH": "Ternera", "NT": "Novillito", "NV": "Novillo",
+    "VQ": "Vaquillona", "VA": "Vaca", "TO": "Toro",
+}
+
+
+def _rr_cat(c):
+    k = str(c or "").strip().upper()
+    if k in RR_CAT_CODE:
+        return RR_CAT_CODE[k]
+    return _CAT_COMPRAS.get(_norm_cat_compra(k), k.title())
 
 
 def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
@@ -7468,9 +7482,11 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     grupos = {}
     n_venta = 0
     for e in (egresos_data or []):
-        motivo = str(e.get("MotivoSalida") or "").upper()
-        if "VENTA" not in motivo:
-            continue          # muertes, traslados y consumo quedan afuera
+        motivo = str(e.get("MotivoSalida") or "").strip().upper()
+        # La API manda 'V'; el SQL viejo mandaba 'VENTA ...'. Se toleran los dos
+        # igual que filtrar_solo_venta() de procesar_productivo.
+        if not (motivo == "V" or "VENTA" in motivo):
+            continue          # traslados (T) y muertes (M) quedan afuera
         fe = _d(e.get("FechaSalida"))
         if fe is None or fe < desde:
             continue
@@ -7479,10 +7495,11 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             continue
         n_venta += 1
         fi = _d(e.get("FechaIngreso"))
-        k = (rem, str(e.get("NRO_TROPA") or ""), str(e.get("Categoria") or ""),
+        _cat = _rr_cat(e.get("Categoria"))
+        k = (rem, str(e.get("NRO_TROPA") or ""), _cat,
              str(e.get("NRO_CORRAL") or ""), fi, fe)
         g = grupos.setdefault(k, {
-            "remito": rem, "tropa": e.get("NRO_TROPA"), "cat": e.get("Categoria"),
+            "remito": rem, "tropa": e.get("NRO_TROPA"), "cat": _cat,
             "corral": e.get("NRO_CORRAL"), "fi": fi, "fe": fe,
             "hotelero": e.get("HOTELERO"), "comprador": e.get("Destino") or e.get("Consignatario"),
             "cab": 0, "kgi": 0.0, "kge": 0.0, "dias": e.get("Estadia"),
