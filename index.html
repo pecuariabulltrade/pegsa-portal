@@ -71,14 +71,16 @@
   <div class="sb-section sb-section-divider">
     <div class="sb-section-label">Análisis Económico</div>
     <a class="sb-item" data-target="resultados" onclick="sbNavigate('resultados')">
-      <span class="sb-num">07</span><span class="sb-text">Estado Resultados</span>
+      <span class="sb-num">08</span><span class="sb-text">Estado Resultados</span>
     </a>
     <a class="sb-item" data-target="flujo" onclick="sbNavigate('flujo')">
-      <span class="sb-num">08</span><span class="sb-text">Flujo de Fondos</span>
+      <span class="sb-num">09</span><span class="sb-text">Flujo de Fondos</span>
     </a>
-    <!-- v15.61: pagina aparte (no es una seccion React) — link directo. -->
-    <a class="sb-item" href="analisis_costos.html">
-      <span class="sb-num">09</span><span class="sb-text">An&aacute;lisis de Costos</span>
+    <!-- v15.61.1: pagina aparte (no es seccion React) → link directo. Necesita
+         data-target igual: sbInit() oculta todo .sb-item cuyo data-target no
+         este en user.modules, y sin el quedaba en display:none. -->
+    <a class="sb-item" data-target="analisis-costos" href="analisis_costos.html">
+      <span class="sb-num">10</span><span class="sb-text">An&aacute;lisis de Costos</span>
     </a>
   </div>
 
@@ -2655,7 +2657,7 @@
   </div>
 </div>
 
-<script src="js/core-home.js"></script>
+<script src="js/core-home.js?v=15611"></script>
 <script src="js/modulo-05-mercado.js"></script>
 <script src="js/modulo-07-simulador.js"></script>
 
