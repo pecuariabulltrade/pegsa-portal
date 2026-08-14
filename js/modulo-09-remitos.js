@@ -15,16 +15,30 @@ var _remSel  = null;
 // Decisión del usuario 2026-08-13: provisorio hasta conectar una base de datos.
 // No inventar sincronización — cada dispositivo ve su propia carga.
 var REM_LS_PREFIX = 'pegsa_venta_remito_';
+// v15.62: una faena se lleva 2-3 remitos y el frigorífico liquida todo junto.
+// La venta del grupo va en su propia clave, canónica (ids ordenados), para que
+// el mismo grupo re-seleccionado en cualquier orden recupere su carga.
+var REM_LS_GRUPO  = 'pegsa_venta_grupo_';
+var _remModo = 'simple';   // 'simple' | 'grupo'
+var _remGrupo = [];        // ids seleccionados en modo grupo
 
-function remVentaGet(nro) {
-  try {
-    var raw = localStorage.getItem(REM_LS_PREFIX + nro);
-    return raw ? JSON.parse(raw) : {};
-  } catch (e) { return {}; }
+function _remLsGet(k) {
+  try { var raw = localStorage.getItem(k); return raw ? JSON.parse(raw) : {}; }
+  catch (e) { return {}; }
 }
-function remVentaSet(nro, obj) {
-  try { localStorage.setItem(REM_LS_PREFIX + nro, JSON.stringify(obj)); } catch (e) {}
+function _remLsSet(k, obj) {
+  try { localStorage.setItem(k, JSON.stringify(obj)); } catch (e) {}
 }
+function remVentaGet(nro) { return _remLsGet(REM_LS_PREFIX + nro); }
+function remVentaSet(nro, obj) { _remLsSet(REM_LS_PREFIX + nro, obj); }
+
+// Clave de la venta del contexto actual (remito suelto o grupo).
+function remVentaKey() {
+  return _remModo === 'grupo'
+    ? REM_LS_GRUPO + _remGrupo.slice().sort().join('-')
+    : REM_LS_PREFIX + _remSel;
+}
+function remVentaCtx() { return _remLsGet(remVentaKey()); }
 
 var _remM = function (n) {
   if (n == null || isNaN(n)) return '—';
@@ -60,15 +74,128 @@ async function cargarRemitos() {
   }
 }
 
+/* v15.62 · Consolida varios remitos en un objeto con la MISMA forma que uno
+   suelto, para que todo lo de abajo (KPIs, barra, resultado, indicadores,
+   reposición, detalle, informe PDF) siga funcionando sin ramificaciones.
+
+   ⚠ Los indicadores se RECALCULAN desde los agregados, no se promedian los de
+   cada remito: promediar un ADP o una conversión da un número que no existe.
+   Los días-animal salen de dias × cabezas de cada fila (el JSON no los trae
+   explícitos). */
+function remConsolidar(ids) {
+  var R = _remData.remitos, orden = ids.slice().sort();
+  var filas = [], sinPrecio = [], acot = {}, compradores = [];
+  var C = { compra: 0, comision: 0, alimento: 0, estructura: 0, sanidad: 0, mortandad: 0, total: 0 };
+  var RP = { compra: 0, comision: 0, alimento: 0, mortandad: 0, total: 0 };
+  var cab = 0, kgi = 0, kge = 0, kgms = 0, diasAnimal = 0, pvDen = 0, kgiConPrecio = 0;
+  var repoPrecioNum = 0, repoPrecioDen = 0, fuentes = {}, mesMs = null, precioMs = null;
+  var fechas = [], sinPv = 0;
+
+  orden.forEach(function (id) {
+    var r = R[id]; if (!r) return;
+    ['compra', 'comision', 'alimento', 'estructura', 'sanidad', 'mortandad', 'total'].forEach(function (k) {
+      C[k] += r.costos[k] || 0;
+    });
+    ['compra', 'comision', 'alimento', 'mortandad', 'total'].forEach(function (k) {
+      RP[k] += r.reposicion[k] || 0;
+    });
+    cab += r.cabezas || 0; kgi += r.kg_ingreso || 0; kge += r.kg_egreso || 0; kgms += r.kg_ms || 0;
+    sinPv += r.dias_sin_pv || 0;
+    if (r.fecha_egreso) fechas.push(r.fecha_egreso);
+    if (r.comprador && compradores.indexOf(r.comprador) < 0) compradores.push(r.comprador);
+    Object.keys(r.meses_pv_acotados || {}).forEach(function (m) { acot[m] = r.meses_pv_acotados[m]; });
+    (r.tropas_sin_precio || []).forEach(function (t) { sinPrecio.push(t); });
+    // precio de reposición: ponderado por kg de entrada del remito
+    if (r.reposicion.precio_kg) { repoPrecioNum += r.reposicion.precio_kg * (r.kg_ingreso || 0); repoPrecioDen += (r.kg_ingreso || 0); }
+    fuentes[r.reposicion.fuente_precio] = 1;
+    mesMs = r.reposicion.mes_ms; precioMs = r.reposicion.precio_kg_ms;
+    (r.filas || []).forEach(function (f) {
+      var fr = {}; for (var k in f) fr[k] = f[k];
+      fr.remito = id;                                  // columna extra del detalle
+      filas.push(fr);
+      var da = (f.dias || 0) * (f.cabezas || 0);
+      diasAnimal += da;
+      pvDen += ((f.kg_ingreso + f.kg_egreso) / 2) * (f.dias || 0);
+      if (!f.estimado) kgiConPrecio += f.kg_ingreso || 0;
+    });
+  });
+
+  var kgProd = kge - kgi;
+  var tropasUnicas = {}; filas.forEach(function (f) { tropasUnicas[f.tropa] = 1; });
+  var fu = Object.keys(fuentes);
+
+  return {
+    esGrupo: true, remitos_ids: orden,
+    remitos_detalle: orden.map(function (id) {
+      return { id: id, fecha_egreso: (R[id] || {}).fecha_egreso, cabezas: (R[id] || {}).cabezas };
+    }),
+    filas: filas,
+    cabezas: cab, tropas: Object.keys(tropasUnicas).length,
+    kg_ingreso: Math.round(kgi * 10) / 10, kg_egreso: Math.round(kge * 10) / 10,
+    kg_producidos: Math.round(kgProd * 10) / 10, kg_ms: Math.round(kgms * 10) / 10,
+    fecha_egreso: fechas.sort().slice(-1)[0] || null,
+    comprador: compradores.join(' · ') || null,
+    costos: {
+      compra: C.compra, comision: C.comision, alimento: C.alimento,
+      estructura: C.estructura, sanidad: C.sanidad, mortandad: C.mortandad,
+      total: C.total, por_kg_vendido: kge ? C.total / kge : null
+    },
+    indicadores: {
+      kg_prom_ingreso: cab ? kgi / cab : null,
+      kg_prom_salida: cab ? kge / cab : null,
+      estadia_prom: cab ? Math.round(diasAnimal / cab) : null,
+      adp: diasAnimal ? kgProd / diasAnimal : null,
+      pct_ms: pvDen ? kgms / pvDen * 100 : null,
+      conversion_ms: kgProd > 0 ? kgms / kgProd : null,
+      costo_kg_producido: kgProd > 0 ? (C.alimento + C.estructura + C.sanidad) / kgProd : null,
+      precio_prom_pagado: kgi ? C.compra / kgi : null
+    },
+    reposicion: {
+      precio_kg: repoPrecioDen ? repoPrecioNum / repoPrecioDen : null,
+      fuente_precio: fu.length === 1 ? fu[0] : 'prom. ponderado de ' + orden.length + ' remitos',
+      precio_kg_ms: precioMs, mes_ms: mesMs,
+      compra: RP.compra, comision: RP.comision, alimento: RP.alimento,
+      mortandad: RP.mortandad, total: RP.total,
+      por_kg_vendido: kge ? RP.total / kge : null
+    },
+    cobertura_pct: kgi ? kgiConPrecio / kgi * 100 : null,
+    tropas_sin_precio: sinPrecio,
+    precio_estimado: kgiConPrecio ? C.compra / kgi : null,
+    meses_pv_acotados: acot,
+    dias_sin_pv: sinPv
+  };
+}
+
+// Objeto activo: el remito suelto o el consolidado del grupo.
+function remActual() {
+  if (_remModo === 'grupo' && _remGrupo.length >= 2) return remConsolidar(_remGrupo);
+  return (_remData.remitos || {})[_remSel];
+}
+
+function remToggleModo() {
+  if (_remModo === 'simple') {
+    _remModo = 'grupo';
+    if (!_remGrupo.length && _remSel) _remGrupo = [_remSel];
+  } else {
+    _remModo = 'simple';
+  }
+  renderRemitos();
+}
+function remToggleRemito(id) {
+  var i = _remGrupo.indexOf(id);
+  if (i >= 0) _remGrupo.splice(i, 1); else _remGrupo.push(id);
+  renderRemitos();
+}
+
 function initRemitos() { cargarRemitos(); }
 
 function remSelChange(v) { _remSel = v; renderRemitos(); }
 
-function remVentaInput(nro, campo, valor) {
-  var v = remVentaGet(nro);
+function remVentaInput(campo, valor) {
+  var k = remVentaKey(), v = _remLsGet(k);
   var n = parseFloat(String(valor).replace(',', '.'));
   v[campo] = isNaN(n) ? null : n;
-  remVentaSet(nro, v);
+  _remLsSet(k, v);
   renderRemitos(true);
 }
 
@@ -144,9 +271,14 @@ function _remPuenteSVG(pasos) {
 
 function remInformePDF() {
   if (!_remData || !_remSel) return;
-  var r = _remData.remitos[_remSel], meta = _remData.meta || {};
+  // v15.62: el informe sale igual en modo grupo — el consolidado tiene la
+  // misma forma que un remito suelto.
+  var r = remActual(); if (!r) return;
+  var meta = _remData.meta || {};
+  var esGrupo = !!r.esGrupo;
+  var titulo = esGrupo ? 'Grupo · ' + r.remitos_ids.join(' + ') : 'Remito ' + _remSel;
   var C = r.costos, I = r.indicadores, RP = r.reposicion;
-  var venta = remVentaGet(_remSel);
+  var venta = remVentaCtx();
   var kgc = venta.kg_carne || 0, pkg = venta.precio_kg || 0;
   var gastos = (venta.flete || 0) + (venta.pesada || 0) + (venta.guia_senasa || 0) + (venta.guia_comuna || 0);
   var bruto = kgc * pkg, neto = bruto - gastos, hayVenta = bruto > 0;
@@ -188,7 +320,7 @@ function remInformePDF() {
     + ' ' + ('0' + ahora.getHours()).slice(-2) + ':' + ('0' + ahora.getMinutes()).slice(-2);
 
   var h = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
-    + '<title>Resultado Remito ' + _remSel + ' · PEGSA &amp; Bulltrade</title>'
+    + '<title>Resultado ' + titulo + ' · PEGSA &amp; Bulltrade</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">'
     + '<style>'
     + '@page{size:A4 portrait;margin:12mm}'
@@ -215,11 +347,14 @@ function remInformePDF() {
   // 1 · Encabezado
   h += '<div class="hd"><div>'
     + '<div class="n">PEGSA &amp; Bulltrade · Resultado por Remito</div>'
-    + '<div class="t" style="font-size:27px;line-height:1.1">Remito ' + _remSel + '</div>'
+    + '<div class="t" style="font-size:27px;line-height:1.1">' + titulo + '</div>'
     + '<div style="font-size:10px;color:#6b6560;margin-top:3px">'
     + (r.fecha_egreso ? r.fecha_egreso.split('-').reverse().join('/') + ' · ' : '')
     + r.cabezas + ' cabezas · ' + r.tropas + ' tropas · ' + _remN(r.kg_ingreso) + ' → ' + _remN(r.kg_egreso) + ' kg'
     + ' · cobertura precios ' + _remN(r.cobertura_pct, 1) + ' %</div>'
+    + (esGrupo ? '<div style="font-size:9.5px;color:#8a827a;margin-top:2px">' + r.remitos_detalle.map(function (d) {
+        return d.id + (d.fecha_egreso ? ' (' + d.fecha_egreso.split('-').reverse().join('/') + ')' : '');
+      }).join(' + ') + '</div>' : '')
     + (r.comprador ? '<div style="font-size:9.5px;color:#8a827a;margin-top:2px">' + r.comprador + '</div>' : '')
     + '</div><div style="text-align:right">'
     + '<div class="l" style="font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a">Costo total</div>'
@@ -299,10 +434,15 @@ function renderRemitos(soloResultado) {
     return;
   }
   if (!_remSel || !remitos[_remSel]) _remSel = nros[nros.length - 1];
-  var r = remitos[_remSel];
+  // v15.62: en modo grupo (>=2 remitos) se trabaja sobre el consolidado, que
+  // tiene la misma forma que un remito suelto — nada de abajo se ramifica.
+  _remGrupo = _remGrupo.filter(function (id) { return !!remitos[id]; });
+  var esGrupo = _remModo === 'grupo' && _remGrupo.length >= 2;
+  var r = remActual();
   var meta = _remData.meta || {};
+  if (!r) { el.innerHTML = ''; return; }
 
-  var venta = remVentaGet(_remSel);
+  var venta = remVentaCtx();
   var kgc = venta.kg_carne || 0, pkg = venta.precio_kg || 0;
   var gastos = (venta.flete || 0) + (venta.pesada || 0) + (venta.guia_senasa || 0) + (venta.guia_comuna || 0);
   var bruto = kgc * pkg, neto = bruto - gastos;
@@ -333,16 +473,41 @@ function renderRemitos(soloResultado) {
 
   // ── Selector + carga de venta ──
   h += '<div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:16px 20px;margin-bottom:6px;display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">';
+  // v15.62: toggle de modo. En grupo el <select> se reemplaza por chips.
+  h += '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">Modo</label>'
+    + '<button onclick="remToggleModo()" style="padding:7px 14px;border-radius:2px;cursor:pointer;'
+    + 'font-family:\'DM Mono\',monospace;font-size:12px;white-space:nowrap;'
+    + (esGrupo || _remModo === 'grupo'
+        ? 'background:var(--ink);border:1px solid var(--ink);color:#d4a84b">✓ Agrupar'
+        : 'background:#faf8f4;border:1px solid #d8d6ce;color:var(--ink)">Agrupar')
+    + '</button></div>';
+  if (_remModo === 'grupo') {
+    h += '<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:260px">'
+      + '<label style="' + LBL + '">Remitos del grupo · ' + _remGrupo.length + ' seleccionado'
+      + (_remGrupo.length === 1 ? '' : 's') + (_remGrupo.length < 2 ? ' (mínimo 2)' : '') + '</label>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:5px;max-height:92px;overflow:auto;'
+      + 'border:1px solid #d8d6ce;border-radius:2px;padding:7px;background:#faf8f4">'
+      + nros.map(function (n) {
+          var on = _remGrupo.indexOf(n) >= 0;
+          return '<span onclick="remToggleRemito(\'' + n + '\')" style="cursor:pointer;padding:3px 9px;border-radius:2px;'
+            + 'font-family:\'DM Mono\',monospace;font-size:12px;'
+            + (on ? 'background:var(--ink);color:#d4a84b;border:1px solid var(--ink)'
+                  : 'background:#fff;color:var(--ink);border:1px solid #e3e1da')
+            + '">' + n + (remVentaGet(n).kg_carne ? ' ✓' : '') + '</span>';
+        }).join('')
+      + '</div></div>';
+  } else {
   h += '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">Remito de salida</label>'
     + '<select onchange="remSelChange(this.value)" style="' + INP + ';width:150px">'
     + nros.map(function (n) { return '<option value="' + n + '"' + (n === _remSel ? ' selected' : '') + '>' + n + (remVentaGet(n).kg_carne ? ' ✓' : '') + '</option>'; }).join('')
     + '</select></div>';
+  }
   var CAMPOS = [['kg_carne', 'Kg carne'], ['precio_kg', '$ / kg carne'], ['flete', 'Flete'],
                 ['pesada', 'Pesada'], ['guia_senasa', 'Guía SENASA'], ['guia_comuna', 'Guía comuna']];
   CAMPOS.forEach(function (c) {
     h += '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">' + c[1] + '</label>'
       + '<input value="' + (venta[c[0]] != null ? venta[c[0]] : '') + '" style="' + INP + '" '
-      + 'onchange="remVentaInput(\'' + _remSel + '\',\'' + c[0] + '\',this.value)"></div>';
+      + 'onchange="remVentaInput(\'' + c[0] + '\',this.value)"></div>';
   });
   // v15.60: informe de una página para compartir
   h += '<div style="margin-left:auto;display:flex;flex-direction:column;gap:5px">'
@@ -352,8 +517,20 @@ function renderRemitos(soloResultado) {
   h += '<div style="' + SUB + ';margin:0 0 16px">Carga local en este navegador — se migrará a base de datos.</div>';
 
   // ── Cabecera del remito ──
-  h += '<div style="' + H2 + '">Remito ' + _remSel + '</div>';
-  h += '<div style="' + SUB + '">' + r.cabezas + ' cabezas · ' + r.tropas + ' tropas · '
+  h += '<div style="' + H2 + '">' + (esGrupo ? 'Grupo · ' + r.remitos_ids.join(' + ') : 'Remito ' + _remSel) + '</div>';
+  if (esGrupo) {
+    // qué remitos lo componen, con su fecha de egreso
+    h += '<div style="' + SUB + ';margin-bottom:6px">' + r.remitos_detalle.map(function (d) {
+      return d.id + (d.fecha_egreso ? ' (' + d.fecha_egreso.split('-').reverse().join('/') + ' · ' + d.cabezas + ' cab)' : '');
+    }).join(' + ') + '</div>';
+    // aviso suave si algún remito del grupo ya tenía venta individual cargada
+    var conVenta = r.remitos_ids.filter(function (id) { return remVentaGet(id).kg_carne; });
+    if (conVenta.length) {
+      h += '<div style="' + WARN + '">El remito ' + conVenta.join(', ') + ' tiene una venta individual cargada; '
+        + 'en modo grupo se usa la venta del grupo. No se borró nada — al volver a modo simple sigue ahí.</div>';
+    }
+  }
+  h += '<div style="' + SUB + '">' + r.cabezas + ' cabezas · ' + r.tropas + ' tropas' + (esGrupo ? ' únicas' : '') + ' · '
     + _remN(r.kg_ingreso) + ' kg entrada → ' + _remN(r.kg_egreso) + ' kg salida (+'
     + _remN(r.kg_producidos) + ' kg) · ' + _remN(r.kg_ms) + ' kg MS consumidos'
     + (r.comprador ? ' · ' + r.comprador : '') + '</div>';
@@ -438,13 +615,14 @@ function renderRemitos(soloResultado) {
   // ── Detalle por tropa ──
   h += '<div style="' + H2 + '">Detalle por tropa</div>';
   h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
-    + '<thead><tr>' + ['Tropa', 'Cab', 'Ingreso', 'Kg ent', 'Kg sal', 'Días', '$/kg compra', 'Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San']
+    + '<thead><tr>' + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa']).concat(['Cab', 'Ingreso', 'Kg ent', 'Kg sal', 'Días', '$/kg compra', 'Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'])
       .map(function (t, i) { return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i === 0 ? 'left' : 'right') + ';white-space:nowrap">' + t + '</th>'; }).join('')
     + '</tr></thead><tbody>';
   (r.filas || []).forEach(function (f) {
     var td = 'padding:8px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:13px;white-space:nowrap';
     var tag = '<span style="display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:2px;background:rgba(184,146,42,.15);color:#7a5c14;margin-left:6px">';
     h += '<tr' + (f.estimado ? ' style="background:#fffbf0"' : '') + '>'
+      + (esGrupo ? '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.5)">' + f.remito + '</td>' : '')
       + '<td style="' + td + ';text-align:left">' + f.tropa + (f.estimado ? tag + 'est</span>' : '') + '</td>'
       + '<td style="' + td + '">' + f.cabezas + '</td>'
       + '<td style="' + td + '">' + f.fecha_ingreso.split('-').reverse().join('/') + '</td>'
@@ -459,6 +637,7 @@ function renderRemitos(soloResultado) {
       + '<td style="' + td + '">' + _remM(f.estructura + f.sanidad) + '</td></tr>';
   });
   h += '</tbody><tfoot><tr style="font-weight:500;border-top:2px solid var(--border);background:#faf8f4">'
+    + (esGrupo ? '<td></td>' : '')
     + '<td style="padding:8px 10px;text-align:left;font-size:13px">TOTAL</td>'
     + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + r.cabezas + '</td><td></td>'
     + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remN(r.kg_ingreso) + '</td>'
