@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis de Costos · PEGSA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAF7; --surface:#FFF; --surface-2:#F5F4EE;
+    --border:#E5E5E0; --border-2:#D4D2C8;
+    --ink:#1A1A1A; --text-2:#4A4A48; --mutedc:#8A8880;
+    --accent:#0A7D7E; --accent-bright:#00B5B6; --accent-soft:#E6F8F8;
+    --verde:#00A86B; --ambar:#B8881F; --ambar-soft:#F7F1E2;
+    --rojo:#c0392b; --rojo-soft:#FBEBE8;
+    --serie-act:#0A9394; --serie-ant:#BE8A14;
+    --grid:#ECECE6;
+    --serif:'Lora',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--sans)}
+  header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);
+    padding:12px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  header h1{font-family:var(--serif);font-weight:700;font-size:20px;margin:0}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.3px;background:var(--accent-soft);color:var(--accent)}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{all:unset;font-family:var(--mono);font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--text-2);padding:5px 12px;border-radius:7px;cursor:pointer}
+  nav button:hover{color:var(--accent);background:var(--accent-soft)}
+  nav button.on{color:#fff;background:var(--accent)}
+  .sync{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--mutedc);display:flex;align-items:center;gap:6px}
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:var(--verde);display:inline-block}
+  main{max-width:1280px;margin:22px auto;padding:0 20px 60px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px 22px;margin-bottom:18px}
+  .card h2{font-family:var(--serif);font-weight:600;font-size:17px;margin:0 0 4px}
+  .muted{color:var(--mutedc);font-size:12.5px}
+  .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mutedc);margin-bottom:3px}
+  select,input[type=date]{height:32px;border:1px solid var(--border-2);border-radius:7px;background:var(--surface);
+    padding:0 8px;font:400 13px var(--sans);color:var(--ink)}
+  select:focus,input[type=date]:focus{outline:2px solid var(--accent-soft);border-color:var(--accent-bright)}
+  .filtros{display:flex;gap:14px;align-items:end;flex-wrap:wrap}
+  .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:7px;overflow:hidden;height:32px}
+  .seg button{all:unset;padding:0 14px;display:inline-flex;align-items:center;font-family:var(--mono);
+    font-size:12px;cursor:pointer;color:var(--text-2)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;margin-bottom:18px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px}
+  .kpi .v{font-size:26px;font-weight:700;margin:2px 0 1px}
+  .kpi.oscura{background:#16222B;border-color:#16222B}
+  .kpi.oscura .lbl{color:#8FA3B0}
+  .kpi.oscura .v{color:#E8B84B}
+  .kpi.oscura .d{color:#B7C6CF}
+  .kpi .d{font-family:var(--mono);font-size:11.5px}
+  .d.up{color:var(--rojo);font-weight:600} .d.down{color:var(--verde);font-weight:600} .d.neutro{color:var(--mutedc)}
+  .grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px}
+  @media(max-width:960px){.grid2{grid-template-columns:1fr}}
+  .fila{display:grid;grid-template-columns:185px 1fr 128px;gap:12px;align-items:center;
+    padding:7px 6px;border-radius:7px}
+  .fila.click{cursor:pointer}
+  .fila:hover{background:var(--surface-2)}
+  .fila .nom{font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fila .nom small{display:block;color:var(--mutedc);font-size:11px}
+  .pista{display:flex;flex-direction:column;gap:2px}
+  .barra{height:12px;border-radius:0 4px 4px 0;position:relative;min-width:2px;transition:filter .1s}
+  .fila:hover .barra{filter:brightness(1.08)}
+  .b-act{background:var(--serie-act)} .b-ant{background:var(--serie-ant)}
+  .b-neg{background:var(--rojo);opacity:.75}
+  .fila .vals{text-align:right;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+  .fila .vals .var{font-size:11px;font-weight:600}
+  .migas{font-family:var(--mono);font-size:11.5px;margin-bottom:10px;color:var(--mutedc)}
+  .migas a{color:var(--accent);cursor:pointer;text-decoration:none}
+  .leyenda{display:flex;gap:18px;align-items:center;font-size:12px;color:var(--text-2);margin:6px 0 12px;flex-wrap:wrap}
+  .leyenda .k{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:14px;height:10px;border-radius:2px;display:inline-block}
+  .ln{width:16px;height:2px;border-radius:1px;display:inline-block}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--border);padding:6px 9px;text-align:left}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--mutedc);font-weight:600}
+  tr:hover td{background:var(--surface-2)}
+  td{color:var(--text-2)} .num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-family:var(--mono);font-size:10px}
+  .tag.phy{background:var(--accent-soft);color:var(--accent)}
+  .tag.ext{background:var(--ambar-soft);color:var(--ambar)}
+  .aviso{background:var(--ambar-soft);border:1px solid #e8d9ad;color:#7a5c12;border-radius:8px;
+    padding:8px 12px;font-size:12.5px;margin:0 0 14px}
+  #tip{position:fixed;z-index:50;pointer-events:none;background:var(--surface);border:1px solid var(--border-2);
+    border-radius:8px;padding:9px 12px;box-shadow:0 4px 14px rgba(0,0,0,.09);font-size:12px;display:none;min-width:150px}
+  #tip .t{font-family:var(--mono);font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--mutedc);margin-bottom:5px}
+  #tip .r{display:flex;align-items:center;gap:7px;margin:2px 0}
+  #tip .r b{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+  #tip .r span{color:var(--text-2)}
+  #carga{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:12px}
+  #carga .sp{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:g 0.9s linear infinite}
+  @keyframes g{to{transform:rotate(360deg)}}
+  .nota{position:fixed;bottom:14px;right:16px;z-index:60;background:var(--accent-soft);border:1px solid #bfe3e3;
+    color:var(--accent);font-family:var(--mono);font-size:10.5px;padding:4px 10px;border-radius:999px}
+  svg text{font-family:var(--mono);font-size:10.5px;fill:var(--mutedc)}
+  svg .endlab{font-size:11.5px;font-weight:600;fill:var(--text-2)}
+  button.btn{height:32px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;
+    padding:0 14px;font-family:var(--mono);font-size:11.5px;cursor:pointer}
+  button.btn:hover{background:#086063}
+</style>
+</head>
+<body>
+
+<div id="carga"><div class="sp"></div><div class="muted">Descomprimiendo y leyendo la tabla depurada…</div></div>
+
+<header>
+  <h1>Análisis de Costos</h1>
+  <span class="pill">módulo PEGSA</span>
+  <nav>
+    <button class="on" data-tab="panel" onclick="tab('panel')">Panel</button>
+    <button data-tab="indicadores" onclick="tab('indicadores')">Indicadores</button>
+    <button data-tab="datos" onclick="tab('datos')">Datos</button>
+  </nav>
+  <div class="sync"><span class="dot"></span><span id="sync-txt">analisis-costos@main</span></div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="filtros">
+      <div>
+        <div class="lbl">Empresa</div>
+        <select id="f-emp" onchange="resetNodo();render()"></select>
+      </div>
+      <div>
+        <div class="lbl">Período</div>
+        <select id="f-per" onchange="perPreset()"></select>
+      </div>
+      <div>
+        <div class="lbl">Desde</div>
+        <input type="date" id="f-desde" onchange="perManual()">
+      </div>
+      <div>
+        <div class="lbl">Hasta</div>
+        <input type="date" id="f-hasta" onchange="perManual()">
+      </div>
+      <div>
+        <div class="lbl">Unidad</div>
+        <div class="seg">
+          <button id="u-peso" class="on" onclick="unidad('$')">$ </button>
+          <button id="u-kg" onclick="unidad('kg')">kg novillo</button>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="align-self:center">
+        <div class="muted" style="max-width:390px" id="resumen-filtro"></div>
+        <div class="muted" style="font-family:var(--mono);font-size:10.5px;margin-top:3px">
+          UNIDADES: $ = pesos argentinos (números completos) · kg = kg de novillo (importe ÷ precio novillo del mes)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aviso-kg" class="aviso" style="display:none"></div>
+
+  <section id="tab-panel">
+    <div class="kpis">
+      <div class="kpi"><div class="lbl" id="k1l">Total egresos</div>
+        <div class="v" id="k1">—</div><div class="d neutro" id="k1b"></div></div>
+      <div class="kpi"><div class="lbl">Variación nominal (vs año anterior)</div>
+        <div class="v" id="k2">—</div><div class="d neutro" id="k2b">pesos corrientes</div></div>
+      <div class="kpi"><div class="lbl">Total en kg de novillo</div>
+        <div class="v" id="k3">—</div><div class="d neutro">al precio de cada mes</div></div>
+      <div class="kpi"><div class="lbl">Variación real (kg novillo)</div>
+        <div class="v" id="k4">—</div><div class="d neutro" id="k4b">deflactado por novillo</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Composición por centro de costos</h2>
+        <div class="migas" id="migas"></div>
+        <div class="leyenda">
+          <span class="k"><span class="sw" style="background:var(--serie-act)"></span><span id="ley-act"></span></span>
+          <span class="k"><span class="sw" style="background:var(--serie-ant)"></span><span id="ley-ant"></span></span>
+          <span class="muted">· clic en una fila para abrirla</span>
+          <span class="k" style="margin-left:auto">orden:
+            <a id="o-cod" style="cursor:pointer;color:var(--accent)" onclick="ORDEN='cod';render()">código</a> ·
+            <a id="o-imp" style="cursor:pointer;color:var(--accent)" onclick="ORDEN='imp';render()">importe</a></span>
+        </div>
+        <div id="barras"></div>
+      </div>
+      <div class="card">
+        <h2>Top cuentas <span class="muted" id="nodo-nom"></span></h2>
+        <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span><span id="ley-act2"></span></span></div>
+        <div id="cuentas"></div>
+      </div>
+    </div>
+  <div class="card">
+      <h2 id="evo-tit">Evolución mensual</h2>
+      <p class="muted" style="margin-top:2px">Mes a mes del período elegido, respetando todos los filtros
+        (empresa, centro, cuenta y unidad). Las divisorias marcan el arranque de cada ejercicio (mayo).</p>
+      <svg id="chart" viewBox="0 0 940 300" style="width:100%;height:auto;display:block"></svg>
+      <details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Ver tabla mensual</summary>
+        <table style="max-width:480px;margin-top:8px"><thead><tr><th>Mes</th><th>Ejercicio</th><th class="num" id="th-val"></th></tr></thead>
+        <tbody id="tbl-meses"></tbody></table>
+      </details>
+    </div>
+  </section>
+
+  <section id="tab-indicadores" style="display:none">
+    <div class="card">
+      <h2>Indicadores operativos</h2>
+      <p class="muted" style="margin-top:2px">Análisis por año calendario (enero → último mes con datos, hoy
+        <b id="ind-mes"></b>): la ventana se extiende sola cuando entra un mes nuevo. Respeta el filtro de
+        empresa y la unidad $ / kg novillo; no usa el período del panel. <span id="ind-parcial" class="muted"></span></p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lbl" id="im-l">6 grupos · en pesos (nominal)</div>
+        <div class="v" id="im-vp">—</div><div class="d neutro" id="im-25"></div></div>
+      <div class="kpi"><div class="lbl">En novillo (real)</div>
+        <div class="v" id="im-vk">—</div><div class="d neutro" id="im-vk-b"></div></div>
+      <div class="kpi oscura"><div class="lbl">Brecha</div>
+        <div class="v" id="im-br">—</div><div class="d" id="im-br-b">del crecimiento nominal fue inflación</div></div>
+      <div class="kpi"><div class="lbl">Todos los egresos · acumulado real</div>
+        <div class="v" id="ia-kpi">—</div><div class="d neutro">ene → hoy vs mismo tramo 2025, en kg</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Grupos de costos mes a mes · 2025 vs 2026</h2>
+      <p class="muted" style="margin-top:2px">Los seis grupos que seguimos todos los meses, en ambas empresas.
+        El porcentaje es la variación de enero→hoy contra el mismo tramo de 2025.</p>
+      <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
+        <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span>
+        <span class="k"><span style="width:18px;border-top:2px dashed var(--serie-act);display:inline-block"></span>tendencia 2026 (proyección con la estacionalidad 2025)</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:16px" id="grid-grupos"></div>
+    </div>
+
+    <div class="card">
+      <h2>Los 6 grupos apilados, mes a mes · 2025 vs 2026</h2>
+      <p class="muted" style="margin-top:2px">Cada mes tiene dos barras apiladas: 2025 (tono suave, izquierda) y
+        2026 (derecha); los colores muestran cuánto puso cada grupo y la cifra es el total 2026 del mes.
+        De <b>sep a dic</b> el 2026 es proyección (tono claro, "est."). Unidad: <b id="acum6-u"></b>, números completos. La tabla de abajo compara contra 2025 con los acumulados.</p>
+      <div class="leyenda" id="ley-grupos"></div>
+      <svg id="ch-acum6" viewBox="0 0 940 320" style="width:100%;height:auto;display:block"></svg>
+      <table style="max-width:860px;margin-top:12px">
+        <thead><tr><th>Mes</th><th class="num">Mes 2025 <span id="u-t1"></span></th><th class="num">Mes 2026</th>
+          <th class="num">Acum. 2025</th><th class="num">Acum. 2026</th>
+          <th class="num">Δ acumulada</th><th class="num">Var. %</th></tr></thead>
+        <tbody id="tbl-acum6"></tbody>
+      </table>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>$ por kg de alimento</h2>
+        <p class="muted" style="margin-top:2px">(0901002 gastos operativos alimentación + 0902001–015 maquinaria
+          alimentación) ÷ kg de alimento dado en el mes. Es el grupo d).</p>
+        <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
+          <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span></div>
+        <svg id="ch-alim" viewBox="0 0 940 260" style="width:100%;height:auto;display:block"></svg>
+        <p class="muted" id="alim-falta" style="margin-bottom:0"></p>
+      </div>
+      <div class="card">
+        <h2>$ por cabeza (estructura feedlot)</h2>
+        <p class="muted" style="margin-top:2px">(0904001 estructura el haras + 0903001–022 maquinarias)
+          ÷ cabezas promedio del feedlot en el mes. Es el grupo e).</p>
+        <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
+          <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span></div>
+        <svg id="ch-cab" viewBox="0 0 940 260" style="width:100%;height:auto;display:block"></svg>
+        <p class="muted" id="cab-falta" style="margin-bottom:0"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Variación acumulada del año</h2>
+      <p class="muted" style="margin-top:2px">Acumulado enero → cada mes, comparado contra el mismo acumulado
+        del año anterior. Muestra cómo viene la variación del año a medida que avanza.</p>
+      <div class="leyenda"><span class="k"><span class="ln" style="background:var(--serie-act)"></span>acum. 2026</span>
+        <span class="k"><span class="ln" style="background:var(--serie-ant)"></span>acum. 2025</span></div>
+      <svg id="ch-acum" viewBox="0 0 940 280" style="width:100%;height:auto;display:block"></svg>
+      <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Ver tabla de variación acumulada</summary>
+        <table style="max-width:640px;margin-top:8px"><thead><tr><th>Hasta</th><th class="num">Acum. 2025</th>
+          <th class="num">Acum. 2026</th><th class="num">Var. $</th><th class="num">Var. kg</th></tr></thead>
+        <tbody id="tbl-acum"></tbody></table>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Datos operativos mensuales</h2>
+      <p class="muted" style="margin-top:2px">Los denominadores de los ratios. Si el repo publica <b>analisis_costos_operativos.json</b>
+        se cargan solos; lo tipeado acá lo pisa mientras la página esté abierta.</p>
+      <div style="overflow-x:auto">
+      <table style="min-width:560px" id="tbl-op"></table>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-datos" style="display:none">
+    <div class="card">
+      <h2>Movimientos depurados <span class="muted" id="datos-n"></span></h2>
+      <p class="muted" style="margin-top:2px">Datos agregados por mes, cuenta y centro (los 15 mayores del filtro).
+      El detalle movimiento por movimiento vive en el portal de costos de la PC.</p>
+      <div style="overflow-x:auto">
+      <table style="min-width:980px">
+        <thead><tr><th>Mes</th><th>Empresa</th><th>Cuenta</th><th>Centro</th>
+          <th class="num">Movs</th><th class="num">$</th><th class="num">kg nov.</th></tr></thead>
+        <tbody id="tbl-datos"></tbody>
+      </table>
+      </div>
+      <p style="margin-bottom:0"><button class="btn" onclick="descargar()">⬇ Descargar CSV filtrado</button>
+      <span class="muted" id="datos-meta"></span></p>
+    </div>
+  </section>
+</main>
+
+<div id="tip"></div>
+<div class="nota">ANÁLISIS DE COSTOS · datos publicados semanalmente</div>
+
+<script>
+// ============ datos: JSON agregado publicado junto al portal ============
+const RUTA_DATOS='analisis_costos_datos.json';
+const RUTA_OPERATIVOS='analisis_costos_operativos.json'; // {"2025-01":{"alim":kg,"cab":n},...}
+let META={exportado:''};
+
+// ============ utilidades ============
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('es-AR');
+const fmtM=n=>Math.round(n).toLocaleString('es-AR');
+const MES_ABR=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const shiftY=(f,n)=>{const y=+f.slice(0,4)+n, md=f.slice(4);           // f: YYYY-MM-DD
+  return (md==='-02-29'?y+'-02-28':y+md);}
+const mesLbl=m=>MES_ABR[+m.slice(5,7)-1]+' '+m.slice(2,4);             // m: YYYY-MM
+const fmtF=f=>f.slice(8,10)+'/'+f.slice(5,7)+'/'+f.slice(2,4);
+function mesesEntre(a,b){ // ['YYYY-MM', ...] de a hasta b inclusive
+  const out=[];let y=+a.slice(0,4),m=+a.slice(5,7);
+  const ylim=+b.slice(0,4),mlim=+b.slice(5,7);
+  while(y<ylim||(y===ylim&&m<=mlim)){out.push(y+'-'+String(m).padStart(2,'0'));
+    m++;if(m>12){m=1;y++;}if(out.length>60)break;}
+  return out;
+}
+
+async function gunzipB64(b64){
+  const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  const ds=new DecompressionStream('gzip');
+  const txt=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text();
+  return txt.charCodeAt(0)===0xFEFF?txt.slice(1):txt;
+}
+function parseCSV(txt){
+  const rows=[];let f='',row=[],q=false;
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(q){ if(c==='"'){ if(txt[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"')q=true;
+    else if(c===','){row.push(f);f='';}
+    else if(c==='\n'){row.push(f);f='';if(row.length>1||row[0]!=='')rows.push(row);row=[];}
+    else if(c!=='\r')f+=c;
+  }
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows;
+}
+
+// ============ carga ============
+let DATA=[];   // movimientos de egresos no excluidos
+let EJS=[];    // ejercicios presentes, orden asc
+let U='$', NODO=null, CUENTA=null, ORDEN='cod';
+function resetNodo(){NODO=null;CUENTA=null;}
+
+async function cargar(){
+  const ejercicioDe=m=>{const y=+m.slice(0,4),mm=+m.slice(5,7);const a=mm>=5?y:y-1;return a+'/'+(a+1);};
+  const rsp=await fetch(RUTA_DATOS);
+  if(!rsp.ok){$('carga').innerHTML='<div class="muted">No pude leer '+RUTA_DATOS+' ('+rsp.status+')</div>';return;}
+  const J=await rsp.json();
+  META={exportado:J.generado||''};
+  DATA=J.filas.map(r=>({
+    emp:r.e, fecha:r.m+'-15', mes:r.m, ej:ejercicioDe(r.m),
+    tc:'', nc:'', cta:r.cta, ctan:r.ctan||r.cta, rubron:'',
+    cc:r.cc||'(sin centro)', ccod:r.ccod||'',
+    ramal:r.ramal||'(sin ramal)', rcod:r.rcod||'',
+    madre:r.madre||'(sin centro)', mcod:r.mcod||'',
+    ter:'', det:'', imp:+r.imp||0,
+    kg:(r.kg===null||r.kg===undefined)?null:+r.kg,
+    org:'physis', ed:false, n:r.n||1
+  }));
+  try{const ro=await fetch(RUTA_OPERATIVOS);if(ro.ok)DATOS_OP=await ro.json();}catch(e){}
+  EJS=[...new Set(DATA.map(d=>d.ej))].sort();
+  MINF=DATA.reduce((a,d)=>d.fecha<a?d.fecha:a,'9999');
+  MAXF=DATA.reduce((a,d)=>d.fecha>a?d.fecha:a,'0000');
+  const EMPRESAS=[...new Set(DATA.map(d=>d.emp))].sort();
+  $('f-emp').innerHTML='<option value="*">Todas las empresas</option>'+
+    EMPRESAS.map(e=>`<option value="${e}">${e}</option>`).join('');
+  PRESETS={};
+  [...EJS].reverse().forEach(ej=>{
+    const y=+ej.slice(0,4);
+    const d=y+'-05-01', h=(y+1)+'-04-30';
+    PRESETS['ej'+ej]={n:'Ejercicio '+ej, d:d<MINF?MINF:d, h:h>MAXF?MAXF:h};
+  });
+  [12,6,3].forEach(n=>{
+    const ini=mesesEntre(shiftY(MAXF,-1),MAXF).slice(-n)[0]+'-01';
+    PRESETS['u'+n]={n:'Últimos '+n+' meses', d:ini<MINF?MINF:ini, h:MAXF};
+  });
+  $('f-per').innerHTML=Object.entries(PRESETS)
+    .map(([k,p])=>`<option value="${k}">${p.n}</option>`).join('')+
+    '<option value="custom">Personalizado…</option>';
+  const p0=PRESETS['ej'+EJS[EJS.length-1]];
+  $('f-desde').value=p0.d;$('f-hasta').value=p0.h;
+  $('f-desde').min=MINF;$('f-hasta').max=MAXF;
+  $('sync-txt').textContent='datos publicados: '+META.exportado.replace('T',' ').slice(0,16);
+  $('carga').style.display='none';
+  render();
+}
+
+// ============ estado derivado ============
+function filtro(){ // filas del período elegido y del mismo período un año atrás
+  const emp=$('f-emp').value;
+  let de=$('f-desde').value||MINF, ha=$('f-hasta').value||MAXF;
+  if(de>ha)[de,ha]=[ha,de];
+  const deA=shiftY(de,-1), haA=shiftY(ha,-1);
+  const base=DATA.filter(d=>emp==='*'||d.emp===emp);
+  const act=base.filter(d=>d.fecha>=de&&d.fecha<=ha);
+  const antPer=base.filter(d=>d.fecha>=deA&&d.fecha<=haA);
+  const hayAnt=antPer.length>0;
+  return {act,antPer,antTodo:antPer,de,ha,deA,haA,
+          ej:fmtF(de)+' – '+fmtF(ha),
+          ant:hayAnt?fmtF(deA)+' – '+fmtF(haA):null};
+}
+const val=d=>U==='$'?d.imp:(d.kg??0);
+const suma=a=>a.reduce((s,d)=>s+val(d),0);
+const kgFaltan=a=>a.filter(d=>d.kg===null).length;
+const unidadTxt=()=>U==='$'?'pesos ($)':'kg de novillo';
+const stepNice=r=>{const p=Math.pow(10,Math.floor(Math.log10(Math.max(r,4)/4)));return Math.ceil(r/4/p)*p;};
+const plata=n=>'$ '+fmtM(n);              // n en pesos -> "$ 373.000.000"
+const enU=n=>U==='$'?plata(n):fmt(n)+' kg'; // n en pesos o kg segun U
+const fmtU=n=>U==='$'?'$ '+fmtM(n):fmt(n)+' kg';
+
+function unidad(u){U=u;$('u-peso').classList.toggle('on',u==='$');$('u-kg').classList.toggle('on',u==='kg');render();}
+function tab(t){
+  ['panel','indicadores','datos'].forEach(x=>{
+    $('tab-'+x).style.display=x===t?'':'none';
+    document.querySelector('nav button[data-tab='+x+']').classList.toggle('on',x===t);
+  });
+  if(t==='indicadores')renderInd();
+}
+
+// ============ tooltip ============
+function tipShow(html,ev){const t=$('tip');t.innerHTML=html;t.style.display='block';tipMove(ev);}
+function tipMove(ev){const t=$('tip');const w=t.offsetWidth;
+  t.style.left=Math.min(ev.clientX+14,innerWidth-w-10)+'px';t.style.top=(ev.clientY+14)+'px';}
+function tipHide(){$('tip').style.display='none';}
+
+// ============ render ============
+function render(){
+  const F=filtro();
+  $('ley-act').textContent='período · '+F.ej;
+  $('ley-ant').textContent='año anterior'+(F.ant?' · '+F.ant:'');
+  $('ley-act2').textContent='período · '+F.ej;
+  $('resumen-filtro').textContent=`${F.act.length.toLocaleString('es-AR')} movimientos en el período`+
+    (F.ant?` · comparado contra el mismo período del año anterior (${F.ant})`:' · sin datos del año anterior');
+  // aviso kg
+  const sk=kgFaltan(F.act)+(F.ant?kgFaltan(F.antPer):0);
+  const av=$('aviso-kg');
+  if(U==='kg'&&sk>0){av.style.display='';av.textContent=
+    `⚠ ${sk.toLocaleString('es-AR')} movimientos sin precio de novillo (meses previos a jul-2025) no entran en la vista en kg.`;}
+  else av.style.display='none';
+
+  $('o-cod').style.fontWeight=ORDEN==='cod'?'700':'400';
+  $('o-cod').style.textDecoration=ORDEN==='cod'?'underline':'none';
+  $('o-imp').style.fontWeight=ORDEN==='imp'?'700':'400';
+  $('o-imp').style.textDecoration=ORDEN==='imp'?'underline':'none';
+  kpis(F);barras(F);cuentas(F);tablaDatos(F);drawBarras(F);
+  if($('tab-indicadores').style.display!=='none')renderInd();
+}
+
+function kpis(F){
+  let fAct=filtraNodo(F.act), fAnt=filtraNodo(F.antPer);
+  if(CUENTA){fAct=fAct.filter(d=>d.ctan===CUENTA);fAnt=fAnt.filter(d=>d.ctan===CUENTA);}
+  const tp=fAct.reduce((s,d)=>s+d.imp,0), ta=fAnt.reduce((s,d)=>s+d.imp,0);
+  const kp=fAct.reduce((s,d)=>s+(d.kg||0),0), ka=fAnt.reduce((s,d)=>s+(d.kg||0),0);
+  $('k1l').textContent='Total egresos'+alcanceTxt();
+  $('k1').textContent=U==='$'?plata(tp):fmt(kp)+' kg';
+  $('k1b').textContent=(F.ant?`vs ${U==='$'?plata(ta):fmt(ka)+' kg'} un año atrás`:'sin datos del año anterior')+
+    ` · ${F.ej}`;
+  const vn=ta?(tp/ta-1)*100:null, vr=ka?(kp/ka-1)*100:null;
+  $('k2').textContent=vn===null?'—':(vn>=0?'+':'')+vn.toFixed(1).replace('.',',')+'%';
+  $('k3').textContent=fmt(kp)+' kg';
+  $('k4').textContent=vr===null?'—':(vr>=0?'+':'')+vr.toFixed(1).replace('.',',')+'%';
+  const b=$('k4b');
+  if(vr===null){b.className='d neutro';b.textContent='sin datos de kg en el período anterior';}
+  else{b.className='d '+(vr>0?'up':'down');b.textContent=vr>0?'▲ sube en términos reales':'▼ baja en términos reales';}
+}
+
+function nivelNodo(){ // 0=madres, 1=ramales, 2=centros, 3=centro puntual elegido
+  if(!NODO) return 0;
+  return NODO.c?3:NODO.r?2:1;
+}
+function filtraNodo(filas){
+  let f=filas;
+  if(NODO&&NODO.m)f=f.filter(d=>d.madre===NODO.m);
+  if(NODO&&NODO.r)f=f.filter(d=>d.ramal===NODO.r);
+  if(NODO&&NODO.c)f=f.filter(d=>d.cc===NODO.c);
+  return f;
+}
+function alcanceTxt(){ // describe el filtro activo para las tarjetas y titulos
+  const partes=[];
+  if(NODO){partes.push(NODO.c||NODO.r||NODO.m);}
+  if(CUENTA)partes.push(CUENTA);
+  return partes.length?' · '+partes.join(' · '):'';
+}
+function agruparCod(filas,claveN,claveC){ // Map nombre -> {v, cod}
+  const m=new Map();
+  for(const d of filas){
+    const k=claveN(d);
+    const o=m.get(k)||{v:0,cod:claveC(d)};
+    o.v+=val(d);m.set(k,o);
+  }
+  return m;
+}
+function chipCuenta(){
+  return CUENTA?` · cuenta: ${CUENTA} <a onclick="CUENTA=null;render()" title="quitar filtro de cuenta">✕</a>`:'';
+}
+function barras(F){
+  const niv=nivelNodo();
+  const porCuenta=Boolean(CUENTA)&&!NODO; // cuenta elegida: todos los centros que la tienen
+  let claveN=[d=>d.madre,d=>d.ramal,d=>d.cc,d=>d.cc][niv];
+  let claveC=[d=>d.mcod,d=>d.rcod,d=>d.ccod,d=>d.ccod][niv];
+  if(porCuenta){claveN=d=>d.cc;claveC=d=>d.ccod;}
+  let fAct=filtraNodo(F.act), fAnt=filtraNodo(F.antPer);
+  if(CUENTA){fAct=fAct.filter(d=>d.ctan===CUENTA);fAnt=fAnt.filter(d=>d.ctan===CUENTA);}
+  const mAct=agruparCod(fAct,claveN,claveC), mAnt=agruparCod(fAnt,claveN,claveC);
+  const rows=[...new Set([...mAct.keys(),...mAnt.keys()])]
+    .map(k=>({n:k,cod:(mAct.get(k)||mAnt.get(k)).cod,
+              act:mAct.get(k)?mAct.get(k).v:0,ant:mAnt.get(k)?mAnt.get(k).v:0}));
+  rows.sort(ORDEN==='cod'?(a,b)=>String(a.cod).localeCompare(String(b.cod))
+                         :(a,b)=>b.act-a.act);
+  const tot=rows.reduce((s,r)=>s+r.act,0);
+  const max=Math.max(...rows.map(r=>Math.max(Math.abs(r.act),Math.abs(r.ant))),1);
+  let migas='<a onclick="NODO=null;render()">TODOS</a>';
+  if(porCuenta)migas='CENTROS QUE TIENEN LA CUENTA';
+  else if(!NODO)migas='TODOS LOS CENTROS';
+  else if(NODO.c)migas+=` › <a onclick="NODO={m:NODO.m};render()">${NODO.m}</a> › <a onclick="NODO={m:NODO.m,r:NODO.r};render()">${NODO.r}</a> › ${NODO.c}`;
+  else if(NODO.r)migas+=` › <a onclick="NODO={m:NODO.m};render()">${NODO.m}</a> › ${NODO.r}`;
+  else migas+=` › ${NODO.m}`;
+  $('migas').innerHTML=migas+chipCuenta()+` · total ${fmtU(tot)}`;
+  const cont=$('barras');cont.innerHTML='';
+  const clickeable=porCuenta||niv<3;
+  rows.slice(0,16).forEach(r=>{
+    const varr=r.ant?(r.act/r.ant-1)*100:null;
+    const part=tot?r.act/tot*100:0;
+    const div=document.createElement('div');div.className='fila'+(clickeable?' click':'');
+    const nom=document.createElement('div');nom.className='nom';
+    nom.textContent=r.n;nom.title=r.cod+' · '+r.n;
+    const s=document.createElement('small');s.textContent=r.cod;nom.appendChild(s);
+    const pista=document.createElement('div');pista.className='pista';
+    const b1=document.createElement('div');b1.className='barra '+(r.act<0?'b-neg':'b-act');
+    b1.style.width=(Math.abs(r.act)/max*100)+'%';
+    const b2=document.createElement('div');b2.className='barra b-ant';b2.style.width=(Math.abs(r.ant)/max*100)+'%';
+    pista.append(b1,b2);
+    const vals=document.createElement('div');vals.className='vals';
+    vals.innerHTML=`<div>${fmtU(r.act)} <span class="muted">· ${part.toFixed(0)}%</span></div>`+
+      (varr===null?'':`<div class="var" style="color:${varr>0?'var(--rojo)':'var(--verde)'}">${varr>=0?'+':''}${varr.toFixed(1).replace('.',',')}%</div>`);
+    div.append(nom,pista,vals);
+    div.addEventListener('pointerenter',e=>{
+      const tp=document.createElement('div');
+      tp.innerHTML=`<div class="t"></div>
+        <div class="r"><span class="sw" style="background:var(--serie-act)"></span><span>período</span><b>${fmtU(r.act)}</b></div>
+        <div class="r"><span class="sw" style="background:var(--serie-ant)"></span><span>año anterior</span><b>${fmtU(r.ant)}</b></div>`;
+      tp.querySelector('.t').textContent=(CUENTA?CUENTA+' en ':'')+r.n;
+      tipShow(tp.innerHTML,e);});
+    div.addEventListener('pointermove',tipMove);div.addEventListener('pointerleave',tipHide);
+    if(clickeable)div.addEventListener('click',()=>{
+      if(porCuenta){
+        const d=fAct.find(x=>x.cc===r.n)||F.act.find(x=>x.cc===r.n);
+        if(d)NODO={m:d.madre,r:d.ramal,c:d.cc};
+      }else if(niv===0){
+        NODO={m:r.n};
+        // si la madre tiene un solo ramal, saltar directo a sus centros
+        const ram=new Set(filtraNodo(F.act).map(d=>d.ramal));
+        if(ram.size===1)NODO={m:r.n,r:[...ram][0]};
+      }else if(niv===1)NODO={m:NODO.m,r:r.n};
+      else NODO={m:NODO.m,r:NODO.r,c:r.n};
+      tipHide();render();});
+    cont.appendChild(div);
+  });
+  if(rows.length>16){const p=document.createElement('p');p.className='muted';
+    p.textContent=`… y ${rows.length-16} más (bajá el filtro o mirá la tabla de Datos).`;cont.appendChild(p);}
+}
+
+function cuentas(F){
+  const fAct=filtraNodo(F.act);
+  const donde=!NODO?'todos los centros':(NODO.r||NODO.m);
+  $('nodo-nom').textContent='· '+donde;
+  const m=new Map();
+  for(const d of fAct)m.set(d.ctan,(m.get(d.ctan)||0)+val(d));
+  const rows=[...m.entries()].map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v).slice(0,12);
+  if(CUENTA&&!rows.some(r=>r.n===CUENTA)&&m.has(CUENTA))
+    rows.push({n:CUENTA,v:m.get(CUENTA)});
+  const max=Math.max(...rows.map(r=>Math.abs(r.v)),1);
+  const cont=$('cuentas');cont.innerHTML='';
+  rows.forEach(r=>{
+    const sel=r.n===CUENTA;
+    const div=document.createElement('div');div.className='fila click';
+    div.style.gridTemplateColumns='170px 1fr 92px';
+    if(sel)div.style.background='var(--accent-soft)';
+    const nom=document.createElement('div');nom.className='nom';
+    nom.textContent=(sel?'✓ ':'')+r.n;nom.title=r.n;
+    if(sel)nom.style.color='var(--accent)';
+    const pista=document.createElement('div');pista.className='pista';
+    const b=document.createElement('div');b.className='barra '+(r.v<0?'b-neg':'b-act');
+    b.style.width=(Math.abs(r.v)/max*100)+'%';
+    pista.appendChild(b);
+    const vals=document.createElement('div');vals.className='vals';vals.textContent=fmtU(r.v);
+    div.append(nom,pista,vals);
+    div.addEventListener('pointerenter',e=>{
+      const tp=document.createElement('div');
+      tp.innerHTML=`<div class="t"></div><div class="r"><span>período</span><b>${fmtU(r.v)}</b></div>
+        <div class="r"><span class="muted" style="font-size:11px">${sel?'clic: quitar filtro':'clic: ver qué centros la componen'}</span></div>`;
+      tp.querySelector('.t').textContent=r.n;
+      tipShow(tp.innerHTML,e);});
+    div.addEventListener('pointermove',tipMove);div.addEventListener('pointerleave',tipHide);
+    div.addEventListener('click',()=>{CUENTA=sel?null:r.n;if(!sel)NODO=null;tipHide();render();});
+    cont.appendChild(div);
+  });
+}
+
+function drawBarras(F){
+  const meses=mesesEntre(F.de.slice(0,7),F.ha.slice(0,7));
+  const M=meses.length;
+  let fAct=filtraNodo(F.act);
+  if(CUENTA)fAct=fAct.filter(d=>d.ctan===CUENTA);
+  const pos={};meses.forEach((m,i)=>pos[m]=i);
+  const A=Array(M).fill(0);
+  for(const d of fAct){const i=pos[d.mes];if(i!==undefined)A[i]+=val(d);}
+  const esc=1;
+  const vals=A.map(v=>v/esc);
+  const max=Math.max(...vals,1)*1.15, min=Math.min(0,...vals);
+  const {L,R,T,B,W,H}={L:120,R:20,T:30,B:34,W:940,H:300};
+  const step=stepNice(max-min)||1;
+  const y0=min<0?min:0;
+  const bandW=(W-L-R)/M;
+  const bw=Math.max(4,Math.min(24,bandW-2));
+  const x=i=>L+i*bandW+bandW/2;
+  const y=v=>T+(H-T-B)*(1-(v-y0)/(step*4));
+  let s='';
+  for(let g=0;g<=4;g++){const vy=y0+g*step,gy=y(vy);
+    s+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+    s+=`<text x="${L-8}" y="${gy+3.5}" text-anchor="end">${fmt(vy)}</text>`;}
+  const salto=Math.ceil(M/16);
+  meses.forEach((m,i)=>{if(i%salto===0||M<=16)
+    s+=`<text x="${x(i)}" y="${H-B+18}" text-anchor="middle">${mesLbl(m)}</text>`;});
+  s+=`<text x="${L}" y="${T-16}" style="fill:var(--mutedc)">${unidadTxt()}</text>`;
+  // tramos por ejercicio (arranca en mayo): divisoria + etiqueta
+  const ejDe=m=>{const yy=+m.slice(0,4),mm=+m.slice(5,7);const a=mm>=5?yy:yy-1;return a+'/'+(a+1);};
+  const tramos=[];let ini=0;
+  for(let i=1;i<=M;i++){
+    if(i===M||ejDe(meses[i])!==ejDe(meses[ini])){tramos.push([ini,i-1]);ini=i;}
+  }
+  tramos.forEach(([a2,b2],k)=>{
+    if(k>0){const gx=L+a2*bandW;
+      s+=`<line x1="${gx}" y1="${T-14}" x2="${gx}" y2="${H-B}" stroke="var(--border-2)" stroke-width="1"/>`;}
+    s+=`<text x="${(x(a2)+x(b2))/2}" y="${T-6}" text-anchor="middle" style="font-weight:600">Ej. ${ejDe(meses[a2])}</text>`;
+  });
+  const yb=y(0);
+  A.forEach((v,i)=>{
+    const vy=y(v/esc);
+    const h=Math.max(Math.abs(yb-vy),1);
+    const neg=v<0;
+    const r=Math.min(4,h);
+    const x0=x(i)-bw/2;
+    s+=neg
+      ?`<path d="M${x0} ${yb} h${bw} v${h-r} a${r} ${r} 0 0 1 -${r} ${r} h-${(bw-2*r)} a${r} ${r} 0 0 1 -${r} -${r} z" fill="var(--rojo)"/>`
+      :`<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${(bw-2*r)} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="var(--serie-act)"/>`;
+  });
+  if(M<=18)vals.forEach((v,i)=>{
+    if(v<=0)return;
+    s+=`<text x="${x(i)}" y="${y(v)-5}" text-anchor="middle"
+      style="font-size:9.5px;font-weight:600;fill:var(--text-2)">${fmt(v)}</text>`;});
+  else{const vmax=Math.max(...vals),imax=vals.indexOf(vmax);
+    if(imax>=0&&vmax>0)s+=`<text class="endlab" x="${x(imax)}" y="${y(vmax)-6}" text-anchor="middle">${fmt(vmax)}</text>`;}
+  s+=`<line x1="${L}" y1="${yb}" x2="${W-R}" y2="${yb}" stroke="var(--border-2)" stroke-width="1"/>`;
+  const svg=$('chart');svg.innerHTML=s;
+  $('evo-tit').textContent='Evolución mensual'+alcanceTxt();
+  svg.onpointermove=ev=>{
+    const rc=svg.getBoundingClientRect();const px=(ev.clientX-rc.left)*(W/rc.width);
+    const i=Math.max(0,Math.min(M-1,Math.floor((px-L)/bandW)));
+    tipShow(`<div class="t">${mesLbl(meses[i])} · Ej. ${ejDe(meses[i])}</div>
+      <div class="r"><span>${unidadTxt()}</span><b>${fmt(vals[i])}</b></div>`,ev);
+  };
+  svg.onpointerleave=tipHide;
+  $('th-val').textContent=unidadTxt();
+  $('tbl-meses').innerHTML=meses.map((m,i)=>
+    `<tr><td>${mesLbl(m)}</td><td class="muted">${ejDe(m)}</td><td class="num">${U==='$'?'$ '+fmt(vals[i]):fmt(vals[i])+' kg'}</td></tr>`).join('');
+}
+
+function tablaDatos(F){
+  const rows=[...F.act].sort((a,b)=>Math.abs(b.imp)-Math.abs(a.imp)).slice(0,15);
+  $('datos-n').textContent=`· ${F.act.length.toLocaleString('es-AR')} movimientos en ${F.ej}`;
+  const tb=$('tbl-datos');tb.innerHTML='';
+  rows.forEach(d=>{
+    const tr=document.createElement('tr');
+    const c=(t,cls)=>{const td=document.createElement('td');if(cls)td.className=cls;td.textContent=t;return td;};
+    tr.append(c(mesLbl(d.mes)),c(d.emp),c(d.ctan),c(d.cc),
+      c(String(d.n),'num'),c('$ '+fmt(d.imp),'num'),c(d.kg===null?'—':fmt(d.kg)+' kg','num'));
+    tb.appendChild(tr);
+  });
+  $('datos-meta').textContent=` · exportado ${META.exportado.replace('T',' ').slice(0,16)} desde el portal de la PC`;
+}
+
+function descargar(){
+  const F=filtro();
+  const esc=v=>/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  const filas=[['mes','ejercicio','empresa','cuenta','cuenta_nombre','centro','ramal','centro_madre','movimientos','importe','kg_novillo']];
+  for(const d of F.act)filas.push([d.mes,d.ej,d.emp,d.cta,d.ctan,d.cc,d.ramal,d.madre,d.n,d.imp,d.kg??'']);
+  const csv='﻿'+filas.map(r=>r.map(v=>esc(String(v))).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`egresos_${F.de}_a_${F.ha}.csv`;a.click();
+}
+
+
+// ==================== INDICADORES ====================
+const ALIM=d=>d.ccod==='0901002'||(d.ccod>='0902001'&&d.ccod<='0902015');
+const ESTR=d=>d.ccod==='0904001'||(d.ccod>='0903001'&&d.ccod<='0903022');
+const GCOL=['#0A9394','#BE8A14','#7A66B8','#3E8A4E','#4E7DC0','#B25B66'];
+const GRUPOS=[
+  {k:'a',n:'Administración y consignataria',p:d=>d.ccod==='0101001'||d.ccod==='1101001'},
+  {k:'b',n:'Financiero',p:d=>d.ccod==='0102001'||d.ccod==='1101002'},
+  {k:'c',n:'Impuestos',p:d=>d.ccod==='0103001'||d.ccod==='1101003'},
+  {k:'d',n:'Alimentación',p:ALIM},
+  {k:'e',n:'Estructura feedlot',p:ESTR},
+  {k:'f',n:'Sanidad',p:d=>d.ccod==='0905001'},
+];
+const MAQ=d=>GRUPOS.some(g=>g.p(d)); // total de los 6 grupos seguidos
+let DATOS_OP={}; // 'YYYY-MM' -> {alim:kg de alimento, cab:cabezas}
+
+function baseInd(){const emp=$('f-emp').value;
+  return DATA.filter(d=>emp==='*'||d.emp===emp);}
+function sumaMes(filas,pred,anio,mes,enKg){ // mes 1..12
+  const clave=anio+'-'+String(mes).padStart(2,'0');
+  let s=0;for(const d of filas)if(pred(d)&&d.mes===clave)s+=enKg?(d.kg||0):d.imp;
+  return s;}
+function mesTope(){return +MAXF.slice(5,7);}
+const MESN=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const pct=(a,b)=>b?((a/b-1)*100):null;
+const fpct=v=>v===null?'—':(v>=0?'+':'')+v.toFixed(1).replace('.',',')+'%';
+
+function chartApilado(svgId,d25,d26,unidad,esKg){
+  // d25/d26: [12] -> {vals:[6], est?:bool}. 2025 suave a la izquierda, 2026 a la derecha.
+  const svg=$(svgId);if(!svg)return;
+  const H=+svg.viewBox.baseVal.height,W=+svg.viewBox.baseVal.width;
+  const {L,R,T,B}={L:120,R:16,T:30,B:30};
+  const totA=d25.map(d=>d.vals.reduce((a,b)=>a+Math.max(b,0),0));
+  const totB=d26.map(d=>d.vals.reduce((a,b)=>a+Math.max(b,0),0));
+  const max=Math.max(...totA,...totB,1)*1.18;
+  const step=stepNice(max)||1;
+  const band=(W-L-R)/12, bw=Math.max(8,Math.min(26,(band-12)/2));
+  const x=i=>L+i*band+band/2, y=v=>T+(H-T-B)*(1-v/(step*4));
+  let s='';
+  for(let g=0;g<=4;g++){const gy=y(g*step);
+    s+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+    s+=`<text x="${L-8}" y="${gy+3.5}" text-anchor="end">${fmt(g*step)}</text>`;}
+  MESN.forEach((m,i)=>s+=`<text x="${x(i)}" y="${H-B+18}" text-anchor="middle">${m}</text>`);
+  s+=`<text x="${L}" y="${T-16}" style="fill:var(--mutedc)">${unidad}</text>`;
+  const pila=(d,i,x0,op)=>{
+    let acumY=y(0),out='';
+    d.vals.forEach((v,gi)=>{
+      if(v<=0)return;
+      const h=y(0)-y(v);acumY-=h;
+      out+=`<rect x="${x0}" y="${acumY}" width="${bw}" height="${Math.max(h-2,1)}" fill="${GCOL[gi]}" opacity="${op}"/>`;
+    });
+    return [out,acumY];
+  };
+  d25.forEach((d,i)=>{const [o]=pila(d,i,x(i)-bw-2,0.5);s+=o;});
+  d26.forEach((d,i)=>{
+    const [o,topY]=pila(d,i,x(i)+2,d.est?0.45:1);s+=o;
+    if(totB[i]>0){
+      const etiq=esKg?fmt(totB[i])+' kg':'$ '+fmt(totB[i]);
+      s+=`<text x="${x(i)+2+bw/2}" y="${topY-5}" text-anchor="middle"
+        style="font-size:8.5px;font-weight:600;fill:${d.est?'var(--mutedc)':'var(--text-2)'}${d.est?';font-style:italic':''}">${etiq}${d.est?' est.':''}</text>`;
+    }
+  });
+  s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
+  svg.innerHTML=s;
+  const fU=v=>v<=0?'—':(esKg?fmt(v)+' kg':'$ '+fmt(v));
+  svg.onpointermove=ev=>{
+    const rc=svg.getBoundingClientRect();const px=(ev.clientX-rc.left)*(W/rc.width);
+    const i=Math.max(0,Math.min(11,Math.floor((px-L)/band)));
+    const filasT=GRUPOS.map((g,gi)=>`<div class="r"><span class="sw" style="background:${GCOL[gi]}"></span>
+      <span>${g.k}) ${g.n}</span><b>${fU(d25[i].vals[gi])} → ${fU(d26[i].vals[gi])}</b></div>`).join('');
+    tipShow(`<div class="t">${MESN[i]} · 2025 → 2026${d26[i].est?' (proyectado)':''}</div>${filasT}
+      <div class="r" style="border-top:1px solid var(--border);padding-top:3px;margin-top:3px">
+        <span><b>Total</b></span><b>${fU(totA[i])} → ${fU(totB[i])}</b></div>`,ev);
+  };
+  svg.onpointerleave=tipHide;
+}
+
+function chartGrupo(svgId,s25,s26,proj,tope,unidad){
+  const svg=$(svgId);if(!svg)return;
+  const H=+svg.viewBox.baseVal.height,W=+svg.viewBox.baseVal.width;
+  const {L,R,T,B}={L:88,R:10,T:24,B:26};
+  const todos=[...s25,...s26,...proj].filter(v=>v!==null&&isFinite(v));
+  const max=Math.max(...todos,1)*1.15;
+  const step=stepNice(max)||1;
+  const band=(W-L-R)/12, bw=Math.max(3,Math.min(11,(band-5)/2));
+  const x=i=>L+i*band+band/2, y=v=>T+(H-T-B)*(1-v/(step*4));
+  let s='';
+  for(let g=0;g<=4;g++){const gy=y(g*step);
+    s+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+    s+=`<text x="${L-7}" y="${gy+3.5}" text-anchor="end" style="font-size:9.5px">${fmt(g*step)}</text>`;}
+  MESN.forEach((m,i)=>s+=`<text x="${x(i)}" y="${H-B+16}" text-anchor="middle" style="font-size:9.5px">${m.slice(0,1)}</text>`);
+  s+=`<text x="${L}" y="${T-8}" style="font-size:9px;fill:var(--mutedc)">${unidad}</text>`;
+  const barra=(v,i,off,color)=>{
+    if(v===null||!isFinite(v))return'';
+    const vy=y(Math.max(v,0)),yb=y(0),h=Math.max(yb-vy,1),r=Math.min(3,h);
+    const x0=x(i)+off;
+    return `<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${bw-2*r} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="${color}"/>`;};
+  s25.forEach((v,i)=>s+=barra(v,i,-bw-1,'var(--serie-ant)'));
+  s26.forEach((v,i)=>s+=barra(v,i,1,'var(--serie-act)'));
+  // tendencia 2026: desde el ultimo real hasta diciembre, punteada
+  const pts=[];
+  if(tope>=1&&s26[tope-1]!==null)pts.push([tope-1,s26[tope-1]]);
+  proj.forEach((v,i)=>{if(v!==null)pts.push([i,v]);});
+  if(pts.length>1){
+    s+=`<path d="${pts.map(([i,v],k)=>(k?'L':'M')+(x(i)+1+bw/2)+' '+y(v)).join(' ')}"
+      fill="none" stroke="var(--serie-act)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+    pts.slice(1).forEach(([i,v])=>s+=`<circle cx="${x(i)+1+bw/2}" cy="${y(v)}" r="2.6" fill="var(--surface)" stroke="var(--serie-act)" stroke-width="1.6"/>`);
+  }
+  svg.innerHTML=s;
+  svg.onpointermove=ev=>{
+    const rc=svg.getBoundingClientRect();const px=(ev.clientX-rc.left)*(W/rc.width);
+    const i=Math.max(0,Math.min(11,Math.floor((px-L)/band)));
+    const es=proj[i]!==null&&s26[i]===null;
+    const v26=es?proj[i]:s26[i];
+    const f=v=>v===null||!isFinite(v)?'—':fmt(v);
+    tipShow(`<div class="t">${MESN[i]} · ${unidad}</div>
+      <div class="r"><span class="sw" style="background:var(--serie-act)"></span><span>${es?'2026 proyectado':'2026'}</span><b>${f(v26)}</b></div>
+      <div class="r"><span class="sw" style="background:var(--serie-ant)"></span><span>2025</span><b>${f(s25[i])}</b></div>
+      <div class="r"><span>variación${es?' est.':''}</span><b>${fpct(pct(v26,s25[i]))}</b></div>`,ev);
+  };
+  svg.onpointerleave=tipHide;
+}
+
+function barras2(svgId,labels,s26,s25,unidad,dec,etiq){
+  const svg=$(svgId);if(!svg)return;
+  const H=+svg.viewBox.baseVal.height,W=+svg.viewBox.baseVal.width;
+  const {L,R,T,B}=W>600?{L:120,R:16,T:14,B:30}:{L:82,R:8,T:10,B:26};
+  const vals=[...s26,...s25].filter(v=>v!==null&&isFinite(v));
+  const max=Math.max(...vals,1)*1.15;
+  const step=stepNice(max)||1;
+  const M=labels.length,bandW=(W-L-R)/M;
+  const bw=Math.max(3,Math.min(14,(bandW-6)/2));
+  const y=v=>T+(H-T-B)*(1-v/(step*4));
+  let s='';
+  for(let g=0;g<=4;g++){const gy=y(g*step);
+    s+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+    s+=`<text x="${L-8}" y="${gy+3.5}" text-anchor="end">${dec?(g*step).toLocaleString('es-AR'):fmt(g*step)}</text>`;}
+  s+=`<text x="${L}" y="${T-2}" style="font-size:${W>600?10.5:9}px;fill:var(--mutedc)">${unidad}</text>`;
+  labels.forEach((m,i)=>s+=`<text x="${L+i*bandW+bandW/2}" y="${H-B+18}" text-anchor="middle">${m}</text>`);
+  const barra=(v,i,off,color)=>{
+    if(v===null||!isFinite(v))return'';
+    const vy=y(Math.max(v,0)),yb=y(0),h=Math.max(yb-vy,1),r=Math.min(4,h);
+    const x0=L+i*bandW+bandW/2+off;
+    return `<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${bw-2*r} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="${color}"/>`;};
+  s25.forEach((v,i)=>s+=barra(v,i,-bw-1,'var(--serie-ant)'));
+  s26.forEach((v,i)=>s+=barra(v,i,1,'var(--serie-act)'));
+  if(etiq){const fs=W>600?9.5:8.5;
+    s26.forEach((v,i)=>{
+      if(v===null||!isFinite(v))return;
+      const tx=dec?v.toLocaleString('es-AR',{maximumFractionDigits:0}):fmt(v);
+      s+=`<text x="${L+i*bandW+bandW/2}" y="${y(Math.max(v,0))-4}" text-anchor="middle"
+        style="font-size:${fs}px;font-weight:600;fill:var(--text-2)">${tx}</text>`;});}
+  s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
+  svg.innerHTML=s;
+  svg.onpointermove=ev=>{
+    const rc=svg.getBoundingClientRect();const px=(ev.clientX-rc.left)*(W/rc.width);
+    const i=Math.max(0,Math.min(M-1,Math.floor((px-L)/bandW)));
+    const f=v=>v===null||!isFinite(v)?'—':(dec?v.toLocaleString('es-AR',{maximumFractionDigits:1}):fmt(v));
+    tipShow(`<div class="t">${labels[i]} · ${unidad}</div>
+      <div class="r"><span class="sw" style="background:var(--serie-act)"></span><span>2026</span><b>${f(s26[i])}</b></div>
+      <div class="r"><span class="sw" style="background:var(--serie-ant)"></span><span>2025</span><b>${f(s25[i])}</b></div>
+      <div class="r"><span>variación</span><b>${fpct(pct(s26[i],s25[i]))}</b></div>`,ev);
+  };
+  svg.onpointerleave=tipHide;
+}
+
+function lineas2(svgId,labels,s26,s25,unidad,proj){
+  const svg=$(svgId);if(!svg)return;
+  const H=+svg.viewBox.baseVal.height,W=940,{L,R,T,B}={L:76,R:70,T:24,B:30};
+  const vals=[...s26,...s25,...(proj||[])].filter(v=>v!==null);
+  const max=Math.max(...vals,1)*1.12;
+  const step=stepNice(max)||1;
+  const M=labels.length;
+  const x=i=>L+i*(W-L-R)/Math.max(M-1,1), y=v=>T+(H-T-B)*(1-v/(step*4));
+  let s='';
+  for(let g=0;g<=4;g++){const gy=y(g*step);
+    s+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+    s+=`<text x="${L-8}" y="${gy+3.5}" text-anchor="end">${fmt(g*step)}</text>`;}
+  labels.forEach((m,i)=>s+=`<text x="${x(i)}" y="${H-B+18}" text-anchor="middle">${m}</text>`);
+  s+=`<text x="${L}" y="${T-9}" style="fill:var(--mutedc)">${unidad}</text>`;
+  const path=d=>{let p='',pen=false;
+    d.forEach((v,i)=>{if(v===null){pen=false;return;}p+=(pen?'L':'M')+x(i)+' '+y(v);pen=true;});return p;};
+  s+=`<path d="${path(s25)}" fill="none" stroke="var(--serie-ant)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  s+=`<path d="${path(s26)}" fill="none" stroke="var(--serie-act)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if(proj){
+    let lastR=-1;s26.forEach((v,i)=>{if(v!==null)lastR=i;});
+    const pts=[];if(lastR>=0)pts.push([lastR,s26[lastR]]);
+    proj.forEach((v,i)=>{if(v!==null)pts.push([i,v]);});
+    if(pts.length>1){
+      s+=`<path d="${pts.map(([i,v],k)=>(k?'L':'M')+x(i)+' '+y(v)).join(' ')}"
+        fill="none" stroke="var(--serie-act)" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>`;
+      const [li,lv]=pts[pts.length-1];
+      s+=`<circle cx="${x(li)}" cy="${y(lv)}" r="4" fill="var(--surface)" stroke="var(--serie-act)" stroke-width="2"/>`;
+      s+=`<text class="endlab" x="${x(li)+9}" y="${y(lv)+4}" style="fill:var(--mutedc)">${fmt(lv)} est.</text>`;
+    }
+  }
+  [[s25,'var(--serie-ant)'],[s26,'var(--serie-act)']].forEach(([d,c])=>{
+    let last=-1;d.forEach((v,i)=>{if(v!==null)last=i;});
+    if(last>=0){s+=`<circle cx="${x(last)}" cy="${y(d[last])}" r="4.5" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`;
+      s+=`<text class="endlab" x="${x(last)+9}" y="${y(last>=0?d[last]:0)+4}">${fmt(d[last])}</text>`;}});
+  svg.innerHTML=s;
+  svg.onpointermove=ev=>{
+    const rc=svg.getBoundingClientRect();const px=(ev.clientX-rc.left)*(W/rc.width);
+    const i=Math.max(0,Math.min(M-1,Math.round((px-L)/((W-L-R)/Math.max(M-1,1)))));
+    const f=v=>v===null?'—':fmt(v);
+    tipShow(`<div class="t">hasta ${labels[i]} · ${unidad}</div>
+      <div class="r"><span class="ln" style="background:var(--serie-act);width:12px;height:2px"></span><span>2026</span><b>${f(s26[i])}</b></div>
+      <div class="r"><span class="ln" style="background:var(--serie-ant);width:12px;height:2px"></span><span>2025</span><b>${f(s25[i])}</b></div>
+      <div class="r"><span>variación</span><b>${fpct(pct(s26[i],s25[i]))}</b></div>`,ev);
+  };
+  svg.onpointerleave=tipHide;
+}
+
+function tablaOp(){
+  const tope=mesTope();
+  let h='<tr><th>Mes</th><th class="num">kg alimento 2025</th><th class="num">kg alimento 2026</th><th class="num">cabezas 2025</th><th class="num">cabezas 2026</th></tr>';
+  for(let m=1;m<=12;m++){
+    h+='<tr><td>'+MESN[m-1]+'</td>';
+    for(const [anio,campo] of [[2025,'alim'],[2026,'alim'],[2025,'cab'],[2026,'cab']]){
+      const k=anio+'-'+String(m).padStart(2,'0');
+      const activo=anio===2025||m<=tope;
+      const v=(DATOS_OP[k]||{})[campo];
+      h+='<td class="num">'+(activo
+        ?`<input type="number" min="0" style="width:110px;height:26px;border:1px solid var(--border-2);border-radius:6px;text-align:right;font-family:var(--mono);font-size:12px" data-k="${k}" data-c="${campo}" value="${v??''}" oninput="opInput(this)">`
+        :'<span class="muted">—</span>')+'</td>';
+    }
+    h+='</tr>';
+  }
+  $('tbl-op').innerHTML=h;
+}
+function opInput(el){
+  const k=el.dataset.k;
+  DATOS_OP[k]=DATOS_OP[k]||{};
+  DATOS_OP[k][el.dataset.c]=el.value===''?null:+el.value;
+  renderInd(true); // sin redibujar la tabla para no perder el foco
+}
+
+function renderInd(sinTabla){
+  const filas=baseInd(),tope=mesTope();
+  $('ind-mes').textContent=MESN[tope-1];
+  $('ind-parcial').textContent=`(${MESN[tope-1]} 2026 parcial: datos hasta el ${fmtF(MAXF)}).`;
+  const meses=[...Array(tope).keys()].map(i=>i+1);
+  const lbl=meses.map(m=>MESN[m-1]);
+  const enKg=U==='kg';
+  // --- maquinaria ---
+  const t26p=meses.reduce((s,m)=>s+sumaMes(filas,MAQ,2026,m,false),0);
+  const t25p=meses.reduce((s,m)=>s+sumaMes(filas,MAQ,2025,m,false),0);
+  // en kg solo se comparan los meses con precio de novillo en AMBOS años
+  const mesesKg=meses.filter(m=>sumaMes(filas,()=>true,2025,m,true)>0&&sumaMes(filas,()=>true,2026,m,true)>0);
+  const t26k=mesesKg.reduce((s,m)=>s+sumaMes(filas,MAQ,2026,m,true),0);
+  const t25k=mesesKg.reduce((s,m)=>s+sumaMes(filas,MAQ,2025,m,true),0);
+  $('im-l').textContent=`6 grupos · en pesos (nominal) · ene–${MESN[tope-1]}`;
+  const vn6=pct(t26p,t25p), vr6=pct(t26k,t25k);
+  $('im-vp').textContent=fpct(vn6);
+  $('im-25').textContent=`de ${plata(t25p)} (2025) a ${plata(t26p)} (2026) · Δ ${plata(t26p-t25p)}`;
+  $('im-vk').textContent=fpct(vr6);
+  $('im-vk-b').textContent=t25k
+    ?`${fmt(t25k)} kg → ${fmt(t26k)} kg · meses comparables ${MESN[mesesKg[0]-1]}–${MESN[mesesKg[mesesKg.length-1]-1]}`
+    :'sin meses comparables en kg (índice novillo desde jul-25)';
+  const brecha=(vn6!==null&&vr6!==null)?vn6-vr6:null;
+  $('im-br').textContent=brecha===null?'—':fpct(brecha).replace('%',' pp');
+  $('im-br-b').textContent=brecha===null?'se calcula con meses comparables en kg'
+    :'del crecimiento nominal fue inflación (nominal − real)';
+  // grilla de 6 grupos (se crea una sola vez, despues solo se redibuja)
+  const grid=$('grid-grupos');
+  if(!grid.dataset.armada){
+    grid.innerHTML=GRUPOS.map((g,i)=>`<div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--mutedc)">${g.k})</span>
+        <b style="font-size:13px">${g.n}</b>
+        <span class="d" id="gv-${i}" style="margin-left:auto"></span></div>
+      <div class="muted" id="gm-${i}" style="font-family:var(--mono);font-size:11px;margin-bottom:2px"></div>
+      <svg id="ch-g${i}" viewBox="0 0 460 185" style="width:100%;height:auto;display:block"></svg>
+    </div>`).join('');
+    grid.dataset.armada='1';
+  }
+  const M12=[...Array(12).keys()].map(i=>i+1);
+  GRUPOS.forEach((g,i)=>{
+    const s25=M12.map(m=>sumaMes(filas,g.p,2025,m,enKg));
+    const s26=M12.map(m=>m<=tope?sumaMes(filas,g.p,2026,m,enKg):null);
+    const y26=s26.slice(0,tope).reduce((a,b)=>a+(b||0),0);
+    const y25=s25.slice(0,tope).reduce((a,b)=>a+b,0);
+    const v=pct(y26,y25);
+    // proyeccion: la estacionalidad de 2025 escalada al nivel actual de 2026
+    const razon=y25?y26/y25:null;
+    const proj=M12.map(m=>(razon!==null&&m>tope)?s25[m-1]*razon:null);
+    const cierre=razon!==null?y26+proj.reduce((a,b)=>a+(b||0),0):null;
+    const total25=s25.reduce((a,b)=>a+b,0);
+    const el=$('gv-'+i);
+    el.textContent=fpct(v);
+    el.className='d '+(v===null?'neutro':v>0?'up':'down');
+    const u=enKg?' kg':'';const p=enKg?'':'$ ';
+    $('gm-'+i).textContent=`ene–${MESN[tope-1]}: ${p}${fmt(y26)}${u} vs ${p}${fmt(y25)}${u} (2025)`+
+      (cierre!==null?` · cierre 2026 est.: ${p}${fmt(cierre)}${u} vs ${p}${fmt(total25)}${u} todo 2025`:'');
+    chartGrupo('ch-g'+i,s25,s26,proj,tope,unidadTxt());
+  });
+  // --- acumulado de los 6 grupos juntos: 2025 completo + 2026 con proyeccion ---
+  const M12b=[...Array(12).keys()].map(i=>i+1);
+  const g25m=M12b.map(m=>sumaMes(filas,MAQ,2025,m,enKg));
+  const g26m=M12b.map(m=>m<=tope?sumaMes(filas,MAQ,2026,m,enKg):null);
+  const y26g=g26m.slice(0,tope).reduce((a,b)=>a+(b||0),0);
+  const y25g=g25m.slice(0,tope).reduce((a,b)=>a+b,0);
+  const razong=y25g?y26g/y25g:null;
+  let c26=0,c25=0;const ac26=[],ac25=[],acp=[];
+  M12b.forEach((m,i)=>{
+    c25+=g25m[i];ac25.push(c25);
+    if(m<=tope){c26+=g26m[i];ac26.push(c26);acp.push(null);}
+    else{ac26.push(null);
+      c26+=(razong!==null?g25m[i]*razong:0);
+      acp.push(razong!==null?c26:null);}
+  });
+  // apilado mensual 2026: composicion por grupo, sep-dic proyectado
+  const APIL=M12b.map(m=>{
+    const est=m>tope;
+    const vals=GRUPOS.map(g=>{
+      if(!est)return sumaMes(filas,g.p,2026,m,enKg);
+      const gy26=[...Array(tope).keys()].reduce((s2,k)=>s2+sumaMes(filas,g.p,2026,k+1,enKg),0);
+      const gy25=[...Array(tope).keys()].reduce((s2,k)=>s2+sumaMes(filas,g.p,2025,k+1,enKg),0);
+      const r2=gy25?gy26/gy25:null;
+      return r2===null?0:(sumaMes(filas,g.p,2025,m,enKg))*r2;
+    });
+    return {vals,est};
+  });
+  if(!$('ley-grupos').dataset.ok){
+    $('ley-grupos').innerHTML=GRUPOS.map((g,i)=>
+      `<span class="k"><span class="sw" style="background:${GCOL[i]}"></span>${g.k}) ${g.n}</span>`).join('')+
+      '<span class="muted">· izquierda = 2025 (suave) · derecha = 2026 · sep–dic 2026 = proyección</span>';
+    $('ley-grupos').dataset.ok='1';
+  }
+  const APIL25=M12b.map(m=>({vals:GRUPOS.map(g=>sumaMes(filas,g.p,2025,m,enKg))}));
+  chartApilado('ch-acum6',APIL25,APIL,unidadTxt(),enKg);
+  $('tbl-acum6').innerHTML=M12b.map((m,i)=>{
+    const es=m>tope;
+    const v26m=es?(razong!==null?g25m[i]*razong:null):g26m[i];
+    const a26=es?acp[i]:ac26[i];
+    const dif=a26!==null?a26-ac25[i]:null;
+    const st=es?'color:var(--mutedc);font-style:italic':'';
+    const cU=v=>v===null?'—':(enKg?fmt(v)+' kg':'$ '+fmt(v));
+    return `<tr style="${st}"><td>${MESN[i]}${es?' (est.)':''}</td>
+      <td class="num">${cU(g25m[i])}</td><td class="num">${cU(v26m)}</td>
+      <td class="num">${cU(ac25[i])}</td><td class="num"><b>${cU(a26)}</b></td>
+      <td class="num" style="${es?'':'color:'+(dif>0?'var(--rojo)':'var(--verde)')}">${dif===null?'—':(dif>=0?'+':'')+cU(dif).replace('$ ','$ ')}</td>
+      <td class="num" style="${es?'':'color:'+(a26>ac25[i]?'var(--rojo)':'var(--verde)')}">${a26===null?'—':fpct(pct(a26,ac25[i]))}</td></tr>`;
+  }).join('');
+  $('acum6-u').textContent=unidadTxt();
+  // --- ratios ---
+  const den=(anio,m,campo)=>{const k=anio+'-'+String(m).padStart(2,'0');
+    const v=(DATOS_OP[k]||{})[campo];return v||null;};
+  const ratio=(pred,campo,anio)=>meses.map(m=>{
+    const d=den(anio,m,campo);if(!d)return null;
+    return sumaMes(filas,pred,anio,m,false)/d;});
+  barras2('ch-alim',lbl,ratio(ALIM,'alim',2026),ratio(ALIM,'alim',2025),'$ / kg alimento',true,true);
+  barras2('ch-cab',lbl,ratio(ESTR,'cab',2026),ratio(ESTR,'cab',2025),'$ / cabeza',true,true);
+  const faltan=campo=>{let n=0;for(let m=1;m<=tope;m++){if(!den(2025,m,campo))n++;if(!den(2026,m,campo))n++;}return n;};
+  $('alim-falta').textContent=faltan('alim')?`Faltan cargar ${faltan('alim')} meses de kg de alimento (tabla de abajo).`:'';
+  $('cab-falta').textContent=faltan('cab')?`Faltan cargar ${faltan('cab')} meses de cabezas (tabla de abajo).`:'';
+  // --- acumulado ---
+  const esc=1;
+  let a26=0,a25=0;const s26=[],s25=[],rows=[];
+  let a26p=0,a25p=0,a26k=0,a25k=0;
+  meses.forEach(m=>{
+    a26+=meses.includes(m)?( sumaMes(filas,()=>true,2026,m,enKg)):0;
+    a25+=sumaMes(filas,()=>true,2025,m,enKg);
+    s26.push(a26/esc);s25.push(a25/esc);
+    a26p+=sumaMes(filas,()=>true,2026,m,false);a25p+=sumaMes(filas,()=>true,2025,m,false);
+    if(mesesKg.includes(m)){a26k+=sumaMes(filas,()=>true,2026,m,true);a25k+=sumaMes(filas,()=>true,2025,m,true);}
+    rows.push(`<tr><td>${MESN[m-1]}</td><td class="num">${plata(a25p)}</td><td class="num">${plata(a26p)}</td>
+      <td class="num">${fpct(pct(a26p,a25p))}</td><td class="num">${fpct(pct(a26k,a25k))}</td></tr>`);
+  });
+  lineas2('ch-acum',lbl,s26,s25,unidadTxt()+' · acumulado');
+  $('tbl-acum').innerHTML=rows.join('');
+  $('ia-kpi').textContent=fpct(pct(a26k,a25k));
+  document.querySelector('#ia-kpi').nextElementSibling.textContent=
+    mesesKg.length?`ene → hoy vs mismo tramo 2025, en kg (meses comparables: ${MESN[mesesKg[0]-1]}–${MESN[mesesKg[mesesKg.length-1]-1]})`
+    :'sin meses comparables en kg todavía';
+  if(!sinTabla)tablaOp();
+}
+
+cargar();
+</script>
+</body>
+</html>
