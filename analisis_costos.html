@@ -794,12 +794,25 @@ function chartApilado(svgId,d25,d26,unidad,esKg){
     return [out,acumY];
   };
   d25.forEach((d,i)=>{const [o]=pila(d,i,x(i)-bw-2,0.45);s+=o;});  // v15.61.3: 2025 tenue, mismos colores
+  let _prevEt=null;   // v15.61.3: anti-colision entre etiquetas de meses vecinos
   d26.forEach((d,i)=>{
     const [o,topY]=pila(d,i,x(i)+2,d.est?0.45:1);s+=o;
     if(totB[i]>0){
-      const etiq=esKg?fmt(totB[i])+' kg':'$ '+fmt(totB[i]);
-      s+=`<text x="${x(i)+2+bw/2}" y="${topY-5}" text-anchor="middle"
-        style="font-size:10px;font-weight:600;fill:${d.est?'var(--mutedc)':'var(--text-2)'}${d.est?';font-style:italic':''}">${etiq}${d.est?' est.':''}</text>`;
+      const etiq=(esKg?fmt(totB[i])+' kg':'$ '+fmt(totB[i]))+(d.est?' est.':'');
+      // v15.61.3: la etiqueta del ultimo mes se salia por la derecha
+      // ("$ 318.849.280 est."). Se acota el centro para que la caja del texto
+      // entre siempre en el viewBox, aunque quede corrida respecto de su barra.
+      const _hw=etiq.length*10*0.62/2;
+      const _cx=Math.min(Math.max(x(i)+2+bw/2,_hw+2),W-_hw-2);
+      // si la caja se pisa con la del mes anterior, se sube un renglon
+      let _y=topY-5;
+      // 15px: la caja del texto a 10px mide ~13 de alto, con 12 seguian
+      // solapando por 1px (medido con getBBox).
+      if(_prevEt&&!(_cx-_hw>_prevEt.x2+2||_cx+_hw<_prevEt.x1-2)&&Math.abs(_y-_prevEt.y)<15)
+        _y=_prevEt.y-15;
+      _prevEt={x1:_cx-_hw,x2:_cx+_hw,y:_y};
+      s+=`<text x="${_cx}" y="${_y}" text-anchor="middle"
+        style="font-size:10px;font-weight:600;fill:${d.est?'var(--mutedc)':'var(--text-2)'}${d.est?';font-style:italic':''}">${etiq}</text>`;
     }
   });
   s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
