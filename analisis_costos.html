@@ -275,6 +275,8 @@
           alimentación) ÷ kg de alimento dado en el mes. Es el grupo d).</p>
         <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
           <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span></div>
+        <!-- v15.61.4: tarjeta gemela de la de estructura (v15.61.3). -->
+        <div id="alim-prom" class="kpi" style="margin-bottom:12px"></div>
         <svg id="ch-alim" viewBox="0 0 620 330" style="width:100%;height:auto;display:block"></svg>
         <p class="muted" id="alim-falta" style="margin-bottom:0"></p>
       </div>
@@ -888,7 +890,7 @@ function barras2(svgId,labels,s26,s25,unidad,dec,etiq,nd){
   const {L,R,T,B}=W>600?{L:Math.max(56,Math.ceil(_ejeTxt.length*6.3+16)),R:16,T:14,B:30}
                        :{L:82,R:8,T:10,B:26};
   const M=labels.length,bandW=(W-L-R)/M;
-  const bw=Math.max(3,Math.min(14,(bandW-6)/2));
+  const bw=Math.max(3,Math.min(16,(bandW-10)/2));   // v15.61.4: mas cuerpo y mas aire entre meses
   const y=v=>T+(H-T-B)*(1-v/(step*4));
   let s='';
   for(let g=0;g<=4;g++){const gy=y(g*step);
@@ -903,15 +905,25 @@ function barras2(svgId,labels,s26,s25,unidad,dec,etiq,nd){
     return `<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${bw-2*r} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="${color}"/>`;};
   s25.forEach((v,i)=>s+=barra(v,i,-bw-1,'var(--serie-ant)'));
   s26.forEach((v,i)=>s+=barra(v,i,1,'var(--serie-act)'));
-  if(etiq){const fs=W>600?10.5:9;   // v15.61.2: legible sin zoom
-    // v15.61.3: nd decimales (1 para $/kg alimento, 0 para $/cabeza). Se
-    // etiqueta el año ACTIVO (2026); las de 2025 quedan en el tooltip — con 12
-    // meses en 620px de ancho no entran las dos sin pisarse.
-    s26.forEach((v,i)=>{
-      if(v===null||!isFinite(v))return;
-      const tx=dec?v.toLocaleString('es-AR',{minimumFractionDigits:nd||0,maximumFractionDigits:nd||0}):fmt(v);
-      s+=`<text x="${L+i*bandW+bandW/2}" y="${y(Math.max(v,0))-4}" text-anchor="middle"
-        style="font-size:${fs}px;font-weight:600;fill:var(--text-2)">${tx}</text>`;});}
+  if(etiq){const fs=W>600?10:9;
+    // v15.61.4: etiqueta en CADA barra, arriba de la suya y en el COLOR de su
+    // serie — antes habia una sola por mes y no se sabia a que barra pertenecia.
+    // Se ordena por mes y, dentro del mes, primero la del año activo para que
+    // quede anclada a su barra; si dos cajas se pisan, la siguiente sube un
+    // renglon (mismo criterio que el apilado en v15.61.3).
+    const pts=[];
+    s25.forEach((v,i)=>{if(v!==null&&isFinite(v))pts.push({v,i,off:-bw-1,c:'var(--serie-ant)'});});
+    s26.forEach((v,i)=>{if(v!==null&&isFinite(v))pts.push({v,i,off:1,c:'var(--serie-act)'});});
+    pts.sort((a,b)=>(a.i-b.i)||(b.off-a.off));
+    let prev=null;
+    pts.forEach(p=>{
+      const tx=dec?p.v.toLocaleString('es-AR',{minimumFractionDigits:nd||0,maximumFractionDigits:nd||0}):fmt(p.v);
+      const cx=L+p.i*bandW+bandW/2+p.off+bw/2, hw=tx.length*fs*0.62/2;
+      let y0=y(Math.max(p.v,0))-4;
+      if(prev&&!(cx-hw>prev.x2+2||cx+hw<prev.x1-2)&&Math.abs(y0-prev.y)<13)y0=prev.y-13;
+      prev={x1:cx-hw,x2:cx+hw,y:y0};
+      s+=`<text x="${cx}" y="${y0}" text-anchor="middle"
+        style="font-size:${fs}px;font-weight:600;fill:${p.c}">${tx}</text>`;});}
   s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
   svg.innerHTML=s;
   svg.onpointermove=ev=>{
@@ -1125,7 +1137,11 @@ function renderInd(sinTabla){
   const den=(anio,m,campo)=>{const k=anio+'-'+String(m).padStart(2,'0');
     const v=(DATOS_OP[k]||{})[campo];return v||null;};
   const ratio=(pred,campo,anio)=>M12a.map(m=>{
-    if(anio===2026&&m>tope)return null;      // 2026 solo hasta el mes con datos
+    // v15.61.4: el mes EN CURSO (tope) tambien queda afuera del año activo: su
+    // contable esta parcial y el ratio no significa nada (ago-26 daba "0,0" y
+    // ensuciaba el grafico). Asi el grafico queda alineado con las tarjetas,
+    // que ya promediaban solo meses cerrados.
+    if(anio===2026&&m>=tope)return null;
     const d=den(anio,m,campo);if(!d)return null;
     return sumaMes(filas,pred,anio,m,false)/d;});
   const rAlim26=ratio(ALIM,'alim',2026), rAlim25=ratio(ALIM,'alim',2025);
@@ -1136,18 +1152,45 @@ function renderInd(sinTabla){
   // entero con separador se lee mejor.
   barras2('ch-alim',lbl12,rAlim26,rAlim25,'$ / kg alimento',true,true,1);
   barras2('ch-cab', lbl12,rCab26, rCab25, '$ / cabeza',    true,true,0);
+  // v15.61.3/.4 · Tarjetas de promedio. Las dos usan el MISMO layout para que
+  // se lean como una familia, y el mismo criterio: promedio SIMPLE de los meses
+  // CERRADOS (el mes en curso queda afuera, esta parcial). Desde v15.61.4 los
+  // ratios ya vienen con el mes en curso en null, asi que alcanza con filtrar.
+  const _promMeses=a=>{const v=a.filter(x=>x!==null&&isFinite(x)&&x>0);
+    return v.length?v.reduce((x,y)=>x+y,0)/v.length:null;};
+  const _cerrados=tope>1?`ene–${MESN[tope-2]}`:'sin meses cerrados';
+  const _filaProm=(et,val,extraHtml,destac,nd)=>
+    `<div style="${destac?'':'margin-top:7px;padding-top:7px;border-top:1px solid var(--border)'}">
+       <span class="lbl" style="margin:0">${et}</span>
+       <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">
+         <b style="font-family:var(--mono);font-size:${destac?'21':'15'}px;font-weight:700;
+            color:${destac?'var(--ink)':'var(--text-2)'}">${val===null?'—':'$ '+(nd?val.toLocaleString('es-AR',{minimumFractionDigits:nd,maximumFractionDigits:nd}):fmt(val))}</b>
+         ${extraHtml}
+       </div></div>`;
+
+  // v15.61.4 · Alimentacion por kg: promedio y variacion interanual.
+  (function(){
+    const a26=_promMeses(rAlim26), a25=_promMeses(rAlim25);
+    const va=(a26!==null&&a25)?((a26/a25-1)*100):null;
+    // es un COSTO: que suba es malo -> rojo; que baje, verde.
+    const col=va===null?'var(--mutedc)':(va>0?'var(--rojo)':'var(--verde)');
+    const uni='<span class="muted" style="font-size:11px">/kg alimento</span>';
+    $('alim-prom').innerHTML=
+      `<div class="lbl">Alimentación por kg · promedio</div>`
+      + _filaProm(`2026 (${_cerrados})`, a26,
+          uni+`<span style="font-family:var(--mono);font-size:15px;font-weight:700;color:${col}">${va===null?'':(va>=0?'+':'')+va.toFixed(0)+' % vs 2025'}</span>`,
+          true, 1)
+      + _filaProm('2025 (año completo)', a25, uni, false, 1);
+  })();
+
   // v15.61.3 · Promedio de estructura por cabeza, mensual y POR DIA.
   // Promedio SIMPLE de los meses cerrados: se excluye el mes en curso (tope),
   // que esta parcial y tiraria el promedio para abajo. 2025 va el año completo.
   // $/cab/dia = promedio mensual x 12 / 365 (año calendario, no 30,44 por mes:
   // asi el total anual cierra exacto contra la suma de los 12 meses).
   (function(){
-    const prom=a=>{const v=a.filter(x=>x!==null&&isFinite(x)&&x>0);
-      return v.length?v.reduce((x,y)=>x+y,0)/v.length:null;};
-    const m26=prom(rCab26.slice(0,Math.max(tope-1,0)));   // cerrados: hasta tope-1
-    const m25=prom(rCab25);
+    const m26=_promMeses(rCab26), m25=_promMeses(rCab25);
     const dia=v=>v===null?null:v*12/365;
-    const cerr=tope>1?`ene–${MESN[tope-2]}`:'sin meses cerrados';
     const fila=(et,mes,d,destac)=>
       `<div style="${destac?'':'margin-top:7px;padding-top:7px;border-top:1px solid var(--border)'}">
          <span class="lbl" style="margin:0">${et}</span>
@@ -1161,12 +1204,14 @@ function renderInd(sinTabla){
          </div></div>`;
     $('cab-prom').innerHTML=
       `<div class="lbl">Estructura por cabeza · promedio</div>`
-      + fila(`2026 (${cerr})`, m26, dia(m26), true)
+      + fila(`2026 (${_cerrados})`, m26, dia(m26), true)
       + fila('2025 (año completo)', m25, dia(m25), false);
   })();
   const faltan=campo=>{let n=0;for(let m=1;m<=tope;m++){if(!den(2025,m,campo))n++;if(!den(2026,m,campo))n++;}return n;};
-  $('alim-falta').textContent=faltan('alim')?`Faltan cargar ${faltan('alim')} meses de kg de alimento (tabla de abajo).`:'';
-  $('cab-falta').textContent=faltan('cab')?`Faltan cargar ${faltan('cab')} meses de cabezas (tabla de abajo).`:'';
+  // v15.61.4: nota fija sobre el mes en curso + el aviso de meses sin cargar.
+  const _notaMes=`El mes en curso (${MESN[tope-1]}) se muestra recién al cierre: su contable está parcial.`;
+  $('alim-falta').innerHTML=(faltan('alim')?`Faltan cargar ${faltan('alim')} meses de kg de alimento (tabla de abajo). `:'')+_notaMes;
+  $('cab-falta').innerHTML=(faltan('cab')?`Faltan cargar ${faltan('cab')} meses de cabezas (tabla de abajo). `:'')+_notaMes;
   // --- acumulado ---
   const esc=1;
   // v15.61.2: la linea de 2025 se dibuja el AÑO COMPLETO (ene→dic) para ver
