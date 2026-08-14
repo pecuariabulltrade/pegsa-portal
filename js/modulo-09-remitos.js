@@ -166,6 +166,52 @@ function remConsolidar(ids) {
   };
 }
 
+/* v15.62.1 · Economía de la venta, con la comisión del consignatario.
+   El $ manual MANDA sobre el %: si el usuario escribe el monto, ese vale y el
+   % queda como referencia calculada. Las ventas guardadas antes de esta
+   versión no tienen estos campos → comisión 0, todo sigue igual. */
+function remVentaCalc(venta) {
+  var kgc = venta.kg_carne || 0, pkg = venta.precio_kg || 0;
+  var bruto = kgc * pkg;
+  var manual = venta.com_venta_monto != null;
+  var comVenta = manual ? venta.com_venta_monto
+                        : (venta.com_venta_pct ? bruto * venta.com_venta_pct / 100 : 0);
+  var otros = (venta.flete || 0) + (venta.pesada || 0) + (venta.guia_senasa || 0) + (venta.guia_comuna || 0);
+  return {
+    kgc: kgc, pkg: pkg, bruto: bruto, otros: otros,
+    comVenta: comVenta, comManual: manual,
+    comPct: bruto ? comVenta / bruto * 100 : null,
+    gastos: otros + comVenta, neto: bruto - otros - comVenta
+  };
+}
+
+/* v15.62.1 · Reposición con precios editables a mano.
+   Todos los rubros repo son LINEALES en su precio (compra = kg × $/kg,
+   comisión = compra × %, mortandad = kg_mort × $/kg, alimento = kg MS × $/kg MS),
+   así que alcanza con reescalar lo que ya vino calculado — no hace falta
+   rehacer el cálculo fila por fila y el resultado es exacto.
+   Estructura y sanidad quedan históricas, como en el prototipo.
+   ⚠ En un grupo cuyos remitos tenían precios repo distintos, la mortandad
+   reescalada tiene una diferencia de segundo orden (es ~1 % del costo). */
+function remRepoCalc(r, venta) {
+  var RP = r.reposicion;
+  var pAuto = RP.precio_kg, msAuto = RP.precio_kg_ms;
+  var p = venta.repoPrecio != null ? venta.repoPrecio : pAuto;
+  var ms = venta.repoMS != null ? venta.repoMS : msAuto;
+  var fp = pAuto ? p / pAuto : 1, fm = msAuto ? ms / msAuto : 1;
+  var estrSan = RP.total - ((RP.compra || 0) + (RP.comision || 0) + (RP.alimento || 0) + (RP.mortandad || 0));
+  var compra = (RP.compra || 0) * fp, comision = (RP.comision || 0) * fp;
+  var mort = (RP.mortandad || 0) * fp, alim = (RP.alimento || 0) * fm;
+  var total = compra + comision + alim + mort + estrSan;
+  return {
+    precio: p, precioMs: ms, pAuto: pAuto, msAuto: msAuto,
+    manualP: venta.repoPrecio != null, manualMs: venta.repoMS != null,
+    manual: venta.repoPrecio != null || venta.repoMS != null,
+    compra: compra, comision: comision, alimento: alim, mortandad: mort,
+    total: total, por_kg_vendido: r.kg_egreso ? total / r.kg_egreso : null
+  };
+}
+
 // Objeto activo: el remito suelto o el consolidado del grupo.
 function remActual() {
   if (_remModo === 'grupo' && _remGrupo.length >= 2) return remConsolidar(_remGrupo);
@@ -190,6 +236,32 @@ function remToggleRemito(id) {
 function initRemitos() { cargarRemitos(); }
 
 function remSelChange(v) { _remSel = v; renderRemitos(); }
+
+// v15.62.1: al escribir el %, se limpia el monto manual para que el % vuelva a
+// mandar; al escribir el monto, ese manda y el % queda de referencia.
+function remComInput(campo, valor) {
+  var k = remVentaKey(), v = _remLsGet(k);
+  var n = parseFloat(String(valor).replace(',', '.'));
+  n = isNaN(n) ? null : n;
+  if (campo === 'pct') { v.com_venta_pct = n; v.com_venta_monto = null; }
+  else { v.com_venta_monto = n; }
+  _remLsSet(k, v);
+  renderRemitos(true);
+}
+// Overrides de reposicion. null = automatico (vuelve al valor del JSON).
+function remRepoInput(campo, valor) {
+  var k = remVentaKey(), v = _remLsGet(k);
+  var n = parseFloat(String(valor).replace(',', '.'));
+  v[campo] = isNaN(n) ? null : n;
+  _remLsSet(k, v);
+  renderRemitos(true);
+}
+function remRepoAuto() {
+  var k = remVentaKey(), v = _remLsGet(k);
+  v.repoPrecio = null; v.repoMS = null;
+  _remLsSet(k, v);
+  renderRemitos(true);
+}
 
 function remVentaInput(campo, valor) {
   var k = remVentaKey(), v = _remLsGet(k);
@@ -279,10 +351,9 @@ function remInformePDF() {
   var titulo = esGrupo ? 'Grupo · ' + r.remitos_ids.join(' + ') : 'Remito ' + _remSel;
   var C = r.costos, I = r.indicadores, RP = r.reposicion;
   var venta = remVentaCtx();
-  var kgc = venta.kg_carne || 0, pkg = venta.precio_kg || 0;
-  var gastos = (venta.flete || 0) + (venta.pesada || 0) + (venta.guia_senasa || 0) + (venta.guia_comuna || 0);
-  var bruto = kgc * pkg, neto = bruto - gastos, hayVenta = bruto > 0;
-  var res = neto - C.total, resRepo = neto - RP.total;
+  var V = remVentaCalc(venta), RPc = remRepoCalc(r, venta);
+  var kgc = V.kgc, pkg = V.pkg, gastos = V.gastos, bruto = V.bruto, neto = V.neto, hayVenta = bruto > 0;
+  var res = neto - C.total, resRepo = neto - RPc.total;
   var GOLD = '#b8922a', GREEN = '#27613d', BLUE = '#2d6a8a', RED = '#c0392b', NAVY = '#0F1B64';
 
   var pasos = hayVenta
@@ -372,7 +443,10 @@ function remInformePDF() {
   if (hayVenta) {
     h += '<div class="k" style="grid-template-columns:repeat(4,1fr)">'
       + '<div class="kc"><div class="l">Venta bruta</div><div class="v">' + _remMM(bruto) + '</div><div class="u">' + _remN(kgc) + ' kg × $ ' + _remN(pkg, 2) + '</div></div>'
-      + '<div class="kc"><div class="l">Gastos de venta</div><div class="v neg">' + _remMM(-gastos) + '</div><div class="u">$ ' + _remN(gastos / kgc, 2) + '/kg carne</div></div>'
+      + '<div class="kc"><div class="l">Gastos de venta</div><div class="v neg">' + _remMM(-gastos) + '</div>'
+      + (V.comVenta ? '<div class="u">com. venta ' + _remM(V.comVenta) + ' (' + _remN(V.comPct, 1) + ' %)</div>'
+                      + '<div class="u">flete y guías ' + _remM(V.otros) + '</div>'
+                    : '<div class="u">$ ' + _remN(gastos / kgc, 2) + '/kg carne</div>') + '</div>'
       + '<div class="kc"><div class="l">Venta neta</div><div class="v">' + _remMM(neto) + '</div><div class="u">rinde ' + _remN(kgc / r.kg_egreso * 100, 2) + ' %</div></div>'
       + '<div class="kc big"><div class="l">Resultado</div><div class="v">' + _remMM(res) + '</div><div class="u">'
       + _remN(res / C.total * 100, 1) + ' % s/costo · ' + _remM(res / r.cabezas) + '/cab</div></div>'
@@ -392,14 +466,14 @@ function remInformePDF() {
   // RESULTADO histórico (tarjeta oscura y número grande).
   h += '<div class="sec">Resultado a reposición</div><div class="repo">'
     + '<div><div class="rl">Costo total reposición</div>'
-    + '<div class="t" style="font-size:20px">' + _remM(RP.total) + '</div>'
-    + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(RP.por_kg_vendido) + ' / kg vendido · hist $ ' + _remN(C.por_kg_vendido) + '</div>'
-    + '<div style="font-size:9px;color:#6b6560;margin-top:4px">' + RP.fuente_precio + ' $ ' + _remN(RP.precio_kg)
-    + '/kg · MS ' + RP.mes_ms + ' $ ' + _remN(RP.precio_kg_ms, 2) + '</div></div>'
+    + '<div class="t" style="font-size:20px">' + _remM(RPc.total) + '</div>'
+    + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(RPc.por_kg_vendido) + ' / kg vendido · hist $ ' + _remN(C.por_kg_vendido) + '</div>'
+    + '<div style="font-size:9px;color:#6b6560;margin-top:4px">' + (RPc.manualP ? 'manual' : RP.fuente_precio)
+    + ' $ ' + _remN(RPc.precio) + '/kg · MS ' + (RPc.manualMs ? 'manual' : RP.mes_ms) + ' $ ' + _remN(RPc.precioMs, 2) + '</div></div>'
     + (hayVenta
         ? '<div class="kc big" style="text-align:right"><div class="l">Resultado a reposición</div>'
           + '<div class="v" style="font-size:24px;color:' + (resRepo >= 0 ? '#d4a84b' : '#ff8b7d') + '">' + _remM(resRepo) + '</div>'
-          + '<div class="u">' + _remN(resRepo / RP.total * 100, 1) + ' % s/costo repo</div>'
+          + '<div class="u">' + _remN(resRepo / RPc.total * 100, 1) + ' % s/costo repo</div>'
           + '<div class="u">histórico ' + _remM(res) + ' · dif ' + (resRepo - res >= 0 ? '+' : '') + _remM(resRepo - res) + '</div>'
           + '<div class="u" style="margin-top:3px">comprando y alimentando a precios de hoy</div></div>'
         : '<div class="kc" style="text-align:right"><div class="rl">Resultado a reposición</div>'
@@ -409,9 +483,12 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.60.1 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.62.1 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
+    + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
+                    + (RPc.manualMs ? ' y MS $ ' + _remN(RPc.precioMs, 2) : '') : '')
+    + (V.comVenta ? ' · comisión de venta ' + _remN(V.comPct, 1) + ' %' : '')
     + (nSin ? ' · ' + nSin + ' tropa(s) sin precio estimadas al promedio de las compañeras' : '')
     + '</div></body></html>';
 
@@ -443,11 +520,11 @@ function renderRemitos(soloResultado) {
   if (!r) { el.innerHTML = ''; return; }
 
   var venta = remVentaCtx();
-  var kgc = venta.kg_carne || 0, pkg = venta.precio_kg || 0;
-  var gastos = (venta.flete || 0) + (venta.pesada || 0) + (venta.guia_senasa || 0) + (venta.guia_comuna || 0);
-  var bruto = kgc * pkg, neto = bruto - gastos;
+  var V = remVentaCalc(venta);
+  var kgc = V.kgc, pkg = V.pkg, gastos = V.gastos, bruto = V.bruto, neto = V.neto;
   var costo = r.costos.total, res = neto - costo;
-  var resRepo = neto - r.reposicion.total;
+  var RPc = remRepoCalc(r, venta);          // reposición con overrides
+  var resRepo = neto - RPc.total;
 
   var C = r.costos, I = r.indicadores, RP = r.reposicion;
   var w = function (x) { return costo > 0 ? (x / costo * 100) : 0; };
@@ -509,6 +586,14 @@ function renderRemitos(soloResultado) {
       + '<input value="' + (venta[c[0]] != null ? venta[c[0]] : '') + '" style="' + INP + '" '
       + 'onchange="remVentaInput(\'' + c[0] + '\',this.value)"></div>';
   });
+  // v15.62.1: comisión del consignatario/frigorífico. El $ manual pisa al %.
+  h += '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">% com. venta</label>'
+    + '<input value="' + (venta.com_venta_pct != null ? venta.com_venta_pct : '') + '" style="' + INP + ';width:92px" '
+    + 'onchange="remComInput(\'pct\',this.value)"></div>';
+  h += '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">$ com. venta'
+    + (V.comVenta && !V.comManual ? ' (calc.)' : '') + '</label>'
+    + '<input value="' + (V.comManual ? venta.com_venta_monto : (V.comVenta ? Math.round(V.comVenta) : '')) + '" style="' + INP + '" '
+    + 'onchange="remComInput(\'monto\',this.value)"></div>';
   // v15.60: informe de una página para compartir
   h += '<div style="margin-left:auto;display:flex;flex-direction:column;gap:5px">'
     + '<button onclick="remInformePDF()" style="padding:8px 16px;background:var(--ink);border:1px solid var(--ink);border-radius:2px;'
@@ -580,7 +665,9 @@ function renderRemitos(soloResultado) {
   if (bruto > 0) {
     h += '<div style="' + H2 + '">Resultado</div><div style="' + GRID + '">'
       + card('Venta bruta', _remM(bruto), _remN(kgc) + ' kg carne × $ ' + _remN(pkg, 2))
-      + card('Gastos venta', _remM(-gastos), kgc ? '$ ' + _remN(gastos / kgc, 2) + ' por kg carne' : '')
+      + card('Gastos venta', _remM(-gastos),
+             V.comVenta ? 'com. venta ' + _remM(V.comVenta) + ' (' + _remN(V.comPct, 1) + ' %) + otros ' + _remM(V.otros)
+                        : (kgc ? '$ ' + _remN(gastos / kgc, 2) + ' por kg carne' : ''))
       + card('Venta neta', _remM(neto), 'rinde ' + _remN(kgc / r.kg_egreso * 100, 2) + ' %')
       + card('Resultado', _remM(res), _remN(res / costo * 100, 1) + ' % s/costo · ' + _remM(res / r.cabezas) + '/cab', true)
       + '</div>';
@@ -602,14 +689,27 @@ function renderRemitos(soloResultado) {
 
   // ── Reposición ──
   h += '<div style="' + H2 + '">Resultado a reposición</div>';
-  h += '<div style="' + SUB + '">Mismos kg de entrada y mismos kg MS, valuados a precio de hoy ('
-    + RP.fuente_precio + ' $ ' + _remN(RP.precio_kg) + '/kg · MS ' + RP.mes_ms + ' $ ' + _remN(RP.precio_kg_ms, 2)
-    + ') — la diferencia contra el gasto histórico es revalorización. Estructura y sanidad quedan históricas.</div>';
+  h += '<div style="' + SUB + '">Mismos kg de entrada y mismos kg MS, valuados a precio de hoy — la diferencia '
+    + 'contra el gasto histórico es revalorización. Estructura y sanidad quedan históricas.</div>';
+  // v15.62.1: precios de reposición editables a mano (como el prototipo).
+  h += '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:12px 16px;margin-bottom:12px;'
+    + 'display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">'
+    + '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">$/kg reposición compra · '
+    + (RPc.manualP ? '<span style="color:var(--gold)">manual</span>' : RP.fuente_precio) + '</label>'
+    + '<input value="' + _remN(RPc.precio) + '" style="' + INP + '" onchange="remRepoInput(\'repoPrecio\',this.value)"></div>'
+    + '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">$/kg MS reposición · '
+    + (RPc.manualMs ? '<span style="color:var(--gold)">manual</span>' : RP.mes_ms) + '</label>'
+    + '<input value="' + _remN(RPc.precioMs, 2) + '" style="' + INP + '" onchange="remRepoInput(\'repoMS\',this.value)"></div>'
+    + (RPc.manual
+        ? '<a onclick="remRepoAuto()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
+          + 'color:var(--gold);text-decoration:underline;padding-bottom:9px">restaurar automático</a>'
+        : '')
+    + '</div>';
   h += '<div style="' + GRID + '">'
-    + card('Compra a reposición', _remM(RP.compra + RP.comision), 'vs hist ' + ((RP.compra + RP.comision - C.compra - C.comision) >= 0 ? '+' : '') + _remM(RP.compra + RP.comision - C.compra - C.comision))
-    + card('Alimento a reposición', _remM(RP.alimento), 'vs hist ' + ((RP.alimento - C.alimento) >= 0 ? '+' : '') + _remM(RP.alimento - C.alimento))
-    + card('Costo total reposición', _remM(RP.total), '$ ' + _remN(RP.por_kg_vendido) + ' por kg vendido · hist $ ' + _remN(C.por_kg_vendido))
-    + (bruto > 0 ? card('Resultado a reposición', _remM(resRepo), _remN(resRepo / RP.total * 100, 1) + ' % s/costo repo · hist ' + _remM(res), true) : '')
+    + card('Compra a reposición', _remM(RPc.compra + RPc.comision), 'vs hist ' + ((RPc.compra + RPc.comision - C.compra - C.comision) >= 0 ? '+' : '') + _remM(RPc.compra + RPc.comision - C.compra - C.comision))
+    + card('Alimento a reposición', _remM(RPc.alimento), 'vs hist ' + ((RPc.alimento - C.alimento) >= 0 ? '+' : '') + _remM(RPc.alimento - C.alimento))
+    + card('Costo total reposición', _remM(RPc.total), '$ ' + _remN(RPc.por_kg_vendido) + ' por kg vendido · hist $ ' + _remN(C.por_kg_vendido))
+    + (bruto > 0 ? card('Resultado a reposición', _remM(resRepo), _remN(resRepo / RPc.total * 100, 1) + ' % s/costo repo · hist ' + _remM(res), true) : '')
     + '</div>';
 
   // ── Detalle por tropa ──
