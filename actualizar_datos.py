@@ -4402,6 +4402,22 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["resultado_remitos"] = {"ok": False, "error": str(e)}
 
+    # ── ANÁLISIS DE COSTOS · denominadores operativos (v15.61) ─
+    # Sólo los denominadores de los ratios. El JSON contable del módulo
+    # (analisis_costos_datos.json) lo regenera Nicolás a mano con su ejecutable
+    # de Physis — el pipeline NUNCA lo escribe.
+    separador("Análisis de Costos · operativos")
+    try:
+        _op = generar_analisis_costos_operativos(carpeta, periodo, log)
+        resumen["modulos"]["analisis_costos_operativos"] = {
+            "ok":    _op is not None,
+            "meses": len(_op) if _op else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_analisis_costos_operativos falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["analisis_costos_operativos"] = {"ok": False, "error": str(e)}
+
     # ── v15.14: Smoke test post-pipeline ──
     # Valida que los JSONs tengan números razonables. Si falla, queda registrado
     # en modulos.smoke_test → el banner stale v15.12 lo detecta como módulo con
@@ -7728,6 +7744,120 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     for rem, r in sorted(remitos_out.items()):
         log.info(f"      {rem}: {r['cabezas']:>3} cab · costo $ {r['costos']['total']:,.0f} "
                  f"· $ {r['costos']['por_kg_vendido']:,.0f}/kg · cobertura {r['cobertura_pct']}%")
+    return salida
+
+
+def generar_analisis_costos_operativos(carpeta_out, periodo, log=None):
+    """v15.61: denominadores mensuales de los ratios del módulo Análisis de Costos
+    (Physis) → analisis_costos_operativos.json.
+
+        {"2025-01": {"alim": 3330933, "cab": 8767}, ...}
+
+    alim = kg de alimento TAL CUAL dados por el mixer en el mes.
+    cab  = cabezas PROMEDIO del feedlot (El Haras, TODOS los propietarios).
+
+    El contable (analisis_costos_datos.json) lo regenera Nicolás a mano con su
+    ejecutable de Physis; esto es lo único de ese módulo que se refresca solo.
+
+    Devuelve el dict volcado o None. NO levanta excepción.
+    """
+    if log is None:
+        log = logging.getLogger("costosop")
+    from datetime import date as _date
+
+    base = Path(carpeta_out)
+
+    def _load(nombre):
+        try:
+            with (base / nombre).open(encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            log.warning(f"  ⚠ no pude leer {nombre}: {e}")
+            return None
+
+    _consumo = _load(f"consumo_{periodo}.json") or {}
+    meses_mix = ((_consumo.get("por_mes") or {}).get("meses")) or {}
+    if not meses_mix:
+        log.warning("  ⚠ consumo sin por_mes, saltando operativos de costos")
+        return None
+
+    _efi = _load("eficiencia_historico.json") or {}
+    regs = _efi.get("registros") or []
+    _comp = _load("comportamiento_historico.json") or {}
+    snaps = _comp.get("snapshots") or []
+
+    # ── Cabezas por mes desde la serie DIARIA (la medición buena) ──
+    diario = {}
+    for r in regs:
+        f = str(r.get("fecha") or "")[:7]
+        c = r.get("cabezas")
+        if f and c:
+            diario.setdefault(f, []).append(float(c))
+
+    # ── Cabezas a fin de mes desde los snapshots (meses viejos) ──
+    # El Haras pegsa + hoteleros, excluyendo la clave 'PEGSA' de por_hotelero
+    # (duplica la propia y además es de todos los campos) — mismo criterio que
+    # el denominador de %PV de v15.58.1. Limitación conocida: por_hotelero no
+    # abre por campo, así que los meses viejos pueden sobreestimar un poco.
+    fin_mes = {}
+    for s in snaps:
+        per = s.get("periodo")
+        hm = s.get("hacienda_masa") or {}
+        eh = ((hm.get("pegsa") or {}).get("por_campo", {}).get("El Haras", {}) or {}).get("cabezas")
+        if not (per and eh):
+            continue
+        hot = sum(float((v or {}).get("cabezas") or 0)
+                  for k, v in (hm.get("por_hotelero") or {}).items()
+                  if str(k).strip().upper() != "PEGSA")
+        fin_mes[per] = float(eh) + hot
+
+    def _mes_ant(m):
+        y, mm = int(m[:4]), int(m[5:7])
+        return f"{y-1:04d}-12" if mm == 1 else f"{y:04d}-{mm-1:02d}"
+
+    hoy = _date.today()
+    mes_actual = f"{hoy.year:04d}-{hoy.month:02d}"
+    salida, fuentes = {}, {}
+    for m in sorted(meses_mix):
+        if m < "2025-01" or m > mes_actual:
+            continue
+        d = meses_mix[m]
+        kg = d.get("kg_total") or 0
+        n_reg = d.get("dias_con_registro") or 0
+        n_desc = len(d.get("dias_descartados") or [])
+        if kg <= 0 or n_reg <= 0:
+            continue
+        # v15.61: los días descartados del corte mensual son días en que un mixer
+        # no subió datos — el alimento SE repartió igual. Para un TOTAL mensual
+        # (no un promedio) hay que reponerlos al promedio de los días válidos.
+        alim = kg + n_desc * kg / n_reg
+
+        cab, fuente = None, None
+        if len(diario.get(m, [])) >= 25:
+            cab = sum(diario[m]) / len(diario[m])
+            fuente = "serie_diaria"
+        else:
+            ant, act = fin_mes.get(_mes_ant(m)), fin_mes.get(m)
+            if ant is not None and act is not None:
+                cab, fuente = (ant + act) / 2, "snapshots_prom"
+            elif act is not None:
+                cab, fuente = act, "fin_mes"
+            elif ant is not None:
+                cab, fuente = ant, "fin_mes_anterior"
+        if cab is None:
+            continue
+        salida[m] = {"alim": int(round(alim)), "cab": int(round(cab))}
+        fuentes[m] = fuente
+
+    if not salida:
+        log.warning("  ⚠ ningún mes con alimento Y cabezas, no se genera operativos")
+        return None
+
+    guardar(salida, carpeta_out, "analisis_costos_operativos.json")
+    log.info(f"  ✓ Análisis de Costos · operativos: {len(salida)} meses "
+             f"({min(salida)} → {max(salida)})")
+    for m in sorted(salida)[-4:]:
+        log.info(f"      {m}: alim {salida[m]['alim']:>10,} kg · cab {salida[m]['cab']:>6,} ({fuentes[m]})")
     return salida
 
 
