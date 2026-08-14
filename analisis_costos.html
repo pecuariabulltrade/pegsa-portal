@@ -72,6 +72,9 @@
   .kpi .d{font-family:var(--mono);font-size:11.5px}
   .d.up{color:var(--rojo);font-weight:600} .d.down{color:var(--verde);font-weight:600} .d.neutro{color:var(--mutedc)}
   .grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px}
+  /* v15.61.2: la fila de ratios va en columnas IGUALES — con 1.55fr/1fr el de
+     '$ por cabeza' quedaba a ~480px y el grafico se renderizaba ilegible. */
+  .grid2.eq{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   @media(max-width:960px){.grid2{grid-template-columns:1fr}}
   .fila{display:grid;grid-template-columns:185px 1fr 128px;gap:12px;align-items:center;
     padding:7px 6px;border-radius:7px}
@@ -265,14 +268,14 @@
       </table>
     </div>
 
-    <div class="grid2">
+    <div class="grid2 eq">
       <div class="card">
         <h2>$ por kg de alimento</h2>
         <p class="muted" style="margin-top:2px">(0901002 gastos operativos alimentación + 0902001–015 maquinaria
           alimentación) ÷ kg de alimento dado en el mes. Es el grupo d).</p>
         <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
           <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span></div>
-        <svg id="ch-alim" viewBox="0 0 940 260" style="width:100%;height:auto;display:block"></svg>
+        <svg id="ch-alim" viewBox="0 0 620 330" style="width:100%;height:auto;display:block"></svg>
         <p class="muted" id="alim-falta" style="margin-bottom:0"></p>
       </div>
       <div class="card">
@@ -281,7 +284,7 @@
           ÷ cabezas promedio del feedlot en el mes. Es el grupo e).</p>
         <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
           <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span></div>
-        <svg id="ch-cab" viewBox="0 0 940 260" style="width:100%;height:auto;display:block"></svg>
+        <svg id="ch-cab" viewBox="0 0 620 330" style="width:100%;height:auto;display:block"></svg>
         <p class="muted" id="cab-falta" style="margin-bottom:0"></p>
       </div>
     </div>
@@ -292,7 +295,7 @@
         del año anterior. Muestra cómo viene la variación del año a medida que avanza.</p>
       <div class="leyenda"><span class="k"><span class="ln" style="background:var(--serie-act)"></span>acum. 2026</span>
         <span class="k"><span class="ln" style="background:var(--serie-ant)"></span>acum. 2025</span></div>
-      <svg id="ch-acum" viewBox="0 0 940 280" style="width:100%;height:auto;display:block"></svg>
+      <svg id="ch-acum" viewBox="0 0 940 300" style="width:100%;height:auto;display:block"></svg>
       <details style="margin-top:8px"><summary class="muted" style="cursor:pointer">Ver tabla de variación acumulada</summary>
         <table style="max-width:640px;margin-top:8px"><thead><tr><th>Hasta</th><th class="num">Acum. 2025</th>
           <th class="num">Acum. 2026</th><th class="num">Var. $</th><th class="num">Var. kg</th></tr></thead>
@@ -876,7 +879,7 @@ function barras2(svgId,labels,s26,s25,unidad,dec,etiq){
     return `<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${bw-2*r} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="${color}"/>`;};
   s25.forEach((v,i)=>s+=barra(v,i,-bw-1,'var(--serie-ant)'));
   s26.forEach((v,i)=>s+=barra(v,i,1,'var(--serie-act)'));
-  if(etiq){const fs=W>600?9.5:8.5;
+  if(etiq){const fs=W>600?10.5:9;   // v15.61.2: legible sin zoom
     s26.forEach((v,i)=>{
       if(v===null||!isFinite(v))return;
       const tx=dec?v.toLocaleString('es-AR',{maximumFractionDigits:0}):fmt(v);
@@ -898,7 +901,18 @@ function barras2(svgId,labels,s26,s25,unidad,dec,etiq){
 
 function lineas2(svgId,labels,s26,s25,unidad,proj){
   const svg=$(svgId);if(!svg)return;
-  const H=+svg.viewBox.baseVal.height,W=940,{L,R,T,B}={L:76,R:70,T:24,B:30};
+  // v15.61.2: L y R se calculan del ancho REAL del texto mas largo en vez de
+  // ser fijos. Con numeros enteros es-AR de miles de millones ("1.234.567.890")
+  // el eje se comia los primeros digitos ("000.000.000") y las etiquetas de
+  // punta se cortaban contra el borde derecho. ~6.3px por caracter a 10.5px de
+  // JetBrains Mono, +8 de aire.
+  const H=+svg.viewBox.baseVal.height,W=940;
+  const _todos=[...s26,...s25,...(proj||[])].filter(v=>v!==null&&isFinite(v));
+  const _maxAbs=Math.max(...(_todos.length?_todos.map(Math.abs):[0]),1);
+  const _stepPrev=stepNice(_maxAbs*1.12)||1;
+  const _anchoEje=fmt(_stepPrev*4).length*6.3+14;
+  const _anchoPunta=(fmt(_maxAbs).length+5)*6.3+14;   // +5 por " est."
+  const {L,R,T,B}={L:Math.max(76,Math.ceil(_anchoEje)),R:Math.max(70,Math.ceil(_anchoPunta)),T:24,B:30};
   const vals=[...s26,...s25,...(proj||[])].filter(v=>v!==null);
   const max=Math.max(...vals,1)*1.12;
   const step=stepNice(max)||1;
@@ -1088,18 +1102,29 @@ function renderInd(sinTabla){
   $('cab-falta').textContent=faltan('cab')?`Faltan cargar ${faltan('cab')} meses de cabezas (tabla de abajo).`:'';
   // --- acumulado ---
   const esc=1;
+  // v15.61.2: la linea de 2025 se dibuja el AÑO COMPLETO (ene→dic) para ver
+  // contra que termina comparando el año; la de 2026 llega hasta el ultimo mes
+  // con datos (los meses posteriores van null y lineas2 corta el trazo solo).
+  // La comparacion sigue siendo mes contra mismo mes: lo unico que cambia es
+  // hasta donde se dibuja 2025.
+  const M12a=[...Array(12).keys()].map(i=>i+1);
+  const lbl12=M12a.map(m=>MESN[m-1]);
   let a26=0,a25=0;const s26=[],s25=[],rows=[];
   let a26p=0,a25p=0,a26k=0,a25k=0;
-  meses.forEach(m=>{
-    a26+=meses.includes(m)?( sumaMes(filas,()=>true,2026,m,enKg)):0;
+  M12a.forEach(m=>{
+    const hay26=m<=tope;
+    if(hay26)a26+=sumaMes(filas,()=>true,2026,m,enKg);
     a25+=sumaMes(filas,()=>true,2025,m,enKg);
-    s26.push(a26/esc);s25.push(a25/esc);
-    a26p+=sumaMes(filas,()=>true,2026,m,false);a25p+=sumaMes(filas,()=>true,2025,m,false);
+    s26.push(hay26?a26/esc:null);s25.push(a25/esc);
+    if(hay26)a26p+=sumaMes(filas,()=>true,2026,m,false);
+    a25p+=sumaMes(filas,()=>true,2025,m,false);
     if(mesesKg.includes(m)){a26k+=sumaMes(filas,()=>true,2026,m,true);a25k+=sumaMes(filas,()=>true,2025,m,true);}
-    rows.push(`<tr><td>${MESN[m-1]}</td><td class="num">${plata(a25p)}</td><td class="num">${plata(a26p)}</td>
-      <td class="num">${fpct(pct(a26p,a25p))}</td><td class="num">${fpct(pct(a26k,a25k))}</td></tr>`);
+    rows.push(`<tr><td>${MESN[m-1]}</td><td class="num">${plata(a25p)}</td>
+      <td class="num">${hay26?plata(a26p):'—'}</td>
+      <td class="num">${hay26?fpct(pct(a26p,a25p)):'—'}</td>
+      <td class="num">${hay26?fpct(pct(a26k,a25k)):'—'}</td></tr>`);
   });
-  lineas2('ch-acum',lbl,s26,s25,unidadTxt()+' · acumulado');
+  lineas2('ch-acum',lbl12,s26,s25,unidadTxt()+' · acumulado');
   $('tbl-acum').innerHTML=rows.join('');
   $('ia-kpi').textContent=fpct(pct(a26k,a25k));
   document.querySelector('#ia-kpi').nextElementSibling.textContent=
