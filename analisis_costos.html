@@ -259,7 +259,7 @@
         2026 (derecha); los colores muestran cuánto puso cada grupo y la cifra es el total 2026 del mes.
         De <b>sep a dic</b> el 2026 es proyección (tono claro, "est."). Unidad: <b id="acum6-u"></b>, números completos. La tabla de abajo compara contra 2025 con los acumulados.</p>
       <div class="leyenda" id="ley-grupos"></div>
-      <svg id="ch-acum6" viewBox="0 0 940 320" style="width:100%;height:auto;display:block"></svg>
+      <svg id="ch-acum6" viewBox="0 0 940 360" style="width:100%;height:auto;display:block"></svg>
       <table style="max-width:860px;margin-top:12px">
         <thead><tr><th>Mes</th><th class="num">Mes 2025 <span id="u-t1"></span></th><th class="num">Mes 2026</th>
           <th class="num">Acum. 2025</th><th class="num">Acum. 2026</th>
@@ -284,6 +284,10 @@
           ÷ cabezas promedio del feedlot en el mes. Es el grupo e).</p>
         <div class="leyenda"><span class="k"><span class="sw" style="background:var(--serie-act)"></span>2026</span>
           <span class="k"><span class="sw" style="background:var(--serie-ant)"></span>2025</span></div>
+        <!-- v15.61.3: tarjeta informativa con el promedio de estructura por
+             cabeza, mensual y por dia. Es un derivado del mismo ratio del
+             grafico: no agrega ninguna fuente de datos nueva. -->
+        <div id="cab-prom" class="kpi" style="margin-bottom:12px"></div>
         <svg id="ch-cab" viewBox="0 0 620 330" style="width:100%;height:auto;display:block"></svg>
         <p class="muted" id="cab-falta" style="margin-bottom:0"></p>
       </div>
@@ -764,12 +768,15 @@ function chartApilado(svgId,d25,d26,unidad,esKg){
   // d25/d26: [12] -> {vals:[6], est?:bool}. 2025 suave a la izquierda, 2026 a la derecha.
   const svg=$(svgId);if(!svg)return;
   const H=+svg.viewBox.baseVal.height,W=+svg.viewBox.baseVal.width;
-  const {L,R,T,B}={L:120,R:16,T:30,B:30};
   const totA=d25.map(d=>d.vals.reduce((a,b)=>a+Math.max(b,0),0));
   const totB=d26.map(d=>d.vals.reduce((a,b)=>a+Math.max(b,0),0));
   const max=Math.max(...totA,...totB,1)*1.18;
   const step=stepNice(max)||1;
-  const band=(W-L-R)/12, bw=Math.max(8,Math.min(26,(band-12)/2));
+  // v15.61.3: margen izquierdo segun el ancho real de la etiqueta del eje.
+  const {L,R,T,B}={L:Math.max(120,Math.ceil(fmt(step*4).length*6.3+16)),R:16,T:30,B:30};
+  // v15.61.3: mas aire ENTRE pares que DENTRO del par (barras un poco mas
+  // finas): antes el par ocupaba casi toda la banda y los meses se pegaban.
+  const band=(W-L-R)/12, bw=Math.max(8,Math.min(22,(band-20)/2));
   const x=i=>L+i*band+band/2, y=v=>T+(H-T-B)*(1-v/(step*4));
   let s='';
   for(let g=0;g<=4;g++){const gy=y(g*step);
@@ -786,13 +793,13 @@ function chartApilado(svgId,d25,d26,unidad,esKg){
     });
     return [out,acumY];
   };
-  d25.forEach((d,i)=>{const [o]=pila(d,i,x(i)-bw-2,0.5);s+=o;});
+  d25.forEach((d,i)=>{const [o]=pila(d,i,x(i)-bw-2,0.45);s+=o;});  // v15.61.3: 2025 tenue, mismos colores
   d26.forEach((d,i)=>{
     const [o,topY]=pila(d,i,x(i)+2,d.est?0.45:1);s+=o;
     if(totB[i]>0){
       const etiq=esKg?fmt(totB[i])+' kg':'$ '+fmt(totB[i]);
       s+=`<text x="${x(i)+2+bw/2}" y="${topY-5}" text-anchor="middle"
-        style="font-size:8.5px;font-weight:600;fill:${d.est?'var(--mutedc)':'var(--text-2)'}${d.est?';font-style:italic':''}">${etiq}${d.est?' est.':''}</text>`;
+        style="font-size:10px;font-weight:600;fill:${d.est?'var(--mutedc)':'var(--text-2)'}${d.est?';font-style:italic':''}">${etiq}${d.est?' est.':''}</text>`;
     }
   });
   s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
@@ -856,13 +863,17 @@ function chartGrupo(svgId,s25,s26,proj,tope,unidad){
   svg.onpointerleave=tipHide;
 }
 
-function barras2(svgId,labels,s26,s25,unidad,dec,etiq){
+function barras2(svgId,labels,s26,s25,unidad,dec,etiq,nd){
   const svg=$(svgId);if(!svg)return;
   const H=+svg.viewBox.baseVal.height,W=+svg.viewBox.baseVal.width;
-  const {L,R,T,B}=W>600?{L:120,R:16,T:14,B:30}:{L:82,R:8,T:10,B:26};
   const vals=[...s26,...s25].filter(v=>v!==null&&isFinite(v));
   const max=Math.max(...vals,1)*1.15;
   const step=stepNice(max)||1;
+  // v15.61.3: margen izquierdo segun el ancho real de la etiqueta del eje
+  // (mismo criterio que lineas2 en v15.61.2), no fijo.
+  const _ejeTxt=dec?(step*4).toLocaleString('es-AR'):fmt(step*4);
+  const {L,R,T,B}=W>600?{L:Math.max(56,Math.ceil(_ejeTxt.length*6.3+16)),R:16,T:14,B:30}
+                       :{L:82,R:8,T:10,B:26};
   const M=labels.length,bandW=(W-L-R)/M;
   const bw=Math.max(3,Math.min(14,(bandW-6)/2));
   const y=v=>T+(H-T-B)*(1-v/(step*4));
@@ -880,9 +891,12 @@ function barras2(svgId,labels,s26,s25,unidad,dec,etiq){
   s25.forEach((v,i)=>s+=barra(v,i,-bw-1,'var(--serie-ant)'));
   s26.forEach((v,i)=>s+=barra(v,i,1,'var(--serie-act)'));
   if(etiq){const fs=W>600?10.5:9;   // v15.61.2: legible sin zoom
+    // v15.61.3: nd decimales (1 para $/kg alimento, 0 para $/cabeza). Se
+    // etiqueta el año ACTIVO (2026); las de 2025 quedan en el tooltip — con 12
+    // meses en 620px de ancho no entran las dos sin pisarse.
     s26.forEach((v,i)=>{
       if(v===null||!isFinite(v))return;
-      const tx=dec?v.toLocaleString('es-AR',{maximumFractionDigits:0}):fmt(v);
+      const tx=dec?v.toLocaleString('es-AR',{minimumFractionDigits:nd||0,maximumFractionDigits:nd||0}):fmt(v);
       s+=`<text x="${L+i*bandW+bandW/2}" y="${y(Math.max(v,0))-4}" text-anchor="middle"
         style="font-size:${fs}px;font-weight:600;fill:var(--text-2)">${tx}</text>`;});}
   s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
@@ -987,6 +1001,11 @@ function renderInd(sinTabla){
   $('ind-parcial').textContent=`(${MESN[tope-1]} 2026 parcial: datos hasta el ${fmtF(MAXF)}).`;
   const meses=[...Array(tope).keys()].map(i=>i+1);
   const lbl=meses.map(m=>MESN[m-1]);
+  // v15.61.3: eje ene->dic para ratios y acumulado. 2025 se dibuja el año
+  // completo; 2026 hasta el ultimo mes con datos (el resto va null y cada
+  // grafico corta el trazo/omite la barra solo).
+  const M12a=[...Array(12).keys()].map(i=>i+1);
+  const lbl12=M12a.map(m=>MESN[m-1]);
   const enKg=U==='kg';
   // --- maquinaria ---
   const t26p=meses.reduce((s,m)=>s+sumaMes(filas,MAQ,2026,m,false),0);
@@ -1070,7 +1089,7 @@ function renderInd(sinTabla){
   if(!$('ley-grupos').dataset.ok){
     $('ley-grupos').innerHTML=GRUPOS.map((g,i)=>
       `<span class="k"><span class="sw" style="background:${GCOL[i]}"></span>${g.k}) ${g.n}</span>`).join('')+
-      '<span class="muted">· izquierda = 2025 (suave) · derecha = 2026 · sep–dic 2026 = proyección</span>';
+      '<span class="muted">· <b>2026 sólido</b> · 2025 tenue (mismos colores) · sep–dic 2026 = proyección (itálica)</span>';
     $('ley-grupos').dataset.ok='1';
   }
   const APIL25=M12b.map(m=>({vals:GRUPOS.map(g=>sumaMes(filas,g.p,2025,m,enKg))}));
@@ -1092,11 +1111,46 @@ function renderInd(sinTabla){
   // --- ratios ---
   const den=(anio,m,campo)=>{const k=anio+'-'+String(m).padStart(2,'0');
     const v=(DATOS_OP[k]||{})[campo];return v||null;};
-  const ratio=(pred,campo,anio)=>meses.map(m=>{
+  const ratio=(pred,campo,anio)=>M12a.map(m=>{
+    if(anio===2026&&m>tope)return null;      // 2026 solo hasta el mes con datos
     const d=den(anio,m,campo);if(!d)return null;
     return sumaMes(filas,pred,anio,m,false)/d;});
-  barras2('ch-alim',lbl,ratio(ALIM,'alim',2026),ratio(ALIM,'alim',2025),'$ / kg alimento',true,true);
-  barras2('ch-cab',lbl,ratio(ESTR,'cab',2026),ratio(ESTR,'cab',2025),'$ / cabeza',true,true);
+  const rAlim26=ratio(ALIM,'alim',2026), rAlim25=ratio(ALIM,'alim',2025);
+  const rCab26=ratio(ESTR,'cab',2026),   rCab25=ratio(ESTR,'cab',2025);
+  // v15.61.3: el ultimo arg es la cantidad de decimales de las etiquetas.
+  // En $/kg alimento los valores son 4-11: redondear a entero escondia la
+  // informacion (4,6 y 11,0 se veian "5" y "11"). En $/cabeza son miles y el
+  // entero con separador se lee mejor.
+  barras2('ch-alim',lbl12,rAlim26,rAlim25,'$ / kg alimento',true,true,1);
+  barras2('ch-cab', lbl12,rCab26, rCab25, '$ / cabeza',    true,true,0);
+  // v15.61.3 · Promedio de estructura por cabeza, mensual y POR DIA.
+  // Promedio SIMPLE de los meses cerrados: se excluye el mes en curso (tope),
+  // que esta parcial y tiraria el promedio para abajo. 2025 va el año completo.
+  // $/cab/dia = promedio mensual x 12 / 365 (año calendario, no 30,44 por mes:
+  // asi el total anual cierra exacto contra la suma de los 12 meses).
+  (function(){
+    const prom=a=>{const v=a.filter(x=>x!==null&&isFinite(x)&&x>0);
+      return v.length?v.reduce((x,y)=>x+y,0)/v.length:null;};
+    const m26=prom(rCab26.slice(0,Math.max(tope-1,0)));   // cerrados: hasta tope-1
+    const m25=prom(rCab25);
+    const dia=v=>v===null?null:v*12/365;
+    const cerr=tope>1?`ene–${MESN[tope-2]}`:'sin meses cerrados';
+    const fila=(et,mes,d,destac)=>
+      `<div style="${destac?'':'margin-top:7px;padding-top:7px;border-top:1px solid var(--border)'}">
+         <span class="lbl" style="margin:0">${et}</span>
+         <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">
+           <b style="font-family:var(--mono);font-size:${destac?'21':'15'}px;font-weight:700;
+              color:${destac?'var(--ink)':'var(--text-2)'}">${mes===null?'—':'$ '+fmt(mes)}</b>
+           <span class="muted" style="font-size:11px">/cab/mes</span>
+           <span style="font-family:var(--mono);font-size:${destac?'17':'13.5'}px;font-weight:700;
+              color:${destac?'var(--accent)':'var(--mutedc)'}">${d===null?'—':'$ '+fmt(d)}</span>
+           <span class="muted" style="font-size:11px">/cab/día</span>
+         </div></div>`;
+    $('cab-prom').innerHTML=
+      `<div class="lbl">Estructura por cabeza · promedio</div>`
+      + fila(`2026 (${cerr})`, m26, dia(m26), true)
+      + fila('2025 (año completo)', m25, dia(m25), false);
+  })();
   const faltan=campo=>{let n=0;for(let m=1;m<=tope;m++){if(!den(2025,m,campo))n++;if(!den(2026,m,campo))n++;}return n;};
   $('alim-falta').textContent=faltan('alim')?`Faltan cargar ${faltan('alim')} meses de kg de alimento (tabla de abajo).`:'';
   $('cab-falta').textContent=faltan('cab')?`Faltan cargar ${faltan('cab')} meses de cabezas (tabla de abajo).`:'';
@@ -1107,8 +1161,6 @@ function renderInd(sinTabla){
   // con datos (los meses posteriores van null y lineas2 corta el trazo solo).
   // La comparacion sigue siendo mes contra mismo mes: lo unico que cambia es
   // hasta donde se dibuja 2025.
-  const M12a=[...Array(12).keys()].map(i=>i+1);
-  const lbl12=M12a.map(m=>MESN[m-1]);
   let a26=0,a25=0;const s26=[],s25=[],rows=[];
   let a26p=0,a25p=0,a26k=0,a25k=0;
   M12a.forEach(m=>{
