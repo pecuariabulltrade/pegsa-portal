@@ -920,10 +920,15 @@ function barras2(svgId,labels,s26,s25,unidad,dec,etiq,nd){
       const tx=dec?p.v.toLocaleString('es-AR',{minimumFractionDigits:nd||0,maximumFractionDigits:nd||0}):fmt(p.v);
       const cx=L+p.i*bandW+bandW/2+p.off+bw/2, hw=tx.length*fs*0.62/2;
       let y0=y(Math.max(p.v,0))-4;
-      if(prev&&!(cx-hw>prev.x2+2||cx+hw<prev.x1-2)&&Math.abs(y0-prev.y)<13)y0=prev.y-13;
+      // 15px, no 13: la caja de un texto de 10px mide ~13 de alto y con 13
+      // quedaban tocandose (medido con getBBox), igual que en el apilado.
+      if(prev&&!(cx-hw>prev.x2+2||cx+hw<prev.x1-2)&&Math.abs(y0-prev.y)<15)y0=prev.y-15;
       prev={x1:cx-hw,x2:cx+hw,y:y0};
+      // v15.61.4: halo del color del fondo (paint-order) — la etiqueta de una
+      // barra corta se cruza con la barra alta vecina y ahi perdia contraste.
       s+=`<text x="${cx}" y="${y0}" text-anchor="middle"
-        style="font-size:${fs}px;font-weight:600;fill:${p.c}">${tx}</text>`;});}
+        style="font-size:${fs}px;font-weight:600;fill:${p.c};paint-order:stroke;
+        stroke:var(--surface);stroke-width:3px;stroke-linejoin:round">${tx}</text>`;});}
   s+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="var(--border-2)" stroke-width="1"/>`;
   svg.innerHTML=s;
   svg.onpointermove=ev=>{
