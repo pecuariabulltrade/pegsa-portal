@@ -344,6 +344,8 @@
 // ============ datos: JSON agregado publicado junto al portal ============
 const RUTA_DATOS='analisis_costos_datos.json';
 const RUTA_OPERATIVOS='analisis_costos_operativos.json'; // {"2025-01":{"alim":kg,"cab":n},...}
+const RUTA_MAG='valuacion_historica.json';   // v15.61.5: $/kg novillo MAG mensual
+let MAG={}, BACKFILL=null;
 let META={exportado:''};
 
 // ============ utilidades ============
@@ -406,6 +408,31 @@ async function cargar(){
     org:'physis', ed:false, n:r.n||1
   }));
   try{const ro=await fetch(RUTA_OPERATIVOS);if(ro.ok)DATOS_OP=await ro.json();}catch(e){}
+
+  // v15.61.5: los movimientos previos a jul-2025 vienen con kg=null porque
+  // Physis no tenia indice. El portal SI tiene el $/kg novillo MAG mensual
+  // desde dic-24 (valuacion_historica.json), y se verifico que es el MISMO
+  // indice que Physis usa desde jul-25: comparando el precio implicito
+  // (imp/kg) de jul-25 a dic-25 contra el MAG, el desvio es 0,60% promedio y
+  // 1,08% maximo (los implicitos de Physis son enteros redondos: 2.924, 3.133
+  // — el mismo indice redondeado). Se completa kg = imp / mag_indice[mes].
+  // ⚠ SOLO en memoria: el JSON contable es de Nicolas/Physis y no se toca.
+  // 2024-11 y anteriores quedan afuera: no hay MAG.
+  try{
+    const rv=await fetch(RUTA_MAG);
+    if(rv.ok){
+      const V=await rv.json();
+      (V.snapshots||[]).forEach(sn=>{
+        const px=(sn.precios_efectivos||{}).mag_indice;
+        if(sn.periodo&&px)MAG[sn.periodo]=px;
+      });
+      let n=0;
+      DATA.forEach(r=>{
+        if(r.kg===null&&MAG[r.mes]){r.kg=r.imp/MAG[r.mes];r.kgBackfill=true;n++;}
+      });
+      BACKFILL={meses:Object.keys(MAG).sort(), filas:n};
+    }
+  }catch(e){}
   EJS=[...new Set(DATA.map(d=>d.ej))].sort();
   MINF=DATA.reduce((a,d)=>d.fecha<a?d.fecha:a,'9999');
   MAXF=DATA.reduce((a,d)=>d.fecha>a?d.fecha:a,'0000');
@@ -482,7 +509,14 @@ function render(){
   // aviso kg
   const sk=kgFaltan(F.act)+(F.ant?kgFaltan(F.antPer):0);
   const av=$('aviso-kg');
-  if(U==='kg'&&sk>0){av.style.display='';av.textContent=
+  // v15.61.5: con el backfill del MAG el aviso pasa a ser informativo — dice
+  // que dic-24 → jun-25 se valorizaron con el indice del portal, y solo queda
+  // afuera lo anterior a dic-24 (no hay MAG).
+  if(U==='kg'&&BACKFILL&&BACKFILL.filas>0){av.style.display='';av.textContent=
+    `${BACKFILL.meses[0]} → jun-2025 valorizados con el índice MAG del portal `
+    + `(${BACKFILL.filas.toLocaleString('es-AR')} movimientos)`
+    + (sk>0?` · ${sk.toLocaleString('es-AR')} movimientos anteriores a ${BACKFILL.meses[0]} sin índice, fuera de la vista en kg.`:'.');}
+  else if(U==='kg'&&sk>0){av.style.display='';av.textContent=
     `⚠ ${sk.toLocaleString('es-AR')} movimientos sin precio de novillo (meses previos a jul-2025) no entran en la vista en kg.`;}
   else av.style.display='none';
 
@@ -693,10 +727,20 @@ function drawBarras(F){
       ?`<path d="M${x0} ${yb} h${bw} v${h-r} a${r} ${r} 0 0 1 -${r} ${r} h-${(bw-2*r)} a${r} ${r} 0 0 1 -${r} -${r} z" fill="var(--rojo)"/>`
       :`<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${(bw-2*r)} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="var(--serie-act)"/>`;
   });
+  // v15.61.5: con 16 barras y montos de 10 digitos las etiquetas se pisaban
+  // entre si y la ultima se cortaba contra el borde. Se escalonan en DOS
+  // niveles por paridad del indice: asi dos vecinas nunca comparten altura y
+  // las que si la comparten quedan a dos bandas de distancia (~100px contra
+  // ~63px de ancho de texto). Es deterministico — no depende de medir.
+  // Ademas se acota el centro para que la caja entre siempre en el viewBox.
   if(M<=18)vals.forEach((v,i)=>{
     if(v<=0)return;
-    s+=`<text x="${x(i)}" y="${y(v)-5}" text-anchor="middle"
-      style="font-size:9.5px;font-weight:600;fill:var(--text-2)">${fmt(v)}</text>`;});
+    const tx=fmt(v), hw=tx.length*9.5*0.62/2;
+    const cx=Math.min(Math.max(x(i),hw+2),W-hw-2);
+    const yy=y(v)-5-(i%2?13:0);
+    s+=`<text x="${cx}" y="${yy}" text-anchor="middle"
+      style="font-size:9.5px;font-weight:600;fill:var(--text-2);paint-order:stroke;
+      stroke:var(--surface);stroke-width:3px;stroke-linejoin:round">${tx}</text>`;});
   else{const vmax=Math.max(...vals),imax=vals.indexOf(vmax);
     if(imax>=0&&vmax>0)s+=`<text class="endlab" x="${x(imax)}" y="${y(vmax)-6}" text-anchor="middle">${fmt(vmax)}</text>`;}
   s+=`<line x1="${L}" y1="${yb}" x2="${W-R}" y2="${yb}" stroke="var(--border-2)" stroke-width="1"/>`;
