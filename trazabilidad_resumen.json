@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-08-14T20:06:39.349416",
+    "generado": "2026-08-14T21:07:00.513436",
     "hoy": "2026-08-14",
     "fuente": "G:\\Mi unidad\\Trazabilidad",
     "archivos": [
@@ -15,26 +15,27 @@
       "titulo": "El Haras · Post Blanqueo",
       "archivo": "CARAVANAS DECLARADAS.xlsx",
       "hoja": "EL HARAS POST BLANQUEO",
-      "activas": 8882,
+      "activas": 9142,
       "sin_usar": 0,
       "categorias": {
-        "VACA": 4842,
+        "VACA": 4873,
         "MACHO": 2345,
         "HEMBRA": 1173,
         "HEMBRA/MACHO": 387,
-        "NOV": 63,
+        "VQ": 152,
+        "NOV": 123,
+        "NOV/ VQ": 50,
         "TORO": 35,
-        "VQ": 33,
         "NOVILLO": 4
       },
       "estado": {
-        "CLASIFICAR": 4034,
+        "CLASIFICAR": 4294,
         "CON BOLSA": 4848
       },
       "cumple_40d": 8185,
-      "pct_40d": 92.2,
+      "pct_40d": 89.5,
       "cumple_90d": 7973,
-      "pct_90d": 89.8,
+      "pct_90d": 87.2,
       "estado_40d": {
         "CLASIFICAR": 3785,
         "CON BOLSA": 4400
@@ -546,15 +547,120 @@
           "pct_40d": 100.0,
           "pct_90d": 100.0
         },
+        "TAPERAS": {
+          "activas": 229,
+          "sin_usar": 0,
+          "categorias": {
+            "VQ": 119,
+            "NOV": 60,
+            "NOV/ VQ": 50
+          },
+          "estado": {
+            "CLASIFICAR": 229,
+            "CON BOLSA": 0
+          },
+          "cumple_40d": 0,
+          "cumple_90d": 0,
+          "estado_40d": {
+            "CLASIFICAR": 0,
+            "CON BOLSA": 0
+          },
+          "estado_90d": {
+            "CLASIFICAR": 0,
+            "CON BOLSA": 0
+          },
+          "categorias_40d": {},
+          "categorias_90d": {},
+          "por_categoria": {
+            "VQ": {
+              "activas": 119,
+              "estado": {
+                "CLASIFICAR": 119,
+                "CON BOLSA": 0
+              },
+              "cumple_40d": 0,
+              "cumple_90d": 0,
+              "proximas_40d": [
+                {
+                  "fecha": "2026-09-17",
+                  "cabezas": 119,
+                  "dias_hasta": 34
+                }
+              ],
+              "proximas_90d": [
+                {
+                  "fecha": "2026-11-06",
+                  "cabezas": 119,
+                  "dias_hasta": 84
+                }
+              ],
+              "pct_40d": 0.0,
+              "pct_90d": 0.0
+            },
+            "NOV": {
+              "activas": 60,
+              "estado": {
+                "CLASIFICAR": 60,
+                "CON BOLSA": 0
+              },
+              "cumple_40d": 0,
+              "cumple_90d": 0,
+              "proximas_40d": [
+                {
+                  "fecha": "2026-09-17",
+                  "cabezas": 60,
+                  "dias_hasta": 34
+                }
+              ],
+              "proximas_90d": [
+                {
+                  "fecha": "2026-11-06",
+                  "cabezas": 60,
+                  "dias_hasta": 84
+                }
+              ],
+              "pct_40d": 0.0,
+              "pct_90d": 0.0
+            },
+            "NOV/ VQ": {
+              "activas": 50,
+              "estado": {
+                "CLASIFICAR": 50,
+                "CON BOLSA": 0
+              },
+              "cumple_40d": 0,
+              "cumple_90d": 0,
+              "proximas_40d": [
+                {
+                  "fecha": "2026-09-17",
+                  "cabezas": 50,
+                  "dias_hasta": 34
+                }
+              ],
+              "proximas_90d": [
+                {
+                  "fecha": "2026-11-06",
+                  "cabezas": 50,
+                  "dias_hasta": 84
+                }
+              ],
+              "pct_40d": 0.0,
+              "pct_90d": 0.0
+            }
+          },
+          "pct_40d": 0.0,
+          "pct_90d": 0.0
+        },
         "PECUARIA": {
-          "activas": 96,
+          "activas": 127,
           "sin_usar": 0,
           "categorias": {
             "NOV": 63,
-            "VQ": 33
+            "VQ": 33,
+            "VACA": 31
           },
           "estado": {
-            "CLASIFICAR": 0,
+            "CLASIFICAR": 31,
             "CON BOLSA": 96
           },
           "cumple_40d": 0,
@@ -614,6 +720,31 @@
                 {
                   "fecha": "2026-11-06",
                   "cabezas": 33,
+                  "dias_hasta": 84
+                }
+              ],
+              "pct_40d": 0.0,
+              "pct_90d": 0.0
+            },
+            "VACA": {
+              "activas": 31,
+              "estado": {
+                "CLASIFICAR": 31,
+                "CON BOLSA": 0
+              },
+              "cumple_40d": 0,
+              "cumple_90d": 0,
+              "proximas_40d": [
+                {
+                  "fecha": "2026-09-17",
+                  "cabezas": 31,
+                  "dias_hasta": 34
+                }
+              ],
+              "proximas_90d": [
+                {
+                  "fecha": "2026-11-06",
+                  "cabezas": 31,
                   "dias_hasta": 84
                 }
               ],
@@ -757,7 +888,7 @@
         },
         {
           "fecha": "2026-09-17",
-          "cabezas": 154,
+          "cabezas": 414,
           "dias_hasta": 34
         },
         {
@@ -814,7 +945,7 @@
         },
         {
           "fecha": "2026-11-06",
-          "cabezas": 154,
+          "cabezas": 414,
           "dias_hasta": 84
         },
         {
@@ -1295,23 +1426,24 @@
     }
   ],
   "consolidado": {
-    "activas": 13028,
+    "activas": 13288,
     "sin_usar": 1123,
     "categorias": {
-      "VACA": 5542,
+      "VACA": 5573,
       "MACHO": 3876,
       "HEMBRA": 2042,
       "MACHO/HEMBRA": 676,
       "HEMBRA/MACHO": 387,
       "NOVILLOS": 211,
       "TORO": 190,
-      "NOV": 63,
-      "VQ": 33,
+      "VQ": 152,
+      "NOV": 123,
+      "NOV/ VQ": 50,
       "NOVILLO": 4,
       "HEMRBRA": 4
     },
     "estado": {
-      "CLASIFICAR": 5427,
+      "CLASIFICAR": 5687,
       "CON BOLSA": 7601
     },
     "cumple_40d": 12331,
@@ -2074,15 +2206,120 @@
         "pct_40d": 100.0,
         "pct_90d": 100.0
       },
+      "TAPERAS": {
+        "activas": 229,
+        "sin_usar": 0,
+        "categorias": {
+          "VQ": 119,
+          "NOV": 60,
+          "NOV/ VQ": 50
+        },
+        "estado": {
+          "CLASIFICAR": 229,
+          "CON BOLSA": 0
+        },
+        "cumple_40d": 0,
+        "cumple_90d": 0,
+        "estado_40d": {
+          "CLASIFICAR": 0,
+          "CON BOLSA": 0
+        },
+        "estado_90d": {
+          "CLASIFICAR": 0,
+          "CON BOLSA": 0
+        },
+        "categorias_40d": {},
+        "categorias_90d": {},
+        "por_categoria": {
+          "VQ": {
+            "activas": 119,
+            "estado": {
+              "CLASIFICAR": 119,
+              "CON BOLSA": 0
+            },
+            "cumple_40d": 0,
+            "cumple_90d": 0,
+            "proximas_40d": [
+              {
+                "fecha": "2026-09-17",
+                "cabezas": 119,
+                "dias_hasta": 34
+              }
+            ],
+            "proximas_90d": [
+              {
+                "fecha": "2026-11-06",
+                "cabezas": 119,
+                "dias_hasta": 84
+              }
+            ],
+            "pct_40d": 0.0,
+            "pct_90d": 0.0
+          },
+          "NOV": {
+            "activas": 60,
+            "estado": {
+              "CLASIFICAR": 60,
+              "CON BOLSA": 0
+            },
+            "cumple_40d": 0,
+            "cumple_90d": 0,
+            "proximas_40d": [
+              {
+                "fecha": "2026-09-17",
+                "cabezas": 60,
+                "dias_hasta": 34
+              }
+            ],
+            "proximas_90d": [
+              {
+                "fecha": "2026-11-06",
+                "cabezas": 60,
+                "dias_hasta": 84
+              }
+            ],
+            "pct_40d": 0.0,
+            "pct_90d": 0.0
+          },
+          "NOV/ VQ": {
+            "activas": 50,
+            "estado": {
+              "CLASIFICAR": 50,
+              "CON BOLSA": 0
+            },
+            "cumple_40d": 0,
+            "cumple_90d": 0,
+            "proximas_40d": [
+              {
+                "fecha": "2026-09-17",
+                "cabezas": 50,
+                "dias_hasta": 34
+              }
+            ],
+            "proximas_90d": [
+              {
+                "fecha": "2026-11-06",
+                "cabezas": 50,
+                "dias_hasta": 84
+              }
+            ],
+            "pct_40d": 0.0,
+            "pct_90d": 0.0
+          }
+        },
+        "pct_40d": 0.0,
+        "pct_90d": 0.0
+      },
       "PECUARIA": {
-        "activas": 96,
+        "activas": 127,
         "sin_usar": 0,
         "categorias": {
           "NOV": 63,
-          "VQ": 33
+          "VQ": 33,
+          "VACA": 31
         },
         "estado": {
-          "CLASIFICAR": 0,
+          "CLASIFICAR": 31,
           "CON BOLSA": 96
         },
         "cumple_40d": 0,
@@ -2142,6 +2379,31 @@
               {
                 "fecha": "2026-11-06",
                 "cabezas": 33,
+                "dias_hasta": 84
+              }
+            ],
+            "pct_40d": 0.0,
+            "pct_90d": 0.0
+          },
+          "VACA": {
+            "activas": 31,
+            "estado": {
+              "CLASIFICAR": 31,
+              "CON BOLSA": 0
+            },
+            "cumple_40d": 0,
+            "cumple_90d": 0,
+            "proximas_40d": [
+              {
+                "fecha": "2026-09-17",
+                "cabezas": 31,
+                "dias_hasta": 34
+              }
+            ],
+            "proximas_90d": [
+              {
+                "fecha": "2026-11-06",
+                "cabezas": 31,
                 "dias_hasta": 84
               }
             ],
@@ -2233,7 +2495,7 @@
       },
       {
         "fecha": "2026-09-17",
-        "cabezas": 154,
+        "cabezas": 414,
         "dias_hasta": 34
       },
       {
@@ -2325,7 +2587,7 @@
       },
       {
         "fecha": "2026-11-06",
-        "cabezas": 154,
+        "cabezas": 414,
         "dias_hasta": 84
       },
       {
@@ -2334,7 +2596,7 @@
         "dias_hasta": 87
       }
     ],
-    "pct_40d": 94.6,
-    "pct_90d": 86.6
+    "pct_40d": 92.8,
+    "pct_90d": 84.9
   }
 }
