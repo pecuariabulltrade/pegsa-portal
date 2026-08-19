@@ -34,13 +34,13 @@ NORMALIZAR_INSUMO = {
     "AGUA":               "AGUA",
 }
 
-# % MS por insumo canonico (valores actualizados por Nicolas - 2026-05)
+# % MS por insumo canonico (valores actualizados por Nicolas - 2026-08, v15.64)
 MS_PCT = {
-    "GLUTEN DE MAIZ":      53.0,   # 45 -> 53 (Dir 2026-05)
-    "MAIZ GRANO":          89.0,
-    "SILO DE MAIZ":        58.0,   # 47 -> 58 (Dir 2026-05)
-    "HARINA GERMEN":       99.0,   # 98 -> 99 (Dir 2026-05)
-    "NUCLEO CONC 5% LDB":  98.0,   # 97.5 -> 98 (Dir 2026-05)
+    "GLUTEN DE MAIZ":      51.0,   # 53 -> 51 (Dir 2026-08)
+    "MAIZ GRANO":          86.0,   # 89 -> 86 (Dir 2026-08)
+    "SILO DE MAIZ":        47.0,   # 58 -> 47 (Dir 2026-08)
+    "HARINA GERMEN":       99.0,   # sin cambio
+    "NUCLEO CONC 5% LDB":  95.5,   # 98 -> 95.5 (Dir 2026-08)
     "HOMINY FEED":         88.0,
     "ROLLO":               87.0,
     "SOJA":                90.0,
