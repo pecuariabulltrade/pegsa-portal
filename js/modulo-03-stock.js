@@ -4,6 +4,10 @@ var STOCK_SB   = '/pegsa-portal'; // mismo dominio en GitHub Pages
 var STOCK_PER  = '2025';
 var STOCK_CACHE= {};
 var STOCK_COLS = ['#b8922a','#27613d','#3d4a5c','#c0392b','#d4a84b','#6bc47a','#5d8aa8','#8b4513'];
+// v15.65: ajuste interno de %PV (criterio Nicolás). Antes estaba hardcodeado
+// en 3 lugares y NO se aplicaba al %PV anual — la tarjeta anual y la línea de
+// referencia del gráfico quedaban ~8,7% por debajo de la serie diaria.
+var AJUSTE_PV = 0.92;
 
 function stockFmt(n){ return Number(n||0).toLocaleString('es-AR'); }
 function stockSlug(s){ return s.replace(/[^a-zA-Z0-9_]/g,'_'); }
@@ -956,10 +960,13 @@ function renderEficienciaHistorico(data) {
   });
   var adpAnualEf  = adpDen2 > 0 ? adpNum2 / adpDen2 : 0;
   var convAnualEf = (msPorCabAnEf != null && adpAnualEf > 0) ? (msPorCabAnEf / adpAnualEf) : null;
+  // v15.65: la línea de referencia se dibuja ajustada, igual que la serie diaria.
+  // pvAnualEf (crudo) se sigue usando para la conversión — ver nota en renderIndicadores.
+  var pvAnualEfAj = pvAnualEf != null ? pvAnualEf / AJUSTE_PV : null;
 
   // ── Recalcular cada registro con la fórmula nueva (consistente con tarjetas) ──
   registros = registros.map(function(r){
-    var pctPVAj = r.pct_pv != null ? r.pct_pv / 0.92 : null;
+    var pctPVAj = r.pct_pv != null ? r.pct_pv / AJUSTE_PV : null;
     var kgCabDia = (r.kg_pv > 0 && r.cabezas > 0) ? (r.kg_pv / r.cabezas) : null;
     // Conversión nueva: (%PV anual × kg/cab del día) ÷ ADP del día
     var convNueva = null;
@@ -1010,7 +1017,7 @@ function renderEficienciaHistorico(data) {
         },
         {
           label: 'Ref. % PV anual',
-          data: lineaRef(pvAnualEf),
+          data: lineaRef(pvAnualEfAj),
           borderColor: 'rgba(192,57,43,.55)', borderDash: [5,4],
           yAxisID: 'yPv', pointRadius: 0, pointHoverRadius: 0,
           borderWidth: 1.5, fill: false, spanGaps: true,
@@ -1116,7 +1123,7 @@ function renderIndicadores(data) {
   var fuen  = data.fuentes     || {};
   var pvRaw = ind.pct_peso_vivo         || {};
   var pv = {
-    valor:   pvRaw.valor != null ? pvRaw.valor / 0.92 : null,
+    valor:   pvRaw.valor != null ? pvRaw.valor / AJUSTE_PV : null,
     ref_min: 2.2,
     ref_opt: 2.4,
     ref_max: 2.7,
@@ -1155,6 +1162,10 @@ function renderIndicadores(data) {
   var msAnualDia  = (consAn.total_kg_ms || 0) / 365;
   var tcAnualDia  = (consAn.total_kg    || 0) / 365;
   var pvAnual     = (kgPVAnual > 0) ? (msAnualDia / kgPVAnual * 100) : null;
+  // v15.65: pvAnualAj es el que se MUESTRA (mismo criterio que la tarjeta diaria).
+  // pvAnual queda CRUDO y es el que alimenta la conversión: la conversión es
+  // kg MS ÷ kg carne, no un %PV, y ajustarla la inflaría 8,7% sacándola de banda.
+  var pvAnualAj   = pvAnual != null ? pvAnual / AJUSTE_PV : null;
   var cabAnualDia = (cabAnual  > 0) ? (tcAnualDia / cabAnual) : null;
   var msPorCabDia = (cabAnual  > 0) ? (msAnualDia / cabAnual) : null;
   var convAnual   = (msPorCabDia != null && adpAnual > 0) ? (msPorCabDia / adpAnual) : null;
@@ -1359,8 +1370,8 @@ function renderIndicadores(data) {
 
     gridAnual.appendChild(makeRefCard(
       '% Consumo PV anual',
-      pvAnual != null ? fmtD(pvAnual,2) + ' % PV' : '—',
-      'MS anual ÷ 365 ÷ kg PV prom. anual',
+      pvAnualAj != null ? fmtD(pvAnualAj,2) + ' % PV' : '—',
+      'MS anual ÷ 365 ÷ kg PV prom. anual ÷ 0,92',
       fmtN(consAn.total_kg_ms) + ' kg MS  ÷  ' + fmtN(kgPVAnual) + ' kg PV'
     ));
     gridAnual.appendChild(makeRefCard(
