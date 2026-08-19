@@ -1462,7 +1462,7 @@ function renderProductivo(data) {
     sec90.innerHTML =
       '<div class="section-header">'
       +'<span class="section-title">ADP Real — Últimos 90 Días</span>'
-      +'<span class="section-sub">ADP observado vs teórico por categoría · rango controlado ±15%</span>'
+      +'<span class="section-sub">ADP observado vs teórico por categoría · rango controlado ±25%</span>'
       +'</div>';
 
     // Cards por categoría (grid responsive)
@@ -1485,9 +1485,11 @@ function renderProductivo(data) {
       var dotLabel = 'Dentro del rango';
       if (ajust) { dotColor = '#b8922a'; dotLabel = 'Ajustado al límite'; }
 
-      // Barra progreso: obs relativo al rango [teo*0.85, teo*1.15]
-      var barMin  = teo ? teo * 0.85 : 0;
-      var barMax  = teo ? teo * 1.15 : 2;
+      // Barra progreso: obs relativo al rango del clamp (v15.63: ±25%, era ±15%).
+      // Se toman los extremos del JSON (adp_min/max_range) para no repetir la
+      // constante acá; el fallback replica el ±25% del pipeline.
+      var barMin  = minR != null ? minR : (teo ? teo * 0.75 : 0);
+      var barMax  = maxR != null ? maxR : (teo ? teo * 1.25 : 2);
       var barPct  = obs != null ? Math.min(100, Math.max(0, (obs - barMin) / (barMax - barMin) * 100)) : 50;
       var midPct  = 50; // posición del valor teórico en la barra
       var zonePct = 100/3; // ±10% ocupa ~33% del rango visible
@@ -1525,7 +1527,7 @@ function renderProductivo(data) {
         +'</div>'
         +'<div style="display:flex;justify-content:space-between;font-family:\'DM Mono\',monospace;font-size:10px;color:rgba(26,22,18,.3);margin-top:3px">'
         +'<span>'+(minR != null ? fmtD(minR,3) : '—')+'</span>'
-        +'<span style="color:rgba(26,22,18,.45)">±15% teo.</span>'
+        +'<span style="color:rgba(26,22,18,.45)">±25% teo.</span>'
         +'<span>'+(maxR != null ? fmtD(maxR,3) : '—')+'</span>'
         +'</div>'
         +'</div>'
@@ -1541,7 +1543,7 @@ function renderProductivo(data) {
     var nota = document.createElement('div');
     nota.style.cssText = 'background:rgba(26,22,18,.03);border:1px solid rgba(26,22,18,.08);border-radius:2px;padding:12px 16px;font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.5);line-height:1.7';
     nota.innerHTML = '📐 <strong style="color:rgba(26,22,18,.65)">Metodología:</strong> ADP observado = promedio ponderado de <em>AdpSinDebaste</em> en egresos por VENTA de los últimos 90 días · '
-      +'Rango controlado: el valor usado en la estimación de masa histórica se clampea a ±15% del ADP teórico de tabla · '
+      +'Rango controlado: el valor usado en la estimación de masa histórica se clampea a ±25% del ADP teórico de tabla · '
       +'Si no hay egresos recientes de una categoría, se usa el valor teórico de tabla.';
     sec90.appendChild(nota);
     el.appendChild(sec90);
