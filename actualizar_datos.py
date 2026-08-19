@@ -134,19 +134,21 @@ ENGORDE_DIARIO = [
     ("Vaca",   650,  1000, 1.00),
 ]
 
-# v15.13: ADP calibrado (límite inferior del rango ±15% del teórico).
+# v15.13: ADP calibrado (límite inferior del rango ±25% del teórico).
 # v15.13.2: renombrado a ADP_CAL_FALLBACK. Ya NO es el valor usado en runtime:
 # main() actualiza _ADP_CAL_RUNTIME con el adp_calibrado dinámico que calcula
-# procesar_productivo (clamp ±15% del teórico) en cada tick. Este dict queda
+# procesar_productivo (clamp ±25% del teórico) en cada tick. Este dict queda
 # como FALLBACK para una categoría sin observado suficiente.
+# v15.63: el clamp pasó de ±15% a ±25% (decisión Nicolás 2026-08-18) — 5 de 7
+# categorías venían clavadas en el piso. Los pisos de acá se recalculan a × 0.75.
 ADP_CAL_FALLBACK = {
-    'TM': 1.165,  # ternero macho   (= 1.371 × 0.85)
-    'TH': 1.125,  # ternera         (= 1.324 × 0.85)
-    'NT': 1.266,  # novillito       (= 1.489 × 0.85)
-    'NV': 1.046,  # novillo         (= 1.231 × 0.85)
-    'VQ': 1.144,  # vaquillona      (= 1.346 × 0.85)
-    'VA': 1.189,  # vaca            (= 1.399 × 0.85)
-    'TO': 1.360,  # toro            (= 1.60  × 0.85)
+    'TM': 1.028,  # ternero macho   (= 1.371 × 0.75)
+    'TH': 0.993,  # ternera         (= 1.324 × 0.75)
+    'NT': 1.117,  # novillito       (= 1.489 × 0.75)
+    'NV': 0.923,  # novillo         (= 1.231 × 0.75)
+    'VQ': 1.010,  # vaquillona      (= 1.346 × 0.75)
+    'VA': 1.049,  # vaca            (= 1.399 × 0.75)
+    'TO': 1.200,  # toro            (= 1.60  × 0.75)
 }
 
 # v15.13.2: ADP runtime (dinámico). Se inicializa con el fallback y main() lo
@@ -1746,7 +1748,7 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     # v15.5.1 HOTFIX: adapter WinCampo Web (fetch_egresos) devuelve Categoria
     # como código de 2 letras (TM/VA/TH/NV/VQ/NT/TO). _ADP_TEO y _CAT_FILTROS
     # usan nombres largos como claves históricas (TERNERO/VACA/etc.). Mapear
-    # código -> largo antes de cada lookup para que clamp ±15% y filtros
+    # código -> largo antes de cada lookup para que clamp ±25% y filtros
     # per-categoría sigan funcionando como pre-v15.5 (commit ac7ad4c).
     CATEGORIA_CODE_TO_LARGO = {
         'TM': 'TERNERO',    'TH': 'TERNERA',
@@ -1921,9 +1923,9 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             teo = _ADP_TEO.get(_cat_largo(cat))
             # Variación % entre observado y teórico
             var_pct = round((obs - teo) / teo * 100, 2) if (obs is not None and teo) else None
-            # Calibrado: clampear obs a ±15% del teórico
+            # Calibrado: clampear obs a ±25% del teórico (v15.63; era ±15%)
             if obs is not None and teo:
-                lo, hi = teo * 0.85, teo * 1.15
+                lo, hi = teo * 0.75, teo * 1.25
                 cal     = round(max(lo, min(hi, obs)), 4)
                 ajust   = (obs < lo or obs > hi)
             else:
@@ -1935,8 +1937,8 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
                 "adp_calibrado": cal,
                 "variacion_pct": var_pct,
                 "ajustado":      ajust,
-                "adp_min_range": round(teo * 0.85, 4) if teo else None,
-                "adp_max_range": round(teo * 1.15, 4) if teo else None,
+                "adp_min_range": round(teo * 0.75, 4) if teo else None,
+                "adp_max_range": round(teo * 1.25, 4) if teo else None,
             }
     log.info(f"  por_categoria_90d: {len(por_cat_90d)} categorías ({len(regs_90d)} registros en 90d)")
 
@@ -3289,7 +3291,7 @@ def main():
         _cal = _info.get("adp_calibrado")
         if _cal is not None and _cal > 0:
             _ADP_CAL_RUNTIME[_cat] = _cal
-    log.info(f"  + ADP_CAL_RUNTIME (dinámico): {_ADP_CAL_RUNTIME}")
+    log.info(f"  + ADP_CAL_RUNTIME (dinámico, clamp ±25%): {_ADP_CAL_RUNTIME}")
     log.info(f"    Fallback si categoría sin observado: {ADP_CAL_FALLBACK}")
 
     separador("Stock de Hacienda")
