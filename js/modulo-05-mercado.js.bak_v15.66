@@ -107,18 +107,13 @@ function renderInferencia(){
     semanas.length + ' semana' + (semanas.length === 1 ? '' : 's') +
     ' · última ' + String(ultima).split('-').reverse().join('/');
 
-  // v15.66: categorías DINÁMICAS — se arman desde los items del histórico,
-  // en orden de aparición. Las 4 clásicas conservan su color; las nuevas
-  // toman de la paleta extra.
-  var CAT_COLORS = { vaca_100:'#1a5276', vaca_60:'#7b3f2a', novillo:'#27613d', vaquillona:'#b8922a' };
-  var EXTRA_COLORS = ['#8e44ad','#c0392b','#5d8aa8','#d4a84b','#6bc47a'];
-  var CATS = []; var _seen = {}; var _ei = 0;
-  semanas.forEach(function(s){ (s.items||[]).forEach(function(it){
-    if (!it.id || _seen[it.id]) return;
-    _seen[it.id] = 1;
-    CATS.push({ id: it.id, nombre: it.nombre || it.id,
-                color: CAT_COLORS[it.id] || EXTRA_COLORS[_ei++ % EXTRA_COLORS.length] });
-  }); });
+  // Series por categoría (mismas 4 categorías por convención del Excel).
+  var CATS = [
+    { id: 'vaca_100',   nombre: 'Vaca 100 días', color: '#1a5276' },
+    { id: 'vaca_60',    nombre: 'Vaca 60 días',  color: '#7b3f2a' },
+    { id: 'novillo',    nombre: 'Novillo',       color: '#27613d' },
+    { id: 'vaquillona', nombre: 'Vaquillona',    color: '#b8922a' },
+  ];
   var labels = semanas.map(function(s){
     var p = String(s.fecha).split('-');
     return p[2] + '/' + p[1];
