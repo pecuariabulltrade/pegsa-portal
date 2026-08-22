@@ -6670,8 +6670,20 @@ def procesar_precios_inferencia(carpeta_out, log=None):
             return None, None
         ws = wb[wb.sheetnames[0]]
 
-        IDS = ["vaca_100", "vaca_60", "novillo", "vaquillona"]
-        NOMBRES_FALLBACK = ["Vaca 100 días", "Vaca 60 días", "Novillo", "Vaquillona"]
+        # v15.66: categorías DINÁMICAS — se leen las columnas B.. mientras la
+        # fila 2 (Categoria) tenga valor. Los ids históricos se preservan por
+        # nombre; una categoría nueva genera su id como slug del nombre.
+        import unicodedata as _ud
+        def _slug(n):
+            s = _ud.normalize("NFKD", str(n).strip().lower())
+            s = "".join(ch for ch in s if not _ud.combining(ch))
+            return "_".join(s.split())
+        IDS_POR_NOMBRE = {
+            "vaca 100 dias": "vaca_100",
+            "vaca 60 dias":  "vaca_60",
+            "novillo":       "novillo",
+            "vaquillona":    "vaquillona",
+        }
 
         # B1: fecha del snapshot. Aceptar datetime o string ISO.
         b1 = ws.cell(row=1, column=2).value
@@ -6698,10 +6710,14 @@ def procesar_precios_inferencia(carpeta_out, log=None):
                 return None
 
         items = []
-        for i, (item_id, fallback) in enumerate(zip(IDS, NOMBRES_FALLBACK)):
-            col = i + 2  # B=2, C=3, D=4, E=5
+        col = 1
+        while True:
+            col += 1  # arranca en B=2
             nombre = ws.cell(row=2, column=col).value
-            nombre = (str(nombre).strip() if nombre else fallback)
+            if nombre is None or not str(nombre).strip():
+                break
+            nombre = str(nombre).strip()
+            item_id = IDS_POR_NOMBRE.get(_slug(nombre).replace("_", " "), _slug(nombre))
             # Capitalizar primera letra de cada palabra para presentación uniforme
             nombre_disp = " ".join(w.capitalize() if w.lower() != "días" else "días" for w in nombre.split())
             items.append({

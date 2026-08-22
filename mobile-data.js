@@ -856,6 +856,7 @@
       vaca_100:   "Vaca",
       vaca_60:    "Vaca",
       novillo:    "Novillo",
+      novillo_pesado: "Novillo",   // v15.66
       vaquillona: "Vaquillona"
     };
     var pReal     = D.preciosCompraReal || null;
