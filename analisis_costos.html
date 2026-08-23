@@ -139,6 +139,7 @@
     <button class="on" data-tab="panel" onclick="tab('panel')">Panel</button>
     <button data-tab="indicadores" onclick="tab('indicadores')">Indicadores</button>
     <button data-tab="datos" onclick="tab('datos')">Datos</button>
+    <button data-tab="grupo" onclick="tab('grupo')">Grupo</button>
   </nav>
   <div class="sync"><span class="dot"></span><span id="sync-txt">analisis-costos@main</span></div>
 </header>
@@ -223,6 +224,11 @@
       </details>
     </div>
 
+
+
+  </section>
+
+  <section id="tab-grupo" style="display:none">
 <!-- ============ GRUPO DARWASH-TAPERAS / LA UNION (portal de costos) ============
      Datos: graficos_grupo.json en la raiz del repo (el bot copia
      OneDrive\PEGSA_Portal\datos\*.json ahi, igual que analisis_costos_operativos.json).
@@ -248,6 +254,14 @@
     Excluidos los centros GANADERÍA (compra de hacienda, hotelería, manejo) y las retenciones.</p>
   <div class="muted" id="dt-costos-m" style="font-family:var(--mono);font-size:11px;margin-bottom:2px"></div>
   <svg id="dt-ch-costos" viewBox="0 0 940 260" style="width:100%;height:auto;display:block"></svg>
+</div>
+
+<div class="card" id="grupo-dt-cabcom">
+  <h2>Grupo · DW — Costo por cabeza comercializada</h2>
+  <p class="muted" style="margin:0 0 2px">Solo costos (sin módulo ganadería) ÷ cabezas comercializadas en el mes por
+    la consignataria (SACH, por fecha de operación). Mismo formato que el $/cabeza del feedlot.</p>
+  <div class="muted" id="dt-cabcom-m" style="font-family:var(--mono);font-size:11px;margin-bottom:2px"></div>
+  <svg id="dt-ch-cabcom" viewBox="0 0 940 260" style="width:100%;height:auto;display:block"></svg>
 </div>
 
 <div class="card" id="grupo-dt-union">
@@ -305,6 +319,13 @@
         return `<path d="M${x0} ${yb} v-${h-r} a${r} ${r} 0 0 1 ${r} -${r} h${bw-2*r} a${r} ${r} 0 0 1 ${r} ${r} v${h-r} z" fill="${v<0?'var(--rojo)':color}"/>`;};
       sAnt.forEach((v,i)=>s+=barra(v,i,-bw-1,'var(--serie-ant)'));
       sAct.forEach((v,i)=>s+=barra(v,i,1,'var(--serie-act)'));
+      const lblM=v=>{const a=Math.abs(v);return a>=1e9?(v/1e9).toFixed(1).replace('.',',')+'mM':a>=1e6?Math.round(v/1e6)+'M':a>=1e3?Math.round(v/1e3)+'k':Math.round(v);};
+      sAnt.forEach((v,i)=>{if(v===null||!isFinite(v)||v<=0)return;
+        s+=`<text x="${x(i)-1-bw/2}" y="${y(v)-3}" text-anchor="middle" style="font-size:7.5px;fill:var(--mutedc)">${lblM(v)}</text>`;});
+      sAct.forEach((v,i)=>{if(v===null||!isFinite(v)||v<=0)return;
+        s+=`<text x="${x(i)+1+bw/2}" y="${y(v)-3}" text-anchor="middle" style="font-size:7.5px;font-weight:600;fill:var(--text-2)">${lblM(v)}</text>`;});
+      proj.forEach((v,i)=>{if(v===null||sAct[i]!==null)return;
+        s+=`<text x="${x(i)+1+bw/2}" y="${y(Math.max(v,0))-6}" text-anchor="middle" style="font-size:7.5px;fill:var(--serie-act)">${lblM(v)}</text>`;});
       const pts=[];
       if(tope>=1&&sAct[tope-1]!==null)pts.push([tope-1,sAct[tope-1]]);
       proj.forEach((v,i)=>{if(v!==null)pts.push([i,v]);});
@@ -332,6 +353,26 @@
     const c2=serie(G.costos,v=>v);
     yoy('dt-ch-costos','dt-costos-m',c2.ant,c2.act,'pesos ($)');
 
+    // --- $/cabeza comercializada: costos / cabezas del mes ---
+    if(G.cabezas&&Object.keys(G.cabezas).length){
+      const ratio=a=>M12.map(m=>{const k=a+'-'+String(m).padStart(2,'0');
+        const c=G.costos[k], n=G.cabezas[k];
+        return (c!==undefined&&n)?c/n:null;});
+      yoy('dt-ch-cabcom','dt-cabcom-m',ratio(aAnt),ratio(aAct),'$ / cabeza');
+      // la linea de resumen del ratio se calcula bien: total $ / total cabezas
+      (function(){
+        const tot=(obj,a,hasta)=>M12.filter(m=>!hasta||m<=hasta).reduce((t,m)=>{
+          const k=a+'-'+String(m).padStart(2,'0');return t+(obj[k]||0);},0);
+        const rAct=ratio(aAct); const tope=rAct.reduce((t,v,i)=>v!==null?i+1:t,0);
+        const cA=tot(G.costos,aAct,tope), nA=tot(G.cabezas,aAct,tope);
+        const cB=tot(G.costos,aAnt,tope), nB=tot(G.cabezas,aAnt,tope);
+        if(nA&&nB)$('dt-cabcom-m').textContent=
+          `ene–${MESN[Math.max(tope-1,0)]}: $ ${fmt(cA/nA)}/cab (${fmt(nA)} cab) vs $ ${fmt(cB/nB)}/cab (${fmt(nB)} cab) en ${aAnt} · ${fpct(pct(cA/nA,cB/nB))}`;
+      })();
+    }else{
+      $('dt-cabcom-m').textContent='falta regenerar graficos_grupo.json con las cabezas (GENERAR_GRAFICOS_GRUPO.bat)';
+    }
+
     // --- La Union: pares ing/egr + acumulado, sobre los meses con datos ---
     (function(){
       const ms=meses(G.union); if(!ms.length){$('dt-union-m').textContent='sin movimientos todavía';return;}
@@ -353,6 +394,10 @@
         const x0=x(i)+off;
         return `<path d="M${x0} ${yb} v-${h-rr} a${rr} ${rr} 0 0 1 ${rr} -${rr} h${bw-2*rr} a${rr} ${rr} 0 0 1 ${rr} ${rr} v${h-rr} z" fill="${color}"/>`;};
       rows.forEach((r,i)=>{s+=barra(r.ing,i,-bw-1,'var(--serie-act)');s+=barra(r.egr,i,1,'var(--rojo)');});
+      const lblU=v=>{const a=Math.abs(v);return a>=1e6?Math.round(v/1e6)+'M':a>=1e3?Math.round(v/1e3)+'k':Math.round(v);};
+      rows.forEach((r,i)=>{
+        if(r.ing>0)s+=`<text x="${x(i)-1-bw/2}" y="${y(r.ing)-3}" text-anchor="middle" style="font-size:8px;font-weight:600;fill:var(--text-2)">${lblU(r.ing)}</text>`;
+        if(r.egr>0)s+=`<text x="${x(i)+1+bw/2}" y="${y(r.egr)-3}" text-anchor="middle" style="font-size:8px;fill:var(--mutedc)">${lblU(r.egr)}</text>`;});
       s+=`<path d="${rows.map((r,i)=>(i?'L':'M')+x(i)+' '+y(Math.max(r.acum,0))).join(' ')}"
         fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>`;
       rows.forEach((r,i)=>s+=`<circle cx="${x(i)}" cy="${y(Math.max(r.acum,0))}" r="2.6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>`);
@@ -374,7 +419,6 @@
 })();
 </script>
 <!-- ============ FIN GRUPO DARWASH-TAPERAS / LA UNION ============ -->
-
   </section>
 
   <section id="tab-indicadores" style="display:none">
@@ -638,7 +682,7 @@ const fmtU=n=>U==='$'?'$ '+fmtM(n):fmt(n)+' kg';
 
 function unidad(u){U=u;$('u-peso').classList.toggle('on',u==='$');$('u-kg').classList.toggle('on',u==='kg');render();}
 function tab(t){
-  ['panel','indicadores','datos'].forEach(x=>{
+  ['panel','indicadores','datos','grupo'].forEach(x=>{
     $('tab-'+x).style.display=x===t?'':'none';
     document.querySelector('nav button[data-tab='+x+']').classList.toggle('on',x===t);
   });
