@@ -1,53 +1,61 @@
 {
   "meta": {
-    "generado": "2026-08-24T23:05:10.290764",
+    "generado": "2026-08-25T00:05:06.711118",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-08-24",
+    "hoy_parcial": "2026-08-25",
     "ultimo_completo": "2026-08-23",
     "ventana_3d": [
       "2026-08-21",
       "2026-08-22",
       "2026-08-23"
     ],
-    "dias_descartados": [],
+    "dias_descartados": [
+      {
+        "fecha": "2026-08-24",
+        "kg": 37445.0,
+        "avg_prev": 80016.7,
+        "ratio": 0.468,
+        "razon": "caida 53% vs prom 3 dias previos"
+      }
+    ],
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 39996315.0,
-    "total_kg_ms": 27141934.0,
+    "total_kg": 39952270.0,
+    "total_kg_ms": 27112942.1,
     "por_insumo": [
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12316931.0,
+        "kg": 12295316.0,
         "ms_pct": 51.0,
-        "kg_ms": 6281634.8
+        "kg_ms": 6270611.2
       },
       {
         "desc": "MAIZ GRANO",
-        "kg": 12293773.0,
+        "kg": 12282568.0,
         "ms_pct": 86.0,
-        "kg_ms": 10572644.8
+        "kg_ms": 10563008.5
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9398647.0,
+        "kg": 9393347.0,
         "ms_pct": 47.0,
-        "kg_ms": 4417364.1
+        "kg_ms": 4414873.1
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4363990.0,
+        "kg": 4358775.0,
         "ms_pct": 99.0,
-        "kg_ms": 4320350.1
+        "kg_ms": 4315187.2
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1622974.0,
+        "kg": 1622264.0,
         "ms_pct": 95.5,
-        "kg_ms": 1549940.2
+        "kg_ms": 1549262.1
       }
     ]
   },
@@ -1024,7 +1032,9 @@
         "kg_ms_dia": 61283.6,
         "dias_calendario": 31,
         "dias_con_registro": 23,
-        "dias_descartados": [],
+        "dias_descartados": [
+          "2026-08-24"
+        ],
         "parcial": true
       }
     }
