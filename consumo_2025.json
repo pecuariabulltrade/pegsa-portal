@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generado": "2026-08-25T23:36:47.139659",
+    "generado": "2026-08-26T00:05:03.478394",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-08-25",
+    "hoy_parcial": "2026-08-26",
     "ultimo_completo": "2026-08-23",
     "ventana_3d": [
       "2026-08-21",
@@ -13,6 +13,13 @@
       "2026-08-23"
     ],
     "dias_descartados": [
+      {
+        "fecha": "2026-08-25",
+        "kg": 29145.0,
+        "avg_prev": 71365.0,
+        "ratio": 0.408,
+        "razon": "caida 59% vs prom 3 dias previos"
+      },
       {
         "fecha": "2026-08-24",
         "kg": 54235.0,
@@ -24,38 +31,38 @@
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 39969060.0,
-    "total_kg_ms": 27124475.2,
+    "total_kg": 39890600.0,
+    "total_kg_ms": 27070601.5,
     "por_insumo": [
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12300631.0,
+        "kg": 12275261.0,
         "ms_pct": 51.0,
-        "kg_ms": 6273321.8
+        "kg_ms": 6260383.1
       },
       {
         "desc": "MAIZ GRANO",
-        "kg": 12288613.0,
+        "kg": 12268318.0,
         "ms_pct": 86.0,
-        "kg_ms": 10568207.2
+        "kg_ms": 10550753.5
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9396702.0,
+        "kg": 9379662.0,
         "ms_pct": 47.0,
-        "kg_ms": 4416449.9
+        "kg_ms": 4408441.1
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4360640.0,
+        "kg": 4348455.0,
         "ms_pct": 99.0,
-        "kg_ms": 4317033.6
+        "kg_ms": 4304970.5
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1622474.0,
+        "kg": 1618904.0,
         "ms_pct": 95.5,
-        "kg_ms": 1549462.7
+        "kg_ms": 1546053.3
       }
     ]
   },
@@ -1032,7 +1039,9 @@
         "kg_ms_dia": 60307.8,
         "dias_calendario": 31,
         "dias_con_registro": 24,
-        "dias_descartados": [],
+        "dias_descartados": [
+          "2026-08-25"
+        ],
         "parcial": true
       }
     }
