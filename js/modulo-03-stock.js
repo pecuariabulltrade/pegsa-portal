@@ -1481,6 +1481,25 @@ function renderProductivo(data) {
         +(baseAnios ? ' · base ' + baseAnios : '')+'</span>'
       +'</div>';
 
+    // v15.67: alarma si la mayoría de las categorías toca el límite del clamp.
+    // Cuando pasa, adp_calibrado dejó de seguir al observado y es ese valor el
+    // que usa el módulo Stock para estimar masa histórica.
+    var catsConTeo = cats90.filter(function(c){ return porCat90[c].adp_teorico != null; });
+    var catsClamp  = catsConTeo.filter(function(c){ return porCat90[c].ajustado; });
+    if (catsConTeo.length && catsClamp.length > catsConTeo.length / 2) {
+      var alarma = document.createElement('div');
+      alarma.style.cssText = 'background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.28);'
+        + 'border-left:3px solid #c0392b;border-radius:2px;padding:12px 16px;margin-bottom:16px;'
+        + "font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.7);line-height:1.7";
+      alarma.innerHTML = '<strong style="color:#c0392b">\u26a0 '
+        + catsClamp.length + ' de ' + catsConTeo.length + ' categorías tocan el límite '
+        + clampTxt + '</strong> (' + catsClamp.join(', ') + ') \u00b7 '
+        + 'El ADP calibrado dejó de seguir al observado, y es ese valor el que usa el módulo Stock '
+        + 'para estimar la masa histórica: el clamp está tapando parte de la caída real. '
+        + 'Si la caída es genuina, subir <em>ADP_CLAMP_TOL</em> en actualizar_datos.py (p.ej. 0.40) y volver a correr.';
+      sec90.appendChild(alarma);
+    }
+
     // Cards por categoría (grid responsive)
     var gridADP = document.createElement('div');
     gridADP.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-bottom:16px';

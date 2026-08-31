@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-08-31T17:05:06.248420",
+    "generado": "2026-08-31T17:52:30.366523",
     "periodo": "2025",
     "mes_actual": "2026-08",
     "nombre_mes": "Agosto 2026",
@@ -965,10 +965,20 @@
       "total_kg": 9402330.7,
       "kg_promedio": 539.6,
       "por_propietario": {
+        "PEGSA": {
+          "cabezas": 14115,
+          "kg": 7734031.8,
+          "kg_promedio": 547.9
+        },
         "DARWASH SA": {
           "cabezas": 1054,
           "kg": 600054.3,
           "kg_promedio": 569.3
+        },
+        "EL SAGUAIPE SAS": {
+          "cabezas": 50,
+          "kg": 22850.0,
+          "kg_promedio": 457.0
         },
         "EL YULTO SAS": {
           "cabezas": 29,
@@ -980,31 +990,6 @@
           "kg": 446726.5,
           "kg_promedio": 512.9
         },
-        "PEGSA": {
-          "cabezas": 14115,
-          "kg": 7734031.8,
-          "kg_promedio": 547.9
-        },
-        "RICARDO BAILO": {
-          "cabezas": 498,
-          "kg": 257405.0,
-          "kg_promedio": 516.9
-        },
-        "UGMA": {
-          "cabezas": 115,
-          "kg": 67506.0,
-          "kg_promedio": 587.0
-        },
-        "ZAMBRONI NICANOR": {
-          "cabezas": 142,
-          "kg": 57350.0,
-          "kg_promedio": 403.9
-        },
-        "EL SAGUAIPE SAS": {
-          "cabezas": 50,
-          "kg": 22850.0,
-          "kg_promedio": 457.0
-        },
         "PACO GALARZA": {
           "cabezas": 116,
           "kg": 64746.0,
@@ -1015,22 +1000,37 @@
           "kg": 5064.0,
           "kg_promedio": 562.7
         },
+        "RICARDO BAILO": {
+          "cabezas": 498,
+          "kg": 257405.0,
+          "kg_promedio": 516.9
+        },
         "TERCIO BRAVO SAS": {
           "cabezas": 426,
           "kg": 135743.0,
           "kg_promedio": 318.6
+        },
+        "UGMA": {
+          "cabezas": 115,
+          "kg": 67506.0,
+          "kg_promedio": 587.0
+        },
+        "ZAMBRONI NICANOR": {
+          "cabezas": 142,
+          "kg": 57350.0,
+          "kg_promedio": 403.9
         }
       },
       "por_categoria": {
-        "VA": {
-          "cabezas": 7784,
-          "kg": 4583146.8,
-          "kg_promedio": 588.8
-        },
         "TH": {
           "cabezas": 2082,
           "kg": 957104.6,
           "kg_promedio": 459.7
+        },
+        "VA": {
+          "cabezas": 7784,
+          "kg": 4583146.8,
+          "kg_promedio": 588.8
         },
         "VQ": {
           "cabezas": 719,
@@ -1059,6 +1059,11 @@
         }
       },
       "por_mes": {
+        "2026-06": {
+          "cabezas": 2025,
+          "kg": 988913.6,
+          "kg_promedio": 488.4
+        },
         "2025-09": {
           "cabezas": 1670,
           "kg": 956698.0,
@@ -1083,11 +1088,6 @@
           "cabezas": 686,
           "kg": 398000.0,
           "kg_promedio": 580.2
-        },
-        "2026-06": {
-          "cabezas": 2025,
-          "kg": 988913.6,
-          "kg_promedio": 488.4
         },
         "2026-02": {
           "cabezas": 2178,
@@ -1411,11 +1411,6 @@
               "kg": 10398.0,
               "kg_promedio": 577.7
             },
-            "VQ": {
-              "cabezas": 14,
-              "kg": 8190.0,
-              "kg_promedio": 585.0
-            },
             "TM": {
               "cabezas": 16,
               "kg": 7316.0,
@@ -1430,6 +1425,11 @@
               "cabezas": 22,
               "kg": 10035.0,
               "kg_promedio": 456.1
+            },
+            "VQ": {
+              "cabezas": 14,
+              "kg": 8190.0,
+              "kg_promedio": 585.0
             }
           },
           "por_propietario": {
@@ -1438,15 +1438,15 @@
               "kg": 506.0,
               "kg_promedio": 506.0
             },
-            "PEGSA": {
-              "cabezas": 621,
-              "kg": 360224.0,
-              "kg_promedio": 580.1
-            },
             "PACO GALARZA": {
               "cabezas": 64,
               "kg": 37270.0,
               "kg_promedio": 582.3
+            },
+            "PEGSA": {
+              "cabezas": 621,
+              "kg": 360224.0,
+              "kg_promedio": 580.1
             }
           },
           "kg_promedio": 580.2
@@ -1906,20 +1906,20 @@
         }
       },
       "por_tipo_egreso": {
-        "M": {
-          "cabezas": 476,
-          "kg": 139729.3,
-          "kg_promedio": 293.5
+        "T": {
+          "cabezas": 5172,
+          "kg": 1479571.2,
+          "kg_promedio": 286.1
         },
         "V": {
           "cabezas": 17425,
           "kg": 9402330.7,
           "kg_promedio": 539.6
         },
-        "T": {
-          "cabezas": 5172,
-          "kg": 1479571.2,
-          "kg_promedio": 286.1
+        "M": {
+          "cabezas": 476,
+          "kg": 139729.3,
+          "kg_promedio": 293.5
         }
       },
       "top10_destino": []
