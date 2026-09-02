@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-01T23:03:05.222820",
+    "generado": "2026-09-02T00:02:51.963859",
     "periodo": "2025",
     "tabla": "v_PB_Egresos",
     "ventana": "365 días",
@@ -13,12 +13,12 @@
     "clamp_tolerancia": 0.25,
     "base_trim_ventanas": [
       [
-        "2024-06-03",
-        "2024-09-01"
+        "2024-06-04",
+        "2024-09-02"
       ],
       [
-        "2025-06-03",
-        "2025-09-01"
+        "2025-06-04",
+        "2025-09-02"
       ]
     ],
     "teorico_90d": "ventana de 90 días de [2024, 2025]",
@@ -134,20 +134,20 @@
   },
   "por_categoria_90d": {
     "NT": {
-      "cabezas": 305,
-      "adp_promedio": 1.175,
+      "cabezas": 302,
+      "adp_promedio": 1.178,
       "adp_min": 0.445,
       "adp_max": 4.915,
-      "estadia_promedio": 157.4,
+      "estadia_promedio": 157.7,
       "estadia_min": 50,
       "estadia_max": 344,
       "adp_teorico": 1.327,
-      "adp_calibrado": 1.175,
-      "variacion_pct": -11.45,
+      "adp_calibrado": 1.178,
+      "variacion_pct": -11.23,
       "ajustado": false,
       "adp_min_range": 0.9952,
       "adp_max_range": 1.6587,
-      "teorico_fuente": "base 90d [2024, 2025] (n=896)"
+      "teorico_fuente": "base 90d [2024, 2025] (n=904)"
     },
     "NV": {
       "cabezas": 181,
@@ -173,29 +173,29 @@
       "estadia_promedio": 250.6,
       "estadia_min": 183,
       "estadia_max": 438,
-      "adp_teorico": 1.198,
-      "adp_calibrado": 1.4975,
-      "variacion_pct": 47.91,
+      "adp_teorico": 1.185,
+      "adp_calibrado": 1.4813,
+      "variacion_pct": 49.54,
       "ajustado": true,
-      "adp_min_range": 0.8985,
-      "adp_max_range": 1.4975,
-      "teorico_fuente": "base 90d [2024, 2025] (n=400)"
+      "adp_min_range": 0.8888,
+      "adp_max_range": 1.4813,
+      "teorico_fuente": "base 90d [2024, 2025] (n=480)"
     },
     "TM": {
-      "cabezas": 84,
-      "adp_promedio": 1.077,
+      "cabezas": 83,
+      "adp_promedio": 1.083,
       "adp_min": 0.587,
       "adp_max": 1.719,
-      "estadia_promedio": 306.5,
+      "estadia_promedio": 307.5,
       "estadia_min": 184,
       "estadia_max": 441,
-      "adp_teorico": 1.205,
-      "adp_calibrado": 1.077,
-      "variacion_pct": -10.62,
+      "adp_teorico": 1.207,
+      "adp_calibrado": 1.083,
+      "variacion_pct": -10.27,
       "ajustado": false,
-      "adp_min_range": 0.9038,
-      "adp_max_range": 1.5063,
-      "teorico_fuente": "base 90d [2024, 2025] (n=489)"
+      "adp_min_range": 0.9053,
+      "adp_max_range": 1.5088,
+      "teorico_fuente": "base 90d [2024, 2025] (n=499)"
     },
     "TO": {
       "cabezas": 14,
@@ -214,36 +214,36 @@
       "teorico_fuente": "base anual [2024, 2025] (n=105)"
     },
     "VA": {
-      "cabezas": 1038,
-      "adp_promedio": 1.086,
+      "cabezas": 1035,
+      "adp_promedio": 1.088,
       "adp_min": 0.01,
       "adp_max": 3.566,
-      "estadia_promedio": 160.2,
+      "estadia_promedio": 160.3,
       "estadia_min": 32,
       "estadia_max": 349,
-      "adp_teorico": 1.71,
-      "adp_calibrado": 1.2825,
-      "variacion_pct": -36.49,
+      "adp_teorico": 1.69,
+      "adp_calibrado": 1.2675,
+      "variacion_pct": -35.62,
       "ajustado": true,
-      "adp_min_range": 1.2825,
-      "adp_max_range": 2.1375,
-      "teorico_fuente": "base 90d [2024, 2025] (n=3226)"
+      "adp_min_range": 1.2675,
+      "adp_max_range": 2.1125,
+      "teorico_fuente": "base 90d [2024, 2025] (n=3010)"
     },
     "VQ": {
-      "cabezas": 110,
-      "adp_promedio": 1.021,
+      "cabezas": 107,
+      "adp_promedio": 1.038,
       "adp_min": 0.25,
       "adp_max": 2.207,
-      "estadia_promedio": 159.2,
+      "estadia_promedio": 160.1,
       "estadia_min": 39,
       "estadia_max": 288,
-      "adp_teorico": 1.453,
-      "adp_calibrado": 1.0897,
-      "variacion_pct": -29.73,
+      "adp_teorico": 1.438,
+      "adp_calibrado": 1.0785,
+      "variacion_pct": -27.82,
       "ajustado": true,
-      "adp_min_range": 1.0897,
-      "adp_max_range": 1.8163,
-      "teorico_fuente": "base 90d [2024, 2025] (n=329)"
+      "adp_min_range": 1.0785,
+      "adp_max_range": 1.7975,
+      "teorico_fuente": "base 90d [2024, 2025] (n=346)"
     }
   },
   "por_mes": {

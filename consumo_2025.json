@@ -1,11 +1,11 @@
 {
   "meta": {
-    "generado": "2026-09-01T23:07:08.491019",
+    "generado": "2026-09-02T00:06:45.268029",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-09-01",
+    "hoy_parcial": "2026-09-02",
     "ultimo_completo": "2026-08-31",
     "ventana_3d": [
       "2026-08-28",
@@ -13,6 +13,13 @@
       "2026-08-31"
     ],
     "dias_descartados": [
+      {
+        "fecha": "2026-09-01",
+        "kg": 42715.0,
+        "avg_prev": 82815.0,
+        "ratio": 0.516,
+        "razon": "caida 48% vs prom 3 dias previos"
+      },
       {
         "fecha": "2026-08-29",
         "kg": 79310.0,
@@ -24,38 +31,38 @@
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 39861561.0,
-    "total_kg_ms": 27037534.7,
+    "total_kg": 39802246.0,
+    "total_kg_ms": 26996910.9,
     "por_insumo": [
       {
         "desc": "MAIZ GRANO",
-        "kg": 12290423.0,
+        "kg": 12276203.0,
         "ms_pct": 86.0,
-        "kg_ms": 10569763.8
+        "kg_ms": 10557534.6
       },
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12256731.0,
+        "kg": 12236076.0,
         "ms_pct": 51.0,
-        "kg_ms": 6250932.8
+        "kg_ms": 6240398.8
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9399807.0,
+        "kg": 9387757.0,
         "ms_pct": 47.0,
-        "kg_ms": 4417909.3
+        "kg_ms": 4412245.8
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4299596.0,
+        "kg": 4289176.0,
         "ms_pct": 99.0,
-        "kg_ms": 4256600.0
+        "kg_ms": 4246284.2
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1615004.0,
+        "kg": 1613034.0,
         "ms_pct": 95.5,
-        "kg_ms": 1542328.8
+        "kg_ms": 1540447.5
       }
     ]
   },
@@ -1034,6 +1041,15 @@
         "dias_con_registro": 31,
         "dias_descartados": [],
         "parcial": false
+      },
+      "2026-09": {
+        "kg_total": 42715.0,
+        "kg_ms_total": 29756.5,
+        "kg_ms_dia": 29756.5,
+        "dias_calendario": 30,
+        "dias_con_registro": 1,
+        "dias_descartados": [],
+        "parcial": true
       }
     }
   }
