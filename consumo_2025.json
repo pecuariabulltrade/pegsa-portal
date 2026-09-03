@@ -1,53 +1,61 @@
 {
   "meta": {
-    "generado": "2026-09-02T23:10:24.542652",
+    "generado": "2026-09-03T00:07:06.963033",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-09-02",
+    "hoy_parcial": "2026-09-03",
     "ultimo_completo": "2026-09-01",
     "ventana_3d": [
       "2026-08-30",
       "2026-08-31",
       "2026-09-01"
     ],
-    "dias_descartados": [],
+    "dias_descartados": [
+      {
+        "fecha": "2026-09-02",
+        "kg": 40665.0,
+        "avg_prev": 84975.0,
+        "ratio": 0.479,
+        "razon": "caida 52% vs prom 3 dias previos"
+      }
+    ],
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 39845321.0,
-    "total_kg_ms": 27026396.4,
+    "total_kg": 39779371.0,
+    "total_kg_ms": 26981032.0,
     "por_insumo": [
       {
         "desc": "MAIZ GRANO",
-        "kg": 12291438.0,
+        "kg": 12275683.0,
         "ms_pct": 86.0,
-        "kg_ms": 10570636.7
+        "kg_ms": 10557087.4
       },
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12249656.0,
+        "kg": 12227696.0,
         "ms_pct": 51.0,
-        "kg_ms": 6247324.6
+        "kg_ms": 6236125.0
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9396622.0,
+        "kg": 9382692.0,
         "ms_pct": 47.0,
-        "kg_ms": 4416412.3
+        "kg_ms": 4409865.2
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4293146.0,
+        "kg": 4281511.0,
         "ms_pct": 99.0,
-        "kg_ms": 4250214.5
+        "kg_ms": 4238695.9
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1614459.0,
+        "kg": 1611789.0,
         "ms_pct": 95.5,
-        "kg_ms": 1541808.3
+        "kg_ms": 1539258.5
       }
     ]
   },
@@ -1028,11 +1036,11 @@
         "parcial": false
       },
       "2026-09": {
-        "kg_total": 85790.0,
-        "kg_ms_total": 59242.2,
-        "kg_ms_dia": 59242.2,
+        "kg_total": 126455.0,
+        "kg_ms_total": 87485.5,
+        "kg_ms_dia": 43742.7,
         "dias_calendario": 30,
-        "dias_con_registro": 1,
+        "dias_con_registro": 2,
         "dias_descartados": [],
         "parcial": true
       }
