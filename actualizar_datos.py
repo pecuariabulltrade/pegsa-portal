@@ -4566,6 +4566,20 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["fantasmas"] = {"ok": False, "error": str(e)}
 
+    # ── HISTORIAL DE RESULTADOS POR VENTA (v15.69.1) ───────────
+    separador("Historial de resultados por venta")
+    try:
+        _rv = generar_resultados_ventas(carpeta, log)
+        resumen["modulos"]["resultados_ventas"] = {
+            "ok":        _rv is not None,
+            "ventas":    _rv["meta"]["n_ventas"] if _rv else 0,
+            "invalidos": len(_rv["meta"]["archivos_invalidos"]) if _rv else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_resultados_ventas falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["resultados_ventas"] = {"ok": False, "error": str(e)}
+
     # ── ANÁLISIS DE COSTOS · denominadores operativos (v15.61) ─
     # Sólo los denominadores de los ratios. El JSON contable del módulo
     # (analisis_costos_datos.json) lo regenera Nicolás a mano con su ejecutable
@@ -7912,6 +7926,140 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
         verif[rem] = bloque
 
     return verif, meta
+
+
+# ── v15.69.1 · HISTORIAL DE RESULTADOS POR VENTA ────────────────────
+# Cada informe PDF que arma el módulo se pierde cuando se cierra la ventana. El
+# módulo ahora baja un JSON con el resultado completo de esa venta (ya con los
+# overrides manuales aplicados); Nicolás lo deja en `datos\resultados_ventas\` y
+# acá se consolidan todos para poder mirar resultados por tropa, hotelero, mes y
+# comprador.
+#
+# El bot NO escribe en esa carpeta, solo la lee. Es subcarpeta de `datos`, así
+# que el `for %%F in ("%ORIGEN%\*.json")` del .bat no la toca (no recursa) — al
+# repo va únicamente el consolidado `resultados_ventas.json`.
+RR_RV_DIRNAME = "resultados_ventas"
+
+
+def generar_resultados_ventas(carpeta_out, log=None):
+    """v15.69.1: consolida los snapshots de resultado que baja el módulo.
+
+    Lee `datos/resultados_ventas/resultado_*.json`, deduplica por `id`
+    quedándose con el `generado` más reciente y vuelca
+    `resultados_ventas.json` con las ventas y los agregados.
+
+    Un archivo roto no rompe el tick: se avisa y se saltea.
+    Devuelve el dict volcado o None. NO levanta excepción.
+    """
+    if log is None:
+        log = logging.getLogger("resultados_ventas")
+    d = Path(carpeta_out) / RR_RV_DIRNAME
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        log.warning(f"  ⚠ No pude crear {RR_RV_DIRNAME}: {e}")
+        return None
+
+    archivos = sorted(d.glob("resultado_*.json"))
+    ventas, malos = {}, []
+    for p in archivos:
+        try:
+            with p.open(encoding="utf-8") as f:
+                v = json.load(f)
+            if not isinstance(v, dict) or not v.get("id") or not v.get("remitos"):
+                raise ValueError("sin id o sin remitos")
+        except Exception as e:
+            malos.append(f"{p.name} ({type(e).__name__}: {e})")
+            continue
+        prev = ventas.get(v["id"])
+        # el snapshot más reciente de esa venta manda: es el que tiene los
+        # últimos overrides que cargó Nicolás
+        if prev is None or str(v.get("generado") or "") >= str(prev.get("generado") or ""):
+            ventas[v["id"]] = v
+    for m in malos:
+        log.warning(f"  ⚠ Resultados de ventas: archivo inválido, se saltea — {m}")
+    if not ventas:
+        log.info(f"  Resultados de ventas: sin snapshots en {RR_RV_DIRNAME}\ todavía")
+
+    lista = sorted(ventas.values(), key=lambda v: (str(v.get("fecha_egreso") or ""), v["id"]))
+
+    def _acc(dst, k, v, cab, kge, neta, costo, extra_set=None, extra_val=None):
+        if k in (None, ""):
+            k = "—"
+        a = dst.setdefault(k, {"ventas": 0, "cabezas": 0, "kg_egreso": 0.0,
+                               "venta_neta": 0.0, "costo": 0.0, "resultado": 0.0,
+                               "_ids": set(), "_extra": set()})
+        a["_ids"].add(v["id"])
+        a["cabezas"] += cab or 0
+        a["kg_egreso"] += kge or 0.0
+        a["venta_neta"] += neta or 0.0
+        a["costo"] += costo or 0.0
+        if extra_set is not None and extra_val:
+            a["_extra"].add(extra_val)
+
+    por_tropa, por_hotelero, por_mes, por_comprador = {}, {}, {}, {}
+    for v in lista:
+        # tropa y hotelero son dimensiones de la FILA: se agregan desde `filas`,
+        # con la venta ya prorrateada por kg de egreso.
+        for f in (v.get("filas") or []):
+            _acc(por_tropa, f.get("tropa"), v, f.get("cabezas"), f.get("kg_egreso"),
+                 f.get("venta_prorrateada"), f.get("costo_fila"),
+                 extra_set=True, extra_val=f.get("hotelero"))
+            _acc(por_hotelero, f.get("hotelero"), v, f.get("cabezas"), f.get("kg_egreso"),
+                 f.get("venta_prorrateada"), f.get("costo_fila"))
+        # mes y comprador son dimensiones de la VENTA: se agregan enteros (exacto,
+        # sin prorrateo).
+        _c = (v.get("costos") or {}).get("total")
+        _n = (v.get("venta") or {}).get("neta")
+        _mes = str(v.get("fecha_egreso") or "")[:7] or "—"
+        _acc(por_mes, _mes, v, v.get("cabezas"), v.get("kg_egreso"), _n, _c)
+        _acc(por_comprador, v.get("comprador"), v, v.get("cabezas"), v.get("kg_egreso"), _n, _c)
+
+    def _cerrar(dst, con_hoteleros=False):
+        out = {}
+        for k, a in dst.items():
+            cab = a["cabezas"]
+            r = {
+                "ventas": len(a["_ids"]),
+                "cabezas": cab,
+                "kg_egreso": round(a["kg_egreso"], 1),
+                "venta_neta": round(a["venta_neta"], 2),
+                "costo": round(a["costo"], 2),
+                "resultado": round(a["venta_neta"] - a["costo"], 2),
+                "resultado_por_cab": (round((a["venta_neta"] - a["costo"]) / cab, 2) if cab else None),
+                "pct_costo": (round((a["venta_neta"] - a["costo"]) / a["costo"] * 100, 1)
+                              if a["costo"] else None),
+            }
+            if con_hoteleros:
+                r["hoteleros"] = sorted(x for x in a["_extra"] if x)
+            out[k] = r
+        return dict(sorted(out.items(), key=lambda kv: -abs(kv[1]["resultado"] or 0)))
+
+    fechas = [str(v.get("fecha_egreso") or "") for v in lista if v.get("fecha_egreso")]
+    salida = {
+        "meta": {
+            "generado": datetime.now().isoformat(),
+            "n_ventas": len(lista),
+            "n_remitos": len({r for v in lista for r in (v.get("remitos") or [])}),
+            "n_archivos": len(archivos),
+            "archivos_invalidos": malos,
+            "desde": min(fechas) if fechas else None,
+            "hasta": max(fechas) if fechas else None,
+            "carpeta": f"datos\\{RR_RV_DIRNAME}\\",
+            "nota": ("tropa y hotelero salen de las filas con la venta prorrateada por kg de "
+                     "egreso; mes y comprador se agregan por venta entera"),
+        },
+        "ventas": lista,
+        "por_tropa": _cerrar(por_tropa, con_hoteleros=True),
+        "por_hotelero": _cerrar(por_hotelero),
+        "por_mes": _cerrar(por_mes),
+        "por_comprador": _cerrar(por_comprador),
+    }
+    guardar(salida, carpeta_out, "resultados_ventas.json")
+    log.info(f"  ✓ Resultados de ventas: {len(archivos)} archivos → {len(lista)} ventas "
+             f"consolidadas ({len(salida['por_tropa'])} tropas, "
+             f"{len(salida['por_hotelero'])} hoteleros)")
+    return salida
 
 
 # ── v15.69 · CARAVANAS FANTASMA ─────────────────────────────────────

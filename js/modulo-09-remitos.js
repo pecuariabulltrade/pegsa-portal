@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.69 (2026-09-03)
+/* modulo-09-remitos.js — Resultado por Remito · v15.69.1 (2026-09-03)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -26,6 +26,11 @@ var _remFant = null;
 var _remFantOpen = false;
 var _remFantHot = '';
 var _remFantFec = '';
+// v15.69.1 · historial de resultados por venta. Cada informe PDF baja un JSON
+// con el resultado completo de esa venta; Nicolás lo deja en
+// datos\resultados_ventas\ y el pipeline lo consolida.
+var REM_LS_HIST = 'pegsa_resultados_hist';
+var _remHist = null;   // resultados_ventas.json consolidado por el pipeline
 
 // v15.59: la venta se carga a mano y persiste en localStorage POR NAVEGADOR.
 // Decisión del usuario 2026-08-13: provisorio hasta conectar una base de datos.
@@ -94,6 +99,10 @@ async function cargarRemitos() {
       var rf = await fetch(STOCK_SB + '/fantasmas.json', {}, {});
       if (rf.ok) _remFant = await rf.json();
     } catch (e) { _remFant = null; }   // el modulo funciona igual sin fantasmas
+    try {
+      var rh = await fetch(STOCK_SB + '/resultados_ventas.json', {}, {});
+      if (rh.ok) _remHist = await rh.json();
+    } catch (e) { _remHist = null; }
     if (loading) loading.style.display = 'none';
     if (content) content.style.display = 'block';
     renderRemitos();
@@ -706,7 +715,7 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.69 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.69.1 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -716,6 +725,9 @@ function remInformePDF() {
     // v15.68: el origen de los sin caravana es un supuesto, y va dicho.
     + '<br>' + _remSCLineaPDF(r)
     + '</div></body></html>';
+
+  // v15.69.1: además del PDF, guardar el resultado de esta venta.
+  try { remGuardarSnapshot(r); } catch (e) {}
 
   var win = window.open('', '_blank');
   if (!win) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
@@ -747,6 +759,161 @@ function remSCEstado(r) {
 }
 
 function _remFec(f) { return f ? String(f).split('-').reverse().join('/') : '—'; }
+
+/* v15.69.1 · Snapshot del resultado de una venta ───────────────────
+   Todo lo que muestra el PDF, ya con los overrides aplicados, en un JSON que se
+   baja al disco. La venta se prorratea por fila segun sus kg de egreso, asi que
+   los agregados por tropa y por hotelero del pipeline cierran contra la neta. */
+function remSnapshot(r) {
+  var venta = remVentaCtx(), V = remVentaCalc(venta), RPc = remRepoCalc(r, venta);
+  var SC = remSCEstado(r), C = r.costos, I = r.indicadores;
+  var ids = (r.esGrupo ? r.remitos_ids.slice() : [_remSel]).slice().sort();
+  // El prorrateo va sobre la suma de los kg de las FILAS, no sobre
+  // r.kg_egreso: los dos vienen redondeados por separado y la diferencia
+  // (unos gramos) dejaba la venta prorrateada corta por ~$1.500. Asi la suma
+  // de venta_prorrateada da la neta exacta.
+  var kge = (r.filas || []).reduce(function (a, f) { return a + (f.kg_egreso || 0); }, 0);
+  var res = V.neto - C.total;
+  var v = r.verificacion || {};
+
+  var filas = (r.filas || []).map(function (f) {
+    var com = (f.costo_compra || 0) * (f.comision_pct || 0) / 100;
+    var costo = (f.costo_compra || 0) + com + (f.alimento || 0)
+              + (f.estructura || 0) + (f.sanidad || 0) + (f.mortandad || 0);
+    var vp = kge ? V.neto * (f.kg_egreso || 0) / kge : 0;
+    return {
+      remito: f.remito || ids[0],
+      tropa: f.tropa, hotelero: f.hotelero, categoria: f.categoria,
+      corral: f.corral, cabezas: f.cabezas,
+      kg_ingreso: f.kg_ingreso, kg_egreso: f.kg_egreso, dias: f.dias,
+      precio_kg: f.precio_kg, estimado: !!f.estimado,
+      costo_compra: f.costo_compra, comision: com,
+      alimento: f.alimento, estructura: f.estructura,
+      sanidad: f.sanidad, mortandad: f.mortandad,
+      costo_fila: costo,
+      origen: f.origen, sc_tipo: f.sc_tipo || null,
+      venta_prorrateada: vp,
+      resultado_fila: vp - costo
+    };
+  });
+
+  return {
+    id: ids.join('-') + '_' + (r.fecha_egreso || ''),
+    generado: new Date().toISOString(),
+    version_portal: 'v15.69.1',
+    remitos: ids,
+    es_grupo: !!r.esGrupo,
+    fecha_egreso: r.fecha_egreso,
+    comprador: r.comprador,
+    cabezas: r.cabezas, tropas: r.tropas,
+    kg_ingreso: r.kg_ingreso, kg_egreso: r.kg_egreso,
+    kg_producidos: r.kg_producidos, kg_ms: r.kg_ms,
+    venta: {
+      kg_carne: V.kgc, precio_kg: V.pkg, bruta: V.bruto,
+      flete: venta.flete || 0, pesada: venta.pesada || 0,
+      guia_senasa: venta.guia_senasa || 0, guia_comuna: venta.guia_comuna || 0,
+      com_venta_pct: (V.bruto ? V.comVenta / V.bruto * 100 : null),
+      com_venta_monto: V.comVenta, com_venta_manual: !!V.comManual,
+      gastos: V.gastos, neta: V.neto
+    },
+    costos: {
+      compra: C.compra, comision: C.comision, alimento: C.alimento,
+      estructura: C.estructura, sanidad: C.sanidad, mortandad: C.mortandad,
+      total: C.total, por_kg_vendido: C.por_kg_vendido
+    },
+    resultado: {
+      monto: res,
+      pct_costo: (C.total ? res / C.total * 100 : null),
+      por_cab: (r.cabezas ? res / r.cabezas : null)
+    },
+    indicadores: {
+      kg_prom_ingreso: I.kg_prom_ingreso, kg_prom_salida: I.kg_prom_salida,
+      estadia_prom: I.estadia_prom, adp: I.adp, pct_ms: I.pct_ms,
+      conversion_ms: I.conversion_ms, costo_kg_producido: I.costo_kg_producido,
+      precio_prom_pagado: I.precio_prom_pagado
+    },
+    reposicion: {
+      precio_kg: RPc.precio, precio_kg_ms: RPc.precioMs, manual: RPc.manual,
+      costos: { compra: RPc.compra, comision: RPc.comision, alimento: RPc.alimento,
+                mortandad: RPc.mortandad, total: RPc.total,
+                por_kg_vendido: RPc.por_kg_vendido },
+      resultado: V.neto - RPc.total
+    },
+    verificacion: {
+      estado: v.estado, ventana_dias: v.ventana_dias,
+      confirmadas: v.confirmadas || 0, sc: v.sc || 0,
+      sc_sin_electronica: v.sc_sin_electronica || 0,
+      sc_no_leida: v.sc_no_leida || 0,
+      confirmadas_anterior: v.confirmadas_anterior || 0,
+      tropa_imputada: v.tropa_imputada || null,
+      origen_manual: SC.manual
+        ? { precio_kg: SC.precio, kg_ingreso_cab: SC.kgCab, fecha_ingreso: SC.fecha }
+        : null
+    },
+    filas: filas
+  };
+}
+
+/* Guarda el snapshot en localStorage y lo baja al disco. */
+function remGuardarSnapshot(r) {
+  var snap = remSnapshot(r);
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(REM_LS_HIST) || '[]') || []; } catch (e) { hist = []; }
+  // una venta = un registro: la ultima version manda
+  hist = hist.filter(function (x) { return x.id !== snap.id; });
+  hist.push(snap);
+  try { localStorage.setItem(REM_LS_HIST, JSON.stringify(hist)); } catch (e) {}
+
+  var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+  var stamp = d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate())
+            + '-' + z(d.getHours()) + z(d.getMinutes());
+  var nombre = 'resultado_' + snap.remitos.join('-') + '_' + (snap.fecha_egreso || 's-f')
+             + '_' + stamp + '.json';
+  try {
+    var blob = new Blob([JSON.stringify(snap, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  } catch (e) {}
+  remToast('Resultado guardado — mové <strong>' + nombre + '</strong> a '
+    + '<code>PEGSA_Portal\\datos\\resultados_ventas\\</code> para que entre al historial');
+  return snap;
+}
+
+function remHistDe(id) {
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(REM_LS_HIST) || '[]') || []; } catch (e) { hist = []; }
+  return hist.filter(function (x) { return x.id === id; });
+}
+function remBajarSnapshot(id) {
+  var x = remHistDe(id)[0];
+  if (!x) return;
+  try {
+    var blob = new Blob([JSON.stringify(x, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'resultado_' + x.remitos.join('-') + '_' + (x.fecha_egreso || 's-f') + '.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  } catch (e) {}
+}
+
+/* Aviso efimero abajo a la derecha. */
+function remToast(html) {
+  try {
+    var t = document.createElement('div');
+    t.innerHTML = html;
+    t.style.cssText = 'position:fixed;right:22px;bottom:22px;z-index:9999;max-width:420px;'
+      + 'background:var(--ink,#1a1612);color:#f5f2ec;padding:13px 17px;border-radius:3px;'
+      + "font-family:'DM Mono',monospace;font-size:12px;line-height:1.6;"
+      + 'box-shadow:0 6px 24px rgba(0,0,0,.25);transition:opacity .4s';
+    document.body.appendChild(t);
+    setTimeout(function () { t.style.opacity = '0'; }, 7000);
+    setTimeout(function () { t.remove(); }, 7600);
+  } catch (e) {}
+}
 
 /* v15.69 · Fantasmas ──────────────────────────────────────────────
    Una caravana fantasma es un EID que el baston leyo el dia de una salida y que
@@ -1029,7 +1196,26 @@ function renderRemitos(soloResultado) {
     + '<button onclick="remInformePDF()" style="padding:8px 16px;background:var(--ink);border:1px solid var(--ink);border-radius:2px;'
     + 'color:#d4a84b;font-family:\'DM Mono\',monospace;font-size:12px;cursor:pointer;white-space:nowrap">&#128196; Informe PDF</button></div>';
   h += '</div>';
-  h += '<div style="' + SUB + ';margin:0 0 16px">Carga local en este navegador — se migrará a base de datos.</div>';
+  h += '<div style="' + SUB + ';margin:0 0 16px">Carga local en este navegador — se migrará a base de datos.'
+    + (_remHist && _remHist.meta && _remHist.meta.n_ventas
+        ? ' · Historial: <strong>' + _remHist.meta.n_ventas + ' venta'
+          + (_remHist.meta.n_ventas === 1 ? '' : 's') + ' consolidada'
+          + (_remHist.meta.n_ventas === 1 ? '' : 's') + '</strong>'
+          + (_remHist.meta.hasta ? ' (última ' + _remFec(_remHist.meta.hasta) + ')' : '')
+        : '')
+    + '</div>';
+
+  // v15.69.1 · snapshots de ESTA venta guardados en este navegador
+  var _idV = (esGrupo ? r.remitos_ids.slice().sort() : [_remSel]).join('-') + '_' + (r.fecha_egreso || '');
+  var _snaps = remHistDe(_idV);
+  if (_snaps.length) {
+    h += '<div style="' + SUB + ';margin:-10px 0 16px">Historial de esta venta · '
+      + _snaps.map(function (x) {
+          return String(x.generado || '').slice(0, 16).replace('T', ' ');
+        }).join(' · ')
+      + ' <a onclick="remBajarSnapshot(\'' + _idV + '\')" style="cursor:pointer;color:var(--gold);'
+      + 'text-decoration:underline">descargar de nuevo</a></div>';
+  }
 
   // ── Cabecera del remito ──
   h += '<div style="' + H2 + '">' + (esGrupo ? 'Grupo · ' + r.remitos_ids.join(' + ') : 'Remito ' + _remSel) + '</div>';
