@@ -167,9 +167,18 @@ class DatamarsAPI:
         return None
 
     def _login(self):
+        # Verificado por probe el 2026-09-03: /jwt/login NO es un login JSON
+        # sino un token endpoint OAuth2 (Resource Owner Password Credentials).
+        # Con `json={email, password}` devuelve 400 {"error":"invalid_client"};
+        # form-encoded con grant_type=password devuelve 200 y `access_token`
+        # (sin client_id ni client_secret). La app web guarda ese token en
+        # localStorage como `access-token`, de ahí el nombre con guion.
         r = self.session.post(
             BASE + "/jwt/login",
-            json={"email": self.email, "password": self.password},
+            data={"grant_type": "password",
+                  "username": self.email,
+                  "password": self.password},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=30,
         )
         r.raise_for_status()
