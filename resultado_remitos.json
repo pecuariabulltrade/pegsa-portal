@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generado": "2026-09-03T11:08:19.493567",
+    "generado": "2026-09-03T12:08:46.448411",
     "desde": "2026-07-01",
-    "remitos": 64,
-    "egresos_venta": 2015,
+    "remitos": 65,
+    "egresos_venta": 2025,
     "cobertura_global_pct": 77.9,
     "pv_min": 2.0,
     "pv_max": 3.0,
@@ -12,12 +12,12 @@
     "pv_fallback": 2.33,
     "tasas_mortandad": {
       "Vaca": 1.62,
-      "Toro": 0.979,
-      "Novillo": 0.979,
-      "Novillito": 0.979,
-      "Ternero": 0.979,
-      "Vaquillona": 0.823,
-      "Ternera": 0.823
+      "Toro": 0.964,
+      "Novillo": 0.964,
+      "Novillito": 0.964,
+      "Ternero": 0.964,
+      "Vaquillona": 0.805,
+      "Ternera": 0.805
     },
     "datamars": {
       "activo": false,
@@ -27,7 +27,7 @@
       "remitos_verificados": 0,
       "remitos_sin_sesion": 0,
       "sc_total": 0,
-      "cab_total": 2015
+      "cab_total": 2025
     },
     "fuentes": {
       "egresos": "WinCampo lst_egresos_hacienda (MOTIVO=VENTA, NRO_TRANSACCION=remito)",
@@ -65,7 +65,7 @@
           "alimento": 3356607.81,
           "estructura": 362104.0,
           "sanidad": 31032.0,
-          "mortandad": 32164.15
+          "mortandad": 31671.34
         },
         {
           "origen": "sin_verificar",
@@ -91,7 +91,7 @@
           "alimento": 978907.08,
           "estructura": 132494.0,
           "sanidad": 15516.0,
-          "mortandad": 13752.71
+          "mortandad": 13542.0
         },
         {
           "origen": "sin_verificar",
@@ -117,7 +117,7 @@
           "alimento": 32192.25,
           "estructura": 5850.0,
           "sanidad": 7630.0,
-          "mortandad": 12189.13
+          "mortandad": 12002.37
         },
         {
           "origen": "sin_verificar",
@@ -143,7 +143,7 @@
           "alimento": 749594.53,
           "estructura": 78506.0,
           "sanidad": 7758.0,
-          "mortandad": 9222.21
+          "mortandad": 9080.91
         },
         {
           "origen": "sin_verificar",
@@ -169,7 +169,7 @@
           "alimento": 808385.87,
           "estructura": 141015.0,
           "sanidad": 23274.0,
-          "mortandad": 7126.83
+          "mortandad": 7017.63
         },
         {
           "origen": "sin_verificar",
@@ -195,7 +195,7 @@
           "alimento": 284022.13,
           "estructura": 43015.0,
           "sanidad": 7758.0,
-          "mortandad": 8272.26
+          "mortandad": 8145.51
         }
       ],
       "cabezas": 12,
@@ -212,9 +212,9 @@
         "alimento": 6209709.68,
         "estructura": 762984.0,
         "sanidad": 92968.0,
-        "mortandad": 82727.29,
-        "total": 15809849.75,
-        "por_kg_vendido": 2661.59
+        "mortandad": 81459.76,
+        "total": 15808582.23,
+        "por_kg_vendido": 2661.37
       },
       "indicadores": {
         "kg_prom_ingreso": 151.8,
@@ -234,9 +234,9 @@
         "compra": 8450183.01,
         "comision": 253505.49,
         "alimento": 6381880.64,
-        "mortandad": 82727.29,
-        "total": 16024248.43,
-        "por_kg_vendido": 2697.68
+        "mortandad": 81459.76,
+        "total": 16022980.9,
+        "por_kg_vendido": 2697.47
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -295,7 +295,7 @@
           "alimento": 4465385.82,
           "estructura": 543180.0,
           "sanidad": 93096.0,
-          "mortandad": 224063.19
+          "mortandad": 220630.15
         },
         {
           "origen": "sin_verificar",
@@ -321,7 +321,7 @@
           "alimento": 3120872.51,
           "estructura": 354380.0,
           "sanidad": 38790.0,
-          "mortandad": 65454.16
+          "mortandad": 64451.28
         },
         {
           "origen": "sin_verificar",
@@ -347,7 +347,7 @@
           "alimento": 7205425.1,
           "estructura": 708276.0,
           "sanidad": 46548.0,
-          "mortandad": 61989.23
+          "mortandad": 61039.45
         },
         {
           "origen": "sin_verificar",
@@ -373,7 +373,7 @@
           "alimento": 1645827.36,
           "estructura": 166998.0,
           "sanidad": 23274.0,
-          "mortandad": 48569.39
+          "mortandad": 47825.22
         },
         {
           "origen": "sin_verificar",
@@ -399,7 +399,7 @@
           "alimento": 1966494.41,
           "estructura": 258700.0,
           "sanidad": 31032.0,
-          "mortandad": 48733.19
+          "mortandad": 47986.51
         },
         {
           "origen": "sin_verificar",
@@ -425,7 +425,7 @@
           "alimento": 746647.85,
           "estructura": 101930.0,
           "sanidad": 15516.0,
-          "mortandad": 26050.15
+          "mortandad": 25651.01
         },
         {
           "origen": "sin_verificar",
@@ -451,7 +451,7 @@
           "alimento": 461692.7,
           "estructura": 46975.0,
           "sanidad": 7758.0,
-          "mortandad": 15969.38
+          "mortandad": 15724.7
         },
         {
           "origen": "sin_verificar",
@@ -477,7 +477,7 @@
           "alimento": 841968.07,
           "estructura": 79716.0,
           "sanidad": 7758.0,
-          "mortandad": 16439.41
+          "mortandad": 16187.53
         },
         {
           "origen": "sin_verificar",
@@ -503,7 +503,7 @@
           "alimento": 664763.66,
           "estructura": 73736.0,
           "sanidad": 7758.0,
-          "mortandad": 14972.51
+          "mortandad": 14743.11
         },
         {
           "origen": "sin_verificar",
@@ -529,7 +529,7 @@
           "alimento": 402033.72,
           "estructura": 49825.0,
           "sanidad": 7758.0,
-          "mortandad": 9615.96
+          "mortandad": 9468.63
         },
         {
           "origen": "sin_verificar",
@@ -555,7 +555,7 @@
           "alimento": 733709.21,
           "estructura": 76596.0,
           "sanidad": 7758.0,
-          "mortandad": 12544.54
+          "mortandad": 12352.33
         },
         {
           "origen": "sin_verificar",
@@ -581,7 +581,7 @@
           "alimento": 359464.96,
           "estructura": 51250.0,
           "sanidad": 7758.0,
-          "mortandad": 9986.48
+          "mortandad": 9833.47
         },
         {
           "origen": "sin_verificar",
@@ -607,7 +607,7 @@
           "alimento": 729242.55,
           "estructura": 80756.0,
           "sanidad": 7758.0,
-          "mortandad": 10167.14
+          "mortandad": 10011.37
         },
         {
           "origen": "sin_verificar",
@@ -633,7 +633,7 @@
           "alimento": 1181738.04,
           "estructura": 118236.0,
           "sanidad": 7758.0,
-          "mortandad": 7966.79
+          "mortandad": 7844.73
         }
       ],
       "cabezas": 40,
@@ -650,9 +650,9 @@
         "alimento": 24525265.96,
         "estructura": 2710554.0,
         "sanidad": 310320.0,
-        "mortandad": 572521.53,
-        "total": 88014846.99,
-        "por_kg_vendido": 4632.36
+        "mortandad": 563749.5,
+        "total": 88006074.96,
+        "por_kg_vendido": 4631.9
       },
       "indicadores": {
         "kg_prom_ingreso": 283.0,
@@ -672,9 +672,9 @@
         "compra": 58480238.26,
         "comision": 1754407.15,
         "alimento": 25450133.89,
-        "mortandad": 572521.53,
-        "total": 89278174.83,
-        "por_kg_vendido": 4698.85
+        "mortandad": 563749.5,
+        "total": 89269402.79,
+        "por_kg_vendido": 4698.39
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -781,7 +781,7 @@
           "alimento": 6267250.77,
           "estructura": 814770.0,
           "sanidad": 139644.0,
-          "mortandad": 304156.19
+          "mortandad": 299495.98
         },
         {
           "origen": "sin_verificar",
@@ -807,7 +807,7 @@
           "alimento": 4407247.89,
           "estructura": 646750.0,
           "sanidad": 77580.0,
-          "mortandad": 91433.54
+          "mortandad": 90032.61
         },
         {
           "origen": "sin_verificar",
@@ -833,7 +833,7 @@
           "alimento": 3717593.63,
           "estructura": 425256.0,
           "sanidad": 46548.0,
-          "mortandad": 78386.83
+          "mortandad": 77185.81
         },
         {
           "origen": "sin_verificar",
@@ -859,7 +859,7 @@
           "alimento": 9545737.88,
           "estructura": 1019664.0,
           "sanidad": 69822.0,
-          "mortandad": 70921.42
+          "mortandad": 69834.78
         },
         {
           "origen": "sin_verificar",
@@ -885,7 +885,7 @@
           "alimento": 4670032.78,
           "estructura": 472184.0,
           "sanidad": 31032.0,
-          "mortandad": 37016.0
+          "mortandad": 36448.85
         },
         {
           "origen": "sin_verificar",
@@ -911,7 +911,7 @@
           "alimento": 859361.75,
           "estructura": 98510.0,
           "sanidad": 15516.0,
-          "mortandad": 34264.3
+          "mortandad": 33739.31
         },
         {
           "origen": "sin_verificar",
@@ -937,7 +937,7 @@
           "alimento": 1308085.9,
           "estructura": 147472.0,
           "sanidad": 15516.0,
-          "mortandad": 27010.28
+          "mortandad": 26596.43
         },
         {
           "origen": "sin_verificar",
@@ -963,7 +963,7 @@
           "alimento": 339940.71,
           "estructura": 35110.0,
           "sanidad": 7630.0,
-          "mortandad": 23866.78
+          "mortandad": 23501.1
         },
         {
           "origen": "sin_verificar",
@@ -989,7 +989,7 @@
           "alimento": 2411881.76,
           "estructura": 224692.0,
           "sanidad": 15516.0,
-          "mortandad": 25195.77
+          "mortandad": 24809.72
         },
         {
           "origen": "sin_verificar",
@@ -1015,7 +1015,7 @@
           "alimento": 595381.14,
           "estructura": 56758.0,
           "sanidad": 7758.0,
-          "mortandad": 16707.07
+          "mortandad": 16451.09
         },
         {
           "origen": "sin_verificar",
@@ -1041,7 +1041,7 @@
           "alimento": 438033.65,
           "estructura": 46975.0,
           "sanidad": 7758.0,
-          "mortandad": 14791.92
+          "mortandad": 14565.28
         },
         {
           "origen": "sin_verificar",
@@ -1067,7 +1067,7 @@
           "alimento": 686939.68,
           "estructura": 66040.0,
           "sanidad": 7758.0,
-          "mortandad": 15226.99
+          "mortandad": 14993.69
         },
         {
           "origen": "sin_verificar",
@@ -1093,7 +1093,7 @@
           "alimento": 832984.39,
           "estructura": 79976.0,
           "sanidad": 7758.0,
-          "mortandad": 16382.43
+          "mortandad": 16131.43
         },
         {
           "origen": "sin_verificar",
@@ -1119,7 +1119,7 @@
           "alimento": 660580.66,
           "estructura": 73736.0,
           "sanidad": 7758.0,
-          "mortandad": 14723.45
+          "mortandad": 14497.86
         },
         {
           "origen": "sin_verificar",
@@ -1145,7 +1145,7 @@
           "alimento": 346483.9,
           "estructura": 47260.0,
           "sanidad": 7758.0,
-          "mortandad": 14619.77
+          "mortandad": 14395.77
         },
         {
           "origen": "sin_verificar",
@@ -1171,7 +1171,7 @@
           "alimento": 399461.06,
           "estructura": 51250.0,
           "sanidad": 7758.0,
-          "mortandad": 11193.18
+          "mortandad": 11021.68
         },
         {
           "origen": "sin_verificar",
@@ -1197,7 +1197,7 @@
           "alimento": 661366.52,
           "estructura": 79716.0,
           "sanidad": 7758.0,
-          "mortandad": 11612.86
+          "mortandad": 11434.93
         },
         {
           "origen": "sin_verificar",
@@ -1223,7 +1223,7 @@
           "alimento": 626565.13,
           "estructura": 76596.0,
           "sanidad": 7758.0,
-          "mortandad": 11457.33
+          "mortandad": 11281.79
         },
         {
           "origen": "sin_verificar",
@@ -1249,7 +1249,7 @@
           "alimento": 665812.61,
           "estructura": 79976.0,
           "sanidad": 7758.0,
-          "mortandad": 11457.33
+          "mortandad": 11281.79
         },
         {
           "origen": "sin_verificar",
@@ -1275,7 +1275,7 @@
           "alimento": 1921970.6,
           "estructura": 224312.0,
           "sanidad": 15516.0,
-          "mortandad": 10887.06
+          "mortandad": 10720.25
         },
         {
           "origen": "sin_verificar",
@@ -1301,7 +1301,7 @@
           "alimento": 633770.06,
           "estructura": 80496.0,
           "sanidad": 7758.0,
-          "mortandad": 10420.47
+          "mortandad": 10260.81
         },
         {
           "origen": "sin_verificar",
@@ -1327,7 +1327,7 @@
           "alimento": 648289.69,
           "estructura": 79716.0,
           "sanidad": 7758.0,
-          "mortandad": 10368.63
+          "mortandad": 10209.76
         }
       ],
       "cabezas": 68,
@@ -1344,9 +1344,9 @@
         "alimento": 42644772.17,
         "estructura": 4927215.0,
         "sanidad": 527416.0,
-        "mortandad": 862099.62,
-        "total": 139187598.13,
-        "por_kg_vendido": 4424.27
+        "mortandad": 848890.74,
+        "total": 139174389.25,
+        "por_kg_vendido": 4423.85
       },
       "indicadores": {
         "kg_prom_ingreso": 244.5,
@@ -1366,9 +1366,9 @@
         "compra": 88059205.77,
         "comision": 2641776.17,
         "alimento": 44152390.87,
-        "mortandad": 862099.62,
-        "total": 141170103.43,
-        "por_kg_vendido": 4487.29
+        "mortandad": 848890.74,
+        "total": 141156894.55,
+        "por_kg_vendido": 4486.87
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -1523,7 +1523,7 @@
           "alimento": 975873.17,
           "estructura": 124230.0,
           "sanidad": 23274.0,
-          "mortandad": 36458.66
+          "mortandad": 35661.27
         },
         {
           "origen": "sin_verificar",
@@ -1549,7 +1549,7 @@
           "alimento": 4786196.26,
           "estructura": 624442.0,
           "sanidad": 54306.0,
-          "mortandad": 32082.39
+          "mortandad": 31380.7
         },
         {
           "origen": "sin_verificar",
@@ -1575,7 +1575,7 @@
           "alimento": 1198401.54,
           "estructura": 155865.0,
           "sanidad": 23274.0,
-          "mortandad": 34190.29
+          "mortandad": 33442.51
         },
         {
           "origen": "sin_verificar",
@@ -1601,7 +1601,7 @@
           "alimento": 495293.45,
           "estructura": 65700.0,
           "sanidad": 15260.0,
-          "mortandad": 25013.01
+          "mortandad": 24465.94
         },
         {
           "origen": "sin_verificar",
@@ -1627,7 +1627,7 @@
           "alimento": 1454644.54,
           "estructura": 164832.0,
           "sanidad": 15516.0,
-          "mortandad": 15198.5
+          "mortandad": 14866.09
         },
         {
           "origen": "sin_verificar",
@@ -1679,7 +1679,7 @@
           "alimento": 316523.3,
           "estructura": 39910.0,
           "sanidad": 7758.0,
-          "mortandad": 14256.07
+          "mortandad": 13944.27
         },
         {
           "origen": "sin_verificar",
@@ -1705,7 +1705,7 @@
           "alimento": 1063314.73,
           "estructura": 95476.0,
           "sanidad": 7758.0,
-          "mortandad": 11075.35
+          "mortandad": 10833.11
         },
         {
           "origen": "sin_verificar",
@@ -1809,7 +1809,7 @@
           "alimento": 1301902.11,
           "estructura": 165872.0,
           "sanidad": 15516.0,
-          "mortandad": 10714.19
+          "mortandad": 10479.86
         },
         {
           "origen": "sin_verificar",
@@ -1861,7 +1861,7 @@
           "alimento": 1163010.52,
           "estructura": 105166.0,
           "sanidad": 7758.0,
-          "mortandad": 10593.81
+          "mortandad": 10362.11
         },
         {
           "origen": "sin_verificar",
@@ -1887,7 +1887,7 @@
           "alimento": 516426.58,
           "estructura": 58366.0,
           "sanidad": 7758.0,
-          "mortandad": 10951.37
+          "mortandad": 10711.85
         },
         {
           "origen": "sin_verificar",
@@ -2017,7 +2017,7 @@
           "alimento": 380510.13,
           "estructura": 49960.0,
           "sanidad": 7758.0,
-          "mortandad": 8818.14
+          "mortandad": 8625.28
         },
         {
           "origen": "sin_verificar",
@@ -2069,7 +2069,7 @@
           "alimento": 398577.48,
           "estructura": 53665.0,
           "sanidad": 7758.0,
-          "mortandad": 7975.45
+          "mortandad": 7801.02
         },
         {
           "origen": "sin_verificar",
@@ -2095,7 +2095,7 @@
           "alimento": 545251.58,
           "estructura": 67648.0,
           "sanidad": 7758.0,
-          "mortandad": 5391.56
+          "mortandad": 5273.64
         },
         {
           "origen": "sin_verificar",
@@ -2121,7 +2121,7 @@
           "alimento": 703112.31,
           "estructura": 83456.0,
           "sanidad": 7758.0,
-          "mortandad": 6591.03
+          "mortandad": 6446.88
         }
       ],
       "cabezas": 37,
@@ -2138,9 +2138,9 @@
         "alimento": 21420651.65,
         "estructura": 2405451.0,
         "sanidad": 286662.0,
-        "mortandad": 399968.18,
-        "total": 63930722.84,
-        "por_kg_vendido": 3809.93
+        "mortandad": 394952.9,
+        "total": 63925707.56,
+        "por_kg_vendido": 3809.63
       },
       "indicadores": {
         "kg_prom_ingreso": 283.8,
@@ -2160,9 +2160,9 @@
         "compra": 38397142.78,
         "comision": 1151914.28,
         "alimento": 22053987.75,
-        "mortandad": 415335.53,
-        "total": 64710493.34,
-        "por_kg_vendido": 3856.4
+        "mortandad": 410667.32,
+        "total": 64705825.13,
+        "por_kg_vendido": 3856.13
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -2303,7 +2303,7 @@
           "alimento": 2805262.57,
           "estructura": 375655.0,
           "sanidad": 54306.0,
-          "mortandad": 53260.01
+          "mortandad": 52095.15
         },
         {
           "origen": "sin_verificar",
@@ -2355,7 +2355,7 @@
           "alimento": 1222014.28,
           "estructura": 155865.0,
           "sanidad": 23274.0,
-          "mortandad": 34991.94
+          "mortandad": 34226.62
         },
         {
           "origen": "sin_verificar",
@@ -2381,7 +2381,7 @@
           "alimento": 2148415.18,
           "estructura": 249588.0,
           "sanidad": 23274.0,
-          "mortandad": 20324.07
+          "mortandad": 19879.55
         },
         {
           "origen": "sin_verificar",
@@ -2407,7 +2407,7 @@
           "alimento": 624160.18,
           "estructura": 82820.0,
           "sanidad": 15516.0,
-          "mortandad": 22335.94
+          "mortandad": 21847.42
         },
         {
           "origen": "sin_verificar",
@@ -2433,7 +2433,7 @@
           "alimento": 1589933.68,
           "estructura": 164832.0,
           "sanidad": 15516.0,
-          "mortandad": 18296.1
+          "mortandad": 17895.94
         },
         {
           "origen": "sin_verificar",
@@ -2459,7 +2459,7 @@
           "alimento": 1959371.61,
           "estructura": 250368.0,
           "sanidad": 23274.0,
-          "mortandad": 15513.2
+          "mortandad": 15173.91
         },
         {
           "origen": "sin_verificar",
@@ -2485,7 +2485,7 @@
           "alimento": 1339266.42,
           "estructura": 152872.0,
           "sanidad": 15516.0,
-          "mortandad": 15217.14
+          "mortandad": 14884.33
         },
         {
           "origen": "sin_verificar",
@@ -2511,7 +2511,7 @@
           "alimento": 252485.88,
           "estructura": 32850.0,
           "sanidad": 7630.0,
-          "mortandad": 12539.42
+          "mortandad": 12265.16
         },
         {
           "origen": "sin_verificar",
@@ -2537,7 +2537,7 @@
           "alimento": 483518.73,
           "estructura": 58366.0,
           "sanidad": 7758.0,
-          "mortandad": 8198.42
+          "mortandad": 8019.11
         },
         {
           "origen": "sin_verificar",
@@ -2563,7 +2563,7 @@
           "alimento": 484371.99,
           "estructura": 59458.0,
           "sanidad": 7758.0,
-          "mortandad": 9999.83
+          "mortandad": 9781.12
         },
         {
           "origen": "sin_verificar",
@@ -2589,7 +2589,7 @@
           "alimento": 376596.28,
           "estructura": 49960.0,
           "sanidad": 7758.0,
-          "mortandad": 8407.92
+          "mortandad": 8224.03
         },
         {
           "origen": "sin_verificar",
@@ -2615,7 +2615,7 @@
           "alimento": 757696.13,
           "estructura": 80076.0,
           "sanidad": 7758.0,
-          "mortandad": 8289.5
+          "mortandad": 8108.19
         },
         {
           "origen": "sin_verificar",
@@ -2641,7 +2641,7 @@
           "alimento": 605802.73,
           "estructura": 71470.0,
           "sanidad": 7758.0,
-          "mortandad": 9074.65
+          "mortandad": 8876.17
         },
         {
           "origen": "sin_verificar",
@@ -2667,7 +2667,7 @@
           "alimento": 731615.37,
           "estructura": 83716.0,
           "sanidad": 7758.0,
-          "mortandad": 7253.31
+          "mortandad": 7094.67
         },
         {
           "origen": "sin_verificar",
@@ -2693,7 +2693,7 @@
           "alimento": 801606.24,
           "estructura": 88826.0,
           "sanidad": 7758.0,
-          "mortandad": 6986.86
+          "mortandad": 6834.05
         },
         {
           "origen": "sin_verificar",
@@ -2719,7 +2719,7 @@
           "alimento": 538760.44,
           "estructura": 69013.0,
           "sanidad": 7758.0,
-          "mortandad": 4270.43
+          "mortandad": 4177.03
         },
         {
           "origen": "sin_verificar",
@@ -2745,7 +2745,7 @@
           "alimento": 681834.48,
           "estructura": 82936.0,
           "sanidad": 7758.0,
-          "mortandad": 5713.83
+          "mortandad": 5588.86
         },
         {
           "origen": "sin_verificar",
@@ -2771,7 +2771,7 @@
           "alimento": 736665.31,
           "estructura": 91486.0,
           "sanidad": 7758.0,
-          "mortandad": 5269.75
+          "mortandad": 5154.49
         }
       ],
       "cabezas": 40,
@@ -2788,9 +2788,9 @@
         "alimento": 23904213.98,
         "estructura": 2640942.0,
         "sanidad": 310192.0,
-        "mortandad": 417259.22,
-        "total": 70025480.96,
-        "por_kg_vendido": 3805.73
+        "mortandad": 411442.75,
+        "total": 70019664.48,
+        "por_kg_vendido": 3805.42
       },
       "indicadores": {
         "kg_prom_ingreso": 289.5,
@@ -2810,9 +2810,9 @@
         "compra": 41654317.76,
         "comision": 1249629.53,
         "alimento": 24558733.73,
-        "mortandad": 429828.65,
-        "total": 70843643.68,
-        "por_kg_vendido": 3850.2
+        "mortandad": 424296.05,
+        "total": 70838111.08,
+        "por_kg_vendido": 3849.9
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -2969,7 +2969,7 @@
           "alimento": 5189486.75,
           "estructura": 749660.0,
           "sanidad": 77580.0,
-          "mortandad": 30260.35
+          "mortandad": 29598.52
         },
         {
           "origen": "sin_verificar",
@@ -3038,9 +3038,9 @@
         "alimento": 7236727.37,
         "estructura": 953960.0,
         "sanidad": 260700.0,
-        "mortandad": 687082.3,
-        "total": 54668123.73,
-        "por_kg_vendido": 3615.61
+        "mortandad": 686420.47,
+        "total": 54667461.9,
+        "por_kg_vendido": 3615.57
       },
       "indicadores": {
         "kg_prom_ingreso": 436.9,
@@ -3060,9 +3060,9 @@
         "compra": 44221399.98,
         "comision": 1326642.0,
         "alimento": 7436584.94,
-        "mortandad": 687082.3,
-        "total": 54886369.23,
-        "por_kg_vendido": 3630.05
+        "mortandad": 686420.47,
+        "total": 54885707.4,
+        "por_kg_vendido": 3630.0
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -3121,7 +3121,7 @@
           "alimento": 3765642.9,
           "estructura": 471645.0,
           "sanidad": 69822.0,
-          "mortandad": 108302.66
+          "mortandad": 105933.95
         },
         {
           "origen": "sin_verificar",
@@ -3147,7 +3147,7 @@
           "alimento": 3435164.78,
           "estructura": 432920.0,
           "sanidad": 62064.0,
-          "mortandad": 75318.14
+          "mortandad": 73670.84
         },
         {
           "origen": "sin_verificar",
@@ -3199,7 +3199,7 @@
           "alimento": 804072.97,
           "estructura": 100820.0,
           "sanidad": 15516.0,
-          "mortandad": 20017.89
+          "mortandad": 19580.07
         },
         {
           "origen": "sin_verificar",
@@ -3251,7 +3251,7 @@
           "alimento": 506909.17,
           "estructura": 58816.0,
           "sanidad": 7758.0,
-          "mortandad": 10698.89
+          "mortandad": 10464.9
         },
         {
           "origen": "sin_verificar",
@@ -3277,7 +3277,7 @@
           "alimento": 424802.3,
           "estructura": 50125.0,
           "sanidad": 7758.0,
-          "mortandad": 11778.45
+          "mortandad": 11520.84
         },
         {
           "origen": "sin_verificar",
@@ -3303,7 +3303,7 @@
           "alimento": 1329243.53,
           "estructura": 167812.0,
           "sanidad": 15516.0,
-          "mortandad": 10979.71
+          "mortandad": 10739.57
         },
         {
           "origen": "sin_verificar",
@@ -3329,7 +3329,7 @@
           "alimento": 314397.92,
           "estructura": 41860.0,
           "sanidad": 7758.0,
-          "mortandad": 10216.44
+          "mortandad": 9992.99
         },
         {
           "origen": "sin_verificar",
@@ -3355,7 +3355,7 @@
           "alimento": 508995.44,
           "estructura": 59908.0,
           "sanidad": 7758.0,
-          "mortandad": 10033.84
+          "mortandad": 9814.39
         },
         {
           "origen": "sin_verificar",
@@ -3381,7 +3381,7 @@
           "alimento": 653797.45,
           "estructura": 76886.0,
           "sanidad": 7758.0,
-          "mortandad": 8502.58
+          "mortandad": 8316.62
         },
         {
           "origen": "sin_verificar",
@@ -3407,7 +3407,7 @@
           "alimento": 713814.64,
           "estructura": 82866.0,
           "sanidad": 7758.0,
-          "mortandad": 7397.91
+          "mortandad": 7236.11
         },
         {
           "origen": "sin_verificar",
@@ -3433,7 +3433,7 @@
           "alimento": 718674.4,
           "estructura": 84166.0,
           "sanidad": 7758.0,
-          "mortandad": 6828.84
+          "mortandad": 6679.49
         },
         {
           "origen": "sin_verificar",
@@ -3459,7 +3459,7 @@
           "alimento": 766680.48,
           "estructura": 89276.0,
           "sanidad": 7758.0,
-          "mortandad": 6694.95
+          "mortandad": 6548.52
         },
         {
           "origen": "sin_verificar",
@@ -3485,7 +3485,7 @@
           "alimento": 741099.13,
           "estructura": 87806.0,
           "sanidad": 7758.0,
-          "mortandad": 6527.57
+          "mortandad": 6384.81
         },
         {
           "origen": "sin_verificar",
@@ -3511,7 +3511,7 @@
           "alimento": 658486.38,
           "estructura": 82866.0,
           "sanidad": 7758.0,
-          "mortandad": 6192.82
+          "mortandad": 6057.38
         },
         {
           "origen": "sin_verificar",
@@ -3537,7 +3537,7 @@
           "alimento": 753883.13,
           "estructura": 95926.0,
           "sanidad": 7758.0,
-          "mortandad": 4117.39
+          "mortandad": 4027.34
         }
       ],
       "cabezas": 36,
@@ -3554,9 +3554,9 @@
         "alimento": 17992734.23,
         "estructura": 2142578.0,
         "sanidad": 279160.0,
-        "mortandad": 400418.46,
-        "total": 64822647.27,
-        "por_kg_vendido": 3760.01
+        "mortandad": 393778.19,
+        "total": 64816007.0,
+        "por_kg_vendido": 3759.63
       },
       "indicadores": {
         "kg_prom_ingreso": 292.8,
@@ -3576,9 +3576,9 @@
         "compra": 42866360.6,
         "comision": 1285990.82,
         "alimento": 18639570.76,
-        "mortandad": 417819.06,
-        "total": 65631479.24,
-        "por_kg_vendido": 3806.93
+        "mortandad": 411571.77,
+        "total": 65625231.95,
+        "por_kg_vendido": 3806.57
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -3701,7 +3701,7 @@
           "alimento": 10096316.23,
           "estructura": 894744.0,
           "sanidad": 69822.0,
-          "mortandad": 106840.35
+          "mortandad": 105203.37
         },
         {
           "origen": "sin_verificar",
@@ -3727,7 +3727,7 @@
           "alimento": 443313.41,
           "estructura": 70200.0,
           "sanidad": 45780.0,
-          "mortandad": 73134.77
+          "mortandad": 72014.21
         },
         {
           "origen": "sin_verificar",
@@ -3753,7 +3753,7 @@
           "alimento": 5342709.62,
           "estructura": 508480.0,
           "sanidad": 38790.0,
-          "mortandad": 51353.32
+          "mortandad": 50566.5
         },
         {
           "origen": "sin_verificar",
@@ -3779,7 +3779,7 @@
           "alimento": 2279295.82,
           "estructura": 179452.0,
           "sanidad": 15516.0,
-          "mortandad": 43880.86
+          "mortandad": 43208.53
         },
         {
           "origen": "sin_verificar",
@@ -3805,7 +3805,7 @@
           "alimento": 4176004.83,
           "estructura": 334158.0,
           "sanidad": 23274.0,
-          "mortandad": 42502.96
+          "mortandad": 41851.74
         },
         {
           "origen": "sin_verificar",
@@ -3831,7 +3831,7 @@
           "alimento": 819728.38,
           "estructura": 74476.0,
           "sanidad": 7758.0,
-          "mortandad": 18972.64
+          "mortandad": 18681.95
         },
         {
           "origen": "sin_verificar",
@@ -3857,7 +3857,7 @@
           "alimento": 924806.73,
           "estructura": 89726.0,
           "sanidad": 7758.0,
-          "mortandad": 12295.12
+          "mortandad": 12106.74
         },
         {
           "origen": "sin_verificar",
@@ -3883,7 +3883,7 @@
           "alimento": 1341848.64,
           "estructura": 115186.0,
           "sanidad": 7758.0,
-          "mortandad": 10387.26
+          "mortandad": 10228.11
         }
       ],
       "cabezas": 28,
@@ -3900,9 +3900,9 @@
         "alimento": 25424023.66,
         "estructura": 2266422.0,
         "sanidad": 216456.0,
-        "mortandad": 359367.28,
-        "total": 66000380.32,
-        "por_kg_vendido": 3961.62
+        "mortandad": 353861.14,
+        "total": 65994874.18,
+        "por_kg_vendido": 3961.29
       },
       "indicadores": {
         "kg_prom_ingreso": 242.2,
@@ -3922,9 +3922,9 @@
         "compra": 36707587.3,
         "comision": 1101227.62,
         "alimento": 26032511.52,
-        "mortandad": 359367.28,
-        "total": 66683571.72,
-        "por_kg_vendido": 4002.63
+        "mortandad": 353861.14,
+        "total": 66678065.59,
+        "por_kg_vendido": 4002.3
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -4023,7 +4023,7 @@
           "alimento": 5618754.91,
           "estructura": 641095.0,
           "sanidad": 100854.0,
-          "mortandad": 257316.58
+          "mortandad": 253374.03
         },
         {
           "origen": "sin_verificar",
@@ -4049,7 +4049,7 @@
           "alimento": 2162934.4,
           "estructura": 241570.0,
           "sanidad": 53410.0,
-          "mortandad": 128080.13
+          "mortandad": 126117.72
         },
         {
           "origen": "sin_verificar",
@@ -4075,7 +4075,7 @@
           "alimento": 2397686.9,
           "estructura": 238864.0,
           "sanidad": 31032.0,
-          "mortandad": 65401.2
+          "mortandad": 64399.14
         },
         {
           "origen": "sin_verificar",
@@ -4101,7 +4101,7 @@
           "alimento": 3421562.27,
           "estructura": 412350.0,
           "sanidad": 46548.0,
-          "mortandad": 77928.83
+          "mortandad": 76734.82
         },
         {
           "origen": "sin_verificar",
@@ -4127,7 +4127,7 @@
           "alimento": 139284.92,
           "estructura": 22500.0,
           "sanidad": 37500.0,
-          "mortandad": 57138.2
+          "mortandad": 56262.74
         },
         {
           "origen": "sin_verificar",
@@ -4153,7 +4153,7 @@
           "alimento": 1419217.11,
           "estructura": 121616.0,
           "sanidad": 15516.0,
-          "mortandad": 42555.76
+          "mortandad": 41903.73
         },
         {
           "origen": "sin_verificar",
@@ -4179,7 +4179,7 @@
           "alimento": 847172.37,
           "estructura": 85520.0,
           "sanidad": 15516.0,
-          "mortandad": 41613.82
+          "mortandad": 40976.23
         },
         {
           "origen": "sin_verificar",
@@ -4205,7 +4205,7 @@
           "alimento": 1121063.44,
           "estructura": 110600.0,
           "sanidad": 15516.0,
-          "mortandad": 36547.01
+          "mortandad": 35987.05
         },
         {
           "origen": "sin_verificar",
@@ -4231,7 +4231,7 @@
           "alimento": 1029032.83,
           "estructura": 110030.0,
           "sanidad": 15516.0,
-          "mortandad": 30464.79
+          "mortandad": 29998.01
         },
         {
           "origen": "sin_verificar",
@@ -4257,7 +4257,7 @@
           "alimento": 2245210.14,
           "estructura": 199732.0,
           "sanidad": 15516.0,
-          "mortandad": 28234.57
+          "mortandad": 27801.96
         },
         {
           "origen": "sin_verificar",
@@ -4283,7 +4283,7 @@
           "alimento": 681155.43,
           "estructura": 61354.0,
           "sanidad": 7758.0,
-          "mortandad": 19350.15
+          "mortandad": 19053.67
         },
         {
           "origen": "sin_verificar",
@@ -4309,7 +4309,7 @@
           "alimento": 306750.92,
           "estructura": 34200.0,
           "sanidad": 7630.0,
-          "mortandad": 4492.14
+          "mortandad": 4423.31
         },
         {
           "origen": "sin_verificar",
@@ -4335,7 +4335,7 @@
           "alimento": 216813.2,
           "estructura": 25830.0,
           "sanidad": 7630.0,
-          "mortandad": 13580.35
+          "mortandad": 13372.28
         },
         {
           "origen": "sin_verificar",
@@ -4361,7 +4361,7 @@
           "alimento": 246145.97,
           "estructura": 28310.0,
           "sanidad": 7630.0,
-          "mortandad": 18477.66
+          "mortandad": 18194.55
         },
         {
           "origen": "sin_verificar",
@@ -4387,7 +4387,7 @@
           "alimento": 961250.56,
           "estructura": 77786.0,
           "sanidad": 7758.0,
-          "mortandad": 20874.85
+          "mortandad": 20555.01
         },
         {
           "origen": "sin_verificar",
@@ -4413,7 +4413,7 @@
           "alimento": 185903.09,
           "estructura": 23660.0,
           "sanidad": 7630.0,
-          "mortandad": 15899.79
+          "mortandad": 15656.18
         },
         {
           "origen": "sin_verificar",
@@ -4439,7 +4439,7 @@
           "alimento": 742769.36,
           "estructura": 70090.0,
           "sanidad": 7758.0,
-          "mortandad": 16699.22
+          "mortandad": 16443.36
         },
         {
           "origen": "sin_verificar",
@@ -4465,7 +4465,7 @@
           "alimento": 1078789.3,
           "estructura": 90556.0,
           "sanidad": 7758.0,
-          "mortandad": 17663.33
+          "mortandad": 17392.7
         },
         {
           "origen": "sin_verificar",
@@ -4491,7 +4491,7 @@
           "alimento": 720954.03,
           "estructura": 71182.0,
           "sanidad": 7758.0,
-          "mortandad": 14012.31
+          "mortandad": 13797.61
         },
         {
           "origen": "sin_verificar",
@@ -4517,7 +4517,7 @@
           "alimento": 433039.2,
           "estructura": 53305.0,
           "sanidad": 7758.0,
-          "mortandad": 16834.2
+          "mortandad": 16576.27
         },
         {
           "origen": "sin_verificar",
@@ -4543,7 +4543,7 @@
           "alimento": 402480.73,
           "estructura": 49885.0,
           "sanidad": 7758.0,
-          "mortandad": 11953.67
+          "mortandad": 11770.52
         },
         {
           "origen": "sin_verificar",
@@ -4569,7 +4569,7 @@
           "alimento": 1096097.33,
           "estructura": 99486.0,
           "sanidad": 7758.0,
-          "mortandad": 13693.54
+          "mortandad": 13483.73
         },
         {
           "origen": "sin_verificar",
@@ -4595,7 +4595,7 @@
           "alimento": 698567.1,
           "estructura": 74926.0,
           "sanidad": 7758.0,
-          "mortandad": 12489.22
+          "mortandad": 12297.87
         },
         {
           "origen": "sin_verificar",
@@ -4621,7 +4621,7 @@
           "alimento": 833158.03,
           "estructura": 84806.0,
           "sanidad": 7758.0,
-          "mortandad": 10482.03
+          "mortandad": 10321.42
         },
         {
           "origen": "sin_verificar",
@@ -4647,7 +4647,7 @@
           "alimento": 70108.45,
           "estructura": 12150.0,
           "sanidad": 7630.0,
-          "mortandad": 12189.13
+          "mortandad": 12002.37
         }
       ],
       "cabezas": 60,
@@ -4664,9 +4664,9 @@
         "alimento": 29075901.98,
         "estructura": 3041403.0,
         "sanidad": 462654.0,
-        "mortandad": 983972.47,
-        "total": 136482252.77,
-        "por_kg_vendido": 4343.8
+        "mortandad": 968896.28,
+        "total": 136467176.59,
+        "por_kg_vendido": 4343.32
       },
       "indicadores": {
         "kg_prom_ingreso": 367.7,
@@ -4686,9 +4686,9 @@
         "compra": 100507912.86,
         "comision": 3015237.39,
         "alimento": 30058992.57,
-        "mortandad": 983972.47,
-        "total": 138070172.29,
-        "por_kg_vendido": 4394.34
+        "mortandad": 968896.28,
+        "total": 138055096.1,
+        "por_kg_vendido": 4393.86
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -4795,7 +4795,7 @@
           "alimento": 2382567.12,
           "estructura": 238864.0,
           "sanidad": 31032.0,
-          "mortandad": 65108.11
+          "mortandad": 64110.54
         },
         {
           "origen": "sin_verificar",
@@ -4821,7 +4821,7 @@
           "alimento": 1529418.8,
           "estructura": 197260.0,
           "sanidad": 31032.0,
-          "mortandad": 69355.5
+          "mortandad": 68292.85
         },
         {
           "origen": "sin_verificar",
@@ -4847,7 +4847,7 @@
           "alimento": 2498239.26,
           "estructura": 233358.0,
           "sanidad": 23274.0,
-          "mortandad": 51018.39
+          "mortandad": 50236.7
         },
         {
           "origen": "sin_verificar",
@@ -4873,7 +4873,7 @@
           "alimento": 289124.89,
           "estructura": 43600.0,
           "sanidad": 15260.0,
-          "mortandad": 29927.98
+          "mortandad": 29469.43
         },
         {
           "origen": "sin_verificar",
@@ -4899,7 +4899,7 @@
           "alimento": 306177.38,
           "estructura": 34510.0,
           "sanidad": 7630.0,
-          "mortandad": 18032.5
+          "mortandad": 17756.21
         },
         {
           "origen": "sin_verificar",
@@ -4925,7 +4925,7 @@
           "alimento": 399761.81,
           "estructura": 44860.0,
           "sanidad": 7758.0,
-          "mortandad": 16144.14
+          "mortandad": 15896.78
         },
         {
           "origen": "sin_verificar",
@@ -4951,7 +4951,7 @@
           "alimento": 400916.95,
           "estructura": 53305.0,
           "sanidad": 7758.0,
-          "mortandad": 14897.52
+          "mortandad": 14669.27
         },
         {
           "origen": "sin_verificar",
@@ -4977,7 +4977,7 @@
           "alimento": 391408.32,
           "estructura": 55015.0,
           "sanidad": 7758.0,
-          "mortandad": 12224.57
+          "mortandad": 12037.26
         },
         {
           "origen": "sin_verificar",
@@ -5003,7 +5003,7 @@
           "alimento": 635001.11,
           "estructura": 74926.0,
           "sanidad": 7758.0,
-          "mortandad": 11999.02
+          "mortandad": 11815.17
         },
         {
           "origen": "sin_verificar",
@@ -5029,7 +5029,7 @@
           "alimento": 800216.7,
           "estructura": 83766.0,
           "sanidad": 7758.0,
-          "mortandad": 11908.8
+          "mortandad": 11726.34
         },
         {
           "origen": "sin_verificar",
@@ -5055,7 +5055,7 @@
           "alimento": 1026821.43,
           "estructura": 102146.0,
           "sanidad": 7758.0,
-          "mortandad": 8345.18
+          "mortandad": 8217.32
         },
         {
           "origen": "sin_verificar",
@@ -5081,7 +5081,7 @@
           "alimento": 460299.08,
           "estructura": 68725.0,
           "sanidad": 7758.0,
-          "mortandad": 9215.31
+          "mortandad": 9074.11
         }
       ],
       "cabezas": 21,
@@ -5098,9 +5098,9 @@
         "alimento": 11119952.85,
         "estructura": 1230335.0,
         "sanidad": 162534.0,
-        "mortandad": 318177.01,
-        "total": 46095243.05,
-        "por_kg_vendido": 4498.85
+        "mortandad": 313301.98,
+        "total": 46090368.02,
+        "por_kg_vendido": 4498.37
       },
       "indicadores": {
         "kg_prom_ingreso": 335.9,
@@ -5120,9 +5120,9 @@
         "compra": 32500205.25,
         "comision": 975006.16,
         "alimento": 11461728.55,
-        "mortandad": 318177.01,
-        "total": 46647985.97,
-        "por_kg_vendido": 4552.8
+        "mortandad": 313301.98,
+        "total": 46643110.94,
+        "por_kg_vendido": 4552.32
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -5365,7 +5365,7 @@
           "alimento": 7323671.02,
           "estructura": 541056.0,
           "sanidad": 46548.0,
-          "mortandad": 94065.6
+          "mortandad": 92624.34
         },
         {
           "origen": "sin_verificar",
@@ -5391,7 +5391,7 @@
           "alimento": 2043891.26,
           "estructura": 182424.0,
           "sanidad": 23274.0,
-          "mortandad": 58947.6
+          "mortandad": 58044.42
         },
         {
           "origen": "sin_verificar",
@@ -5417,7 +5417,7 @@
           "alimento": 1439776.62,
           "estructura": 122708.0,
           "sanidad": 15516.0,
-          "mortandad": 37486.46
+          "mortandad": 36912.1
         },
         {
           "origen": "sin_verificar",
@@ -5443,7 +5443,7 @@
           "alimento": 125806.3,
           "estructura": 12150.0,
           "sanidad": 7630.0,
-          "mortandad": 29404.61
+          "mortandad": 28954.08
         },
         {
           "origen": "sin_verificar",
@@ -5469,7 +5469,7 @@
           "alimento": 3286083.55,
           "estructura": 299598.0,
           "sanidad": 23274.0,
-          "mortandad": 24462.99
+          "mortandad": 24088.18
         },
         {
           "origen": "sin_verificar",
@@ -5495,7 +5495,7 @@
           "alimento": 502550.99,
           "estructura": 44860.0,
           "sanidad": 7758.0,
-          "mortandad": 24436.54
+          "mortandad": 24062.13
         },
         {
           "origen": "sin_verificar",
@@ -5521,7 +5521,7 @@
           "alimento": 588151.99,
           "estructura": 51025.0,
           "sanidad": 7758.0,
-          "mortandad": 21047.2
+          "mortandad": 20724.72
         },
         {
           "origen": "sin_verificar",
@@ -5547,7 +5547,7 @@
           "alimento": 720625.0,
           "estructura": 61627.0,
           "sanidad": 7758.0,
-          "mortandad": 15624.84
+          "mortandad": 15385.44
         },
         {
           "origen": "sin_verificar",
@@ -5573,7 +5573,7 @@
           "alimento": 2695226.49,
           "estructura": 228992.0,
           "sanidad": 15516.0,
-          "mortandad": 18523.57
+          "mortandad": 18239.76
         },
         {
           "origen": "sin_verificar",
@@ -5599,7 +5599,7 @@
           "alimento": 2192051.87,
           "estructura": 207712.0,
           "sanidad": 15516.0,
-          "mortandad": 15739.47
+          "mortandad": 15498.31
         },
         {
           "origen": "sin_verificar",
@@ -5625,7 +5625,7 @@
           "alimento": 1231089.36,
           "estructura": 92076.0,
           "sanidad": 7758.0,
-          "mortandad": 15590.98
+          "mortandad": 15352.1
         },
         {
           "origen": "sin_verificar",
@@ -5651,7 +5651,7 @@
           "alimento": 862556.68,
           "estructura": 70363.0,
           "sanidad": 7758.0,
-          "mortandad": 13874.63
+          "mortandad": 13662.05
         },
         {
           "origen": "sin_verificar",
@@ -5677,7 +5677,7 @@
           "alimento": 1273648.46,
           "estructura": 98916.0,
           "sanidad": 7758.0,
-          "mortandad": 13066.73
+          "mortandad": 12866.52
         },
         {
           "origen": "sin_verificar",
@@ -5703,7 +5703,7 @@
           "alimento": 1407743.79,
           "estructura": 107656.0,
           "sanidad": 7758.0,
-          "mortandad": 11804.6
+          "mortandad": 11623.73
         },
         {
           "origen": "sin_verificar",
@@ -5729,7 +5729,7 @@
           "alimento": 1379907.39,
           "estructura": 106516.0,
           "sanidad": 7758.0,
-          "mortandad": 11656.12
+          "mortandad": 11477.52
         },
         {
           "origen": "sin_verificar",
@@ -5755,7 +5755,7 @@
           "alimento": 1112811.34,
           "estructura": 99486.0,
           "sanidad": 7758.0,
-          "mortandad": 11136.42
+          "mortandad": 10965.79
         },
         {
           "origen": "sin_verificar",
@@ -5781,7 +5781,7 @@
           "alimento": 984971.71,
           "estructura": 90556.0,
           "sanidad": 7758.0,
-          "mortandad": 10393.99
+          "mortandad": 10234.73
         },
         {
           "origen": "sin_verificar",
@@ -5807,7 +5807,7 @@
           "alimento": 935877.11,
           "estructura": 85066.0,
           "sanidad": 7758.0,
-          "mortandad": 10134.14
+          "mortandad": 9978.87
         },
         {
           "origen": "sin_verificar",
@@ -5833,7 +5833,7 @@
           "alimento": 1332932.99,
           "estructura": 112596.0,
           "sanidad": 7758.0,
-          "mortandad": 8203.83
+          "mortandad": 8078.13
         },
         {
           "origen": "sin_verificar",
@@ -5859,7 +5859,7 @@
           "alimento": 999904.95,
           "estructura": 102146.0,
           "sanidad": 7758.0,
-          "mortandad": 6180.71
+          "mortandad": 6086.01
         }
       ],
       "cabezas": 32,
@@ -5876,9 +5876,9 @@
         "alimento": 32439278.85,
         "estructura": 2717529.0,
         "sanidad": 248128.0,
-        "mortandad": 451781.02,
-        "total": 83374153.13,
-        "por_kg_vendido": 4458.51
+        "mortandad": 444858.94,
+        "total": 83367231.05,
+        "por_kg_vendido": 4458.14
       },
       "indicadores": {
         "kg_prom_ingreso": 380.3,
@@ -5898,9 +5898,9 @@
         "compra": 46147192.72,
         "comision": 1384415.78,
         "alimento": 33241886.52,
-        "mortandad": 451781.02,
-        "total": 84190933.04,
-        "por_kg_vendido": 4502.18
+        "mortandad": 444858.94,
+        "total": 84184010.96,
+        "por_kg_vendido": 4501.81
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -6333,7 +6333,7 @@
           "alimento": 164373.73,
           "estructura": 25520.0,
           "sanidad": 7630.0,
-          "mortandad": 11558.44
+          "mortandad": 11305.64
         },
         {
           "origen": "sin_verificar",
@@ -6385,7 +6385,7 @@
           "alimento": 981120.01,
           "estructura": 95686.0,
           "sanidad": 7758.0,
-          "mortandad": 7974.62
+          "mortandad": 7800.21
         }
       ],
       "cabezas": 21,
@@ -6402,9 +6402,9 @@
         "alimento": 12391819.13,
         "estructura": 988581.0,
         "sanidad": 161894.0,
-        "mortandad": 524051.35,
-        "total": 48400122.06,
-        "por_kg_vendido": 4639.58
+        "mortandad": 523624.14,
+        "total": 48399694.85,
+        "por_kg_vendido": 4639.54
       },
       "indicadores": {
         "kg_prom_ingreso": 485.9,
@@ -6424,9 +6424,9 @@
         "compra": 33516501.58,
         "comision": 1005495.05,
         "alimento": 12831567.88,
-        "mortandad": 526029.77,
-        "total": 49030069.27,
-        "por_kg_vendido": 4699.97
+        "mortandad": 525647.24,
+        "total": 49029686.74,
+        "por_kg_vendido": 4699.93
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -6584,9 +6584,9 @@
         "compra": 20407667.7,
         "comision": 612230.03,
         "alimento": 3446766.55,
-        "mortandad": 199791.07,
-        "total": 25255248.34,
-        "por_kg_vendido": 4678.63
+        "mortandad": 196729.92,
+        "total": 25252187.19,
+        "por_kg_vendido": 4678.06
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -6653,7 +6653,7 @@
           "alimento": 8721817.41,
           "estructura": 717130.0,
           "sanidad": 77580.0,
-          "mortandad": 131536.93
+          "mortandad": 129521.56
         },
         {
           "origen": "sin_verificar",
@@ -6835,7 +6835,7 @@
           "alimento": 1261972.39,
           "estructura": 143426.0,
           "sanidad": 15516.0,
-          "mortandad": 10918.22
+          "mortandad": 10679.42
         },
         {
           "origen": "sin_verificar",
@@ -6861,7 +6861,7 @@
           "alimento": 1620270.56,
           "estructura": 172312.0,
           "sanidad": 15516.0,
-          "mortandad": 12541.12
+          "mortandad": 12266.83
         },
         {
           "origen": "sin_verificar",
@@ -6913,7 +6913,7 @@
           "alimento": 1959045.26,
           "estructura": 196352.0,
           "sanidad": 15516.0,
-          "mortandad": 13037.57
+          "mortandad": 12837.81
         },
         {
           "origen": "sin_verificar",
@@ -6991,7 +6991,7 @@
           "alimento": 395969.06,
           "estructura": 44110.0,
           "sanidad": 7758.0,
-          "mortandad": 12920.79
+          "mortandad": 12638.2
         },
         {
           "origen": "sin_verificar",
@@ -7069,7 +7069,7 @@
           "alimento": 1139348.17,
           "estructura": 97036.0,
           "sanidad": 7758.0,
-          "mortandad": 9084.27
+          "mortandad": 8885.59
         },
         {
           "origen": "sin_verificar",
@@ -7173,7 +7173,7 @@
           "alimento": 771004.33,
           "estructura": 79136.0,
           "sanidad": 7758.0,
-          "mortandad": 6082.98
+          "mortandad": 5949.94
         }
       ],
       "cabezas": 46,
@@ -7190,9 +7190,9 @@
         "alimento": 32948151.25,
         "estructura": 2810988.0,
         "sanidad": 356356.0,
-        "mortandad": 759257.35,
-        "total": 94009973.62,
-        "por_kg_vendido": 3536.87
+        "mortandad": 755914.81,
+        "total": 94006631.08,
+        "por_kg_vendido": 3536.74
       },
       "indicadores": {
         "kg_prom_ingreso": 372.5,
@@ -7212,9 +7212,9 @@
         "compra": 55792369.09,
         "comision": 1673771.07,
         "alimento": 33960812.52,
-        "mortandad": 764822.5,
-        "total": 95359119.19,
-        "por_kg_vendido": 3587.63
+        "mortandad": 761610.06,
+        "total": 95355906.74,
+        "por_kg_vendido": 3587.5
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -7323,7 +7323,7 @@
           "alimento": 1950960.05,
           "estructura": 222220.0,
           "sanidad": 31032.0,
-          "mortandad": 53510.01
+          "mortandad": 52339.68
         },
         {
           "origen": "sin_verificar",
@@ -7401,7 +7401,7 @@
           "alimento": 766530.78,
           "estructura": 90020.0,
           "sanidad": 15516.0,
-          "mortandad": 27477.54
+          "mortandad": 26876.58
         },
         {
           "origen": "sin_verificar",
@@ -7427,7 +7427,7 @@
           "alimento": 954639.02,
           "estructura": 106550.0,
           "sanidad": 15516.0,
-          "mortandad": 25325.44
+          "mortandad": 24771.54
         },
         {
           "origen": "sin_verificar",
@@ -7453,7 +7453,7 @@
           "alimento": 2990831.74,
           "estructura": 306348.0,
           "sanidad": 23274.0,
-          "mortandad": 21070.2
+          "mortandad": 20747.37
         },
         {
           "origen": "sin_verificar",
@@ -7505,7 +7505,7 @@
           "alimento": 904860.39,
           "estructura": 114530.0,
           "sanidad": 15516.0,
-          "mortandad": 15981.86
+          "mortandad": 15632.32
         },
         {
           "origen": "sin_verificar",
@@ -7635,7 +7635,7 @@
           "alimento": 1934109.87,
           "estructura": 198152.0,
           "sanidad": 15516.0,
-          "mortandad": 14035.36
+          "mortandad": 13820.32
         },
         {
           "origen": "sin_verificar",
@@ -7713,7 +7713,7 @@
           "alimento": 152453.06,
           "estructura": 24050.0,
           "sanidad": 7630.0,
-          "mortandad": 14297.28
+          "mortandad": 14078.22
         },
         {
           "origen": "sin_verificar",
@@ -7817,7 +7817,7 @@
           "alimento": 69838.46,
           "estructura": 14400.0,
           "sanidad": 7630.0,
-          "mortandad": 16799.8
+          "mortandad": 16542.4
         },
         {
           "origen": "sin_verificar",
@@ -7869,7 +7869,7 @@
           "alimento": 148025.17,
           "estructura": 27770.0,
           "sanidad": 7630.0,
-          "mortandad": 9982.29
+          "mortandad": 9763.96
         },
         {
           "origen": "sin_verificar",
@@ -7895,7 +7895,7 @@
           "alimento": 751779.17,
           "estructura": 72613.0,
           "sanidad": 7758.0,
-          "mortandad": 6559.74
+          "mortandad": 6416.27
         },
         {
           "origen": "sin_verificar",
@@ -7921,7 +7921,7 @@
           "alimento": 1757895.68,
           "estructura": 147526.0,
           "sanidad": 7758.0,
-          "mortandad": 10020.36
+          "mortandad": 9866.83
         },
         {
           "origen": "sin_verificar",
@@ -7947,7 +7947,7 @@
           "alimento": 1182818.14,
           "estructura": 104396.0,
           "sanidad": 7758.0,
-          "mortandad": 9059.5
+          "mortandad": 8920.69
         },
         {
           "origen": "sin_verificar",
@@ -7973,7 +7973,7 @@
           "alimento": 883559.42,
           "estructura": 87316.0,
           "sanidad": 7758.0,
-          "mortandad": 8373.18
+          "mortandad": 8244.88
         },
         {
           "origen": "sin_verificar",
@@ -7999,7 +7999,7 @@
           "alimento": 670053.08,
           "estructura": 87056.0,
           "sanidad": 7758.0,
-          "mortandad": 7069.16
+          "mortandad": 6960.84
         },
         {
           "origen": "sin_verificar",
@@ -8025,7 +8025,7 @@
           "alimento": 749295.34,
           "estructura": 87056.0,
           "sanidad": 7758.0,
-          "mortandad": 5798.47
+          "mortandad": 5671.65
         },
         {
           "origen": "sin_verificar",
@@ -8051,7 +8051,7 @@
           "alimento": 1047486.29,
           "estructura": 106106.0,
           "sanidad": 7758.0,
-          "mortandad": 6108.3
+          "mortandad": 6014.71
         },
         {
           "origen": "sin_verificar",
@@ -8077,7 +8077,7 @@
           "alimento": 369718.3,
           "estructura": 70975.0,
           "sanidad": 7758.0,
-          "mortandad": 8689.51
+          "mortandad": 8556.37
         }
       ],
       "cabezas": 50,
@@ -8094,9 +8094,9 @@
         "alimento": 31449258.78,
         "estructura": 3031123.0,
         "sanidad": 386876.0,
-        "mortandad": 753954.05,
-        "total": 97027444.64,
-        "por_kg_vendido": 3731.82
+        "mortandad": 749020.69,
+        "total": 97022511.28,
+        "por_kg_vendido": 3731.63
       },
       "indicadores": {
         "kg_prom_ingreso": 341.5,
@@ -8116,9 +8116,9 @@
         "compra": 59855465.3,
         "comision": 1795663.96,
         "alimento": 32533756.27,
-        "mortandad": 782546.97,
-        "total": 98385431.5,
-        "por_kg_vendido": 3784.05
+        "mortandad": 778264.87,
+        "total": 98381149.39,
+        "por_kg_vendido": 3783.89
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -8241,7 +8241,7 @@
           "alimento": 5195535.92,
           "estructura": 629915.0,
           "sanidad": 85338.0,
-          "mortandad": 87150.43
+          "mortandad": 85244.35
         },
         {
           "origen": "sin_verificar",
@@ -8293,7 +8293,7 @@
           "alimento": 2755878.9,
           "estructura": 333330.0,
           "sanidad": 46548.0,
-          "mortandad": 73591.29
+          "mortandad": 71981.76
         },
         {
           "origen": "sin_verificar",
@@ -8397,7 +8397,7 @@
           "alimento": 1426730.08,
           "estructura": 160072.0,
           "sanidad": 15516.0,
-          "mortandad": 14227.47
+          "mortandad": 13916.29
         },
         {
           "origen": "sin_verificar",
@@ -8449,7 +8449,7 @@
           "alimento": 1096620.82,
           "estructura": 171512.0,
           "sanidad": 15516.0,
-          "mortandad": 13429.8
+          "mortandad": 13224.03
         },
         {
           "origen": "sin_verificar",
@@ -8475,7 +8475,7 @@
           "alimento": 305615.0,
           "estructura": 36450.0,
           "sanidad": 7630.0,
-          "mortandad": 12835.62
+          "mortandad": 12554.89
         },
         {
           "origen": "sin_verificar",
@@ -8501,7 +8501,7 @@
           "alimento": 394778.38,
           "estructura": 45010.0,
           "sanidad": 7758.0,
-          "mortandad": 12753.85
+          "mortandad": 12474.91
         },
         {
           "origen": "sin_verificar",
@@ -8527,7 +8527,7 @@
           "alimento": 553274.38,
           "estructura": 61966.0,
           "sanidad": 7758.0,
-          "mortandad": 11330.1
+          "mortandad": 11082.29
         },
         {
           "origen": "sin_verificar",
@@ -8579,7 +8579,7 @@
           "alimento": 348947.37,
           "estructura": 43510.0,
           "sanidad": 7758.0,
-          "mortandad": 12960.06
+          "mortandad": 12676.61
         },
         {
           "origen": "sin_verificar",
@@ -8605,7 +8605,7 @@
           "alimento": 826959.66,
           "estructura": 83676.0,
           "sanidad": 7758.0,
-          "mortandad": 8035.35
+          "mortandad": 7859.61
         },
         {
           "origen": "sin_verificar",
@@ -8657,7 +8657,7 @@
           "alimento": 737188.58,
           "estructura": 86016.0,
           "sanidad": 7758.0,
-          "mortandad": 8736.22
+          "mortandad": 8602.37
         },
         {
           "origen": "sin_verificar",
@@ -8683,7 +8683,7 @@
           "alimento": 319010.39,
           "estructura": 53560.0,
           "sanidad": 7758.0,
-          "mortandad": 8188.07
+          "mortandad": 8062.61
         },
         {
           "origen": "sin_verificar",
@@ -8709,7 +8709,7 @@
           "alimento": 751055.97,
           "estructura": 82896.0,
           "sanidad": 7758.0,
-          "mortandad": 6825.73
+          "mortandad": 6676.44
         },
         {
           "origen": "sin_verificar",
@@ -8735,7 +8735,7 @@
           "alimento": 763387.34,
           "estructura": 85756.0,
           "sanidad": 7758.0,
-          "mortandad": 6710.53
+          "mortandad": 6563.76
         },
         {
           "origen": "sin_verificar",
@@ -8761,7 +8761,7 @@
           "alimento": 399309.93,
           "estructura": 61693.0,
           "sanidad": 7758.0,
-          "mortandad": 9664.01
+          "mortandad": 9515.94
         },
         {
           "origen": "sin_verificar",
@@ -8787,7 +8787,7 @@
           "alimento": 777264.07,
           "estructura": 86536.0,
           "sanidad": 7758.0,
-          "mortandad": 6364.92
+          "mortandad": 6225.71
         },
         {
           "origen": "sin_verificar",
@@ -8813,7 +8813,7 @@
           "alimento": 768625.61,
           "estructura": 87316.0,
           "sanidad": 7758.0,
-          "mortandad": 6163.32
+          "mortandad": 6028.52
         },
         {
           "origen": "sin_verificar",
@@ -8839,7 +8839,7 @@
           "alimento": 488173.0,
           "estructura": 86796.0,
           "sanidad": 7758.0,
-          "mortandad": 7091.76
+          "mortandad": 6983.1
         },
         {
           "origen": "sin_verificar",
@@ -8865,7 +8865,7 @@
           "alimento": 786009.15,
           "estructura": 92426.0,
           "sanidad": 7758.0,
-          "mortandad": 5702.51
+          "mortandad": 5577.79
         },
         {
           "origen": "sin_verificar",
@@ -8891,7 +8891,7 @@
           "alimento": 424582.45,
           "estructura": 77176.0,
           "sanidad": 7758.0,
-          "mortandad": 6509.34
+          "mortandad": 6409.61
         },
         {
           "origen": "sin_verificar",
@@ -8917,7 +8917,7 @@
           "alimento": 793375.56,
           "estructura": 86016.0,
           "sanidad": 7758.0,
-          "mortandad": 5040.09
+          "mortandad": 4929.86
         }
       ],
       "cabezas": 51,
@@ -8934,9 +8934,9 @@
         "alimento": 27218412.97,
         "estructura": 3055734.0,
         "sanidad": 394762.0,
-        "mortandad": 649614.6,
-        "total": 91204066.6,
-        "por_kg_vendido": 3619.21
+        "mortandad": 642894.58,
+        "total": 91197346.59,
+        "por_kg_vendido": 3618.94
       },
       "indicadores": {
         "kg_prom_ingreso": 327.2,
@@ -8956,9 +8956,9 @@
         "compra": 58388456.71,
         "comision": 1751653.7,
         "alimento": 28113712.01,
-        "mortandad": 678163.5,
-        "total": 92382481.93,
-        "por_kg_vendido": 3665.97
+        "mortandad": 672089.25,
+        "total": 92376407.67,
+        "por_kg_vendido": 3665.73
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -9113,7 +9113,7 @@
           "alimento": 2311864.72,
           "estructura": 283900.0,
           "sanidad": 31032.0,
-          "mortandad": 40735.52
+          "mortandad": 40111.38
         },
         {
           "origen": "sin_verificar",
@@ -9139,7 +9139,7 @@
           "alimento": 975591.3,
           "estructura": 92806.0,
           "sanidad": 7758.0,
-          "mortandad": 17987.83
+          "mortandad": 17712.23
         },
         {
           "origen": "sin_verificar",
@@ -9165,7 +9165,7 @@
           "alimento": 1740394.27,
           "estructura": 198152.0,
           "sanidad": 15516.0,
-          "mortandad": 17434.36
+          "mortandad": 17167.24
         },
         {
           "origen": "sin_verificar",
@@ -9191,7 +9191,7 @@
           "alimento": 919791.34,
           "estructura": 92806.0,
           "sanidad": 7758.0,
-          "mortandad": 13726.1
+          "mortandad": 13515.79
         },
         {
           "origen": "sin_verificar",
@@ -9217,7 +9217,7 @@
           "alimento": 825144.87,
           "estructura": 87056.0,
           "sanidad": 7758.0,
-          "mortandad": 11844.3
+          "mortandad": 11662.82
         },
         {
           "origen": "sin_verificar",
@@ -9243,7 +9243,7 @@
           "alimento": 1132316.31,
           "estructura": 104396.0,
           "sanidad": 7758.0,
-          "mortandad": 10986.41
+          "mortandad": 10818.08
         },
         {
           "origen": "sin_verificar",
@@ -9269,7 +9269,7 @@
           "alimento": 954668.95,
           "estructura": 102116.0,
           "sanidad": 7758.0,
-          "mortandad": 8910.9
+          "mortandad": 8774.37
         }
       ],
       "cabezas": 11,
@@ -9286,9 +9286,9 @@
         "alimento": 8859771.75,
         "estructura": 961232.0,
         "sanidad": 85338.0,
-        "mortandad": 121625.42,
-        "total": 22782495.29,
-        "por_kg_vendido": 3822.57
+        "mortandad": 119761.91,
+        "total": 22780631.77,
+        "por_kg_vendido": 3822.25
       },
       "indicadores": {
         "kg_prom_ingreso": 199.8,
@@ -9308,9 +9308,9 @@
         "compra": 12423434.4,
         "comision": 372703.03,
         "alimento": 9052855.77,
-        "mortandad": 121625.42,
-        "total": 23017188.63,
-        "por_kg_vendido": 3861.94
+        "mortandad": 119761.91,
+        "total": 23015325.11,
+        "por_kg_vendido": 3861.63
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -9401,7 +9401,7 @@
           "alimento": 866996.13,
           "estructura": 110700.0,
           "sanidad": 22890.0,
-          "mortandad": 36301.77
+          "mortandad": 35507.81
         },
         {
           "origen": "sin_verificar",
@@ -9427,7 +9427,7 @@
           "alimento": 438675.44,
           "estructura": 52100.0,
           "sanidad": 15260.0,
-          "mortandad": 38035.51
+          "mortandad": 37203.62
         },
         {
           "origen": "sin_verificar",
@@ -9453,7 +9453,7 @@
           "alimento": 1375981.17,
           "estructura": 156045.0,
           "sanidad": 23274.0,
-          "mortandad": 45360.47
+          "mortandad": 44665.47
         },
         {
           "origen": "sin_verificar",
@@ -9479,7 +9479,7 @@
           "alimento": 1545128.58,
           "estructura": 174492.0,
           "sanidad": 15516.0,
-          "mortandad": 15824.85
+          "mortandad": 15478.74
         },
         {
           "origen": "sin_verificar",
@@ -9531,7 +9531,7 @@
           "alimento": 321365.18,
           "estructura": 37210.0,
           "sanidad": 7630.0,
-          "mortandad": 14598.56
+          "mortandad": 14279.27
         },
         {
           "origen": "sin_verificar",
@@ -9635,7 +9635,7 @@
           "alimento": 2249837.01,
           "estructura": 213112.0,
           "sanidad": 15516.0,
-          "mortandad": 16031.15
+          "mortandad": 15785.52
         },
         {
           "origen": "sin_verificar",
@@ -9661,7 +9661,7 @@
           "alimento": 2584324.07,
           "estructura": 236672.0,
           "sanidad": 15516.0,
-          "mortandad": 15950.18
+          "mortandad": 15705.8
         },
         {
           "origen": "sin_verificar",
@@ -9687,7 +9687,7 @@
           "alimento": 206401.04,
           "estructura": 28220.0,
           "sanidad": 7630.0,
-          "mortandad": 12904.73
+          "mortandad": 12622.49
         },
         {
           "origen": "sin_verificar",
@@ -9713,7 +9713,7 @@
           "alimento": 547854.7,
           "estructura": 62416.0,
           "sanidad": 7758.0,
-          "mortandad": 10635.77
+          "mortandad": 10403.16
         },
         {
           "origen": "sin_verificar",
@@ -9739,7 +9739,7 @@
           "alimento": 488919.97,
           "estructura": 53725.0,
           "sanidad": 7758.0,
-          "mortandad": 11884.57
+          "mortandad": 11624.64
         },
         {
           "origen": "sin_verificar",
@@ -9765,7 +9765,7 @@
           "alimento": 793377.31,
           "estructura": 84126.0,
           "sanidad": 7758.0,
-          "mortandad": 10209.58
+          "mortandad": 9986.28
         },
         {
           "origen": "sin_verificar",
@@ -9791,7 +9791,7 @@
           "alimento": 453062.94,
           "estructura": 56005.0,
           "sanidad": 7758.0,
-          "mortandad": 11864.39
+          "mortandad": 11604.9
         },
         {
           "origen": "sin_verificar",
@@ -9817,7 +9817,7 @@
           "alimento": 474370.64,
           "estructura": 56005.0,
           "sanidad": 7758.0,
-          "mortandad": 14450.6
+          "mortandad": 14229.19
         },
         {
           "origen": "sin_verificar",
@@ -9843,7 +9843,7 @@
           "alimento": 813079.06,
           "estructura": 86206.0,
           "sanidad": 7758.0,
-          "mortandad": 9324.75
+          "mortandad": 9120.8
         },
         {
           "origen": "sin_verificar",
@@ -9869,7 +9869,7 @@
           "alimento": 467084.49,
           "estructura": 58000.0,
           "sanidad": 7758.0,
-          "mortandad": 10652.25
+          "mortandad": 10489.04
         },
         {
           "origen": "sin_verificar",
@@ -9895,7 +9895,7 @@
           "alimento": 505662.04,
           "estructura": 57715.0,
           "sanidad": 7758.0,
-          "mortandad": 10323.09
+          "mortandad": 10164.92
         },
         {
           "origen": "sin_verificar",
@@ -9921,7 +9921,7 @@
           "alimento": 815617.49,
           "estructura": 86466.0,
           "sanidad": 7758.0,
-          "mortandad": 8303.79
+          "mortandad": 8122.18
         },
         {
           "origen": "sin_verificar",
@@ -9947,7 +9947,7 @@
           "alimento": 1287345.98,
           "estructura": 117196.0,
           "sanidad": 7758.0,
-          "mortandad": 8703.78
+          "mortandad": 8570.42
         },
         {
           "origen": "sin_verificar",
@@ -9973,7 +9973,7 @@
           "alimento": 1006657.65,
           "estructura": 99526.0,
           "sanidad": 7758.0,
-          "mortandad": 7934.61
+          "mortandad": 7813.04
         },
         {
           "origen": "sin_verificar",
@@ -9999,7 +9999,7 @@
           "alimento": 1188712.6,
           "estructura": 124796.0,
           "sanidad": 7758.0,
-          "mortandad": 5479.14
+          "mortandad": 5359.3
         }
       ],
       "cabezas": 32,
@@ -10016,9 +10016,9 @@
         "alimento": 20636927.21,
         "estructura": 2132042.0,
         "sanidad": 247104.0,
-        "mortandad": 396335.87,
-        "total": 65223565.61,
-        "por_kg_vendido": 3778.88
+        "mortandad": 390298.93,
+        "total": 65217528.68,
+        "por_kg_vendido": 3778.53
       },
       "indicadores": {
         "kg_prom_ingreso": 308.2,
@@ -10038,9 +10038,9 @@
         "compra": 40776284.14,
         "comision": 1223288.52,
         "alimento": 21286393.01,
-        "mortandad": 409185.4,
-        "total": 66074297.07,
-        "por_kg_vendido": 3828.17
+        "mortandad": 403446.58,
+        "total": 66068558.25,
+        "por_kg_vendido": 3827.84
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -10189,7 +10189,7 @@
           "alimento": 1894914.26,
           "estructura": 214900.0,
           "sanidad": 31032.0,
-          "mortandad": 49448.28
+          "mortandad": 48366.79
         },
         {
           "origen": "sin_verificar",
@@ -10241,7 +10241,7 @@
           "alimento": 1244543.75,
           "estructura": 124832.0,
           "sanidad": 15516.0,
-          "mortandad": 25532.17
+          "mortandad": 24973.75
         },
         {
           "origen": "sin_verificar",
@@ -10267,7 +10267,7 @@
           "alimento": 227554.66,
           "estructura": 26050.0,
           "sanidad": 7630.0,
-          "mortandad": 19356.68
+          "mortandad": 18933.33
         },
         {
           "origen": "sin_verificar",
@@ -10319,7 +10319,7 @@
           "alimento": 2946691.68,
           "estructura": 314538.0,
           "sanidad": 23274.0,
-          "mortandad": 16579.08
+          "mortandad": 16325.06
         },
         {
           "origen": "sin_verificar",
@@ -10345,7 +10345,7 @@
           "alimento": 2898313.04,
           "estructura": 234392.0,
           "sanidad": 15516.0,
-          "mortandad": 15515.86
+          "mortandad": 15278.13
         },
         {
           "origen": "sin_verificar",
@@ -10371,7 +10371,7 @@
           "alimento": 324297.15,
           "estructura": 37210.0,
           "sanidad": 7630.0,
-          "mortandad": 13956.49
+          "mortandad": 13651.25
         },
         {
           "origen": "sin_verificar",
@@ -10397,7 +10397,7 @@
           "alimento": 638312.37,
           "estructura": 63508.0,
           "sanidad": 7758.0,
-          "mortandad": 15643.18
+          "mortandad": 15403.5
         },
         {
           "origen": "sin_verificar",
@@ -10449,7 +10449,7 @@
           "alimento": 755184.11,
           "estructura": 75520.0,
           "sanidad": 7758.0,
-          "mortandad": 12371.3
+          "mortandad": 12100.72
         },
         {
           "origen": "sin_verificar",
@@ -10475,7 +10475,7 @@
           "alimento": 1974839.83,
           "estructura": 205132.0,
           "sanidad": 15516.0,
-          "mortandad": 12073.89
+          "mortandad": 11888.9
         },
         {
           "origen": "sin_verificar",
@@ -10501,7 +10501,7 @@
           "alimento": 539759.16,
           "estructura": 62143.0,
           "sanidad": 7758.0,
-          "mortandad": 10477.41
+          "mortandad": 10248.26
         },
         {
           "origen": "sin_verificar",
@@ -10527,7 +10527,7 @@
           "alimento": 1457017.81,
           "estructura": 110356.0,
           "sanidad": 7758.0,
-          "mortandad": 10235.78
+          "mortandad": 10078.95
         },
         {
           "origen": "sin_verificar",
@@ -10553,7 +10553,7 @@
           "alimento": 837270.15,
           "estructura": 86726.0,
           "sanidad": 7758.0,
-          "mortandad": 8574.45
+          "mortandad": 8386.91
         },
         {
           "origen": "sin_verificar",
@@ -10579,7 +10579,7 @@
           "alimento": 869097.45,
           "estructura": 86206.0,
           "sanidad": 7758.0,
-          "mortandad": 8210.87
+          "mortandad": 8031.29
         },
         {
           "origen": "sin_verificar",
@@ -10605,7 +10605,7 @@
           "alimento": 1362778.49,
           "estructura": 114536.0,
           "sanidad": 7758.0,
-          "mortandad": 9587.03
+          "mortandad": 9440.14
         },
         {
           "origen": "sin_verificar",
@@ -10631,7 +10631,7 @@
           "alimento": 936785.51,
           "estructura": 93256.0,
           "sanidad": 7758.0,
-          "mortandad": 8361.62
+          "mortandad": 8233.51
         },
         {
           "origen": "sin_verificar",
@@ -10657,7 +10657,7 @@
           "alimento": 860345.74,
           "estructura": 92876.0,
           "sanidad": 7758.0,
-          "mortandad": 7280.38
+          "mortandad": 7168.83
         }
       ],
       "cabezas": 32,
@@ -10674,9 +10674,9 @@
         "alimento": 23174557.07,
         "estructura": 2223441.0,
         "sanidad": 247232.0,
-        "mortandad": 460329.02,
-        "total": 68258071.54,
-        "por_kg_vendido": 3856.39
+        "mortandad": 455633.86,
+        "total": 68253376.38,
+        "por_kg_vendido": 3856.12
       },
       "indicadores": {
         "kg_prom_ingreso": 349.0,
@@ -10696,9 +10696,9 @@
         "compra": 41109003.06,
         "comision": 1233270.09,
         "alimento": 23868037.69,
-        "mortandad": 476294.82,
-        "total": 69157278.66,
-        "por_kg_vendido": 3907.19
+        "mortandad": 471960.95,
+        "total": 69152944.8,
+        "por_kg_vendido": 3906.95
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -12663,7 +12663,7 @@
           "alimento": 1495771.48,
           "estructura": 188220.0,
           "sanidad": 45780.0,
-          "mortandad": 88461.44
+          "mortandad": 86526.68
         },
         {
           "origen": "sin_verificar",
@@ -12689,7 +12689,7 @@
           "alimento": 2514280.38,
           "estructura": 284375.0,
           "sanidad": 38790.0,
-          "mortandad": 67593.46
+          "mortandad": 66115.11
         },
         {
           "origen": "sin_verificar",
@@ -12715,7 +12715,7 @@
           "alimento": 898938.72,
           "estructura": 120150.0,
           "sanidad": 22890.0,
-          "mortandad": 36762.54
+          "mortandad": 35958.5
         },
         {
           "origen": "sin_verificar",
@@ -12741,7 +12741,7 @@
           "alimento": 804373.55,
           "estructura": 94220.0,
           "sanidad": 15516.0,
-          "mortandad": 30113.08
+          "mortandad": 29454.47
         },
         {
           "origen": "sin_verificar",
@@ -12767,7 +12767,7 @@
           "alimento": 1196148.02,
           "estructura": 131132.0,
           "sanidad": 15516.0,
-          "mortandad": 23543.88
+          "mortandad": 23028.94
         },
         {
           "origen": "sin_verificar",
@@ -12793,7 +12793,7 @@
           "alimento": 2593435.8,
           "estructura": 268848.0,
           "sanidad": 23274.0,
-          "mortandad": 23569.41
+          "mortandad": 23053.92
         },
         {
           "origen": "sin_verificar",
@@ -12819,7 +12819,7 @@
           "alimento": 1191538.05,
           "estructura": 133316.0,
           "sanidad": 15516.0,
-          "mortandad": 23945.17
+          "mortandad": 23421.46
         },
         {
           "origen": "sin_verificar",
@@ -12845,7 +12845,7 @@
           "alimento": 1581877.12,
           "estructura": 179752.0,
           "sanidad": 15516.0,
-          "mortandad": 18535.49
+          "mortandad": 18130.1
         },
         {
           "origen": "sin_verificar",
@@ -12897,7 +12897,7 @@
           "alimento": 245296.81,
           "estructura": 29200.0,
           "sanidad": 7630.0,
-          "mortandad": 17775.01
+          "mortandad": 17386.25
         },
         {
           "origen": "sin_verificar",
@@ -12923,7 +12923,7 @@
           "alimento": 1418365.71,
           "estructura": 104766.0,
           "sanidad": 7758.0,
-          "mortandad": 13734.93
+          "mortandad": 13434.53
         },
         {
           "origen": "sin_verificar",
@@ -12949,7 +12949,7 @@
           "alimento": 186965.01,
           "estructura": 27340.0,
           "sanidad": 7630.0,
-          "mortandad": 12559.18
+          "mortandad": 12284.49
         },
         {
           "origen": "sin_verificar",
@@ -13001,7 +13001,7 @@
           "alimento": 308679.86,
           "estructura": 40360.0,
           "sanidad": 7630.0,
-          "mortandad": 12435.81
+          "mortandad": 12163.82
         },
         {
           "origen": "sin_verificar",
@@ -13027,7 +13027,7 @@
           "alimento": 570189.23,
           "estructura": 65293.0,
           "sanidad": 7758.0,
-          "mortandad": 10825.6
+          "mortandad": 10588.84
         },
         {
           "origen": "sin_verificar",
@@ -13053,7 +13053,7 @@
           "alimento": 818480.26,
           "estructura": 94556.0,
           "sanidad": 7758.0,
-          "mortandad": 8567.66
+          "mortandad": 8380.28
         },
         {
           "origen": "sin_verificar",
@@ -13079,7 +13079,7 @@
           "alimento": 819968.08,
           "estructura": 86496.0,
           "sanidad": 7758.0,
-          "mortandad": 8300.97
+          "mortandad": 8119.41
         },
         {
           "origen": "sin_verificar",
@@ -13105,7 +13105,7 @@
           "alimento": 736062.5,
           "estructura": 90916.0,
           "sanidad": 7758.0,
-          "mortandad": 6900.8
+          "mortandad": 6749.87
         }
       ],
       "cabezas": 35,
@@ -13122,9 +13122,9 @@
         "alimento": 18248426.52,
         "estructura": 2020210.0,
         "sanidad": 269866.0,
-        "mortandad": 448881.86,
-        "total": 74220964.98,
-        "por_kg_vendido": 4183.82
+        "mortandad": 440054.11,
+        "total": 74212137.22,
+        "por_kg_vendido": 4183.32
       },
       "indicadores": {
         "kg_prom_ingreso": 365.6,
@@ -13144,9 +13144,9 @@
         "compra": 51836734.27,
         "comision": 1555102.03,
         "alimento": 18756909.02,
-        "mortandad": 454445.16,
-        "total": 74893266.48,
-        "por_kg_vendido": 4221.72
+        "mortandad": 445743.05,
+        "total": 74884564.37,
+        "por_kg_vendido": 4221.22
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -13289,7 +13289,7 @@
           "alimento": 2516612.99,
           "estructura": 284375.0,
           "sanidad": 38790.0,
-          "mortandad": 65365.11
+          "mortandad": 63935.49
         },
         {
           "origen": "sin_verificar",
@@ -13341,7 +13341,7 @@
           "alimento": 526587.64,
           "estructura": 58400.0,
           "sanidad": 15260.0,
-          "mortandad": 37847.21
+          "mortandad": 37019.45
         },
         {
           "origen": "sin_verificar",
@@ -13523,7 +13523,7 @@
           "alimento": 313653.06,
           "estructura": 40360.0,
           "sanidad": 7630.0,
-          "mortandad": 12875.12
+          "mortandad": 12593.52
         },
         {
           "origen": "sin_verificar",
@@ -13549,7 +13549,7 @@
           "alimento": 319201.39,
           "estructura": 40050.0,
           "sanidad": 7630.0,
-          "mortandad": 12506.5
+          "mortandad": 12232.97
         },
         {
           "origen": "sin_verificar",
@@ -13627,7 +13627,7 @@
           "alimento": 574092.94,
           "estructura": 65566.0,
           "sanidad": 7758.0,
-          "mortandad": 11266.98
+          "mortandad": 11020.55
         },
         {
           "origen": "sin_verificar",
@@ -13653,7 +13653,7 @@
           "alimento": 594688.09,
           "estructura": 66658.0,
           "sanidad": 7758.0,
-          "mortandad": 11938.57
+          "mortandad": 11677.46
         },
         {
           "origen": "sin_verificar",
@@ -13679,7 +13679,7 @@
           "alimento": 747626.4,
           "estructura": 90656.0,
           "sanidad": 7758.0,
-          "mortandad": 6732.45
+          "mortandad": 6585.21
         }
       ],
       "cabezas": 34,
@@ -13696,9 +13696,9 @@
         "alimento": 15124578.66,
         "estructura": 1444488.0,
         "sanidad": 260956.0,
-        "mortandad": 649864.56,
-        "total": 68220911.11,
-        "por_kg_vendido": 3516.54
+        "mortandad": 646397.28,
+        "total": 68217443.83,
+        "por_kg_vendido": 3516.36
       },
       "indicadores": {
         "kg_prom_ingreso": 427.9,
@@ -13718,9 +13718,9 @@
         "compra": 49591864.56,
         "comision": 1487755.94,
         "alimento": 15641458.74,
-        "mortandad": 679458.34,
-        "total": 69105981.58,
-        "por_kg_vendido": 3562.16
+        "mortandad": 676659.42,
+        "total": 69103182.66,
+        "por_kg_vendido": 3562.02
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -14239,7 +14239,7 @@
           "alimento": 1697631.45,
           "estructura": 182732.0,
           "sanidad": 15516.0,
-          "mortandad": 10062.68
+          "mortandad": 9842.6
         },
         {
           "origen": "sin_verificar",
@@ -14265,7 +14265,7 @@
           "alimento": 1097014.5,
           "estructura": 90586.0,
           "sanidad": 7758.0,
-          "mortandad": 6037.61
+          "mortandad": 5905.56
         }
       ],
       "cabezas": 29,
@@ -14282,9 +14282,9 @@
         "alimento": 19196322.14,
         "estructura": 1395003.0,
         "sanidad": 222672.0,
-        "mortandad": 704982.14,
-        "total": 67146555.99,
-        "por_kg_vendido": 3534.03
+        "mortandad": 704630.0,
+        "total": 67146203.86,
+        "por_kg_vendido": 3534.01
       },
       "indicadores": {
         "kg_prom_ingreso": 514.3,
@@ -14304,9 +14304,9 @@
         "compra": 44479863.55,
         "comision": 1334395.91,
         "alimento": 19822135.28,
-        "mortandad": 704982.14,
-        "total": 67959051.87,
-        "por_kg_vendido": 3576.8
+        "mortandad": 704630.0,
+        "total": 67958699.74,
+        "por_kg_vendido": 3576.78
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -14443,7 +14443,7 @@
           "alimento": 1085577.7,
           "estructura": 114650.0,
           "sanidad": 15516.0,
-          "mortandad": 28438.07
+          "mortandad": 27816.09
         },
         {
           "origen": "sin_verificar",
@@ -14980,9 +14980,9 @@
         "alimento": 21032695.03,
         "estructura": 1664736.0,
         "sanidad": 253704.0,
-        "mortandad": 713893.85,
-        "total": 70490476.53,
-        "por_kg_vendido": 3781.68
+        "mortandad": 713271.87,
+        "total": 70489854.56,
+        "por_kg_vendido": 3781.65
       },
       "indicadores": {
         "kg_prom_ingreso": 443.6,
@@ -15002,9 +15002,9 @@
         "compra": 45767500.49,
         "comision": 1373025.01,
         "alimento": 21686943.33,
-        "mortandad": 721398.27,
-        "total": 71467307.1,
-        "por_kg_vendido": 3834.09
+        "mortandad": 720945.78,
+        "total": 71466854.62,
+        "por_kg_vendido": 3834.06
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -15271,7 +15271,7 @@
           "alimento": 50174.24,
           "estructura": 6300.0,
           "sanidad": 7500.0,
-          "mortandad": 24511.72
+          "mortandad": 24136.16
         },
         {
           "origen": "sin_verificar",
@@ -15453,7 +15453,7 @@
           "alimento": 626309.9,
           "estructura": 67108.0,
           "sanidad": 7758.0,
-          "mortandad": 15203.82
+          "mortandad": 14871.3
         },
         {
           "origen": "sin_verificar",
@@ -15687,7 +15687,7 @@
           "alimento": 460595.09,
           "estructura": 61315.0,
           "sanidad": 7758.0,
-          "mortandad": 8798.0
+          "mortandad": 8663.2
         },
         {
           "origen": "sin_verificar",
@@ -15713,7 +15713,7 @@
           "alimento": 369736.85,
           "estructura": 75025.0,
           "sanidad": 7758.0,
-          "mortandad": 8468.12
+          "mortandad": 8338.37
         }
       ],
       "cabezas": 35,
@@ -15730,9 +15730,9 @@
         "alimento": 20854842.31,
         "estructura": 1708708.0,
         "sanidad": 268960.0,
-        "mortandad": 812929.34,
-        "total": 77741719.17,
-        "por_kg_vendido": 4166.22
+        "mortandad": 811956.71,
+        "total": 77740746.54,
+        "por_kg_vendido": 4166.17
       },
       "indicadores": {
         "kg_prom_ingreso": 458.1,
@@ -15752,9 +15752,9 @@
         "compra": 52778202.56,
         "comision": 1583346.08,
         "alimento": 21477563.33,
-        "mortandad": 819794.33,
-        "total": 78636574.3,
-        "por_kg_vendido": 4214.18
+        "mortandad": 818979.9,
+        "total": 78635759.86,
+        "por_kg_vendido": 4214.13
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -15829,7 +15829,7 @@
           "alimento": 839642.79,
           "estructura": 79200.0,
           "sanidad": 120000.0,
-          "mortandad": 367620.79
+          "mortandad": 361988.19
         },
         {
           "origen": "sin_verificar",
@@ -15855,7 +15855,7 @@
           "alimento": 379555.95,
           "estructura": 32400.0,
           "sanidad": 30000.0,
-          "mortandad": 98046.88
+          "mortandad": 96544.63
         },
         {
           "origen": "sin_verificar",
@@ -15881,7 +15881,7 @@
           "alimento": 2027642.07,
           "estructura": 185925.0,
           "sanidad": 23274.0,
-          "mortandad": 35983.54
+          "mortandad": 35432.21
         },
         {
           "origen": "sin_verificar",
@@ -15907,7 +15907,7 @@
           "alimento": 1948311.69,
           "estructura": 156926.0,
           "sanidad": 15516.0,
-          "mortandad": 18546.18
+          "mortandad": 18262.02
         }
       ],
       "cabezas": 25,
@@ -15924,9 +15924,9 @@
         "alimento": 5195152.5,
         "estructura": 454451.0,
         "sanidad": 188790.0,
-        "mortandad": 520197.39,
-        "total": 60693794.66,
-        "por_kg_vendido": 3386.93
+        "mortandad": 512227.05,
+        "total": 60685824.32,
+        "por_kg_vendido": 3386.48
       },
       "indicadores": {
         "kg_prom_ingreso": 599.4,
@@ -15946,9 +15946,9 @@
         "compra": 53363383.2,
         "comision": 1600901.5,
         "alimento": 5318867.27,
-        "mortandad": 522427.52,
-        "total": 61448820.49,
-        "por_kg_vendido": 3429.06
+        "mortandad": 514423.01,
+        "total": 61440815.98,
+        "por_kg_vendido": 3428.62
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -15990,7 +15990,7 @@
           "alimento": 2522805.93,
           "estructura": 239439.0,
           "sanidad": 23274.0,
-          "mortandad": 33326.32
+          "mortandad": 32815.7
         },
         {
           "origen": "sin_verificar",
@@ -16016,7 +16016,7 @@
           "alimento": 680042.21,
           "estructura": 78448.0,
           "sanidad": 7758.0,
-          "mortandad": 8778.23
+          "mortandad": 8643.73
         },
         {
           "origen": "sin_verificar",
@@ -16042,7 +16042,7 @@
           "alimento": 979735.77,
           "estructura": 100006.0,
           "sanidad": 7758.0,
-          "mortandad": 7667.82
+          "mortandad": 7550.34
         },
         {
           "origen": "sin_verificar",
@@ -16068,7 +16068,7 @@
           "alimento": 982297.53,
           "estructura": 106276.0,
           "sanidad": 7758.0,
-          "mortandad": 5853.56
+          "mortandad": 5763.87
         },
         {
           "origen": "sin_verificar",
@@ -16094,7 +16094,7 @@
           "alimento": 1068050.64,
           "estructura": 111596.0,
           "sanidad": 7758.0,
-          "mortandad": 5819.33
+          "mortandad": 5730.17
         }
       ],
       "cabezas": 7,
@@ -16111,9 +16111,9 @@
         "alimento": 6232932.07,
         "estructura": 635765.0,
         "sanidad": 54306.0,
-        "mortandad": 61445.25,
-        "total": 13406058.42,
-        "por_kg_vendido": 3266.58
+        "mortandad": 60503.8,
+        "total": 13405116.97,
+        "por_kg_vendido": 3266.35
       },
       "indicadores": {
         "kg_prom_ingreso": 256.4,
@@ -16133,9 +16133,9 @@
         "compra": 6276327.97,
         "comision": 188289.84,
         "alimento": 6359819.47,
-        "mortandad": 61445.25,
-        "total": 13575953.53,
-        "por_kg_vendido": 3307.98
+        "mortandad": 60503.8,
+        "total": 13575012.08,
+        "por_kg_vendido": 3307.75
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -16921,9 +16921,9 @@
         "compra": 9202952.25,
         "comision": 276088.57,
         "alimento": 4485795.72,
-        "mortandad": 90096.9,
-        "total": 14758091.44,
-        "por_kg_vendido": 4404.09
+        "mortandad": 88716.46,
+        "total": 14756711.0,
+        "por_kg_vendido": 4403.67
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -18204,7 +18204,7 @@
           "alimento": 177524.93,
           "estructura": 23400.0,
           "sanidad": 7630.0,
-          "mortandad": 16103.15
+          "mortandad": 15750.95
         }
       ],
       "cabezas": 33,
@@ -18221,9 +18221,9 @@
         "alimento": 5765873.09,
         "estructura": 696600.0,
         "sanidad": 251790.0,
-        "mortandad": 758987.58,
-        "total": 56656032.11,
-        "por_kg_vendido": 4461.11
+        "mortandad": 758635.39,
+        "total": 56655679.91,
+        "por_kg_vendido": 4461.08
       },
       "indicadores": {
         "kg_prom_ingreso": 436.0,
@@ -18243,9 +18243,9 @@
         "compra": 47813704.1,
         "comision": 1434411.12,
         "alimento": 5825921.65,
-        "mortandad": 760539.12,
-        "total": 56782965.99,
-        "por_kg_vendido": 4471.1
+        "mortandad": 760221.96,
+        "total": 56782648.84,
+        "por_kg_vendido": 4471.08
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -20204,7 +20204,7 @@
           "alimento": 164174.3,
           "estructura": 22050.0,
           "sanidad": 7630.0,
-          "mortandad": 8006.1
+          "mortandad": 7830.99
         }
       ],
       "cabezas": 29,
@@ -20221,8 +20221,8 @@
         "alimento": 15906587.47,
         "estructura": 1182704.0,
         "sanidad": 221136.0,
-        "mortandad": 731838.88,
-        "total": 64910857.16,
+        "mortandad": 731663.77,
+        "total": 64910682.06,
         "por_kg_vendido": 3242.29
       },
       "indicadores": {
@@ -20243,9 +20243,9 @@
         "compra": 45653830.07,
         "comision": 1369614.9,
         "alimento": 16327209.87,
-        "mortandad": 731838.88,
-        "total": 65486333.72,
-        "por_kg_vendido": 3271.04
+        "mortandad": 731663.77,
+        "total": 65486158.62,
+        "por_kg_vendido": 3271.03
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -20348,7 +20348,7 @@
           "alimento": 787597.53,
           "estructura": 75208.0,
           "sanidad": 7758.0,
-          "mortandad": 15850.07
+          "mortandad": 15503.41
         },
         {
           "origen": "sin_verificar",
@@ -20478,7 +20478,7 @@
           "alimento": 476851.95,
           "estructura": 67705.0,
           "sanidad": 7758.0,
-          "mortandad": 11343.32
+          "mortandad": 11095.23
         }
       ],
       "cabezas": 8,
@@ -20495,9 +20495,9 @@
         "alimento": 5364830.32,
         "estructura": 477893.0,
         "sanidad": 61808.0,
-        "mortandad": 168767.78,
-        "total": 18404976.78,
-        "por_kg_vendido": 4187.71
+        "mortandad": 168173.03,
+        "total": 18404382.03,
+        "por_kg_vendido": 4187.57
       },
       "indicadores": {
         "kg_prom_ingreso": 428.5,
@@ -20517,9 +20517,9 @@
         "compra": 12043338.71,
         "comision": 361300.16,
         "alimento": 5544497.12,
-        "mortandad": 174129.78,
-        "total": 18662966.77,
-        "por_kg_vendido": 4246.41
+        "mortandad": 173656.13,
+        "total": 18662493.11,
+        "por_kg_vendido": 4246.3
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -21870,7 +21870,7 @@
           "alimento": 439130.6,
           "estructura": 44060.0,
           "sanidad": 7630.0,
-          "mortandad": 14574.59
+          "mortandad": 14255.83
         },
         {
           "origen": "sin_verificar",
@@ -22147,9 +22147,9 @@
         "alimento": 27566254.26,
         "estructura": 2006078.0,
         "sanidad": 231076.0,
-        "mortandad": 679979.31,
-        "total": 74347963.37,
-        "por_kg_vendido": 3984.36
+        "mortandad": 679660.54,
+        "total": 74347644.61,
+        "por_kg_vendido": 3984.34
       },
       "indicadores": {
         "kg_prom_ingreso": 463.6,
@@ -22169,9 +22169,9 @@
         "compra": 42845275.38,
         "comision": 1285358.26,
         "alimento": 28237068.15,
-        "mortandad": 680097.64,
-        "total": 75284953.43,
-        "por_kg_vendido": 4034.57
+        "mortandad": 679781.55,
+        "total": 75284637.34,
+        "por_kg_vendido": 4034.55
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -23158,7 +23158,7 @@
           "alimento": 894209.95,
           "estructura": 92620.0,
           "sanidad": 15260.0,
-          "mortandad": 22833.53
+          "mortandad": 22334.13
         },
         {
           "origen": "sin_verificar",
@@ -23236,7 +23236,7 @@
           "alimento": 903771.69,
           "estructura": 95786.0,
           "sanidad": 7758.0,
-          "mortandad": 5421.74
+          "mortandad": 5303.16
         }
       ],
       "cabezas": 33,
@@ -23253,9 +23253,9 @@
         "alimento": 18491990.72,
         "estructura": 1582111.0,
         "sanidad": 252046.0,
-        "mortandad": 706510.71,
-        "total": 67515535.95,
-        "por_kg_vendido": 3139.38
+        "mortandad": 705892.73,
+        "total": 67514917.98,
+        "por_kg_vendido": 3139.35
       },
       "indicadores": {
         "kg_prom_ingreso": 437.6,
@@ -23275,9 +23275,9 @@
         "compra": 45300823.47,
         "comision": 1359024.7,
         "alimento": 18927626.35,
-        "mortandad": 706295.93,
-        "total": 68127927.45,
-        "por_kg_vendido": 3167.86
+        "mortandad": 705673.1,
+        "total": 68127304.63,
+        "por_kg_vendido": 3167.83
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -23510,7 +23510,7 @@
           "alimento": 3051252.25,
           "estructura": 287358.0,
           "sanidad": 23274.0,
-          "mortandad": 18575.6
+          "mortandad": 18169.33
         },
         {
           "origen": "sin_verificar",
@@ -23631,9 +23631,9 @@
         "alimento": 19492192.03,
         "estructura": 1546432.0,
         "sanidad": 229538.0,
-        "mortandad": 696817.05,
-        "total": 67202233.68,
-        "por_kg_vendido": 3268.59
+        "mortandad": 696410.78,
+        "total": 67201827.41,
+        "por_kg_vendido": 3268.57
       },
       "indicadores": {
         "kg_prom_ingreso": 466.6,
@@ -23653,9 +23653,9 @@
         "compra": 44123815.57,
         "comision": 1323714.47,
         "alimento": 19928864.21,
-        "mortandad": 696817.05,
-        "total": 67849181.29,
-        "por_kg_vendido": 3300.06
+        "mortandad": 696410.78,
+        "total": 67848775.02,
+        "por_kg_vendido": 3300.04
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -23862,7 +23862,7 @@
           "alimento": 1918789.62,
           "estructura": 191572.0,
           "sanidad": 15516.0,
-          "mortandad": 16222.83
+          "mortandad": 15868.02
         },
         {
           "origen": "sin_verificar",
@@ -24070,7 +24070,7 @@
           "alimento": 425606.77,
           "estructura": 52510.0,
           "sanidad": 7630.0,
-          "mortandad": 13246.84
+          "mortandad": 12957.11
         },
         {
           "origen": "sin_verificar",
@@ -24148,7 +24148,7 @@
           "alimento": 612740.72,
           "estructura": 69025.0,
           "sanidad": 7758.0,
-          "mortandad": 11849.19
+          "mortandad": 11590.04
         },
         {
           "origen": "sin_verificar",
@@ -24174,7 +24174,7 @@
           "alimento": 613557.47,
           "estructura": 71305.0,
           "sanidad": 7758.0,
-          "mortandad": 11463.57
+          "mortandad": 11212.85
         },
         {
           "origen": "sin_verificar",
@@ -24200,7 +24200,7 @@
           "alimento": 627085.07,
           "estructura": 73015.0,
           "sanidad": 7758.0,
-          "mortandad": 6863.51
+          "mortandad": 6713.39
         }
       ],
       "cabezas": 35,
@@ -24217,9 +24217,9 @@
         "alimento": 22983588.08,
         "estructura": 2063393.0,
         "sanidad": 268970.0,
-        "mortandad": 668359.46,
-        "total": 71992109.48,
-        "por_kg_vendido": 3563.61
+        "mortandad": 667054.93,
+        "total": 71990804.95,
+        "por_kg_vendido": 3563.55
       },
       "indicadores": {
         "kg_prom_ingreso": 405.4,
@@ -24239,9 +24239,9 @@
         "compra": 44822288.64,
         "comision": 1344668.66,
         "alimento": 23584115.04,
-        "mortandad": 678259.98,
-        "total": 72761695.31,
-        "por_kg_vendido": 3601.71
+        "mortandad": 677179.05,
+        "total": 72760614.39,
+        "por_kg_vendido": 3601.65
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -24308,7 +24308,7 @@
           "alimento": 2266888.75,
           "estructura": 233800.0,
           "sanidad": 38150.0,
-          "mortandad": 93335.89
+          "mortandad": 91905.82
         },
         {
           "origen": "sin_verificar",
@@ -24334,7 +24334,7 @@
           "alimento": 13410106.54,
           "estructura": 1183160.0,
           "sanidad": 77580.0,
-          "mortandad": 76836.43
+          "mortandad": 75659.16
         },
         {
           "origen": "sin_verificar",
@@ -24360,7 +24360,7 @@
           "alimento": 2526082.87,
           "estructura": 234498.0,
           "sanidad": 23274.0,
-          "mortandad": 51416.56
+          "mortandad": 50628.77
         },
         {
           "origen": "sin_verificar",
@@ -24386,7 +24386,7 @@
           "alimento": 351410.35,
           "estructura": 30600.0,
           "sanidad": 7630.0,
-          "mortandad": 26630.5
+          "mortandad": 26222.47
         },
         {
           "origen": "sin_verificar",
@@ -24412,7 +24412,7 @@
           "alimento": 617752.09,
           "estructura": 57610.0,
           "sanidad": 7630.0,
-          "mortandad": 25986.23
+          "mortandad": 25588.07
         },
         {
           "origen": "sin_verificar",
@@ -24438,7 +24438,7 @@
           "alimento": 387828.75,
           "estructura": 40250.0,
           "sanidad": 7630.0,
-          "mortandad": 18816.11
+          "mortandad": 18527.81
         },
         {
           "origen": "sin_verificar",
@@ -24464,7 +24464,7 @@
           "alimento": 378608.29,
           "estructura": 42110.0,
           "sanidad": 7630.0,
-          "mortandad": 17106.47
+          "mortandad": 16844.37
         },
         {
           "origen": "sin_verificar",
@@ -24490,7 +24490,7 @@
           "alimento": 521986.24,
           "estructura": 52650.0,
           "sanidad": 7630.0,
-          "mortandad": 18179.6
+          "mortandad": 17901.06
         },
         {
           "origen": "sin_verificar",
@@ -24516,7 +24516,7 @@
           "alimento": 733329.2,
           "estructura": 69475.0,
           "sanidad": 7758.0,
-          "mortandad": 22233.85
+          "mortandad": 21893.19
         },
         {
           "origen": "sin_verificar",
@@ -24542,7 +24542,7 @@
           "alimento": 665521.13,
           "estructura": 67765.0,
           "sanidad": 7758.0,
-          "mortandad": 23337.63
+          "mortandad": 22980.06
         },
         {
           "origen": "sin_verificar",
@@ -24568,7 +24568,7 @@
           "alimento": 688733.71,
           "estructura": 69475.0,
           "sanidad": 7758.0,
-          "mortandad": 18332.04
+          "mortandad": 18051.16
         },
         {
           "origen": "sin_verificar",
@@ -24594,7 +24594,7 @@
           "alimento": 863976.15,
           "estructura": 87175.0,
           "sanidad": 7758.0,
-          "mortandad": 15109.78
+          "mortandad": 14878.27
         },
         {
           "origen": "sin_verificar",
@@ -24620,7 +24620,7 @@
           "alimento": 1082074.62,
           "estructura": 102216.0,
           "sanidad": 7758.0,
-          "mortandad": 8462.16
+          "mortandad": 8332.51
         }
       ],
       "cabezas": 28,
@@ -24637,9 +24637,9 @@
         "alimento": 24494298.68,
         "estructura": 2270784.0,
         "sanidad": 215944.0,
-        "mortandad": 415783.27,
-        "total": 70868039.88,
-        "por_kg_vendido": 3641.73
+        "mortandad": 409412.74,
+        "total": 70861669.34,
+        "por_kg_vendido": 3641.4
       },
       "indicadores": {
         "kg_prom_ingreso": 351.0,
@@ -24659,9 +24659,9 @@
         "compra": 42470201.04,
         "comision": 1274106.03,
         "alimento": 25031770.2,
-        "mortandad": 415783.27,
-        "total": 71678588.55,
-        "por_kg_vendido": 3683.38
+        "mortandad": 409412.74,
+        "total": 71672218.02,
+        "por_kg_vendido": 3683.05
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -24720,7 +24720,7 @@
           "alimento": 2452386.82,
           "estructura": 233800.0,
           "sanidad": 38150.0,
-          "mortandad": 99495.12
+          "mortandad": 97970.68
         },
         {
           "origen": "sin_verificar",
@@ -24746,7 +24746,7 @@
           "alimento": 3258812.61,
           "estructura": 312664.0,
           "sanidad": 31032.0,
-          "mortandad": 63307.69
+          "mortandad": 62337.71
         },
         {
           "origen": "sin_verificar",
@@ -24772,7 +24772,7 @@
           "alimento": 2503048.67,
           "estructura": 215265.0,
           "sanidad": 23274.0,
-          "mortandad": 72600.59
+          "mortandad": 71488.22
         },
         {
           "origen": "sin_verificar",
@@ -24798,7 +24798,7 @@
           "alimento": 2047090.98,
           "estructura": 203295.0,
           "sanidad": 23274.0,
-          "mortandad": 69903.33
+          "mortandad": 68832.29
         },
         {
           "origen": "sin_verificar",
@@ -24824,7 +24824,7 @@
           "alimento": 658055.61,
           "estructura": 61200.0,
           "sanidad": 15260.0,
-          "mortandad": 49456.75
+          "mortandad": 48698.99
         },
         {
           "origen": "sin_verificar",
@@ -24850,7 +24850,7 @@
           "alimento": 8825907.22,
           "estructura": 828212.0,
           "sanidad": 54306.0,
-          "mortandad": 54304.08
+          "mortandad": 53472.04
         },
         {
           "origen": "sin_verificar",
@@ -24876,7 +24876,7 @@
           "alimento": 933528.33,
           "estructura": 79258.0,
           "sanidad": 7758.0,
-          "mortandad": 19701.74
+          "mortandad": 19399.87
         },
         {
           "origen": "sin_verificar",
@@ -24902,7 +24902,7 @@
           "alimento": 526284.29,
           "estructura": 52960.0,
           "sanidad": 7630.0,
-          "mortandad": 19391.11
+          "mortandad": 19094.0
         },
         {
           "origen": "sin_verificar",
@@ -24928,7 +24928,7 @@
           "alimento": 996102.78,
           "estructura": 89632.0,
           "sanidad": 7758.0,
-          "mortandad": 15271.38
+          "mortandad": 15037.4
         },
         {
           "origen": "sin_verificar",
@@ -24954,7 +24954,7 @@
           "alimento": 977959.5,
           "estructura": 96236.0,
           "sanidad": 7758.0,
-          "mortandad": 11970.49
+          "mortandad": 11787.08
         }
       ],
       "cabezas": 28,
@@ -24971,9 +24971,9 @@
         "alimento": 23179176.8,
         "estructura": 2172522.0,
         "sanidad": 216200.0,
-        "mortandad": 475402.27,
-        "total": 75728425.11,
-        "por_kg_vendido": 3923.75
+        "mortandad": 468118.28,
+        "total": 75721141.11,
+        "por_kg_vendido": 3923.38
       },
       "indicadores": {
         "kg_prom_ingreso": 388.6,
@@ -24993,9 +24993,9 @@
         "compra": 48559987.17,
         "comision": 1456799.62,
         "alimento": 23735238.87,
-        "mortandad": 475402.27,
-        "total": 76616149.93,
-        "por_kg_vendido": 3969.75
+        "mortandad": 468118.28,
+        "total": 76608865.93,
+        "por_kg_vendido": 3969.37
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -25992,7 +25992,7 @@
           "alimento": 2040181.44,
           "estructura": 213640.0,
           "sanidad": 30520.0,
-          "mortandad": 74147.32
+          "mortandad": 73011.25
         },
         {
           "origen": "sin_verificar",
@@ -26018,7 +26018,7 @@
           "alimento": 2082426.32,
           "estructura": 204645.0,
           "sanidad": 23274.0,
-          "mortandad": 69848.55
+          "mortandad": 68778.35
         },
         {
           "origen": "sin_verificar",
@@ -26044,7 +26044,7 @@
           "alimento": 50303.08,
           "estructura": 5400.0,
           "sanidad": 15000.0,
-          "mortandad": 46272.52
+          "mortandad": 45563.54
         },
         {
           "origen": "sin_verificar",
@@ -26070,7 +26070,7 @@
           "alimento": 3115951.3,
           "estructura": 250832.0,
           "sanidad": 15516.0,
-          "mortandad": 26825.96
+          "mortandad": 26414.94
         },
         {
           "origen": "sin_verificar",
@@ -26096,7 +26096,7 @@
           "alimento": 298091.23,
           "estructura": 31050.0,
           "sanidad": 7630.0,
-          "mortandad": 23301.88
+          "mortandad": 22944.86
         },
         {
           "origen": "sin_verificar",
@@ -26122,7 +26122,7 @@
           "alimento": 572672.33,
           "estructura": 53100.0,
           "sanidad": 7630.0,
-          "mortandad": 22009.01
+          "mortandad": 21671.79
         },
         {
           "origen": "sin_verificar",
@@ -26148,7 +26148,7 @@
           "alimento": 756212.35,
           "estructura": 69925.0,
           "sanidad": 7758.0,
-          "mortandad": 24787.74
+          "mortandad": 24407.95
         },
         {
           "origen": "sin_verificar",
@@ -26174,7 +26174,7 @@
           "alimento": 807169.36,
           "estructura": 72205.0,
           "sanidad": 7758.0,
-          "mortandad": 23240.13
+          "mortandad": 22884.05
         },
         {
           "origen": "sin_verificar",
@@ -26200,7 +26200,7 @@
           "alimento": 875793.39,
           "estructura": 78616.0,
           "sanidad": 7758.0,
-          "mortandad": 19092.8
+          "mortandad": 18800.26
         },
         {
           "origen": "sin_verificar",
@@ -26226,7 +26226,7 @@
           "alimento": 708813.92,
           "estructura": 69925.0,
           "sanidad": 7758.0,
-          "mortandad": 19664.44
+          "mortandad": 19363.15
         },
         {
           "origen": "sin_verificar",
@@ -26252,7 +26252,7 @@
           "alimento": 1039164.25,
           "estructura": 90082.0,
           "sanidad": 7758.0,
-          "mortandad": 16164.92
+          "mortandad": 15917.25
         },
         {
           "origen": "sin_verificar",
@@ -26278,7 +26278,7 @@
           "alimento": 3005685.35,
           "estructura": 269072.0,
           "sanidad": 15516.0,
-          "mortandad": 15625.9
+          "mortandad": 15386.48
         },
         {
           "origen": "sin_verificar",
@@ -26304,7 +26304,7 @@
           "alimento": 685455.69,
           "estructura": 73915.0,
           "sanidad": 7758.0,
-          "mortandad": 14812.99
+          "mortandad": 14586.03
         },
         {
           "origen": "sin_verificar",
@@ -26330,7 +26330,7 @@
           "alimento": 5294948.28,
           "estructura": 540424.0,
           "sanidad": 31032.0,
-          "mortandad": 14812.99
+          "mortandad": 14586.03
         },
         {
           "origen": "sin_verificar",
@@ -26356,7 +26356,7 @@
           "alimento": 1090659.7,
           "estructura": 102666.0,
           "sanidad": 7758.0,
-          "mortandad": 11832.33
+          "mortandad": 11651.03
         },
         {
           "origen": "sin_verificar",
@@ -26382,7 +26382,7 @@
           "alimento": 853404.46,
           "estructura": 88990.0,
           "sanidad": 7758.0,
-          "mortandad": 10095.24
+          "mortandad": 9940.57
         },
         {
           "origen": "sin_verificar",
@@ -26408,7 +26408,7 @@
           "alimento": 1534029.81,
           "estructura": 133396.0,
           "sanidad": 7758.0,
-          "mortandad": 8829.08
+          "mortandad": 8693.81
         },
         {
           "origen": "sin_verificar",
@@ -26434,7 +26434,7 @@
           "alimento": 1259924.91,
           "estructura": 126556.0,
           "sanidad": 7758.0,
-          "mortandad": 5916.16
+          "mortandad": 5825.52
         }
       ],
       "cabezas": 29,
@@ -26451,9 +26451,9 @@
         "alimento": 26070887.16,
         "estructura": 2474439.0,
         "sanidad": 223698.0,
-        "mortandad": 447279.96,
-        "total": 76058713.84,
-        "por_kg_vendido": 4007.44
+        "mortandad": 440426.84,
+        "total": 76051860.73,
+        "por_kg_vendido": 4007.08
       },
       "indicadores": {
         "kg_prom_ingreso": 341.5,
@@ -26473,9 +26473,9 @@
         "compra": 45687431.85,
         "comision": 1370622.96,
         "alimento": 26769199.62,
-        "mortandad": 447279.96,
-        "total": 76972671.38,
-        "por_kg_vendido": 4055.6
+        "mortandad": 440426.84,
+        "total": 76965818.26,
+        "por_kg_vendido": 4055.24
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -26582,7 +26582,7 @@
           "alimento": 4207721.53,
           "estructura": 427280.0,
           "sanidad": 61040.0,
-          "mortandad": 150311.97
+          "mortandad": 148008.93
         },
         {
           "origen": "sin_verificar",
@@ -26608,7 +26608,7 @@
           "alimento": 3218749.61,
           "estructura": 314464.0,
           "sanidad": 31032.0,
-          "mortandad": 65317.46
+          "mortandad": 64316.68
         },
         {
           "origen": "sin_verificar",
@@ -26634,7 +26634,7 @@
           "alimento": 8479650.46,
           "estructura": 726276.0,
           "sanidad": 46548.0,
-          "mortandad": 60027.6
+          "mortandad": 59107.87
         },
         {
           "origen": "sin_verificar",
@@ -26660,7 +26660,7 @@
           "alimento": 702513.37,
           "estructura": 62100.0,
           "sanidad": 15260.0,
-          "mortandad": 51517.42
+          "mortandad": 50728.08
         },
         {
           "origen": "sin_verificar",
@@ -26686,7 +26686,7 @@
           "alimento": 551011.81,
           "estructura": 53720.0,
           "sanidad": 7630.0,
-          "mortandad": 21873.02
+          "mortandad": 21537.89
         },
         {
           "origen": "sin_verificar",
@@ -26712,7 +26712,7 @@
           "alimento": 444198.58,
           "estructura": 44730.0,
           "sanidad": 7630.0,
-          "mortandad": 14501.05
+          "mortandad": 14278.87
         },
         {
           "origen": "sin_verificar",
@@ -26738,7 +26738,7 @@
           "alimento": 747264.65,
           "estructura": 68215.0,
           "sanidad": 7758.0,
-          "mortandad": 23721.12
+          "mortandad": 23357.67
         },
         {
           "origen": "sin_verificar",
@@ -26764,7 +26764,7 @@
           "alimento": 545565.03,
           "estructura": 58060.0,
           "sanidad": 7630.0,
-          "mortandad": 19766.12
+          "mortandad": 19463.27
         },
         {
           "origen": "sin_verificar",
@@ -26790,7 +26790,7 @@
           "alimento": 683037.86,
           "estructura": 69925.0,
           "sanidad": 7758.0,
-          "mortandad": 18791.49
+          "mortandad": 18503.57
         },
         {
           "origen": "sin_verificar",
@@ -26816,7 +26816,7 @@
           "alimento": 1014902.78,
           "estructura": 90082.0,
           "sanidad": 7758.0,
-          "mortandad": 15596.31
+          "mortandad": 15357.34
         },
         {
           "origen": "sin_verificar",
@@ -26842,7 +26842,7 @@
           "alimento": 1078240.87,
           "estructura": 102926.0,
           "sanidad": 7758.0,
-          "mortandad": 10495.5
+          "mortandad": 10334.69
         },
         {
           "origen": "sin_verificar",
@@ -26868,7 +26868,7 @@
           "alimento": 1379634.35,
           "estructura": 122756.0,
           "sanidad": 7758.0,
-          "mortandad": 8628.71
+          "mortandad": 8496.5
         }
       ],
       "cabezas": 28,
@@ -26885,9 +26885,9 @@
         "alimento": 23052490.88,
         "estructura": 2140534.0,
         "sanidad": 215560.0,
-        "mortandad": 460547.75,
-        "total": 74058409.37,
-        "por_kg_vendido": 3918.44
+        "mortandad": 453491.35,
+        "total": 74051352.97,
+        "por_kg_vendido": 3918.07
       },
       "indicadores": {
         "kg_prom_ingreso": 396.5,
@@ -26907,9 +26907,9 @@
         "compra": 47042671.43,
         "comision": 1411280.14,
         "alimento": 23582295.48,
-        "mortandad": 460547.75,
-        "total": 74852888.81,
-        "por_kg_vendido": 3960.48
+        "mortandad": 453491.35,
+        "total": 74845832.41,
+        "por_kg_vendido": 3960.1
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -28092,7 +28092,7 @@
           "alimento": 14200216.79,
           "estructura": 2191500.0,
           "sanidad": 381500.0,
-          "mortandad": 814648.47
+          "mortandad": 802166.62
         }
       ],
       "cabezas": 50,
@@ -28109,9 +28109,9 @@
         "alimento": 14200216.79,
         "estructura": 2191500.0,
         "sanidad": 381500.0,
-        "mortandad": 814648.47,
-        "total": 102464416.35,
-        "por_kg_vendido": 4484.22
+        "mortandad": 802166.62,
+        "total": 102451934.51,
+        "por_kg_vendido": 4483.67
       },
       "indicadores": {
         "kg_prom_ingreso": 330.0,
@@ -28131,9 +28131,9 @@
         "compra": 98763390.0,
         "comision": 2962901.7,
         "alimento": 14514137.76,
-        "mortandad": 966893.59,
-        "total": 119780323.04,
-        "por_kg_vendido": 5242.03
+        "mortandad": 952079.08,
+        "total": 119765508.54,
+        "por_kg_vendido": 5241.38
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -28239,9 +28239,9 @@
         "compra": 67248261.4,
         "comision": 2017447.84,
         "alimento": 1630496.21,
-        "mortandad": 658360.48,
-        "total": 72011309.92,
-        "por_kg_vendido": 5155.08
+        "mortandad": 648273.24,
+        "total": 72001222.69,
+        "por_kg_vendido": 5154.36
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -28339,9 +28339,9 @@
         "compra": 131411163.64,
         "comision": 3942334.91,
         "alimento": 1282662.12,
-        "mortandad": 1286515.29,
-        "total": 138455175.96,
-        "por_kg_vendido": 5426.95
+        "mortandad": 1266803.62,
+        "total": 138435464.29,
+        "por_kg_vendido": 5426.18
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -30160,7 +30160,7 @@
           "alimento": 3677407.87,
           "estructura": 496405.0,
           "sanidad": 54306.0,
-          "mortandad": 111264.63
+          "mortandad": 109559.86
         },
         {
           "origen": "sin_verificar",
@@ -30186,7 +30186,7 @@
           "alimento": 1836087.51,
           "estructura": 249550.0,
           "sanidad": 38150.0,
-          "mortandad": 72133.96
+          "mortandad": 71028.74
         },
         {
           "origen": "sin_verificar",
@@ -30212,7 +30212,7 @@
           "alimento": 2545210.34,
           "estructura": 364550.0,
           "sanidad": 38790.0,
-          "mortandad": 57422.3
+          "mortandad": 56542.49
         },
         {
           "origen": "sin_verificar",
@@ -30238,7 +30238,7 @@
           "alimento": 770335.82,
           "estructura": 103950.0,
           "sanidad": 22890.0,
-          "mortandad": 54197.5
+          "mortandad": 53367.1
         },
         {
           "origen": "sin_verificar",
@@ -30264,7 +30264,7 @@
           "alimento": 4468305.26,
           "estructura": 632275.0,
           "sanidad": 54306.0,
-          "mortandad": 68630.5
+          "mortandad": 67578.96
         },
         {
           "origen": "sin_verificar",
@@ -30290,7 +30290,7 @@
           "alimento": 742907.5,
           "estructura": 101250.0,
           "sanidad": 22890.0,
-          "mortandad": 48386.58
+          "mortandad": 47645.22
         },
         {
           "origen": "sin_verificar",
@@ -30316,7 +30316,7 @@
           "alimento": 1244675.88,
           "estructura": 182280.0,
           "sanidad": 22890.0,
-          "mortandad": 39624.39
+          "mortandad": 39017.28
         },
         {
           "origen": "sin_verificar",
@@ -30342,7 +30342,7 @@
           "alimento": 2337161.7,
           "estructura": 289578.0,
           "sanidad": 23274.0,
-          "mortandad": 33852.76
+          "mortandad": 33334.08
         },
         {
           "origen": "sin_verificar",
@@ -30368,7 +30368,7 @@
           "alimento": 3344399.34,
           "estructura": 363258.0,
           "sanidad": 23274.0,
-          "mortandad": 31714.22
+          "mortandad": 31228.3
         },
         {
           "origen": "sin_verificar",
@@ -30394,7 +30394,7 @@
           "alimento": 2408651.69,
           "estructura": 298158.0,
           "sanidad": 23274.0,
-          "mortandad": 31327.46
+          "mortandad": 30847.47
         },
         {
           "origen": "sin_verificar",
@@ -30420,7 +30420,7 @@
           "alimento": 3098879.33,
           "estructura": 364398.0,
           "sanidad": 23274.0,
-          "mortandad": 26254.09
+          "mortandad": 25851.83
         },
         {
           "origen": "sin_verificar",
@@ -30446,7 +30446,7 @@
           "alimento": 311741.27,
           "estructura": 44950.0,
           "sanidad": 7630.0,
-          "mortandad": 13519.45
+          "mortandad": 13312.31
         },
         {
           "origen": "sin_verificar",
@@ -30472,7 +30472,7 @@
           "alimento": 307984.53,
           "estructura": 43400.0,
           "sanidad": 7630.0,
-          "mortandad": 13334.25
+          "mortandad": 13129.95
         },
         {
           "origen": "sin_verificar",
@@ -30498,7 +30498,7 @@
           "alimento": 553164.55,
           "estructura": 72625.0,
           "sanidad": 7758.0,
-          "mortandad": 15069.95
+          "mortandad": 14839.05
         },
         {
           "origen": "sin_verificar",
@@ -30524,7 +30524,7 @@
           "alimento": 757799.69,
           "estructura": 91690.0,
           "sanidad": 7758.0,
-          "mortandad": 12408.74
+          "mortandad": 12218.61
         },
         {
           "origen": "sin_verificar",
@@ -30550,7 +30550,7 @@
           "alimento": 926351.66,
           "estructura": 105366.0,
           "sanidad": 7758.0,
-          "mortandad": 12649.29
+          "mortandad": 12455.48
         },
         {
           "origen": "sin_verificar",
@@ -30576,7 +30576,7 @@
           "alimento": 752630.0,
           "estructura": 90325.0,
           "sanidad": 7758.0,
-          "mortandad": 9110.9
+          "mortandad": 8971.31
         },
         {
           "origen": "sin_verificar",
@@ -30602,7 +30602,7 @@
           "alimento": 1061333.0,
           "estructura": 114436.0,
           "sanidad": 7758.0,
-          "mortandad": 11511.76
+          "mortandad": 11335.38
         },
         {
           "origen": "sin_verificar",
@@ -30628,7 +30628,7 @@
           "alimento": 575842.93,
           "estructura": 81043.0,
           "sanidad": 7758.0,
-          "mortandad": 10554.11
+          "mortandad": 10392.41
         },
         {
           "origen": "sin_verificar",
@@ -30654,7 +30654,7 @@
           "alimento": 362405.35,
           "estructura": 57970.0,
           "sanidad": 7630.0,
-          "mortandad": 10175.12
+          "mortandad": 10019.22
         },
         {
           "origen": "sin_verificar",
@@ -30680,7 +30680,7 @@
           "alimento": 730732.15,
           "estructura": 99386.0,
           "sanidad": 7758.0,
-          "mortandad": 7507.67
+          "mortandad": 7392.64
         }
       ],
       "cabezas": 55,
@@ -30697,9 +30697,9 @@
         "alimento": 32814007.39,
         "estructura": 4246843.0,
         "sanidad": 424514.0,
-        "mortandad": 690649.62,
-        "total": 110436971.18,
-        "por_kg_vendido": 4015.89
+        "mortandad": 680067.66,
+        "total": 110426389.21,
+        "por_kg_vendido": 4015.5
       },
       "indicadores": {
         "kg_prom_ingreso": 276.0,
@@ -30719,9 +30719,9 @@
         "compra": 70546437.29,
         "comision": 2116393.12,
         "alimento": 33504734.97,
-        "mortandad": 690649.62,
-        "total": 111529572.01,
-        "por_kg_vendido": 4055.62
+        "mortandad": 680067.66,
+        "total": 111518990.04,
+        "por_kg_vendido": 4055.23
       },
       "verificacion": {
         "estado": "sin_datamars",
@@ -30801,6 +30801,236 @@
         "2026-07": 1.76
       },
       "dias_sin_pv": 21
+    },
+    "2335": {
+      "filas": [
+        {
+          "origen": "sin_verificar",
+          "imputado": false,
+          "tropa": "PEG.UTE.23/07/2026",
+          "categoria": "Toro",
+          "corral": "105",
+          "hotelero": "PEGSA",
+          "comprador": "TRASLADO A FERIA",
+          "cabezas": 3,
+          "fecha_ingreso": "2026-07-23",
+          "fecha_egreso": "2026-09-02",
+          "dias": 41,
+          "kg_ingreso": 1598.0,
+          "kg_egreso": 1978.0,
+          "precio_kg": 3508.75,
+          "estimado": false,
+          "comision_pct": 2.0,
+          "costo_compra": 5606982.5,
+          "kg_ms": 1484.0,
+          "pct_ms": 2.02,
+          "acotado": true,
+          "alimento": 527642.49,
+          "estructura": 55350.0,
+          "sanidad": 22500.0,
+          "mortandad": 54051.31
+        },
+        {
+          "origen": "sin_verificar",
+          "imputado": false,
+          "tropa": "BUL.BRE.10/02/26",
+          "categoria": "Toro",
+          "corral": "106",
+          "hotelero": "PEGSA",
+          "comprador": "TRASLADO A FERIA",
+          "cabezas": 3,
+          "fecha_ingreso": "2026-02-10",
+          "fecha_egreso": "2026-09-02",
+          "dias": 204,
+          "kg_ingreso": 865.0,
+          "kg_egreso": 2030.0,
+          "precio_kg": 3897.71,
+          "estimado": false,
+          "comision_pct": 3.0,
+          "costo_compra": 3371519.15,
+          "kg_ms": 6072.9,
+          "pct_ms": 2.06,
+          "acotado": true,
+          "alimento": 2094527.8,
+          "estructura": 226425.0,
+          "sanidad": 23274.0,
+          "mortandad": 32501.44
+        },
+        {
+          "origen": "sin_verificar",
+          "imputado": false,
+          "tropa": "PEGDARW14/05/2026",
+          "categoria": "Novillo",
+          "corral": "105",
+          "hotelero": "PEGSA",
+          "comprador": "TRASLADO A FERIA",
+          "cabezas": 1,
+          "fecha_ingreso": "2026-05-14",
+          "fecha_egreso": "2026-09-02",
+          "dias": 111,
+          "kg_ingreso": 526.0,
+          "kg_egreso": 744.0,
+          "precio_kg": 2938.91,
+          "estimado": false,
+          "comision_pct": 3.0,
+          "costo_compra": 1545866.66,
+          "kg_ms": 1422.4,
+          "pct_ms": 2.02,
+          "acotado": true,
+          "alimento": 495750.39,
+          "estructura": 47430.0,
+          "sanidad": 7630.0,
+          "mortandad": 14902.15
+        },
+        {
+          "origen": "sin_verificar",
+          "imputado": false,
+          "tropa": "PECVIL01/04/2026",
+          "categoria": "Toro",
+          "corral": "106",
+          "hotelero": "PEGSA",
+          "comprador": "TRASLADO A FERIA",
+          "cabezas": 1,
+          "fecha_ingreso": "2026-04-01",
+          "fecha_egreso": "2026-09-02",
+          "dias": 154,
+          "kg_ingreso": 348.0,
+          "kg_egreso": 736.0,
+          "precio_kg": 3950.0,
+          "estimado": false,
+          "comision_pct": 2.0,
+          "costo_compra": 1374600.0,
+          "kg_ms": 1684.7,
+          "pct_ms": 2.02,
+          "acotado": true,
+          "alimento": 585011.91,
+          "estructura": 60760.0,
+          "sanidad": 7630.0,
+          "mortandad": 13251.14
+        },
+        {
+          "origen": "sin_verificar",
+          "imputado": false,
+          "tropa": "PEC.SRP.31/10/25",
+          "categoria": "Ternero",
+          "corral": "104",
+          "hotelero": "PEGSA",
+          "comprador": "TRASLADO A FERIA",
+          "cabezas": 1,
+          "fecha_ingreso": "2025-10-31",
+          "fecha_egreso": "2026-09-02",
+          "dias": 306,
+          "kg_ingreso": 241.0,
+          "kg_egreso": 624.0,
+          "precio_kg": 3565.77,
+          "estimado": true,
+          "comision_pct": 3.0,
+          "costo_compra": 859350.12,
+          "kg_ms": 2865.6,
+          "pct_ms": 2.17,
+          "acotado": true,
+          "alimento": 1003773.42,
+          "estructura": 103026.0,
+          "sanidad": 7758.0,
+          "mortandad": 8284.14
+        },
+        {
+          "origen": "sin_verificar",
+          "imputado": false,
+          "tropa": "PEG.DAR.12/09/25",
+          "categoria": "Ternero",
+          "corral": "104",
+          "hotelero": "PEGSA",
+          "comprador": "TRASLADO A FERIA",
+          "cabezas": 1,
+          "fecha_ingreso": "2025-09-12",
+          "fecha_egreso": "2026-09-02",
+          "dias": 355,
+          "kg_ingreso": 224.0,
+          "kg_egreso": 752.0,
+          "precio_kg": 3565.77,
+          "estimado": true,
+          "comision_pct": 3.0,
+          "costo_compra": 798732.07,
+          "kg_ms": 3793.5,
+          "pct_ms": 2.19,
+          "acotado": true,
+          "alimento": 1327715.19,
+          "estructura": 114436.0,
+          "sanidad": 7758.0,
+          "mortandad": 7699.78
+        }
+      ],
+      "cabezas": 10,
+      "tropas": 6,
+      "kg_ingreso": 3802.0,
+      "kg_egreso": 6864.0,
+      "kg_producidos": 3062.0,
+      "kg_ms": 17323.1,
+      "fecha_egreso": "2026-09-02",
+      "comprador": "TRASLADO A FERIA",
+      "costos": {
+        "compra": 13557050.5,
+        "comision": 336895.69,
+        "alimento": 6034421.2,
+        "estructura": 607427.0,
+        "sanidad": 76550.0,
+        "mortandad": 130689.97,
+        "total": 20743034.35,
+        "por_kg_vendido": 3022.0
+      },
+      "indicadores": {
+        "kg_prom_ingreso": 380.2,
+        "kg_prom_salida": 686.4,
+        "estadia_prom": 166,
+        "adp": 1.843,
+        "pct_ms": 2.09,
+        "conversion_ms": 5.66,
+        "costo_kg_producido": 2194.12,
+        "precio_prom_pagado": 3565.77
+      },
+      "reposicion": {
+        "precio_kg": 3565.77,
+        "fuente_precio": "prom. histórico del remito",
+        "precio_kg_ms": 355.56,
+        "mes_ms": "2026-07",
+        "compra": 13557050.5,
+        "comision": 406711.51,
+        "alimento": 6159352.44,
+        "mortandad": 130689.97,
+        "total": 20937781.42,
+        "por_kg_vendido": 3050.38
+      },
+      "verificacion": {
+        "estado": "sin_datamars",
+        "sc": 0
+      },
+      "cobertura_pct": 87.8,
+      "tropas_sin_precio": [
+        {
+          "tropa": "PEC.SRP.31/10/25",
+          "categoria": "Ternero",
+          "cabezas": 1,
+          "kg_ingreso": 241.0,
+          "fecha_ingreso": "2025-10-31",
+          "estimado_a": 3565.77
+        },
+        {
+          "tropa": "PEG.DAR.12/09/25",
+          "categoria": "Ternero",
+          "cabezas": 1,
+          "kg_ingreso": 224.0,
+          "fecha_ingreso": "2025-09-12",
+          "estimado_a": 3565.77
+        }
+      ],
+      "precio_estimado": 3565.77,
+      "meses_pv_acotados": {
+        "2026-04": 1.91,
+        "2026-06": 1.92,
+        "2026-07": 1.76
+      },
+      "dias_sin_pv": 6
     }
   }
 }
