@@ -1,9 +1,10 @@
 """
-datamars_source.py — Adapter para la API OData de Datamars Livestock (v15.68).
+datamars_source.py — Adapter para la API OData de Datamars Livestock (v15.68.2).
 
 Gemelo de `wincampo_source.py`: misma ubicación (raíz de PEGSA_Portal), mismo
 `.env`, mismo estilo de reintentos. Sirve para UNA cosa: saber qué caravanas
-(EID) leyó de verdad el bastón en la sesión de balanza de cada remito de venta.
+(EID) leyó de verdad el bastón, y cuándo. El pipeline no matchea remito contra
+sesión: le pregunta a esta cache si tal caravana se leyó en los últimos 30 días.
 
 Por qué existe (bitácora sesion_2026-09-03_datamars_cruce_remitos_cowork.md):
 cuando la caravana no lee o no coincide, el cargador de WinCampo le asigna al
@@ -43,10 +44,15 @@ BASE = "https://app.livestock.datamars.com"
 RATE_LIMIT_SLEEP = 0.3
 TIMEOUT_DEFAULT = 60
 PAGE_SIZE = 5000             # el server NO pagina: hay que pedir $top/$skip
-MAX_SESIONES_POR_TICK = 120  # techo de seguridad: la 1a corrida no debe colgar el tick
+MAX_SESIONES_POR_TICK = 250  # techo de seguridad: la 1a corrida no debe colgar el tick
 
 CACHE_DIRNAME = "datamars_sesiones"
 INDEX_NAME = "index.json"
+# v15.68.2: subir este número cuando cambie el shape de la pesada normalizada.
+# Si el index.json guardado trae otro formato, los ses_<id>.json se rebajan y se
+# vuelven a pedir — si no, quedarían pesadas viejas sin los campos nuevos y el
+# cruce fallaría en silencio.
+CACHE_FORMATO = 2
 
 
 class DatamarsSinCredenciales(RuntimeError):
@@ -316,6 +322,10 @@ class DatamarsAPI:
             "eid": eid,
             "vid": vid,
             "categoria": _json_field(life, "Categoria", "Categoría"),
+            # v15.68.2: al 3/9/2026 Datamars devuelve `Sexo` SIEMPRE vacío (353
+            # de 353 pesadas muestreadas), así que el sexo lo termina poniendo
+            # la categoría. Se guarda igual por si empiezan a cargarlo.
+            "sexo": _json_field(life, "Sexo"),
             "dias_datamars": _num(_json_field(udf, "Total de días", "Total de dias")),
             "gpv_datamars": _num(_json_field(udf, "GPV total")),
         }
@@ -346,6 +356,12 @@ def _escribir_json(p, obj):
 def cargar_index(carpeta_datos):
     d = _leer_json(cache_dir(carpeta_datos) / INDEX_NAME, {}) or {}
     return {str(k): v for k, v in (d.get("sesiones") or {}).items()}
+
+
+def formato_cache(carpeta_datos):
+    """Formato con el que se guardaron los ses_<id>.json (1 = pre v15.68.2)."""
+    d = _leer_json(cache_dir(carpeta_datos) / INDEX_NAME, {}) or {}
+    return int(d.get("formato") or 1)
 
 
 def cargar_sesion(carpeta_datos, sesion_id):
@@ -384,6 +400,10 @@ def sincronizar(carpeta_datos, fechas_objetivo, desde=None, log=None,
 
     # 1 · refrescar el índice contra la API (si hay credenciales)
     index = cargar_index(carpeta_datos)
+    vigente = (formato_cache(carpeta_datos) == CACHE_FORMATO)
+    if index and not vigente:
+        log.info(f"  Datamars: la cache está en un formato viejo — se vuelven a "
+                 f"pedir las pesadas de las {len(index)} sesiones conocidas")
     api = None
     try:
         api = DatamarsAPI()
@@ -402,6 +422,7 @@ def sincronizar(carpeta_datos, fechas_objetivo, desde=None, log=None,
                 index[str(s["sesion_id"])] = s
             _escribir_json(cdir / INDEX_NAME, {
                 "actualizado": datetime.now().isoformat(),
+                "formato": CACHE_FORMATO,
                 "desde": desde_d.isoformat(),
                 "sesiones": index,
             })
@@ -416,7 +437,7 @@ def sincronizar(carpeta_datos, fechas_objetivo, desde=None, log=None,
         f = _fecha(s.get("fecha"))
         if not f or not _en_ventana(f):
             continue
-        pesadas = cargar_sesion(carpeta_datos, sid)
+        pesadas = cargar_sesion(carpeta_datos, sid) if vigente else None
         if pesadas is None:
             faltantes.append((sid, s))
         else:

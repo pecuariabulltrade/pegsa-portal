@@ -15,7 +15,7 @@ KPIs agrupados por:
   - Categoria final
 """
 import sys, os, json, logging, configparser, warnings, re
-from datetime import datetime
+from datetime import datetime, timedelta as _td
 from pathlib import Path
 
 # v15.4: el bot AUTO corre actualizar_datos.py desde
@@ -390,20 +390,18 @@ def smoke_test(carpeta, periodo):
         _check("insumos.count", len(insumos_list) >= 6,
                f"solo {len(insumos_list)} insumos críticos — esperado >= 6 de los 7")
 
-    # --- resultado por remito: control del cruce con Datamars (v15.68) ---
-    # AVISO, no error: que el nº de "sin caravana" no coincida con las pesadas
-    # sin EID de la sesión significa que el match remito↔sesión quedó flojo, no
-    # que el pipeline esté roto. Los números del remito siguen siendo válidos.
+    # --- resultado por remito: canario del cruce con Datamars (v15.68.2) ---
+    # AVISO, no error. El control "sin caravana vs pesadas sin EID de la sesión"
+    # se eliminó con el criterio por caravana (ya no hay sesión de referencia).
+    # Queda el único síntoma que sí es un cruce roto: Datamars activo pero
+    # ninguna caravana confirmada en ningún remito (token, cache o EIDs mal).
     rr = _load("resultado_remitos.json")
     if rr:
-        _malos = [(k, v["verificacion"]["sc"], v["verificacion"]["sin_eid_sesion"])
-                  for k, v in (rr.get("remitos") or {}).items()
-                  if (v.get("verificacion") or {}).get("control_ok") is False]
-        if _malos:
+        _dm = (rr.get("meta") or {}).get("datamars") or {}
+        if _dm.get("activo") and not _dm.get("confirmadas_total"):
             results["avisos"].append(
-                "remitos.sc_control: " + str(len(_malos)) + " remito(s) con desvío entre "
-                "los sin-caravana detectados y las pesadas sin EID de su sesión Datamars: "
-                + " · ".join(f"{k}: {a} vs {b}" for k, a, b in sorted(_malos)[:8]))
+                "remitos.datamars: la cache tiene lecturas pero NO se confirmó ninguna "
+                "caravana en ningún remito — revisar el cruce RFID/EID.")
             log.warning("  [!] " + results["avisos"][-1])
 
     # --- consumo (anual razonable) ---
@@ -7589,18 +7587,38 @@ def _rr_cat(c):
     return _CAT_COMPRAS.get(_norm_cat_compra(k), k.title())
 
 
-# ── v15.68 · Cruce con Datamars (la lectura real del bastón) ────────
+# ── v15.68.2 · Cruce con Datamars por CARAVANA (la lectura real del bastón) ──
 # Cuando la caravana no lee o no coincide, el cargador de WinCampo le asigna al
 # egreso un animal cualquiera del stock: el remito hereda kg de ingreso, precio,
 # fecha y estadía de OTRO animal (remito 2274: 50 días de estadía en WinCampo
-# contra 11 reales). Datamars registra esas pesadas SIN EID. Cruzando RFID ↔ EID
-# se detectan y se les imputa el origen de la tropa mayoritaria confirmada.
-RR_DM_DIAS_ATRAS    = 3      # sesión candidata: desde fe−3…
-RR_DM_DIAS_ADELANTE = 1      # …hasta fe+1
-RR_DM_MAX_DCAB      = 2      # |cab sesión − cab remito| aceptado
-RR_DM_MAX_DKG_PCT   = 6.0    # |Δ kg promedio| aceptado, en %
-RR_DM_MIN_SOLAPE    = 1      # caravanas en común mínimas para aceptar la sesión
-RR_DM_TOL_CONTROL   = 0.20   # #SC vs pesadas sin EID: tolerancia relativa
+# contra 11 reales).
+#
+# v15.68.2 — Criterio de Nicolás, apoyado en dos hechos del negocio: las
+# caravanas NO se repiten y un animal que salió no vuelve a salir. Entonces no
+# hace falta adivinar qué sesión de balanza corresponde a cada remito: alcanza
+# con preguntar si esa caravana fue leída ALGUNA VEZ en los últimos 30 días,
+# en cualquier sesión (ingresos incluidos). El match remito↔sesión de la primera
+# versión era demasiado estricto para la realidad de la balanza (remitos
+# cruzados o combinados en una sesión, sesiones de ingreso el mismo día) y
+# dejaba 38 de 60 remitos con el control en rojo.
+RR_DM_VENTANA_DIAS  = 30     # se busca la caravana en [fe − 30, fe + 1]
+RR_DM_DIAS_ADELANTE = 1
+
+# Sexo según la categoría de WinCampo (ya normalizada a nombre largo por _rr_cat)
+RR_SEXO_WC = {
+    "Vaca": "H", "Vaquillona": "H", "Ternera": "H",
+    "Novillo": "M", "Novillito": "M", "Ternero": "M", "Toro": "M",
+}
+# Sexo según lo que trae Datamars. `lifeDataUserDefinedFieldJson.Sexo` viene
+# SIEMPRE vacío (verificado 3/9/2026 sobre 353 pesadas), así que en la práctica
+# manda la Categoria — que además es nula en ~30 % de las pesadas. Sin dato no
+# se descarta: se acepta por presencia.
+RR_SEXO_DM = {
+    "vaca": "H", "vacas": "H", "hembra": "H", "hembras": "H", "vaquillona": "H",
+    "vaquillonas": "H", "ternera": "H", "terneras": "H",
+    "macho": "M", "machos": "M", "toro": "M", "toros": "M", "novillo": "M",
+    "novillos": "M", "novillito": "M", "ternero": "M", "terneros": "M",
+}
 
 
 def _rr_rfid(v):
@@ -7617,24 +7635,45 @@ def _rr_moda(vals):
     return sorted(set(vals), key=lambda v: (-vals.count(v), str(v)))[0]
 
 
+def _rr_sexo_dm(p):
+    """Sexo de una pesada de Datamars. None = Datamars no lo sabe.
+
+    Se mira primero `Sexo` (hoy siempre vacío) y después `Categoria`. 'H'/'M'
+    pelados se aceptan por si algún día llenan el campo.
+    """
+    for v in (p.get("sexo"), p.get("categoria")):
+        k = str(v or "").strip().lower()
+        if k in RR_SEXO_DM:
+            return RR_SEXO_DM[k]
+        if k in ("h", "m"):
+            return k.upper()
+    return None
+
+
 def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
-    """v15.68 · Marca e imputa los animales "sin caravana" de cada remito.
+    """v15.68.2 · Marca e imputa los animales "sin caravana" de cada remito.
 
-    MUTA `filas_rem` in place: a la fila cuyo RFID no aparece en la lectura real
-    del bastón le pone origen='imputado' y le reemplaza tropa, categoría, corral,
-    fecha de ingreso y kg de ingreso por los de la tropa mayoritaria confirmada
-    del remito. El kg de EGRESO se conserva: es el real (Datamars y WinCampo
-    coinciden en el peso).
+    Para cada fila de egreso se busca su RFID en TODAS las pesadas de Datamars
+    con fecha en [fecha_egreso − RR_DM_VENTANA_DIAS, fecha_egreso + 1], sin
+    importar de qué sesión vengan. Si aparece y el sexo no se contradice, la
+    fila está CONFIRMADA. Si no aparece, o solo aparece con el otro sexo, es
+    SIN CARAVANA (SC) y se le imputa el origen de la tropa mayoritaria
+    confirmada del remito.
 
-    Criterio de Nicolás: si no hay sesión de Datamars para ese día, vale lo
-    cargado en WinCampo — cero cambios, marcado "sin verificar".
+    MUTA `filas_rem` in place. El kg de EGRESO nunca se toca: es el real
+    (Datamars y WinCampo coinciden en el peso).
+
+    Criterio de Nicolás: si no hubo balanza en la ventana, vale lo cargado en
+    WinCampo — cero cambios, marcado "sin verificar".
 
     Devuelve (verificacion_por_remito, meta_datamars). Nunca levanta.
     """
     verif = {rem: {"estado": "sin_datamars", "sc": 0} for rem in filas_rem}
-    meta = {"activo": False, "motivo": None, "sesiones_cache": 0, "ultima_sesion": None,
-            "remitos_verificados": 0, "remitos_sin_sesion": 0,
-            "sc_total": 0, "cab_total": sum(len(f) for f in filas_rem.values())}
+    meta = {"activo": False, "motivo": None, "ventana_dias": RR_DM_VENTANA_DIAS,
+            "sesiones_cache": 0, "ultima_sesion": None,
+            "remitos_verificados": 0, "remitos_sin_datamars": 0,
+            "confirmadas_total": 0, "sc_total": 0, "sc_por_sexo_total": 0,
+            "cab_total": sum(len(f) for f in filas_rem.values())}
     if not filas_rem:
         return verif, meta
 
@@ -7645,19 +7684,14 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
         log.warning(f"  ⚠ datamars_source no importable ({e}) — remitos sin verificar")
         return verif, meta
 
-    # fecha de egreso de cada remito (la máxima de sus filas, igual que el JSON)
     info = {}
     for rem, filas in filas_rem.items():
-        fe = max(x["fe"] for x in filas)
-        kges = [x["kge"] for x in filas if x["kge"]]
-        info[rem] = {"fe": fe, "cab": len(filas),
-                     "kg_prom": (sum(kges) / len(kges)) if kges else None,
-                     "rfids": {x["rfid"] for x in filas if x["rfid"]}}
+        info[rem] = {"fe": max(x["fe"] for x in filas)}
 
     try:
         sesiones, m = _DM.sincronizar(
             carpeta_datos, [i["fe"] for i in info.values()], log=log,
-            dias_atras=RR_DM_DIAS_ATRAS, dias_adelante=RR_DM_DIAS_ADELANTE)
+            dias_atras=RR_DM_VENTANA_DIAS, dias_adelante=RR_DM_DIAS_ADELANTE)
     except Exception as e:
         meta["motivo"] = f"sincronizar falló: {type(e).__name__}"
         log.warning(f"  ⚠ Datamars: {e} — remitos sin verificar")
@@ -7667,123 +7701,98 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
     meta["sesiones_cache"] = m.get("sesiones_cache", 0)
     meta["ultima_sesion"] = m.get("ultima_sesion")
     if not sesiones:
+        meta["remitos_sin_datamars"] = len(filas_rem)
         return verif, meta
     meta["activo"] = True
 
-    # resumen por sesión (una sola pasada por las pesadas)
+    # ── Índice global de lecturas: EID → [(fecha, pesada)] ──
+    # Una sola pasada por toda la cache; después cada fila es un lookup.
+    lecturas, sin_eid_fechas = {}, []
     for s in sesiones:
-        pes = s.get("pesadas") or []
-        pesos = [p["peso"] for p in pes if p.get("peso")]
-        s["cab"] = len(pes)
-        s["kg_prom"] = (sum(pesos) / len(pesos)) if pesos else None
-        s["eids"] = {p["eid"] for p in pes if p.get("eid")}
-        s["eids_slz"] = {e.lstrip("0") for e in s["eids"]}
+        for p in (s.get("pesadas") or []):
+            f = _DM._fecha(p.get("fecha")) or s["fecha"]
+            e = p.get("eid")
+            if e:
+                lecturas.setdefault(e, []).append((f, p))
+            else:
+                sin_eid_fechas.append(f)
+    # segundo índice sin ceros a la izquierda, por si WinCampo o Datamars los recortan
+    lecturas_slz = {}
+    for e, v in lecturas.items():
+        k = e.lstrip("0")
+        if k != e:
+            lecturas_slz.setdefault(k, []).extend(v)
+    todas_fechas = sorted({f for v in lecturas.values() for f, _ in v} | set(sin_eid_fechas))
 
-    # ── 1 · Match remito ↔ sesión: fecha + cabezas + kg promedio ──
-    # Greedy global; cada sesión se usa una sola vez.
-    #
-    # ⚠ v15.68: al criterio del piloto (fecha ±, cabezas ±2, kg promedio ±6 %)
-    # se le agrega un requisito de SOLAPE de caravanas. Sobre los datos del
-    # piloto, el criterio de fecha+cabezas+kg solo asignaba a 10 de 64 remitos
-    # una sesión con CERO caravanas en común (2226, 2248, 2249, 2268, 2285,
-    # 2287, 2290, 2297, 2312, 2329): mismo día, cabezas y peso promedio casi
-    # iguales, pero era el camión de al lado. Con esa sesión, TODAS las filas
-    # del remito quedaban "sin caravana" y la imputación reescribía el remito
-    # entero. Una sesión que no comparte ninguna caravana con el remito no es
-    # su pesada, por bien que le den los números.
-    pares = []
-    for rem, i in info.items():
-        for s in sesiones:
-            dd = (s["fecha"] - i["fe"]).days
-            if not (-RR_DM_DIAS_ATRAS <= dd <= RR_DM_DIAS_ADELANTE):
-                continue
-            dcab = abs(s["cab"] - i["cab"])
-            if dcab > RR_DM_MAX_DCAB:
-                continue
-            if not (i["kg_prom"] and s["kg_prom"]):
-                continue
-            dkg = abs(s["kg_prom"] - i["kg_prom"]) / i["kg_prom"] * 100
-            if dkg > RR_DM_MAX_DKG_PCT:
-                continue
-            solape = sum(1 for r in i["rfids"]
-                         if r in s["eids"] or r.lstrip("0") in s["eids_slz"])
-            if solape < RR_DM_MIN_SOLAPE:
-                continue
-            pares.append((-solape, abs(dd) * 2 + dcab * 3 + dkg, rem, s))
-    pares.sort(key=lambda p: (p[0], p[1], info[p[2]]["fe"], p[2]))
-    asignada, usadas = {}, set()
-    for _ov, _sc, rem, s in pares:
-        if rem in asignada or s["sesion_id"] in usadas:
-            continue
-        asignada[rem] = s
-        usadas.add(s["sesion_id"])
-
-    # ── 2 · Por remito: SC + imputación ──
     for rem, filas in filas_rem.items():
-        i = info[rem]
-        s = asignada.get(rem)
-        if s is not None:
-            estado, fuente = "verificado", [s]
-        else:
-            # fallback por día: unión de EIDs de TODAS las sesiones de fe±1.
-            # Son las sesiones que juntan varios remitos (COTO/Millán de julio).
-            fuente = [x for x in sesiones if abs((x["fecha"] - i["fe"]).days) <= 1]
-            estado = "verificado_dia" if fuente else "sin_sesion"
-        if not fuente:
-            verif[rem] = {"estado": "sin_sesion", "sc": 0}
-            meta["remitos_sin_sesion"] += 1
+        fe = info[rem]["fe"]
+        desde = fe - _td(days=RR_DM_VENTANA_DIAS)
+        hasta = fe + _td(days=RR_DM_DIAS_ADELANTE)
+        if not any(desde <= f <= hasta for f in todas_fechas):
+            # no hubo balanza en la ventana → el remito vale como WinCampo
+            verif[rem] = {"estado": "sin_datamars", "sc": 0,
+                          "ventana_dias": RR_DM_VENTANA_DIAS,
+                          "desde": desde.isoformat(), "hasta": hasta.isoformat()}
+            meta["remitos_sin_datamars"] += 1
             continue
 
-        eids, eids_slz, sin_eid, cab_ses, dias_dm = set(), set(), 0, 0, []
-        for x in fuente:
-            eids |= x["eids"]
-            eids_slz |= x["eids_slz"]
-            for p in (x.get("pesadas") or []):
-                cab_ses += 1
-                if not p.get("eid"):
-                    sin_eid += 1
-                if p.get("dias_datamars"):
-                    dias_dm.append(p["dias_datamars"])
-
-        conf, sc = [], []
+        conf, sc, n_sexo = [], [], 0
+        dias_dm = []
         for x in filas:
             r = x["rfid"]
-            # el comparador prueba también sin ceros a la izquierda por si
-            # WinCampo o Datamars los recortan
-            ok = bool(r) and (r in eids or r.lstrip("0") in eids_slz)
-            (conf if ok else sc).append(x)
+            cand = (lecturas.get(r) or []) if r else []
+            if r and not cand:
+                cand = lecturas_slz.get(r.lstrip("0")) or []
+            enventana = [(f, p) for f, p in cand if desde <= f <= hasta]
+            if not enventana:
+                sc.append(x)
+                continue
+            sexo_wc = RR_SEXO_WC.get(x["cat"])
+            # el sexo solo descarta cuando Datamars lo sabe y contradice
+            ok = [(f, p) for f, p in enventana
+                  if sexo_wc is None or _rr_sexo_dm(p) in (None, sexo_wc)]
+            if not ok:
+                n_sexo += 1
+                x["sc_sexo"] = True
+                sc.append(x)
+                continue
+            # la lectura más cercana a la fecha de egreso
+            f, p = min(ok, key=lambda t: abs((t[0] - fe).days))
+            x["dm_fecha"] = f
+            x["dm_dias"] = p.get("dias_datamars")
+            x["dm_gpv"] = p.get("gpv_datamars")
+            if p.get("dias_datamars"):
+                dias_dm.append(p["dias_datamars"])
+            conf.append(x)
 
         kge_tot = sum(x["kge"] for x in filas) or 0.0
         kge_sc = sum(x["kge"] for x in sc)
         n_sc = len(sc)
-        tol = max(2.0, RR_DM_TOL_CONTROL * max(n_sc, sin_eid))
         bloque = {
-            "estado": estado,
-            "sesion_id": (s["sesion_id"] if s is not None else None),
-            "sesion_nombre": (s.get("nombre") if s is not None else None),
-            "sesion_fecha": (s["fecha"].isoformat() if s is not None else None),
-            "sesiones_dia": (None if s is not None else [x["sesion_id"] for x in fuente]),
-            "cab_sesion": cab_ses, "sin_eid_sesion": sin_eid,
-            "sc": n_sc,
+            "estado": "verificado",
+            "ventana_dias": RR_DM_VENTANA_DIAS,
+            "desde": desde.isoformat(), "hasta": hasta.isoformat(),
+            "confirmadas": len(conf), "sc": n_sc,
             "sc_pct_cab": round(n_sc / len(filas) * 100, 1) if filas else None,
             "sc_pct_kg": round(kge_sc / kge_tot * 100, 1) if kge_tot else None,
-            "control_ok": abs(n_sc - sin_eid) <= tol,
+            "sc_por_sexo": n_sexo,
             "tropa_imputada": None, "imputado": None,
+            "pesadas_sin_eid_ventana": sum(1 for f in sin_eid_fechas if desde <= f <= hasta),
             "dias_datamars_prom": (round(sum(dias_dm) / len(dias_dm), 1) if dias_dm else None),
         }
-
-        if n_sc and not conf:
-            # todas sin caravana: no hay de dónde imputar → vale WinCampo
-            bloque["estado"] = "sin_confirmadas"
-            verif[rem] = bloque
-            meta["sc_total"] += n_sc
-            continue
+        meta["remitos_verificados"] += 1
+        meta["confirmadas_total"] += len(conf)
+        meta["sc_total"] += n_sc
+        meta["sc_por_sexo_total"] += n_sexo
 
         for x in conf:
             x["origen"] = "confirmado"
-        meta["remitos_verificados"] += 1
-        meta["sc_total"] += n_sc
         if not n_sc:
+            verif[rem] = bloque
+            continue
+        if not conf:
+            # ninguna caravana leída: no hay de dónde imputar, vale WinCampo.
+            # El frontend lo pinta en rojo para que Nicolás cargue el origen.
             verif[rem] = bloque
             continue
 
@@ -7841,12 +7850,10 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
             "kg_ingreso_cab": round(kg_cab, 1) if kg_cab else None,
             "precio_kg": _pc.get("precio_kg") or t_ex.get("precio_kg"),
             "fecha_ingreso": fi_imp.isoformat() if fi_imp else None,
-            "dias": ((i["fe"] - fi_imp).days if fi_imp else None),
+            "dias": ((fe - fi_imp).days if fi_imp else None),
         }
         verif[rem] = bloque
 
-    meta["remitos_sin_sesion"] = sum(
-        1 for v in verif.values() if v.get("estado") == "sin_sesion")
     return verif, meta
 
 
@@ -7972,10 +7979,19 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "hotelero": x["hotelero"], "comprador": x["comprador"],
                 "origen": x["origen"], "imputado": x["origen"] == "imputado",
                 "cab": 0, "kgi": 0.0, "kge": 0.0, "dias": x["estadia"],
+                # v15.68.2: contraste independiente de WinCampo — estadía y
+                # ganancia que calcula Datamars desde la primera pesada del EID.
+                "dm_dias_l": [], "dm_gpv_l": [], "dm_fecha": None,
             })
             g["cab"] += 1
             g["kgi"] += x["kgi"]
             g["kge"] += x["kge"]
+            if x.get("dm_dias") is not None:
+                g["dm_dias_l"].append(x["dm_dias"])
+            if x.get("dm_gpv") is not None:
+                g["dm_gpv_l"].append(x["dm_gpv"])
+            if x.get("dm_fecha") and (g["dm_fecha"] is None or x["dm_fecha"] > g["dm_fecha"]):
+                g["dm_fecha"] = x["dm_fecha"]
 
     if not grupos:
         log.warning(f"  ⚠ sin egresos de venta con remito desde {RR_DESDE}")
@@ -8100,6 +8116,11 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 # sin caravana, origen imputado a la tropa mayoritaria del
                 # remito; 'sin_verificar' = no hubo sesión de Datamars.
                 "origen": g["origen"], "imputado": g["imputado"],
+                "fecha_lectura_datamars": (g["dm_fecha"].isoformat() if g["dm_fecha"] else None),
+                "dias_datamars": (round(sum(g["dm_dias_l"]) / len(g["dm_dias_l"]), 1)
+                                  if g["dm_dias_l"] else None),
+                "gpv_datamars": (round(sum(g["dm_gpv_l"]) / len(g["dm_gpv_l"]), 1)
+                                 if g["dm_gpv_l"] else None),
                 "tropa": g["tropa"], "categoria": g["cat"], "corral": g["corral"],
                 "hotelero": g["hotelero"], "comprador": g["comprador"],
                 "cabezas": g["cab"],
@@ -8203,9 +8224,12 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     log.info(f"  ✓ Resultado por remito: {len(remitos_out)} remitos desde {RR_DESDE} · "
              f"{n_venta} egresos de venta · cobertura {salida['meta']['cobertura_global_pct']}%")
     if meta_dm.get("activo"):
-        log.info(f"    Datamars: {meta_dm['remitos_verificados']} remitos verificados · "
-                 f"{meta_dm['remitos_sin_sesion']} sin sesión · {meta_dm['sc_total']} sin "
-                 f"caravana de {meta_dm['cab_total']} cab")
+        log.info(f"    Datamars (ventana {meta_dm['ventana_dias']}d): "
+                 f"{meta_dm['remitos_verificados']} remitos verificados · "
+                 f"{meta_dm['remitos_sin_datamars']} sin lecturas · "
+                 f"{meta_dm['confirmadas_total']} caravanas leídas · "
+                 f"{meta_dm['sc_total']} sin caravana de {meta_dm['cab_total']} cab "
+                 f"({meta_dm['sc_por_sexo_total']} por sexo distinto)")
     else:
         log.info(f"    Datamars inactivo ({meta_dm.get('motivo')}) — "
                  f"todos los remitos valen como WinCampo")
@@ -8215,9 +8239,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
         log.info(f"      {rem}: {r['cabezas']:>3} cab · costo $ {r['costos']['total']:,.0f} "
                  f"· $ {r['costos']['por_kg_vendido']:,.0f}/kg · cobertura {r['cobertura_pct']}%"
                  f"{_sc}")
-        if _v.get("sc") and not _v.get("control_ok"):
-            log.warning(f"      ⚠ {rem}: {_v['sc']} sin caravana contra "
-                        f"{_v['sin_eid_sesion']} pesadas sin EID en la sesión")
+        if _v.get("estado") == "verificado" and not _v.get("confirmadas"):
+            log.warning(f"      ⚠ {rem}: ninguna de sus {r['cabezas']} caravanas se leyó en "
+                        f"los últimos {_v.get('ventana_dias')} días — vale WinCampo, "
+                        f"hay que cargar el origen a mano")
     return salida
 
 

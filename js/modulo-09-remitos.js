@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.68 (2026-09-03)
+/* modulo-09-remitos.js — Resultado por Remito · v15.68.2 (2026-09-03)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -10,8 +10,9 @@
    v15.68 · Los animales SIN CARAVANA. Cuando el bastón no lee la caravana, el
    cargador de WinCampo le asigna al egreso un animal cualquiera del stock y el
    remito hereda kg de ingreso, precio, fecha y estadía de OTRO animal. El
-   pipeline los detecta cruzando el RFID contra la lectura real (Datamars) y les
-   imputa el origen de la tropa mayoritaria confirmada. Acá se muestran con
+   pipeline los detecta buscando el RFID en TODAS las lecturas reales de los
+   ultimos 30 dias (Datamars, sin importar la sesion) y les imputa el origen de
+   la tropa mayoritaria confirmada. Acá se muestran con
    badge y marca propia, y se puede pisar ese origen a mano ($/kg, kg/cab y
    fecha) con recálculo en vivo. Sin sesión de Datamars no cambia nada: vale lo
    cargado en WinCampo.
@@ -115,7 +116,7 @@ function remConsolidar(ids) {
   var fechas = [], sinPv = 0;
   // v15.68: verificación sumada del grupo — cabezas sin caravana de todos sus
   // remitos, y las tropas a las que se les imputó el origen.
-  var VER = { sc: 0, kgSc: 0, sinEid: 0, estados: {}, tropas: [], ctrlMal: [], imputado: null };
+  var VER = { sc: 0, kgSc: 0, conf: 0, sexo: 0, vent: 0, estados: {}, tropas: [], imputado: null };
 
   orden.forEach(function (id) {
     var r = R[id]; if (!r) return;
@@ -138,9 +139,10 @@ function remConsolidar(ids) {
     var vv = r.verificacion || { estado: 'sin_datamars', sc: 0 };
     VER.estados[vv.estado] = (VER.estados[vv.estado] || 0) + 1;
     VER.sc += vv.sc || 0;
-    VER.sinEid += vv.sin_eid_sesion || 0;
+    VER.conf += vv.confirmadas || 0;
+    VER.sexo += vv.sc_por_sexo || 0;
+    VER.vent = vv.ventana_dias || VER.vent;
     if (vv.tropa_imputada && VER.tropas.indexOf(vv.tropa_imputada) < 0) VER.tropas.push(vv.tropa_imputada);
-    if (vv.sc && vv.control_ok === false) VER.ctrlMal.push(id);
     if (vv.imputado && !VER.imputado) VER.imputado = vv.imputado;   // prefill del grupo
     (r.filas || []).forEach(function (f) {
       if (f.imputado) VER.kgSc += f.kg_egreso || 0;
@@ -192,18 +194,16 @@ function remConsolidar(ids) {
       mortandad: RP.mortandad, total: RP.total,
       por_kg_vendido: kge ? RP.total / kge : null
     },
-    // v15.68: el estado del grupo es el peor de sus remitos — si a uno le falta
-    // la sesión de Datamars, el grupo no está verificado del todo.
+    // v15.68.2: el estado del grupo es el peor de sus remitos — si a uno le
+    // faltan lecturas de Datamars en la ventana, el grupo no está verificado.
     verificacion: {
-      estado: (VER.estados.sin_confirmadas ? 'sin_confirmadas'
-               : (VER.estados.sin_datamars || VER.estados.sin_sesion) ? 'sin_sesion'
-               : VER.estados.verificado_dia ? 'verificado_dia' : 'verificado'),
+      estado: VER.estados.sin_datamars ? 'sin_datamars' : 'verificado',
+      ventana_dias: VER.vent || 30,
+      confirmadas: VER.conf,
       sc: VER.sc,
       sc_pct_cab: cab ? Math.round(VER.sc / cab * 1000) / 10 : null,
       sc_pct_kg: kge ? Math.round(VER.kgSc / kge * 1000) / 10 : null,
-      sin_eid_sesion: VER.sinEid,
-      control_ok: !VER.ctrlMal.length,
-      control_remitos: VER.ctrlMal,
+      sc_por_sexo: VER.sexo,
       tropa_imputada: VER.tropas.join(' · ') || null,
       imputado: VER.imputado,
       esGrupo: true, remitos_estados: VER.estados
@@ -521,13 +521,18 @@ function _remPuenteSVG(pasos) {
 /* v15.68 · Línea de supuestos del PDF sobre el origen de los sin caravana. */
 function _remSCLineaPDF(r) {
   var v = (r || {}).verificacion || { estado: 'sin_datamars', sc: 0 };
-  if (v.estado === 'sin_sesion' || v.estado === 'sin_datamars')
-    return 'Origen sin verificar (sin sesion Datamars) — vale lo cargado en WinCampo.';
-  if (v.estado === 'sin_confirmadas')
-    return 'Todas las cabezas sin caravana — origen no verificable; vale lo cargado en WinCampo.';
-  if (!v.sc) return 'Caravanas verificadas contra la lectura del baston (Datamars): sin animales sin caravana.';
+  var vent = v.ventana_dias || 30;
+  if (v.estado !== 'verificado')
+    return 'Origen sin verificar (sin lecturas de Datamars en la ventana) — vale lo cargado en WinCampo.';
+  if (!v.confirmadas)
+    return 'Ninguna caravana leida en los ultimos ' + vent + ' dias — vale lo cargado en WinCampo.';
+  if (!v.sc)
+    return 'Verificado contra las lecturas de Datamars de los ultimos ' + vent + ' dias: '
+      + v.confirmadas + ' caravanas leidas, ningun animal sin caravana.';
   var SC = remSCEstado(r);
-  return v.sc + ' animal(es) sin caravana (' + _remN(v.sc_pct_cab, 1) + ' % de las cabezas) — '
+  return 'Verificado contra las lecturas de Datamars de los ultimos ' + vent + ' dias. '
+    + v.sc + ' animal(es) sin caravana (' + _remN(v.sc_pct_cab, 1) + ' % de las cabezas'
+    + (v.sc_por_sexo ? ', ' + v.sc_por_sexo + ' por sexo distinto' : '') + ') — '
     + (SC.manual
         ? ('origen manual $ ' + _remN(SC.precio) + '/kg · ' + _remN(SC.kgCab, 1) + ' kg/cab · ' + _remFec(SC.fecha))
         : ('origen imputado a tropa ' + (v.tropa_imputada || '—')))
@@ -676,7 +681,7 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.68 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.68.2 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -718,27 +723,33 @@ function remSCEstado(r) {
 
 function _remFec(f) { return f ? String(f).split('-').reverse().join('/') : '—'; }
 
-/* Texto y tono del badge de verificación (lo comparten el módulo y el PDF). */
+/* Texto y tono del badge de verificación (lo comparten el módulo y el PDF).
+
+   v15.68.2: el pipeline ya no matchea remito contra sesión de balanza — busca
+   cada caravana en TODAS las lecturas de los últimos 30 días. Estados posibles:
+   'verificado' y 'sin_datamars'. El rojo no es un estado: es un remito
+   verificado al que no se le leyó NINGUNA caravana, así que no hay de dónde
+   imputar y hay que cargarle el origen a mano. */
 function remVerifInfo(r, SC) {
   var v = (r || {}).verificacion || { estado: 'sin_datamars', sc: 0 };
-  var e = v.estado, sc = v.sc || 0;
-  if (e === 'sin_confirmadas')
-    return { tono: 'mal', txt: 'Todas las cabezas sin caravana — origen no verificable; valen los datos de WinCampo.' };
-  if (e === 'sin_sesion' || e === 'sin_datamars')
-    return { tono: 'gris', txt: 'Origen sin verificar (sin sesión Datamars) — valen los datos de WinCampo.' };
-  var base = '&#10003; Datamars' + (e === 'verificado_dia' ? ' (sesiones del día)' : '');
-  if (!sc) return { tono: 'ok', txt: base + ' · todas las caravanas leídas por el bastón' };
+  var sc = v.sc || 0, conf = v.confirmadas || 0, vent = v.ventana_dias || 30;
+  if (v.estado !== 'verificado')
+    return { tono: 'gris', txt: 'Sin lecturas de Datamars en la ventana — valen los datos de WinCampo.' };
+  if (!conf)
+    return { tono: 'mal', txt: 'Ninguna caravana leída en los últimos ' + vent
+      + ' días — vale WinCampo, hay que cargar el origen a mano.' };
+  if (!sc)
+    return { tono: 'ok', txt: '&#10003; Datamars · ' + conf + ' caravana' + (conf === 1 ? '' : 's')
+      + ' leída' + (conf === 1 ? '' : 's') + ' en los últimos ' + vent + ' días · 0 sin caravana' };
   var org = (SC && SC.manual)
     ? ('origen manual $ ' + _remN(SC.precio) + '/kg · ' + _remN(SC.kgCab) + ' kg/cab · ' + _remFec(SC.fecha))
     : ('origen imputado a tropa ' + (v.tropa_imputada || '—'));
   return {
     tono: 'aviso',
-    txt: base + ' · <strong>' + sc + ' sin caravana</strong> (' + _remN(v.sc_pct_cab, 1)
-      + ' % cab · ' + _remN(v.sc_pct_kg, 1) + ' % kg) — ' + org,
-    ctrl: v.control_ok === false
-      ? ('&#9888; control: ' + sc + ' vs ' + (v.sin_eid_sesion || 0)
-         + (v.control_remitos && v.control_remitos.length ? ' (remitos ' + v.control_remitos.join(', ') + ')' : ''))
-      : null
+    txt: '&#10003; Datamars · <strong>' + sc + ' sin caravana</strong> (' + _remN(v.sc_pct_cab, 1)
+      + ' % cab · ' + _remN(v.sc_pct_kg, 1) + ' % kg)'
+      + (v.sc_por_sexo ? ' · ' + v.sc_por_sexo + ' por sexo distinto' : '')
+      + ' — ' + org
   };
 }
 
@@ -873,14 +884,7 @@ function renderRemitos(soloResultado) {
   }[VF.tono];
   h += '<div style="background:' + TONO[0] + ';border:1px solid ' + TONO[1] + ';border-radius:2px;'
     + 'padding:10px 14px;margin:0 0 14px;font-family:\'DM Mono\',monospace;font-size:12px;'
-    + 'color:' + TONO[2] + ';line-height:1.6">' + VF.txt
-    + (VF.ctrl
-        ? '<span title="Los sin caravana detectados por RFID no coinciden con las pesadas sin EID de la sesión. '
-          + 'Suele significar que el match remito↔sesión quedó flojo o que la sesión cubre más de un remito. '
-          + 'Los números del remito siguen siendo válidos; el origen imputado es menos confiable." '
-          + 'style="margin-left:10px;cursor:help;border-bottom:1px dotted">' + VF.ctrl + '</span>'
-        : '')
-    + '</div>';
+    + 'color:' + TONO[2] + ';line-height:1.6">' + VF.txt + '</div>';
 
   // Carga manual del origen de los sin caravana (mismo patrón que reposición).
   if (VER.sc) {
