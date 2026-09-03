@@ -156,6 +156,33 @@ ADP_CAL_FALLBACK = {
 # re-bindea) para que calc_engorde, que lo lee como global, vea los valores frescos.
 _ADP_CAL_RUNTIME = dict(ADP_CAL_FALLBACK)
 
+# ── v15.67: teóricos de ADP calculados desde la base histórica ───────────────
+# Criterio Nicolás 31/08/2026: 2026 quedó atípico (problema de estructura +
+# clima golpearon estadía y engorde), así que el teórico ya NO sale de la tabla
+# del Excel sino de los egresos reales de los dos años calendario ANTERIORES al
+# de la corrida. Dos teóricos distintos:
+#   · ADP Real (90d)  -> misma ventana de 90 días, pero de cada año base
+#   · Por categoría   -> año calendario completo de cada año base
+# La lista se calcula sola. Para CONGELARLA (p.ej. cuando 2026 empiece a entrar
+# en la base y no lo quieras adentro), poner los años a mano:
+#     ADP_BASE_ANIOS = [2024, 2025]
+ADP_BASE_ANIOS   = None   # None = los dos años calendario anteriores al de hoy
+ADP_BASE_MIN_CAB = 30     # cabezas mínimas para aceptar un teórico calculado
+# Tolerancia del clamp del observado contra el teórico. El valor clampeado
+# (adp_calibrado) es el que usa el módulo Stock para estimar masa histórica.
+# OJO: con el teórico calculado sobre años sanos, un año malo como 2026 se va
+# más lejos del teórico y toca el límite más seguido — o sea, el clamp le tapa
+# parte de la caída a la estimación de masa. Subirlo (0.40) deja pasar más de
+# la realidad; bajarlo protege más la estimación.
+ADP_CLAMP_TOL = 0.25
+
+def adp_base_anios(hoy=None):
+    """Años calendario que sirven de base para los teóricos de ADP."""
+    from datetime import date as _date
+    hoy = hoy or _date.today()
+    a = ADP_BASE_ANIOS or [hoy.year - 2, hoy.year - 1]
+    return sorted(set(int(x) for x in a))
+
 # v15.13: techo kg_estimado_hoy por categoría (decisión usuario 2026-06-08).
 # Reemplaza TECHO_KG_FEEDLOT=650 único para el path El Haras.
 TECHO_KG_POR_CAT = {
@@ -285,7 +312,7 @@ def smoke_test(carpeta, periodo):
     from pathlib import Path
     import json as _json
     base = Path(carpeta)
-    results = {"ok": True, "checks_passed": 0, "checks_failed": 0, "errors": []}
+    results = {"ok": True, "checks_passed": 0, "checks_failed": 0, "errors": [], "avisos": []}
 
     def _check(name, cond, detail):
         if cond:
@@ -323,6 +350,19 @@ def smoke_test(carpeta, periodo):
                f"solo {cats_con_teo}/7 categorías tienen adp_teorico — posible regresión v15.5.1")
         registros = p.get("meta", {}).get("registros_filtrados", 0)
         _check("productivo.registros", registros > 1000, f"solo {registros} egresos filtrados")
+        # v15.67: aviso (NO error) si la mayoría de las categorías toca el clamp.
+        # Señal de que el teórico de la base quedó lejos del año corriente y que
+        # el clamp le está tapando la caída real a la estimación de masa.
+        _con_teo = [c for c, v in pc90.items() if v.get("adp_teorico") is not None]
+        _clamp   = [c for c in _con_teo if pc90[c].get("ajustado")]
+        if _con_teo and len(_clamp) > len(_con_teo) / 2:
+            _tol = p.get("meta", {}).get("clamp_tolerancia", 0.25)
+            results["avisos"].append(
+                f"productivo.clamp: {len(_clamp)}/{len(_con_teo)} categorías tocan el límite "
+                f"+/-{_tol:.0%} ({', '.join(sorted(_clamp))}). El ADP calibrado dejo de seguir al "
+                f"observado y con eso se estima la masa historica. Si la caida es real, subir "
+                f"ADP_CLAMP_TOL (p.ej. 0.40) en actualizar_datos.py.")
+            log.warning("  [!] " + results["avisos"][-1])
 
     # --- muertes (anual razonable) ---
     m = _load(f"muertes_{periodo}.json")
@@ -349,6 +389,22 @@ def smoke_test(carpeta, periodo):
         insumos_list = ins.get("insumos") or ins.get("registros") or []
         _check("insumos.count", len(insumos_list) >= 6,
                f"solo {len(insumos_list)} insumos críticos — esperado >= 6 de los 7")
+
+    # --- resultado por remito: control del cruce con Datamars (v15.68) ---
+    # AVISO, no error: que el nº de "sin caravana" no coincida con las pesadas
+    # sin EID de la sesión significa que el match remito↔sesión quedó flojo, no
+    # que el pipeline esté roto. Los números del remito siguen siendo válidos.
+    rr = _load("resultado_remitos.json")
+    if rr:
+        _malos = [(k, v["verificacion"]["sc"], v["verificacion"]["sin_eid_sesion"])
+                  for k, v in (rr.get("remitos") or {}).items()
+                  if (v.get("verificacion") or {}).get("control_ok") is False]
+        if _malos:
+            results["avisos"].append(
+                "remitos.sc_control: " + str(len(_malos)) + " remito(s) con desvío entre "
+                "los sin-caravana detectados y las pesadas sin EID de su sesión Datamars: "
+                + " · ".join(f"{k}: {a} vs {b}" for k, a, b in sorted(_malos)[:8]))
+            log.warning("  [!] " + results["avisos"][-1])
 
     # --- consumo (anual razonable) ---
     c = _load(f"consumo_{periodo}.json")
@@ -1720,6 +1776,21 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     hace_anio  = hoy - timedelta(days=365)
     hace_90d   = hoy - timedelta(days=90)
 
+    # v15.67: años base para los teóricos (ver ADP_BASE_ANIOS arriba)
+    _base_anios = adp_base_anios(hoy)
+
+    def _shift_anio(d, anio):
+        """Misma fecha en otro año; 29/02 cae a 28/02 en año no bisiesto."""
+        try:
+            return d.replace(year=anio)
+        except ValueError:
+            return d.replace(year=anio, day=28)
+
+    # Ventana equivalente a "últimos 90 días" en cada año base
+    _base_trim = [(_shift_anio(hace_90d, a), _shift_anio(hoy, a)) for a in _base_anios]
+    # Fecha más vieja que hace falta conservar para poder calcular las bases
+    _corte_viejo = min([date(min(_base_anios), 1, 1)] + [w[0] for w in _base_trim])
+
     # ADP teórico por categoría — con filtros por estadía Y peso de entrada (igual que Excel)
     # Fuente: "Aumento Proyectado dieta a fecha (analisis anual).xlsx" — hoja resumen
     #   feedlot entero (días 30-400, pesoE 50-500): ADP=1.376
@@ -1786,11 +1857,13 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
     regs = []
     excl = {"motivo": 0, "rfid": 0, "estadia": 0, "adp": 0, "fecha": 0}
     for r in regs_egr:
-        # 1) Filtro fecha (último año)
+        # 1) Filtro fecha
+        # v15.67: se conservan también los años base (para calcular los teóricos).
+        # El recorte a "último año" se hace después, con la marca _en_anio.
         try:
             f = pd.to_datetime(r.get(col_fecha), errors="coerce") if col_fecha else None
             if f is None or pd.isnull(f): excl["fecha"] += 1; continue
-            if f.date() < hace_anio:      excl["fecha"] += 1; continue
+            if f.date() < _corte_viejo:   excl["fecha"] += 1; continue
         except: excl["fecha"] += 1; continue
 
         # 2) MotivoSalida = VENTA
@@ -1821,9 +1894,15 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         if col_pesoe:
             r['_pesoe'] = to_num(r.get(col_pesoe))
         try:
-            r['_en_90d'] = (f.date() >= hace_90d)
+            _fd = f.date()
+            r['_en_90d']  = (_fd >= hace_90d)
+            r['_en_anio'] = (_fd >= hace_anio)
+            # v15.67: marcas de base histórica
+            r['_base_anual'] = (_fd.year in _base_anios)
+            r['_base_trim']  = any(a <= _fd <= b for a, b in _base_trim)
         except:
-            r['_en_90d'] = False
+            r['_en_90d'] = False; r['_en_anio'] = False
+            r['_base_anual'] = False; r['_base_trim'] = False
         regs.append(r)
 
     log.info(f"  Registros totales: {len(regs_egr):,}")
@@ -1881,25 +1960,75 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             "estadia_max":      int(max(est_vals)) if est_vals else None,
         }
 
+    # v15.67: 'regs' ahora arrastra también los años base. El último año —que es
+    # lo que muestran General / Por categoría / Por mes— es este subconjunto.
+    regs_anio = [r for r in regs if r.get('_en_anio')]
+    log.info(f"  Registros último año:  {len(regs_anio):,}  (de {len(regs):,} conservados)")
+
+    # ── v15.67: teóricos calculados sobre los años base ──────────────────────
+    def _teoricos(rows_filtro):
+        """{cat: {'adp':x, 'cabezas':n}} aplicando los filtros per-categoría."""
+        out = {}
+        if not col_cat: return out
+        agr = {}
+        for r in regs:
+            if not rows_filtro(r): continue
+            c = str(r.get(col_cat) or "Sin datos").strip().upper()
+            agr.setdefault(c, []).append(r)
+        for c, rows in agr.items():
+            st = calc_stats(rows, cat=c)
+            out[c] = {"adp": st.get("adp_promedio"), "cabezas": st.get("cabezas") or 0}
+        return out
+
+    _teo_anual = _teoricos(lambda r: r.get('_base_anual'))
+    _teo_trim  = _teoricos(lambda r: r.get('_base_trim'))
+    log.info(f"  Teórico base ANUAL  ({_base_anios}): "
+             + ", ".join(f"{c}={v['adp']} (n={v['cabezas']})" for c, v in sorted(_teo_anual.items())))
+    log.info(f"  Teórico base 90d    ({_base_anios}): "
+             + ", ".join(f"{c}={v['adp']} (n={v['cabezas']})" for c, v in sorted(_teo_trim.items())))
+
+    def _teo_para(cat, preferir_trim):
+        """Cadena de fallback: base pedida -> base anual -> tabla del Excel.
+
+        Criterio Nicolás 31/08/2026: si el trimestre no junta cabezas, se usa el
+        teórico ANUAL de los mismos años base (no la tabla), para quedarse dentro
+        de los datos buenos. La tabla es el último recurso."""
+        c = str(cat or "").strip().upper()
+        if preferir_trim:
+            v = _teo_trim.get(c)
+            if v and v["adp"] and v["cabezas"] >= ADP_BASE_MIN_CAB:
+                return v["adp"], f"base 90d {_base_anios} (n={v['cabezas']})"
+        v = _teo_anual.get(c)
+        if v and v["adp"] and v["cabezas"] >= ADP_BASE_MIN_CAB:
+            return v["adp"], f"base anual {_base_anios} (n={v['cabezas']})"
+        t = _ADP_TEO.get(_cat_largo(c))
+        return (round(t, 4) if t else None), "tabla Excel (sin base suficiente)"
+
     # General
-    general = calc_stats(regs)
+    general = calc_stats(regs_anio)
     log.info(f"  ADP prom: {general.get('adp_promedio')} kg/día | Estadía prom: {general.get('estadia_promedio')} días")
 
     # Por categoría
     por_cat = {}
     if col_cat:
         cat_regs = {}
-        for r in regs:
-            cat = str(r.get(col_cat) or "Sin datos").strip()
+        for r in regs_anio:
+            cat = str(r.get(col_cat) or "Sin datos").strip().upper()
             cat_regs.setdefault(cat, []).append(r)
         for cat, rows in sorted(cat_regs.items()):
-            por_cat[cat] = calc_stats(rows, cat=cat)
+            st  = calc_stats(rows, cat=cat)
+            obs = st.get('adp_promedio')
+            teo, fuente = _teo_para(cat, preferir_trim=False)
+            st["adp_teorico"]    = teo
+            st["teorico_fuente"] = fuente
+            st["variacion_pct"]  = round((obs - teo) / teo * 100, 2) if (obs is not None and teo) else None
+            por_cat[cat] = st
 
     # Por mes
     por_mes = {}
     if col_fecha:
         mes_regs = {}
-        for r in regs:
+        for r in regs_anio:
             try:
                 f = pd.to_datetime(r.get(col_fecha), errors="coerce")
                 mes = f.strftime("%Y-%m") if f and not pd.isnull(f) else "Sin fecha"
@@ -1910,7 +2039,7 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
                 por_mes[mes] = calc_stats(mes_regs[mes])
 
     # Por categoría — últimos 90 días con comparación vs ADP teórico
-    regs_90d    = [r for r in regs if r.get('_en_90d')]
+    regs_90d    = [r for r in regs_anio if r.get('_en_90d')]
     por_cat_90d = {}
     if col_cat and regs_90d:
         cat_regs_90 = {}
@@ -1920,12 +2049,14 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
         for cat, rows in sorted(cat_regs_90.items()):
             st = calc_stats(rows, cat=cat)
             obs = st.get('adp_promedio')
-            teo = _ADP_TEO.get(_cat_largo(cat))
+            # v15.67: teórico = misma ventana de 90d de los años base (fallback
+            # a la base anual y, en último caso, a la tabla del Excel)
+            teo, _teo_fuente = _teo_para(cat, preferir_trim=True)
             # Variación % entre observado y teórico
             var_pct = round((obs - teo) / teo * 100, 2) if (obs is not None and teo) else None
-            # Calibrado: clampear obs a ±25% del teórico (v15.63; era ±15%)
+            # Calibrado: clampear obs a ±ADP_CLAMP_TOL del teórico
             if obs is not None and teo:
-                lo, hi = teo * 0.75, teo * 1.25
+                lo, hi = teo * (1 - ADP_CLAMP_TOL), teo * (1 + ADP_CLAMP_TOL)
                 cal     = round(max(lo, min(hi, obs)), 4)
                 ajust   = (obs < lo or obs > hi)
             else:
@@ -1937,8 +2068,9 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
                 "adp_calibrado": cal,
                 "variacion_pct": var_pct,
                 "ajustado":      ajust,
-                "adp_min_range": round(teo * 0.75, 4) if teo else None,
-                "adp_max_range": round(teo * 1.25, 4) if teo else None,
+                "adp_min_range": round(teo * (1 - ADP_CLAMP_TOL), 4) if teo else None,
+                "adp_max_range": round(teo * (1 + ADP_CLAMP_TOL), 4) if teo else None,
+                "teorico_fuente": _teo_fuente,
             }
     log.info(f"  por_categoria_90d: {len(por_cat_90d)} categorías ({len(regs_90d)} registros en 90d)")
 
@@ -1949,8 +2081,15 @@ def procesar_productivo(regs_egr, cols_egr, periodo):
             "tabla":               "v_PB_Egresos",
             "ventana":             "365 días",
             "filtros":             "MotivoSalida=VENTA | RFID numérico | Estadía 30-365d | ADP 0-5",
+            "base_anios":          _base_anios,
+            "base_min_cabezas":    ADP_BASE_MIN_CAB,
+            "clamp_tolerancia":    ADP_CLAMP_TOL,
+            "base_trim_ventanas":  [[a.isoformat(), b.isoformat()] for a, b in _base_trim],
+            "teorico_90d":         f"ventana de 90 días de {_base_anios}",
+            "teorico_anual":       f"año calendario completo de {_base_anios}",
             "registros_totales":   len(regs_egr),
-            "registros_filtrados": len(regs),
+            "registros_conservados": len(regs),
+            "registros_filtrados": len(regs_anio),
             "excluidos":           excl,
             "col_adp":             col_adp,
             "col_estadia":         col_estadia,
@@ -3278,13 +3417,24 @@ def main():
     separador("Pre-step · Egresos + ADP dinámico")
     import pandas as pd
     from datetime import date, timedelta
-    fd_egr = (date.today() - timedelta(days=730)).isoformat()
-    fh_egr = date.today().isoformat()
+    # v15.67: el fetch se amplía hasta el 1/1 del año base más viejo, porque
+    # procesar_productivo calcula los teóricos de ADP sobre esos años. El resto
+    # del pipeline (stock diario, movimientos) sigue viendo 730 días exactos:
+    # ampliar SOLO egresos descalzaría la serie diaria contra ingresos.
+    _hoy_egr   = date.today()
+    _base_egr  = adp_base_anios(_hoy_egr)
+    _dias_base = max(730, (_hoy_egr - date(min(_base_egr), 1, 1)).days)
+    fd_egr = (_hoy_egr - timedelta(days=_dias_base)).isoformat()
+    fh_egr = _hoy_egr.isoformat()
     egresos_data = wcampo.fetch_egresos(fecha_desde=fd_egr, fecha_hasta=fh_egr)
     df_egr = pd.DataFrame(egresos_data)
-    log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos (730d)")
+    log.info(f"  + WinCampo Web devolvio {len(df_egr):,} egresos ({_dias_base}d, base ADP {_base_egr})")
+    # Recorte estándar 730d — lo que consume el resto del pipeline (sin cambios)
     regs_egr, cols_egr = extraer("v_PB_Egresos", fecha_col="FechaSalida", dias=730, df_override=df_egr)
-    prod_data = procesar_productivo(regs_egr, cols_egr, periodo)
+    # Recorte ancho — solo para los teóricos de ADP
+    regs_prod, _cols_prod = extraer("v_PB_Egresos", fecha_col="FechaSalida", dias=_dias_base, df_override=df_egr)
+    log.info(f"  + Productivo usa {len(regs_prod):,} egresos ({_dias_base}d) | resto del pipeline: {len(regs_egr):,} (730d)")
+    prod_data = procesar_productivo(regs_prod, cols_egr, periodo)
     # Actualizar _ADP_CAL_RUNTIME (in-place) con el adp_calibrado dinámico per cat
     pc90 = prod_data.get("por_categoria_90d", {})
     for _cat, _info in pc90.items():
@@ -7439,6 +7589,267 @@ def _rr_cat(c):
     return _CAT_COMPRAS.get(_norm_cat_compra(k), k.title())
 
 
+# ── v15.68 · Cruce con Datamars (la lectura real del bastón) ────────
+# Cuando la caravana no lee o no coincide, el cargador de WinCampo le asigna al
+# egreso un animal cualquiera del stock: el remito hereda kg de ingreso, precio,
+# fecha y estadía de OTRO animal (remito 2274: 50 días de estadía en WinCampo
+# contra 11 reales). Datamars registra esas pesadas SIN EID. Cruzando RFID ↔ EID
+# se detectan y se les imputa el origen de la tropa mayoritaria confirmada.
+RR_DM_DIAS_ATRAS    = 3      # sesión candidata: desde fe−3…
+RR_DM_DIAS_ADELANTE = 1      # …hasta fe+1
+RR_DM_MAX_DCAB      = 2      # |cab sesión − cab remito| aceptado
+RR_DM_MAX_DKG_PCT   = 6.0    # |Δ kg promedio| aceptado, en %
+RR_DM_MIN_SOLAPE    = 1      # caravanas en común mínimas para aceptar la sesión
+RR_DM_TOL_CONTROL   = 0.20   # #SC vs pesadas sin EID: tolerancia relativa
+
+
+def _rr_rfid(v):
+    """RFID / EID → solo dígitos. Vacío → None."""
+    d = re.sub(r"\D", "", str(v or ""))
+    return d or None
+
+
+def _rr_moda(vals):
+    """Valor más repetido, determinista ante empate (orden por str)."""
+    vals = [v for v in vals if v is not None]
+    if not vals:
+        return None
+    return sorted(set(vals), key=lambda v: (-vals.count(v), str(v)))[0]
+
+
+def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
+    """v15.68 · Marca e imputa los animales "sin caravana" de cada remito.
+
+    MUTA `filas_rem` in place: a la fila cuyo RFID no aparece en la lectura real
+    del bastón le pone origen='imputado' y le reemplaza tropa, categoría, corral,
+    fecha de ingreso y kg de ingreso por los de la tropa mayoritaria confirmada
+    del remito. El kg de EGRESO se conserva: es el real (Datamars y WinCampo
+    coinciden en el peso).
+
+    Criterio de Nicolás: si no hay sesión de Datamars para ese día, vale lo
+    cargado en WinCampo — cero cambios, marcado "sin verificar".
+
+    Devuelve (verificacion_por_remito, meta_datamars). Nunca levanta.
+    """
+    verif = {rem: {"estado": "sin_datamars", "sc": 0} for rem in filas_rem}
+    meta = {"activo": False, "motivo": None, "sesiones_cache": 0, "ultima_sesion": None,
+            "remitos_verificados": 0, "remitos_sin_sesion": 0,
+            "sc_total": 0, "cab_total": sum(len(f) for f in filas_rem.values())}
+    if not filas_rem:
+        return verif, meta
+
+    try:
+        import datamars_source as _DM
+    except Exception as e:
+        meta["motivo"] = f"import falló: {type(e).__name__}"
+        log.warning(f"  ⚠ datamars_source no importable ({e}) — remitos sin verificar")
+        return verif, meta
+
+    # fecha de egreso de cada remito (la máxima de sus filas, igual que el JSON)
+    info = {}
+    for rem, filas in filas_rem.items():
+        fe = max(x["fe"] for x in filas)
+        kges = [x["kge"] for x in filas if x["kge"]]
+        info[rem] = {"fe": fe, "cab": len(filas),
+                     "kg_prom": (sum(kges) / len(kges)) if kges else None,
+                     "rfids": {x["rfid"] for x in filas if x["rfid"]}}
+
+    try:
+        sesiones, m = _DM.sincronizar(
+            carpeta_datos, [i["fe"] for i in info.values()], log=log,
+            dias_atras=RR_DM_DIAS_ATRAS, dias_adelante=RR_DM_DIAS_ADELANTE)
+    except Exception as e:
+        meta["motivo"] = f"sincronizar falló: {type(e).__name__}"
+        log.warning(f"  ⚠ Datamars: {e} — remitos sin verificar")
+        return verif, meta
+
+    meta["motivo"] = m.get("motivo")
+    meta["sesiones_cache"] = m.get("sesiones_cache", 0)
+    meta["ultima_sesion"] = m.get("ultima_sesion")
+    if not sesiones:
+        return verif, meta
+    meta["activo"] = True
+
+    # resumen por sesión (una sola pasada por las pesadas)
+    for s in sesiones:
+        pes = s.get("pesadas") or []
+        pesos = [p["peso"] for p in pes if p.get("peso")]
+        s["cab"] = len(pes)
+        s["kg_prom"] = (sum(pesos) / len(pesos)) if pesos else None
+        s["eids"] = {p["eid"] for p in pes if p.get("eid")}
+        s["eids_slz"] = {e.lstrip("0") for e in s["eids"]}
+
+    # ── 1 · Match remito ↔ sesión: fecha + cabezas + kg promedio ──
+    # Greedy global; cada sesión se usa una sola vez.
+    #
+    # ⚠ v15.68: al criterio del piloto (fecha ±, cabezas ±2, kg promedio ±6 %)
+    # se le agrega un requisito de SOLAPE de caravanas. Sobre los datos del
+    # piloto, el criterio de fecha+cabezas+kg solo asignaba a 10 de 64 remitos
+    # una sesión con CERO caravanas en común (2226, 2248, 2249, 2268, 2285,
+    # 2287, 2290, 2297, 2312, 2329): mismo día, cabezas y peso promedio casi
+    # iguales, pero era el camión de al lado. Con esa sesión, TODAS las filas
+    # del remito quedaban "sin caravana" y la imputación reescribía el remito
+    # entero. Una sesión que no comparte ninguna caravana con el remito no es
+    # su pesada, por bien que le den los números.
+    pares = []
+    for rem, i in info.items():
+        for s in sesiones:
+            dd = (s["fecha"] - i["fe"]).days
+            if not (-RR_DM_DIAS_ATRAS <= dd <= RR_DM_DIAS_ADELANTE):
+                continue
+            dcab = abs(s["cab"] - i["cab"])
+            if dcab > RR_DM_MAX_DCAB:
+                continue
+            if not (i["kg_prom"] and s["kg_prom"]):
+                continue
+            dkg = abs(s["kg_prom"] - i["kg_prom"]) / i["kg_prom"] * 100
+            if dkg > RR_DM_MAX_DKG_PCT:
+                continue
+            solape = sum(1 for r in i["rfids"]
+                         if r in s["eids"] or r.lstrip("0") in s["eids_slz"])
+            if solape < RR_DM_MIN_SOLAPE:
+                continue
+            pares.append((-solape, abs(dd) * 2 + dcab * 3 + dkg, rem, s))
+    pares.sort(key=lambda p: (p[0], p[1], info[p[2]]["fe"], p[2]))
+    asignada, usadas = {}, set()
+    for _ov, _sc, rem, s in pares:
+        if rem in asignada or s["sesion_id"] in usadas:
+            continue
+        asignada[rem] = s
+        usadas.add(s["sesion_id"])
+
+    # ── 2 · Por remito: SC + imputación ──
+    for rem, filas in filas_rem.items():
+        i = info[rem]
+        s = asignada.get(rem)
+        if s is not None:
+            estado, fuente = "verificado", [s]
+        else:
+            # fallback por día: unión de EIDs de TODAS las sesiones de fe±1.
+            # Son las sesiones que juntan varios remitos (COTO/Millán de julio).
+            fuente = [x for x in sesiones if abs((x["fecha"] - i["fe"]).days) <= 1]
+            estado = "verificado_dia" if fuente else "sin_sesion"
+        if not fuente:
+            verif[rem] = {"estado": "sin_sesion", "sc": 0}
+            meta["remitos_sin_sesion"] += 1
+            continue
+
+        eids, eids_slz, sin_eid, cab_ses, dias_dm = set(), set(), 0, 0, []
+        for x in fuente:
+            eids |= x["eids"]
+            eids_slz |= x["eids_slz"]
+            for p in (x.get("pesadas") or []):
+                cab_ses += 1
+                if not p.get("eid"):
+                    sin_eid += 1
+                if p.get("dias_datamars"):
+                    dias_dm.append(p["dias_datamars"])
+
+        conf, sc = [], []
+        for x in filas:
+            r = x["rfid"]
+            # el comparador prueba también sin ceros a la izquierda por si
+            # WinCampo o Datamars los recortan
+            ok = bool(r) and (r in eids or r.lstrip("0") in eids_slz)
+            (conf if ok else sc).append(x)
+
+        kge_tot = sum(x["kge"] for x in filas) or 0.0
+        kge_sc = sum(x["kge"] for x in sc)
+        n_sc = len(sc)
+        tol = max(2.0, RR_DM_TOL_CONTROL * max(n_sc, sin_eid))
+        bloque = {
+            "estado": estado,
+            "sesion_id": (s["sesion_id"] if s is not None else None),
+            "sesion_nombre": (s.get("nombre") if s is not None else None),
+            "sesion_fecha": (s["fecha"].isoformat() if s is not None else None),
+            "sesiones_dia": (None if s is not None else [x["sesion_id"] for x in fuente]),
+            "cab_sesion": cab_ses, "sin_eid_sesion": sin_eid,
+            "sc": n_sc,
+            "sc_pct_cab": round(n_sc / len(filas) * 100, 1) if filas else None,
+            "sc_pct_kg": round(kge_sc / kge_tot * 100, 1) if kge_tot else None,
+            "control_ok": abs(n_sc - sin_eid) <= tol,
+            "tropa_imputada": None, "imputado": None,
+            "dias_datamars_prom": (round(sum(dias_dm) / len(dias_dm), 1) if dias_dm else None),
+        }
+
+        if n_sc and not conf:
+            # todas sin caravana: no hay de dónde imputar → vale WinCampo
+            bloque["estado"] = "sin_confirmadas"
+            verif[rem] = bloque
+            meta["sc_total"] += n_sc
+            continue
+
+        for x in conf:
+            x["origen"] = "confirmado"
+        meta["remitos_verificados"] += 1
+        meta["sc_total"] += n_sc
+        if not n_sc:
+            verif[rem] = bloque
+            continue
+
+        # tropa mayoritaria entre las CONFIRMADAS; empate → la que pesa parecido
+        por_t = {}
+        for x in conf:
+            por_t.setdefault(str(x["tropa"] or ""), []).append(x)
+        maxc = max(len(v) for v in por_t.values())
+        cands = sorted([t for t, v in por_t.items() if len(v) == maxc])
+        if len(cands) > 1:
+            kg_sc = kge_sc / n_sc
+            cands.sort(key=lambda t: abs(sum(y["kge"] for y in por_t[t]) / len(por_t[t]) - kg_sc))
+        ref = por_t[cands[0]]
+
+        cat_imp = _rr_moda([y["cat"] for y in ref])
+        fi_imp = _rr_moda([y["fi"] for y in ref])
+        corral_imp = _rr_moda([y["corral"] for y in ref])
+        hot_imp = _rr_moda([y["hotelero"] for y in ref])
+        tropa_imp = ref[0]["tropa"]
+
+        # kg de ingreso por cabeza: promedio de las CONFIRMADAS de esa tropa y
+        # categoría en este mismo remito.
+        #
+        # ⚠ El prompt pedía el promedio de la tropa completa del Excel de
+        # compras (kg ÷ cabezas), pero ese número mezcla categorías: en el
+        # remito 2274 la tropa PEG.UTE.23/07/2026 tiene 154 cabezas y 40.819 kg
+        # entre novillos, vaquillonas y toros → 265 kg/cab, contra los 669 kg
+        # reales de los 16 toros confirmados. Con 265 el ADP del remito daba
+        # 17,6 kg/día. El propio ejemplo del prompt (kg_ingreso_cab = 668,9) es
+        # el promedio de las confirmadas, así que se toma ese y el promedio del
+        # Excel queda de respaldo para cuando no hay confirmadas con kg.
+        t_ex = por_tropa.get(_norm_tropa(tropa_imp)) or {}
+        _k = [y["kgi"] for y in ref if y["kgi"] and y["cat"] == cat_imp]
+        if not _k:
+            _k = [y["kgi"] for y in ref if y["kgi"]]
+        kg_cab = (sum(_k) / len(_k)) if _k else None
+        if not kg_cab and t_ex.get("kg") and t_ex.get("cabezas"):
+            kg_cab = t_ex["kg"] / t_ex["cabezas"]
+
+        for x in sc:
+            x["tropa"] = tropa_imp
+            if cat_imp:
+                x["cat"] = cat_imp
+            if fi_imp:
+                x["fi"] = fi_imp
+            x["corral"] = corral_imp
+            x["hotelero"] = hot_imp
+            if kg_cab:
+                x["kgi"] = kg_cab
+            x["origen"] = "imputado"
+
+        _pc = (t_ex.get("por_categoria") or {}).get(cat_imp) or {}
+        bloque["tropa_imputada"] = tropa_imp
+        bloque["imputado"] = {
+            "kg_ingreso_cab": round(kg_cab, 1) if kg_cab else None,
+            "precio_kg": _pc.get("precio_kg") or t_ex.get("precio_kg"),
+            "fecha_ingreso": fi_imp.isoformat() if fi_imp else None,
+            "dias": ((i["fe"] - fi_imp).days if fi_imp else None),
+        }
+        verif[rem] = bloque
+
+    meta["remitos_sin_sesion"] = sum(
+        1 for v in verif.values() if v.get("estado") == "sin_sesion")
+    return verif, meta
+
+
 def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     """v15.59: resultado económico por remito de venta.
 
@@ -7512,8 +7923,12 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
         return None
 
     # ── Filtrar egresos: solo VENTA, con remito, desde RR_DESDE ──
+    # v15.68: primero se juntan las filas INDIVIDUALES (1 por animal, con su
+    # RFID). El agrupado por (remito, tropa, cat, corral, fi, fe) se hace
+    # DESPUÉS del cruce con Datamars, porque la imputación de los "sin caravana"
+    # les cambia tropa, categoría y fecha de ingreso.
     desde = _d(RR_DESDE)
-    grupos = {}
+    filas_rem = {}
     n_venta = 0
     for e in (egresos_data or []):
         motivo = str(e.get("MotivoSalida") or "").strip().upper()
@@ -7528,19 +7943,39 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
         if not rem:
             continue
         n_venta += 1
-        fi = _d(e.get("FechaIngreso"))
-        _cat = _rr_cat(e.get("Categoria"))
-        k = (rem, str(e.get("NRO_TROPA") or ""), _cat,
-             str(e.get("NRO_CORRAL") or ""), fi, fe)
-        g = grupos.setdefault(k, {
-            "remito": rem, "tropa": e.get("NRO_TROPA"), "cat": _cat,
-            "corral": e.get("NRO_CORRAL"), "fi": fi, "fe": fe,
-            "hotelero": e.get("HOTELERO"), "comprador": e.get("Destino") or e.get("Consignatario"),
-            "cab": 0, "kgi": 0.0, "kge": 0.0, "dias": e.get("Estadia"),
+        filas_rem.setdefault(rem, []).append({
+            "tropa": e.get("NRO_TROPA"), "cat": _rr_cat(e.get("Categoria")),
+            "corral": e.get("NRO_CORRAL"), "hotelero": e.get("HOTELERO"),
+            "comprador": e.get("Destino") or e.get("Consignatario"),
+            "fi": _d(e.get("FechaIngreso")), "fe": fe,
+            "kgi": float(e.get("KgIngreso") or 0),
+            "kge": float(e.get("KgEgreso") or 0),
+            "estadia": e.get("Estadia"), "rfid": _rr_rfid(e.get("RFID")),
+            "origen": "sin_verificar",
         })
-        g["cab"] += 1
-        g["kgi"] += float(e.get("KgIngreso") or 0)
-        g["kge"] += float(e.get("KgEgreso") or 0)
+
+    # ── v15.68 · Cruce con la lectura real del bastón ──
+    # Sin credenciales / sin sesión del día, `verificacion` queda en
+    # sin_datamars / sin_sesion y NADA cambia: el remito vale como WinCampo.
+    verif, meta_dm = _rr_datamars(base, filas_rem, por_tropa, log)
+
+    # ── Agrupado (el origen entra en la clave: las filas imputadas se ven
+    #    separadas de las confirmadas de la misma tropa) ──
+    grupos = {}
+    for rem, _filas in filas_rem.items():
+        for x in _filas:
+            k = (rem, str(x["tropa"] or ""), x["cat"], str(x["corral"] or ""),
+                 x["fi"], x["fe"], x["origen"] == "imputado")
+            g = grupos.setdefault(k, {
+                "remito": rem, "tropa": x["tropa"], "cat": x["cat"],
+                "corral": x["corral"], "fi": x["fi"], "fe": x["fe"],
+                "hotelero": x["hotelero"], "comprador": x["comprador"],
+                "origen": x["origen"], "imputado": x["origen"] == "imputado",
+                "cab": 0, "kgi": 0.0, "kge": 0.0, "dias": x["estadia"],
+            })
+            g["cab"] += 1
+            g["kgi"] += x["kgi"]
+            g["kge"] += x["kge"]
 
     if not grupos:
         log.warning(f"  ⚠ sin egresos de venta con remito desde {RR_DESDE}")
@@ -7661,6 +8096,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 con_precio_global.add(g["tropa"])
 
             filas_out.append({
+                # v15.68: 'confirmado' = el bastón leyó su caravana; 'imputado' =
+                # sin caravana, origen imputado a la tropa mayoritaria del
+                # remito; 'sin_verificar' = no hubo sesión de Datamars.
+                "origen": g["origen"], "imputado": g["imputado"],
                 "tropa": g["tropa"], "categoria": g["cat"], "corral": g["corral"],
                 "hotelero": g["hotelero"], "comprador": g["comprador"],
                 "cabezas": g["cab"],
@@ -7724,6 +8163,7 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "total": round(costo_repo, 2),
                 "por_kg_vendido": round(costo_repo / kge, 2) if kge else None,
             },
+            "verificacion": verif.get(rem) or {"estado": "sin_datamars", "sc": 0},
             "cobertura_pct": round((kgi - kg_sin) / kgi * 100, 1) if kgi else None,
             "tropas_sin_precio": tropas_sin,
             "precio_estimado": round(prom, 2),
@@ -7746,12 +8186,15 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "comision_default": RR_COMISION_DEF,
             "pv_fallback": PV_FALLBACK,
             "tasas_mortandad": MORT_PCT,
+            "datamars": meta_dm,
             "fuentes": {
                 "egresos": "WinCampo lst_egresos_hacienda (MOTIVO=VENTA, NRO_TRANSACCION=remito)",
                 "compras": "compras de hacienda.xlsx -> precios_compra_real.json (por_tropa)",
                 "racion":  "preico de racion feelot.xlsx",
                 "pct_pv":  "pct_pv_mensual.json (pct_pv_ajustado, limites 2-3%)",
                 "mortandad": f"muertes_{periodo}.json (tasa por grupo)",
+                "caravanas": ("Datamars Livestock /odata/WeightRecords (EID leido por el "
+                              "baston); sin sesion vale lo cargado en WinCampo"),
             },
         },
         "remitos": remitos_out,
@@ -7759,9 +8202,22 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     guardar(salida, carpeta_out, "resultado_remitos.json")
     log.info(f"  ✓ Resultado por remito: {len(remitos_out)} remitos desde {RR_DESDE} · "
              f"{n_venta} egresos de venta · cobertura {salida['meta']['cobertura_global_pct']}%")
+    if meta_dm.get("activo"):
+        log.info(f"    Datamars: {meta_dm['remitos_verificados']} remitos verificados · "
+                 f"{meta_dm['remitos_sin_sesion']} sin sesión · {meta_dm['sc_total']} sin "
+                 f"caravana de {meta_dm['cab_total']} cab")
+    else:
+        log.info(f"    Datamars inactivo ({meta_dm.get('motivo')}) — "
+                 f"todos los remitos valen como WinCampo")
     for rem, r in sorted(remitos_out.items()):
+        _v = r.get("verificacion") or {}
+        _sc = (f" · {_v['sc']} sin caravana ({_v.get('sc_pct_cab')}%)" if _v.get("sc") else "")
         log.info(f"      {rem}: {r['cabezas']:>3} cab · costo $ {r['costos']['total']:,.0f} "
-                 f"· $ {r['costos']['por_kg_vendido']:,.0f}/kg · cobertura {r['cobertura_pct']}%")
+                 f"· $ {r['costos']['por_kg_vendido']:,.0f}/kg · cobertura {r['cobertura_pct']}%"
+                 f"{_sc}")
+        if _v.get("sc") and not _v.get("control_ok"):
+            log.warning(f"      ⚠ {rem}: {_v['sc']} sin caravana contra "
+                        f"{_v['sin_eid_sesion']} pesadas sin EID en la sesión")
     return salida
 
 
