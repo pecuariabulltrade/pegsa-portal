@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-02T20:04:59.254465",
+    "generado": "2026-09-02T21:05:02.475505",
     "periodo": "2025",
     "mes_actual": "2026-09",
     "nombre_mes": "Septiembre 2026",
@@ -16,11 +16,11 @@
       "cabezas_ingresadas": 17065,
       "kg_ingresado": 5790923.6,
       "kg_promedio_ingreso": 339.3,
-      "cabezas_egresadas": 17535,
-      "kg_egresado": 9459740.6,
-      "kg_promedio_egreso": 539.5,
-      "saldo_cabezas": -470,
-      "saldo_kg": -3668817.0
+      "cabezas_egresadas": 17590,
+      "kg_egresado": 9487240.6,
+      "kg_promedio_egreso": 539.4,
+      "saldo_cabezas": -525,
+      "saldo_kg": -3696317.0
     },
     "ingresos": {
       "total_cabezas": 17065,
@@ -961,14 +961,14 @@
       ]
     },
     "egresos": {
-      "total_cabezas": 17535,
-      "total_kg": 9459740.6,
-      "kg_promedio": 539.5,
+      "total_cabezas": 17590,
+      "total_kg": 9487240.6,
+      "kg_promedio": 539.4,
       "por_propietario": {
         "PEGSA": {
-          "cabezas": 14225,
-          "kg": 7791441.7,
-          "kg_promedio": 547.7
+          "cabezas": 14280,
+          "kg": 7818941.7,
+          "kg_promedio": 547.5
         },
         "DARWASH SA": {
           "cabezas": 1054,
@@ -1038,18 +1038,18 @@
           "kg_promedio": 495.6
         },
         "NV": {
-          "cabezas": 2120,
-          "kg": 1142831.6,
-          "kg_promedio": 539.1
+          "cabezas": 2142,
+          "kg": 1153860.2,
+          "kg_promedio": 538.7
         },
         "TM": {
-          "cabezas": 3333,
-          "kg": 1650587.3,
+          "cabezas": 3347,
+          "kg": 1657554.9,
           "kg_promedio": 495.2
         },
         "NT": {
-          "cabezas": 1308,
-          "kg": 653213.8,
+          "cabezas": 1327,
+          "kg": 662717.6,
           "kg_promedio": 499.4
         },
         "TO": {
@@ -1120,9 +1120,9 @@
           "kg_promedio": 607.5
         },
         "2026-09": {
-          "cabezas": 92,
-          "kg": 56860.0,
-          "kg_promedio": 618.0
+          "cabezas": 147,
+          "kg": 84360.0,
+          "kg_promedio": 573.9
         }
       },
       "por_mes_detalle": {
@@ -1910,23 +1910,38 @@
           "kg_promedio": 607.5
         },
         "2026-09": {
-          "cabezas": 92,
-          "kg": 56860.0,
+          "cabezas": 147,
+          "kg": 84360.0,
           "por_categoria": {
             "VA": {
               "cabezas": 92,
               "kg": 56860.0,
               "kg_promedio": 618.0
+            },
+            "NT": {
+              "cabezas": 19,
+              "kg": 9503.8,
+              "kg_promedio": 500.2
+            },
+            "TM": {
+              "cabezas": 14,
+              "kg": 6967.6,
+              "kg_promedio": 497.7
+            },
+            "NV": {
+              "cabezas": 22,
+              "kg": 11028.6,
+              "kg_promedio": 501.3
             }
           },
           "por_propietario": {
             "PEGSA": {
-              "cabezas": 92,
-              "kg": 56860.0,
-              "kg_promedio": 618.0
+              "cabezas": 147,
+              "kg": 84360.0,
+              "kg_promedio": 573.9
             }
           },
-          "kg_promedio": 618.0
+          "kg_promedio": 573.9
         }
       },
       "por_tipo_egreso": {
@@ -1936,9 +1951,9 @@
           "kg_promedio": 285.1
         },
         "V": {
-          "cabezas": 17535,
-          "kg": 9459740.6,
-          "kg_promedio": 539.5
+          "cabezas": 17590,
+          "kg": 9487240.6,
+          "kg_promedio": 539.4
         },
         "M": {
           "cabezas": 478,
@@ -2213,6 +2228,33 @@
       }
     ],
     "egresos_detalle_30d": [
+      {
+        "fecha": "2026-09-02",
+        "doc": "2332",
+        "cabezas": 55,
+        "kg_total": 27500.0,
+        "kg_prom": 500.0,
+        "lugar": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
+        "vendedor": "—",
+        "consignatario": "nan",
+        "categorias_detalle": [
+          {
+            "categoria": "NT",
+            "cabezas": 19,
+            "kg_prom": 500.2
+          },
+          {
+            "categoria": "NV",
+            "cabezas": 22,
+            "kg_prom": 501.3
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 14,
+            "kg_prom": 497.7
+          }
+        ]
+      },
       {
         "fecha": "2026-09-01",
         "doc": "2329",
