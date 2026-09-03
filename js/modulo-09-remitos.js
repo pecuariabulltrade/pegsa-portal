@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.59 (2026-08-13)
+/* modulo-09-remitos.js — Resultado por Remito · v15.68 (2026-09-03)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -6,6 +6,15 @@
    El COSTO viene calculado del pipeline (resultado_remitos.json): compra +
    comisión + alimento (%PV mensual real) + estructura + sanidad + mortandad.
    La VENTA se carga acá a mano y persiste en localStorage.
+
+   v15.68 · Los animales SIN CARAVANA. Cuando el bastón no lee la caravana, el
+   cargador de WinCampo le asigna al egreso un animal cualquiera del stock y el
+   remito hereda kg de ingreso, precio, fecha y estadía de OTRO animal. El
+   pipeline los detecta cruzando el RFID contra la lectura real (Datamars) y les
+   imputa el origen de la tropa mayoritaria confirmada. Acá se muestran con
+   badge y marca propia, y se puede pisar ese origen a mano ($/kg, kg/cab y
+   fecha) con recálculo en vivo. Sin sesión de Datamars no cambia nada: vale lo
+   cargado en WinCampo.
 */
 
 var _remData = null;
@@ -19,6 +28,12 @@ var REM_LS_PREFIX = 'pegsa_venta_remito_';
 // La venta del grupo va en su propia clave, canónica (ids ordenados), para que
 // el mismo grupo re-seleccionado en cualquier orden recupere su carga.
 var REM_LS_GRUPO  = 'pegsa_venta_grupo_';
+// v15.68: origen cargado a mano para los animales SIN CARAVANA de un remito.
+// {precio, kgCab, fecha} — null en cualquiera de los tres = automático (el
+// valor que imputó el pipeline). Misma convención que los overrides de
+// reposición de v15.62.1.
+var REM_LS_SC     = 'pegsa_sc_remito_';
+var REM_LS_SC_GR  = 'pegsa_sc_grupo_';
 var _remModo = 'simple';   // 'simple' | 'grupo'
 var _remGrupo = [];        // ids seleccionados en modo grupo
 
@@ -39,6 +54,14 @@ function remVentaKey() {
     : REM_LS_PREFIX + _remSel;
 }
 function remVentaCtx() { return _remLsGet(remVentaKey()); }
+
+// v15.68 · clave y lectura del origen manual de los "sin caravana".
+function remSCKey() {
+  return _remModo === 'grupo'
+    ? REM_LS_SC_GR + _remGrupo.slice().sort().join('-')
+    : REM_LS_SC + _remSel;
+}
+function remSCCtx() { return _remLsGet(remSCKey()); }
 
 var _remM = function (n) {
   if (n == null || isNaN(n)) return '—';
@@ -90,6 +113,9 @@ function remConsolidar(ids) {
   var cab = 0, kgi = 0, kge = 0, kgms = 0, diasAnimal = 0, pvDen = 0, kgiConPrecio = 0;
   var repoPrecioNum = 0, repoPrecioDen = 0, fuentes = {}, mesMs = null, precioMs = null;
   var fechas = [], sinPv = 0;
+  // v15.68: verificación sumada del grupo — cabezas sin caravana de todos sus
+  // remitos, y las tropas a las que se les imputó el origen.
+  var VER = { sc: 0, kgSc: 0, sinEid: 0, estados: {}, tropas: [], ctrlMal: [], imputado: null };
 
   orden.forEach(function (id) {
     var r = R[id]; if (!r) return;
@@ -109,7 +135,15 @@ function remConsolidar(ids) {
     if (r.reposicion.precio_kg) { repoPrecioNum += r.reposicion.precio_kg * (r.kg_ingreso || 0); repoPrecioDen += (r.kg_ingreso || 0); }
     fuentes[r.reposicion.fuente_precio] = 1;
     mesMs = r.reposicion.mes_ms; precioMs = r.reposicion.precio_kg_ms;
+    var vv = r.verificacion || { estado: 'sin_datamars', sc: 0 };
+    VER.estados[vv.estado] = (VER.estados[vv.estado] || 0) + 1;
+    VER.sc += vv.sc || 0;
+    VER.sinEid += vv.sin_eid_sesion || 0;
+    if (vv.tropa_imputada && VER.tropas.indexOf(vv.tropa_imputada) < 0) VER.tropas.push(vv.tropa_imputada);
+    if (vv.sc && vv.control_ok === false) VER.ctrlMal.push(id);
+    if (vv.imputado && !VER.imputado) VER.imputado = vv.imputado;   // prefill del grupo
     (r.filas || []).forEach(function (f) {
+      if (f.imputado) VER.kgSc += f.kg_egreso || 0;
       var fr = {}; for (var k in f) fr[k] = f[k];
       fr.remito = id;                                  // columna extra del detalle
       filas.push(fr);
@@ -157,6 +191,22 @@ function remConsolidar(ids) {
       compra: RP.compra, comision: RP.comision, alimento: RP.alimento,
       mortandad: RP.mortandad, total: RP.total,
       por_kg_vendido: kge ? RP.total / kge : null
+    },
+    // v15.68: el estado del grupo es el peor de sus remitos — si a uno le falta
+    // la sesión de Datamars, el grupo no está verificado del todo.
+    verificacion: {
+      estado: (VER.estados.sin_confirmadas ? 'sin_confirmadas'
+               : (VER.estados.sin_datamars || VER.estados.sin_sesion) ? 'sin_sesion'
+               : VER.estados.verificado_dia ? 'verificado_dia' : 'verificado'),
+      sc: VER.sc,
+      sc_pct_cab: cab ? Math.round(VER.sc / cab * 1000) / 10 : null,
+      sc_pct_kg: kge ? Math.round(VER.kgSc / kge * 1000) / 10 : null,
+      sin_eid_sesion: VER.sinEid,
+      control_ok: !VER.ctrlMal.length,
+      control_remitos: VER.ctrlMal,
+      tropa_imputada: VER.tropas.join(' · ') || null,
+      imputado: VER.imputado,
+      esGrupo: true, remitos_estados: VER.estados
     },
     cobertura_pct: kgi ? kgiConPrecio / kgi * 100 : null,
     tropas_sin_precio: sinPrecio,
@@ -212,10 +262,120 @@ function remRepoCalc(r, venta) {
   };
 }
 
-// Objeto activo: el remito suelto o el consolidado del grupo.
+function _remDiasEntre(a, b) {
+  var d = (Date.parse(a + 'T00:00:00') && Date.parse(b + 'T00:00:00'))
+    ? (Date.parse(b + 'T00:00:00') - Date.parse(a + 'T00:00:00')) / 86400000 : NaN;
+  return isNaN(d) ? null : Math.max(1, Math.round(d));
+}
+
+/* v15.68 · Origen cargado a mano para los animales SIN CARAVANA.
+
+   El pipeline le imputa a cada fila `imputado` el origen de la tropa
+   mayoritaria confirmada del remito. Acá se puede pisar ese origen con $/kg,
+   kg de ingreso por cabeza y fecha de ingreso propios, y todo se recalcula en
+   vivo. Devuelve un objeto con la MISMA forma que el remito, así nada de lo
+   que sigue (KPIs, resultado, indicadores, reposición, detalle, PDF) se
+   ramifica; si no hay carga manual devuelve el mismo objeto sin tocar.
+
+   Compra, comisión y mortandad son lineales en kg × $/kg, así que salen
+   exactas. Alimento, estructura y kg MS se reescalan PROPORCIONALMENTE a los
+   días (costo_día = costo_fila ÷ días) — es una aproximación: el modelo real
+   cobra cada mes a su %PV y su precio de ración. La sanidad NO se reescala:
+   es única por cabeza al ingreso, no un costo por día. */
+function remAplicarSC(r, sc) {
+  sc = sc || {};
+  var hayManual = (sc.precio != null || sc.kgCab != null || !!sc.fecha);
+  var filas = r.filas || [];
+  if (!hayManual || !filas.some(function (f) { return f.imputado; })) return r;
+
+  var comDef = ((_remData || {}).meta || {}).comision_default || 0.03;
+  var D = { compra: 0, comision: 0, alimento: 0, estructura: 0, mortandad: 0 };
+  var cab = 0, kgi = 0, kge = 0, kgms = 0, diasAnimal = 0, pvDen = 0;
+  var kgiMort = 0, kgiConPrecio = 0;
+
+  var filas2 = filas.map(function (f) {
+    var g = {}; for (var k in f) g[k] = f[k];
+    if (f.imputado) {
+      var nCab = f.cabezas || 1;
+      var mortPct = f.costo_compra ? (f.mortandad || 0) / f.costo_compra : 0;
+      var comPct = (f.comision_pct || 0) / 100;
+      if (sc.fecha) {
+        var d2 = _remDiasEntre(sc.fecha, f.fecha_egreso);
+        if (d2) { g.fecha_ingreso = sc.fecha; g.dias = d2; }
+      }
+      var fd = (f.dias ? g.dias / f.dias : 1);
+      if (sc.kgCab != null) g.kg_ingreso = sc.kgCab * nCab;
+      if (sc.precio != null) g.precio_kg = sc.precio;
+      g.costo_compra = g.kg_ingreso * g.precio_kg;
+      g.mortandad = g.costo_compra * mortPct;
+      g.alimento = (f.alimento || 0) * fd;
+      g.estructura = (f.estructura || 0) * fd;
+      g.kg_ms = (f.kg_ms || 0) * fd;
+      var kgp = (g.kg_ingreso + g.kg_egreso) / 2;
+      g.pct_ms = (g.dias && kgp) ? g.kg_ms / (kgp * g.dias) * 100 : null;
+      g.manual = true;
+      D.compra += g.costo_compra - (f.costo_compra || 0);
+      D.comision += (g.costo_compra - (f.costo_compra || 0)) * comPct;
+      D.alimento += g.alimento - (f.alimento || 0);
+      D.estructura += g.estructura - (f.estructura || 0);
+      D.mortandad += g.mortandad - (f.mortandad || 0);
+    }
+    cab += g.cabezas || 0; kgi += g.kg_ingreso || 0; kge += g.kg_egreso || 0;
+    kgms += g.kg_ms || 0;
+    diasAnimal += (g.dias || 0) * (g.cabezas || 0);
+    pvDen += ((g.kg_ingreso + g.kg_egreso) / 2) * (g.dias || 0);
+    kgiMort += (g.kg_ingreso || 0) * (f.costo_compra ? (f.mortandad || 0) / f.costo_compra : 0);
+    if (!g.estimado) kgiConPrecio += g.kg_ingreso || 0;
+    return g;
+  });
+
+  // Los rubros no imputados se toman del pipeline y solo se les suma el delta:
+  // recalcularlos desde las filas arrastraría el redondeo del % de comisión.
+  var C = {};
+  ['compra', 'comision', 'alimento', 'estructura', 'sanidad', 'mortandad'].forEach(function (k) {
+    C[k] = (r.costos[k] || 0) + (D[k] || 0);
+  });
+  C.total = C.compra + C.comision + C.alimento + C.estructura + C.sanidad + C.mortandad;
+  C.por_kg_vendido = kge ? C.total / kge : null;
+
+  var RP = r.reposicion, rp = RP.precio_kg || 0, rms = RP.precio_kg_ms || 0;
+  var compraR = kgi * rp, comR = compraR * comDef, aliR = kgms * rms, mortR = kgiMort * rp;
+  var kgProd = kge - kgi;
+
+  var out = {}; for (var k2 in r) out[k2] = r[k2];
+  out.filas = filas2;
+  out.scManual = true;
+  out.costos = C;
+  out.kg_ingreso = kgi; out.kg_egreso = kge;
+  out.kg_producidos = kgProd; out.kg_ms = kgms;
+  out.indicadores = {
+    kg_prom_ingreso: cab ? kgi / cab : null,
+    kg_prom_salida: cab ? kge / cab : null,
+    estadia_prom: cab ? Math.round(diasAnimal / cab) : null,
+    adp: diasAnimal ? kgProd / diasAnimal : null,
+    pct_ms: pvDen ? kgms / pvDen * 100 : null,
+    conversion_ms: kgProd > 0 ? kgms / kgProd : null,
+    costo_kg_producido: kgProd > 0 ? (C.alimento + C.estructura + C.sanidad) / kgProd : null,
+    precio_prom_pagado: kgi ? C.compra / kgi : null
+  };
+  out.reposicion = {
+    precio_kg: RP.precio_kg, fuente_precio: RP.fuente_precio,
+    precio_kg_ms: RP.precio_kg_ms, mes_ms: RP.mes_ms,
+    compra: compraR, comision: comR, alimento: aliR, mortandad: mortR,
+    total: compraR + comR + aliR + mortR + C.estructura + C.sanidad,
+    por_kg_vendido: kge ? (compraR + comR + aliR + mortR + C.estructura + C.sanidad) / kge : null
+  };
+  out.cobertura_pct = kgi ? kgiConPrecio / kgi * 100 : null;
+  return out;
+}
+
+// Objeto activo: el remito suelto o el consolidado del grupo, con el origen
+// manual de los sin caravana ya aplicado (v15.68).
 function remActual() {
-  if (_remModo === 'grupo' && _remGrupo.length >= 2) return remConsolidar(_remGrupo);
-  return (_remData.remitos || {})[_remSel];
+  var r = (_remModo === 'grupo' && _remGrupo.length >= 2)
+    ? remConsolidar(_remGrupo)
+    : (_remData.remitos || {})[_remSel];
+  return r ? remAplicarSC(r, remSCCtx()) : r;
 }
 
 function remToggleModo() {
@@ -260,6 +420,23 @@ function remRepoAuto() {
   var k = remVentaKey(), v = _remLsGet(k);
   v.repoPrecio = null; v.repoMS = null;
   _remLsSet(k, v);
+  renderRemitos(true);
+}
+
+// v15.68 · origen manual de los sin caravana. null / '' = automático.
+function remSCInput(campo, valor) {
+  var k = remSCKey(), v = _remLsGet(k);
+  if (campo === 'fecha') {
+    v.fecha = String(valor || '').trim() || null;
+  } else {
+    var n = parseFloat(String(valor).replace(',', '.'));
+    v[campo] = isNaN(n) ? null : n;
+  }
+  _remLsSet(k, v);
+  renderRemitos(true);
+}
+function remSCAuto() {
+  _remLsSet(remSCKey(), { precio: null, kgCab: null, fecha: null });
   renderRemitos(true);
 }
 
@@ -339,6 +516,22 @@ function _remPuenteSVG(pasos) {
   });
   s += '</svg>';
   return s;
+}
+
+/* v15.68 · Línea de supuestos del PDF sobre el origen de los sin caravana. */
+function _remSCLineaPDF(r) {
+  var v = (r || {}).verificacion || { estado: 'sin_datamars', sc: 0 };
+  if (v.estado === 'sin_sesion' || v.estado === 'sin_datamars')
+    return 'Origen sin verificar (sin sesion Datamars) — vale lo cargado en WinCampo.';
+  if (v.estado === 'sin_confirmadas')
+    return 'Todas las cabezas sin caravana — origen no verificable; vale lo cargado en WinCampo.';
+  if (!v.sc) return 'Caravanas verificadas contra la lectura del baston (Datamars): sin animales sin caravana.';
+  var SC = remSCEstado(r);
+  return v.sc + ' animal(es) sin caravana (' + _remN(v.sc_pct_cab, 1) + ' % de las cabezas) — '
+    + (SC.manual
+        ? ('origen manual $ ' + _remN(SC.precio) + '/kg · ' + _remN(SC.kgCab, 1) + ' kg/cab · ' + _remFec(SC.fecha))
+        : ('origen imputado a tropa ' + (v.tropa_imputada || '—')))
+    + '.';
 }
 
 function remInformePDF() {
@@ -483,13 +676,15 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.62.1 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.68 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
                     + (RPc.manualMs ? ' y MS $ ' + _remN(RPc.precioMs, 2) : '') : '')
     + (V.comVenta ? ' · comisión de venta ' + _remN(V.comPct, 1) + ' %' : '')
     + (nSin ? ' · ' + nSin + ' tropa(s) sin precio estimadas al promedio de las compañeras' : '')
+    // v15.68: el origen de los sin caravana es un supuesto, y va dicho.
+    + '<br>' + _remSCLineaPDF(r)
     + '</div></body></html>';
 
   var win = window.open('', '_blank');
@@ -499,6 +694,52 @@ function remInformePDF() {
   win.document.close();
   // Dar tiempo a que bajen las fuentes antes de abrir el diálogo de impresión
   win.onload = function () { setTimeout(function () { win.focus(); win.print(); }, 550); };
+}
+
+/* v15.68 · Estado efectivo del origen de los sin caravana: lo que cargó el
+   usuario, y si no, lo que imputó el pipeline. */
+function remSCEstado(r) {
+  var VI = ((r || {}).verificacion || {}).imputado || {};
+  var m = remSCCtx();
+  // El bloque `imputado` del pipeline puede traer precio_kg en null cuando la
+  // tropa imputada no está en el Excel de compras. En ese caso el prefill sale
+  // de la fila imputada, que es el valor que el motor terminó usando (el
+  // promedio estimado de las compañeras del remito).
+  var fi = (r && r.filas || []).filter(function (f) { return f.imputado; })[0] || {};
+  var kgFila = fi.cabezas ? fi.kg_ingreso / fi.cabezas : null;
+  return {
+    precio: m.precio != null ? m.precio : (VI.precio_kg != null ? VI.precio_kg : (fi.precio_kg != null ? fi.precio_kg : null)),
+    kgCab: m.kgCab != null ? m.kgCab : (VI.kg_ingreso_cab != null ? VI.kg_ingreso_cab : kgFila),
+    fecha: m.fecha || VI.fecha_ingreso || fi.fecha_ingreso || null,
+    mP: m.precio != null, mK: m.kgCab != null, mF: !!m.fecha,
+    manual: (m.precio != null || m.kgCab != null || !!m.fecha)
+  };
+}
+
+function _remFec(f) { return f ? String(f).split('-').reverse().join('/') : '—'; }
+
+/* Texto y tono del badge de verificación (lo comparten el módulo y el PDF). */
+function remVerifInfo(r, SC) {
+  var v = (r || {}).verificacion || { estado: 'sin_datamars', sc: 0 };
+  var e = v.estado, sc = v.sc || 0;
+  if (e === 'sin_confirmadas')
+    return { tono: 'mal', txt: 'Todas las cabezas sin caravana — origen no verificable; valen los datos de WinCampo.' };
+  if (e === 'sin_sesion' || e === 'sin_datamars')
+    return { tono: 'gris', txt: 'Origen sin verificar (sin sesión Datamars) — valen los datos de WinCampo.' };
+  var base = '&#10003; Datamars' + (e === 'verificado_dia' ? ' (sesiones del día)' : '');
+  if (!sc) return { tono: 'ok', txt: base + ' · todas las caravanas leídas por el bastón' };
+  var org = (SC && SC.manual)
+    ? ('origen manual $ ' + _remN(SC.precio) + '/kg · ' + _remN(SC.kgCab) + ' kg/cab · ' + _remFec(SC.fecha))
+    : ('origen imputado a tropa ' + (v.tropa_imputada || '—'));
+  return {
+    tono: 'aviso',
+    txt: base + ' · <strong>' + sc + ' sin caravana</strong> (' + _remN(v.sc_pct_cab, 1)
+      + ' % cab · ' + _remN(v.sc_pct_kg, 1) + ' % kg) — ' + org,
+    ctrl: v.control_ok === false
+      ? ('&#9888; control: ' + sc + ' vs ' + (v.sin_eid_sesion || 0)
+         + (v.control_remitos && v.control_remitos.length ? ' (remitos ' + v.control_remitos.join(', ') + ')' : ''))
+      : null
+  };
 }
 
 function renderRemitos(soloResultado) {
@@ -620,6 +861,57 @@ function renderRemitos(soloResultado) {
     + _remN(r.kg_producidos) + ' kg) · ' + _remN(r.kg_ms) + ' kg MS consumidos'
     + (r.comprador ? ' · ' + r.comprador : '') + '</div>';
 
+  // ── v15.68 · Verificación contra la lectura del bastón (Datamars) ──
+  var SC = remSCEstado(r);
+  var VF = remVerifInfo(r, SC);
+  var VER = r.verificacion || {};
+  var TONO = {
+    ok:    ['#f2f7f3', '#27613d', '#27613d'],
+    aviso: ['#fdf6e3', 'var(--gold)', '#7a5c14'],
+    gris:  ['#f6f5f2', '#d8d6ce', 'rgba(26,22,18,.5)'],
+    mal:   ['#fdf1ef', '#c0392b', '#a3311f']
+  }[VF.tono];
+  h += '<div style="background:' + TONO[0] + ';border:1px solid ' + TONO[1] + ';border-radius:2px;'
+    + 'padding:10px 14px;margin:0 0 14px;font-family:\'DM Mono\',monospace;font-size:12px;'
+    + 'color:' + TONO[2] + ';line-height:1.6">' + VF.txt
+    + (VF.ctrl
+        ? '<span title="Los sin caravana detectados por RFID no coinciden con las pesadas sin EID de la sesión. '
+          + 'Suele significar que el match remito↔sesión quedó flojo o que la sesión cubre más de un remito. '
+          + 'Los números del remito siguen siendo válidos; el origen imputado es menos confiable." '
+          + 'style="margin-left:10px;cursor:help;border-bottom:1px dotted">' + VF.ctrl + '</span>'
+        : '')
+    + '</div>';
+
+  // Carga manual del origen de los sin caravana (mismo patrón que reposición).
+  if (VER.sc) {
+    h += '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:12px 16px;'
+      + 'margin-bottom:14px;display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">'
+      + '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">$/kg ingreso · '
+      + (SC.mP ? '<span style="color:var(--gold)">manual</span>' : 'automático') + '</label>'
+      + '<input value="' + (SC.precio != null ? _remN(SC.precio) : '') + '" style="' + INP + '" '
+      + 'onchange="remSCInput(\'precio\',this.value)"></div>'
+      + '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">Kg ingreso / cab · '
+      + (SC.mK ? '<span style="color:var(--gold)">manual</span>' : 'automático') + '</label>'
+      + '<input value="' + (SC.kgCab != null ? _remN(SC.kgCab, 1) : '') + '" style="' + INP + '" '
+      + 'onchange="remSCInput(\'kgCab\',this.value)"></div>'
+      + '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">Fecha ingreso · '
+      + (SC.mF ? '<span style="color:var(--gold)">manual</span>' : 'automático') + '</label>'
+      + '<input type="date" value="' + (SC.fecha || '') + '" style="' + INP + ';width:145px" '
+      + 'onchange="remSCInput(\'fecha\',this.value)"></div>'
+      + (SC.manual
+          ? '<a onclick="remSCAuto()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
+            + 'color:var(--gold);text-decoration:underline;padding-bottom:9px">restaurar automático</a>'
+          : '')
+      + '<div style="' + SUB + ';margin:0;flex-basis:100%;padding-top:2px" '
+      + 'title="Compra, comisión y mortandad se recalculan exactas (son lineales en kg × $/kg). '
+      + 'Alimento y estructura se reescalan proporcionalmente a los días — es una aproximación: el modelo '
+      + 'del pipeline cobra cada mes a su %PV y su precio de ración. La sanidad no cambia: es única por '
+      + 'cabeza al ingreso, no un costo por día.">Aplica a las ' + VER.sc + ' cabezas sin caravana. '
+      + 'Compra y comisión exactas; alimento y estructura proporcionales a los días '
+      + '<span style="border-bottom:1px dotted;cursor:help">(aproximación)</span>.</div>'
+      + '</div>';
+  }
+
   // ── KPIs de costo ──
   h += '<div style="' + GRID + '">'
     + card('Compra + comisión', _remM(C.compra + C.comision), '$ ' + _remN((C.compra + C.comision) / r.kg_ingreso) + '/kg entrada')
@@ -721,9 +1013,17 @@ function renderRemitos(soloResultado) {
   (r.filas || []).forEach(function (f) {
     var td = 'padding:8px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:13px;white-space:nowrap';
     var tag = '<span style="display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:2px;background:rgba(184,146,42,.15);color:#7a5c14;margin-left:6px">';
-    h += '<tr' + (f.estimado ? ' style="background:#fffbf0"' : '') + '>'
+    // v15.68: la fila imputada (sin caravana) va en tono aparte y con marca —
+    // su tropa y su fecha de ingreso las puso el cruce, no WinCampo.
+    var tagSC = '<span title="Sin caravana: el bastón no leyó estos animales, así que el origen '
+      + 'está imputado a la tropa mayoritaria confirmada del remito' + (f.manual ? ' y pisado a mano' : '')
+      + '." style="display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;'
+      + 'padding:2px 6px;border-radius:2px;background:rgba(192,57,43,.12);color:#a3311f;margin-left:6px;cursor:help">'
+      + (f.manual ? '&#9679; s/car manual' : '&#9679; s/caravana') + '</span>';
+    h += '<tr' + (f.imputado ? ' style="background:#fdf6f4"' : (f.estimado ? ' style="background:#fffbf0"' : '')) + '>'
       + (esGrupo ? '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.5)">' + f.remito + '</td>' : '')
-      + '<td style="' + td + ';text-align:left">' + f.tropa + (f.estimado ? tag + 'est</span>' : '') + '</td>'
+      + '<td style="' + td + ';text-align:left">' + f.tropa + (f.imputado ? tagSC : '')
+      + (f.estimado ? tag + 'est</span>' : '') + '</td>'
       + '<td style="' + td + '">' + f.cabezas + '</td>'
       + '<td style="' + td + '">' + f.fecha_ingreso.split('-').reverse().join('/') + '</td>'
       + '<td style="' + td + '">' + _remN(f.kg_ingreso) + '</td>'
