@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.68.5 (2026-09-03)
+/* modulo-09-remitos.js — Resultado por Remito · v15.69 (2026-09-03)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -20,6 +20,12 @@
 
 var _remData = null;
 var _remSel  = null;
+// v15.69 · caravanas fantasma: leidas por el baston en una salida y todavia en
+// el stock de WinCampo. El cargador tiene que renombrarlas a un placeholder.
+var _remFant = null;
+var _remFantOpen = false;
+var _remFantHot = '';
+var _remFantFec = '';
 
 // v15.59: la venta se carga a mano y persiste en localStorage POR NAVEGADOR.
 // Decisión del usuario 2026-08-13: provisorio hasta conectar una base de datos.
@@ -84,6 +90,10 @@ async function cargarRemitos() {
     var resp = await fetch(STOCK_SB + '/resultado_remitos.json', {}, {});
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     _remData = await resp.json();
+    try {
+      var rf = await fetch(STOCK_SB + '/fantasmas.json', {}, {});
+      if (rf.ok) _remFant = await rf.json();
+    } catch (e) { _remFant = null; }   // el modulo funciona igual sin fantasmas
     if (loading) loading.style.display = 'none';
     if (content) content.style.display = 'block';
     renderRemitos();
@@ -696,7 +706,7 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.68.5 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.69 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -737,6 +747,48 @@ function remSCEstado(r) {
 }
 
 function _remFec(f) { return f ? String(f).split('-').reverse().join('/') : '—'; }
+
+/* v15.69 · Fantasmas ──────────────────────────────────────────────
+   Una caravana fantasma es un EID que el baston leyo el dia de una salida y que
+   sigue en el stock de WinCampo: la vaca salio de verdad, pero en los papeles
+   quedo adentro. Renombrarla a un placeholder es lo que le permite salir en la
+   proxima venta como "sin caravana". Cuando el cargador la renombra desaparece
+   sola de esta lista al tick siguiente. */
+function remFantLista() {
+  var f = (_remFant && _remFant.fantasmas) || [];
+  return f.filter(function (x) {
+    return (!_remFantHot || x.hotelero === _remFantHot)
+        && (!_remFantFec || x.fecha_lectura === _remFantFec);
+  });
+}
+function remFantToggle() { _remFantOpen = !_remFantOpen; renderRemitos(); }
+function remFantFiltro(campo, v) {
+  if (campo === 'hot') _remFantHot = (v === _remFantHot ? '' : v);
+  else _remFantFec = (v === _remFantFec ? '' : v);
+  renderRemitos();
+}
+function remFantCopiar(t) {
+  try { navigator.clipboard.writeText(t); } catch (e) {}
+}
+function remFantCSV() {
+  var COL = ['fecha_lectura', 'placeholder_sugerido', 'eid', 'caravana_visual', 'hotelero',
+             'tropa', 'categoria', 'corral', 'kg_ingreso', 'fecha_ingreso', 'dias_en_stock',
+             'peso_lectura', 'sesion_id', 'sesion_nombre'];
+  var filas = remFantLista();
+  var txt = COL.join(';') + ';remitos_del_dia\n' + filas.map(function (x) {
+    return COL.map(function (c) {
+      var v = x[c] == null ? '' : String(x[c]);
+      return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }).join(';') + ';' + (x.remitos_del_dia || []).map(function (d) { return d.remito; }).join(' ');
+  }).join('\n');
+  // BOM para que Excel en es-AR abra los acentos bien
+  var blob = new Blob(['\ufeff' + txt], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'caravanas_fantasma_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
 
 /* v15.68.5 · Desglose de los sin caravana. Son dos problemas distintos:
    - sin caravana electrónica: WinCampo no tiene el número (código visual o el
@@ -845,6 +897,87 @@ function renderRemitos(soloResultado) {
 
   var h = '';
 
+  // ── v15.69 · Caravanas fantasma (encabezado, colapsable) ──
+  var FT = (_remFant && _remFant.meta) || null;
+  if (FT && FT.total) {
+    var fl = remFantLista();
+    h += '<div style="background:#fff;border:1px solid var(--gold);border-radius:3px;margin-bottom:10px">'
+      + '<div onclick="remFantToggle()" style="padding:12px 18px;cursor:pointer;display:flex;'
+      + 'align-items:center;gap:12px;flex-wrap:wrap">'
+      + '<span style="font-family:\'Playfair Display\',serif;font-size:17px;font-weight:700">'
+      + '&#9888; Caravanas fantasma · ' + FT.total + '</span>'
+      + '<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.55);flex:1;min-width:240px">'
+      + 'leídas por el bastón en una salida y todavía en stock de WinCampo — renombrar a placeholder '
+      + 'para darles salida como sin caravana</span>'
+      + '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--gold)">'
+      + (_remFantOpen ? '&#9650; ocultar' : '&#9660; ver') + '</span></div>';
+    if (_remFantOpen) {
+      h += '<div style="padding:0 18px 16px">';
+      // chips de totales por hotelero y por fecha (son filtros)
+      var chip = function (txt, on, onclick) {
+        return '<span onclick="' + onclick + '" style="cursor:pointer;padding:3px 9px;border-radius:2px;'
+          + 'font-family:\'DM Mono\',monospace;font-size:11px;margin:0 5px 5px 0;display:inline-block;'
+          + (on ? 'background:var(--ink);color:#d4a84b;border:1px solid var(--ink)'
+                : 'background:#faf8f4;color:var(--ink);border:1px solid #e3e1da') + '">' + txt + '</span>';
+      };
+      h += '<div style="margin-bottom:8px">'
+        + Object.keys(FT.por_hotelero || {}).map(function (k) {
+            return chip(k + ' · ' + FT.por_hotelero[k], _remFantHot === k,
+                        'remFantFiltro(\'hot\',\'' + k.replace(/'/g, "\\'") + '\')');
+          }).join('')
+        + '</div><div style="margin-bottom:10px">'
+        + Object.keys(FT.por_fecha || {}).map(function (k) {
+            return chip(_remFec(k) + ' · ' + FT.por_fecha[k], _remFantFec === k,
+                        'remFantFiltro(\'fec\',\'' + k + '\')');
+          }).join('')
+        + (_remFantHot || _remFantFec
+            ? '<a onclick="_remFantHot=\'\';_remFantFec=\'\';renderRemitos()" style="cursor:pointer;'
+              + 'font-family:\'DM Mono\',monospace;font-size:11px;color:var(--gold);text-decoration:underline;'
+              + 'margin-left:6px">quitar filtros</a>' : '')
+        + '<button onclick="remFantCSV()" style="float:right;padding:6px 14px;background:var(--ink);'
+        + 'border:1px solid var(--ink);border-radius:2px;color:#d4a84b;font-family:\'DM Mono\',monospace;'
+        + 'font-size:11px;cursor:pointer">&#11015; Exportar CSV</button></div>';
+      var TH = ['Fecha lectura', 'Hotelero', 'Tropa', 'Cat', 'Corral', 'EID', 'Kg ing',
+                'Fecha ingreso', 'Días', 'Peso leído', 'Remitos del día', 'Placeholder sugerido'];
+      h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;'
+        + 'font-family:\'DM Mono\',monospace;background:#fff;border:1px solid var(--border)"><thead><tr>'
+        + TH.map(function (t, i) {
+            return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;'
+              + 'color:rgba(26,22,18,.5);padding:8px 9px;border-bottom:2px solid var(--border);'
+              + 'text-align:' + (i < 5 ? 'left' : 'right') + ';white-space:nowrap">' + t + '</th>';
+          }).join('') + '</tr></thead><tbody>';
+      fl.forEach(function (x) {
+        var td = 'padding:7px 9px;border-bottom:1px solid #f0eee8;font-size:12px;white-space:nowrap';
+        h += '<tr>'
+          + '<td style="' + td + '">' + _remFec(x.fecha_lectura) + '</td>'
+          + '<td style="' + td + '">' + (x.hotelero || '—') + '</td>'
+          + '<td style="' + td + '">' + (x.tropa || '—') + '</td>'
+          + '<td style="' + td + '">' + (x.categoria || '—') + '</td>'
+          + '<td style="' + td + '">' + (x.corral || '—') + '</td>'
+          + '<td style="' + td + ';text-align:right">' + x.eid
+          + (x.caravana_visual ? '<span style="color:rgba(26,22,18,.4)"> · ' + x.caravana_visual + '</span>' : '')
+          + '</td>'
+          + '<td style="' + td + ';text-align:right">' + _remN(x.kg_ingreso) + '</td>'
+          + '<td style="' + td + ';text-align:right">' + _remFec(x.fecha_ingreso) + '</td>'
+          + '<td style="' + td + ';text-align:right">' + x.dias_en_stock + '</td>'
+          + '<td style="' + td + ';text-align:right">' + _remN(x.peso_lectura) + '</td>'
+          + '<td style="' + td + ';text-align:right;color:rgba(26,22,18,.5)">'
+          + (x.remitos_del_dia || []).map(function (d) { return d.remito; }).join(' ') + '</td>'
+          + '<td style="' + td + ';text-align:right"><strong>' + x.placeholder_sugerido + '</strong>'
+          + '<span onclick="remFantCopiar(\'' + x.placeholder_sugerido + '\')" title="copiar" '
+          + 'style="cursor:pointer;margin-left:7px;color:var(--gold)">&#128203;</span></td></tr>';
+      });
+      h += '</tbody></table></div>';
+      h += '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.45);'
+        + 'margin-top:9px;line-height:1.6">' + fl.length + ' de ' + FT.total + ' · '
+        + 'Cuando el cargador las renombra en WinCampo desaparecen solas de esta lista al tick '
+        + 'siguiente — no hay nada que marcar a mano. Criterio: EID leído el mismo día que un remito '
+        + 'de venta, todavía en stock, ingresado hace más de ' + FT.dias_min + ' días y ausente de '
+        + 'los remitos de ese día.</div></div>';
+    }
+    h += '</div>';
+  }
+
   // ── Selector + carga de venta ──
   h += '<div style="background:#fff;border:1px solid var(--border);border-radius:3px;padding:16px 20px;margin-bottom:6px;display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap">';
   // v15.62: toggle de modo. En grupo el <select> se reemplaza por chips.
@@ -930,6 +1063,24 @@ function renderRemitos(soloResultado) {
   h += '<div style="background:' + TONO[0] + ';border:1px solid ' + TONO[1] + ';border-radius:2px;'
     + 'padding:10px 14px;margin:0 0 14px;font-family:\'DM Mono\',monospace;font-size:12px;'
     + 'color:' + TONO[2] + ';line-height:1.6">' + VF.txt + '</div>';
+
+  // v15.69: si el bastón leyó caravanas ese día que siguen en stock, decirlo acá
+  // — son las que hay que renombrar para que puedan salir en la próxima venta.
+  var _fechasR = esGrupo
+    ? (r.remitos_detalle || []).map(function (d) { return d.fecha_egreso; })
+    : [r.fecha_egreso];
+  var _fant = ((_remFant && _remFant.fantasmas) || []).filter(function (x) {
+    return _fechasR.indexOf(x.fecha_lectura) >= 0;
+  });
+  if (_fant.length) {
+    var _hots = [];
+    _fant.forEach(function (x) { if (_hots.indexOf(x.hotelero) < 0) _hots.push(x.hotelero); });
+    h += '<div style="' + SUB + ';margin:-8px 0 14px">' + _fant.length
+      + ' caravana' + (_fant.length === 1 ? '' : 's') + ' leída' + (_fant.length === 1 ? '' : 's')
+      + ' ese día sigue' + (_fant.length === 1 ? '' : 'n') + ' en stock (' + _hots.join(', ') + ') → '
+      + '<a onclick="_remFantOpen=true;_remFantFec=\'' + _fant[0].fecha_lectura + '\';renderRemitos()" '
+      + 'style="cursor:pointer;color:var(--gold);text-decoration:underline">ver Fantasmas</a></div>';
+  }
 
   // Carga manual del origen de los sin caravana (mismo patrón que reposición).
   if (VER.sc) {

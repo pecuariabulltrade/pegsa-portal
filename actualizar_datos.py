@@ -4552,6 +4552,20 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["resultado_remitos"] = {"ok": False, "error": str(e)}
 
+    # ── CARAVANAS FANTASMA (v15.69) ────────────────────────────
+    # Va después del cruce: reusa la cache de Datamars y el stock de este tick.
+    separador("Caravanas fantasma")
+    try:
+        _fa = generar_fantasmas(carpeta, periodo, egresos_data, log, stock_data=regs or None)
+        resumen["modulos"]["fantasmas"] = {
+            "ok":    _fa is not None,
+            "total": _fa["meta"]["total"] if _fa else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_fantasmas falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["fantasmas"] = {"ok": False, "error": str(e)}
+
     # ── ANÁLISIS DE COSTOS · denominadores operativos (v15.61) ─
     # Sólo los denominadores de los ratios. El JSON contable del módulo
     # (analisis_costos_datos.json) lo regenera Nicolás a mano con su ejecutable
@@ -7898,6 +7912,186 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
         verif[rem] = bloque
 
     return verif, meta
+
+
+# ── v15.69 · CARAVANAS FANTASMA ─────────────────────────────────────
+# El otro lado del problema de las caravanas inventadas. Cuando una vaca sale y
+# su caravana no lee, el cargador pone en el remito otra del mismo dueño y
+# categoría — eso está bien y así queda. Pero la que salió DE VERDAD sigue
+# figurando en el stock de WinCampo con su caravana electrónica, y el bastón sí
+# la leyó ese día. Esa es la "fantasma": está en el campo solo en los papeles.
+#
+# Para que pueda salir en la próxima venta como "sin caravana", el cargador
+# tiene que renombrarla a un placeholder (ddmmyy-N). Este informe le dice
+# exactamente cuáles son y qué placeholder ponerles. Cuando las renombra, al
+# tick siguiente ya no están en stock con ese EID y desaparecen solas de la
+# lista: no hay nada que marcar a mano.
+RR_FANT_MIN_DIAS = 7   # si ingresó hace <= 7 días, la lectura es su pesada de ingreso
+
+
+def generar_fantasmas(carpeta_out, periodo, egresos_data, log=None, stock_data=None):
+    """v15.69: caravanas leídas en una salida que siguen en el stock de WinCampo.
+
+    Una caravana es fantasma cuando se cumplen las cuatro:
+      1. es un EID de 15 dígitos leído en una sesión de Datamars cuya fecha
+         coincide con la fecha de egreso de algún remito de venta;
+      2. sigue en el stock actual de WinCampo;
+      3. su FECHA_INGRESO es anterior a la lectura por más de RR_FANT_MIN_DIAS
+         (así la pesada de ingreso del día no cuenta);
+      4. no está en ningún remito de venta de ese día (si está, es una
+         confirmada normal).
+
+    Devuelve el dict volcado o None. NO levanta excepción.
+    """
+    if log is None:
+        log = logging.getLogger("fantasmas")
+    base = Path(carpeta_out)
+
+    def _d(v):
+        if not v:
+            return None
+        t = str(v)[:10]
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+            try:
+                return datetime.strptime(t, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    # ── stock actual ──
+    stock_gen = None
+    filas_stock = stock_data
+    if not filas_stock:
+        try:
+            with (base / f"stock_detalle_{periodo}.json").open(encoding="utf-8") as f:
+                _sd = json.load(f)
+            filas_stock = _sd.get("detalle") or []
+            stock_gen = (_sd.get("meta") or {}).get("generado")
+        except Exception as e:
+            log.warning(f"  ⚠ Fantasmas: sin stock_detalle ({e}), se saltea")
+            return None
+    if not filas_stock:
+        log.warning("  ⚠ Fantasmas: stock vacío, se saltea")
+        return None
+
+    por_rfid = {}
+    for r in filas_stock:
+        d = _rr_rfid(r.get("RFID"))
+        if d:
+            por_rfid.setdefault(d, r)
+            por_rfid.setdefault(d.lstrip("0"), r)
+
+    # ── remitos de venta por fecha (los mismos que el módulo) ──
+    desde = _d(RR_DESDE)
+    rem_dia, rfid_dia = {}, {}
+    for e in (egresos_data or []):
+        motivo = str(e.get("MotivoSalida") or "").strip().upper()
+        if not (motivo == "V" or "VENTA" in motivo):
+            continue
+        fe = _d(e.get("FechaSalida"))
+        if fe is None or fe < desde:
+            continue
+        rem = str(e.get("NRO_TRANSACCION") or "").strip()
+        if not rem:
+            continue
+        rem_dia.setdefault(fe, {}).setdefault(rem, e.get("Destino") or e.get("Consignatario"))
+        d = _rr_rfid(e.get("RFID"))
+        if d:
+            rfid_dia.setdefault(fe, set()).add(d)
+            rfid_dia[fe].add(d.lstrip("0"))
+    if not rem_dia:
+        log.info("  Fantasmas: sin remitos de venta, nada que revisar")
+        return None
+
+    # ── sesiones de la cache cuya fecha cae en un día de remito ──
+    try:
+        import datamars_source as _DM
+    except Exception as e:
+        log.warning(f"  ⚠ Fantasmas: datamars_source no importable ({e})")
+        return None
+    index = _DM.cargar_index(carpeta_out)
+    if not index:
+        log.info("  Fantasmas: cache de Datamars vacía, se saltea")
+        return None
+
+    fant = []
+    for sid, ses in index.items():
+        f = _d(ses.get("fecha"))
+        if f is None or f not in rem_dia:
+            continue
+        pesadas = _DM.cargar_sesion(carpeta_out, sid)
+        if not pesadas:
+            continue
+        en_remito = rfid_dia.get(f) or set()
+        for p in pesadas:
+            eid = p.get("eid")
+            # solo la caravana electrónica: los EID de Datamars son de 15 dígitos
+            if not eid or len(eid) != 15:
+                continue
+            if eid in en_remito or eid.lstrip("0") in en_remito:
+                continue                      # salió y está en el remito: normal
+            st = por_rfid.get(eid) or por_rfid.get(eid.lstrip("0"))
+            if st is None:
+                continue                      # ya no está en stock: nada que hacer
+            fi = _d(st.get("FECHA_INGRESO"))
+            if fi is None or (f - fi).days <= RR_FANT_MIN_DIAS:
+                continue                      # es su propia pesada de ingreso
+            fant.append({
+                "eid": eid,
+                "hotelero": st.get("HOTELERO"),
+                "tropa": st.get("NRO_TROPA"),
+                "categoria": st.get("CLASIFICACION") or _rr_cat(st.get("CATEGORIA")),
+                "corral": st.get("NRO_CORRAL"),
+                "caravana_visual": st.get("NRO_CARAVANA"),
+                "kg_ingreso": st.get("KG_INGRESO"),
+                "fecha_ingreso": fi.isoformat(),
+                "dias_en_stock": (f - fi).days,
+                "fecha_lectura": f.isoformat(),
+                "sesion_id": int(sid),
+                "sesion_nombre": ses.get("nombre"),
+                "peso_lectura": p.get("peso"),
+                "remitos_del_dia": [{"remito": r, "comprador": c}
+                                    for r, c in sorted(rem_dia[f].items())],
+            })
+
+    # orden pedido: fecha de lectura desc, hotelero, tropa
+    fant.sort(key=lambda x: (x["fecha_lectura"], str(x["hotelero"] or ""),
+                             str(x["tropa"] or ""), x["eid"]), reverse=False)
+    fant.sort(key=lambda x: x["fecha_lectura"], reverse=True)
+
+    # placeholder sugerido: ddmmyy-N, correlativo dentro del día, en el mismo
+    # orden en que se muestran (así el cargador los va poniendo de arriba abajo)
+    _n = {}
+    for x in fant:
+        f = _d(x["fecha_lectura"])
+        _n[x["fecha_lectura"]] = _n.get(x["fecha_lectura"], 0) + 1
+        x["placeholder_sugerido"] = f"{f.strftime('%d%m%y')}-{_n[x['fecha_lectura']]}"
+
+    por_hot, por_cat, por_fecha = {}, {}, {}
+    for x in fant:
+        por_hot[x["hotelero"] or "—"] = por_hot.get(x["hotelero"] or "—", 0) + 1
+        por_cat[x["categoria"] or "—"] = por_cat.get(x["categoria"] or "—", 0) + 1
+        por_fecha[x["fecha_lectura"]] = por_fecha.get(x["fecha_lectura"], 0) + 1
+
+    salida = {
+        "meta": {
+            "generado": datetime.now().isoformat(),
+            "total": len(fant),
+            "dias_min": RR_FANT_MIN_DIAS,
+            "por_hotelero": dict(sorted(por_hot.items(), key=lambda kv: -kv[1])),
+            "por_categoria": dict(sorted(por_cat.items(), key=lambda kv: -kv[1])),
+            "por_fecha": dict(sorted(por_fecha.items(), reverse=True)),
+            "stock_generado": stock_gen,
+            "criterio": ("EID de 15 dígitos leído por el bastón el mismo día que un remito de "
+                         "venta, que sigue en el stock de WinCampo, ingresó hace más de "
+                         f"{RR_FANT_MIN_DIAS} días y no figura en ningún remito de ese día"),
+        },
+        "fantasmas": fant,
+    }
+    guardar(salida, carpeta_out, "fantasmas.json")
+    _det = " · ".join(f"{h} {n}" for h, n in list(salida["meta"]["por_hotelero"].items())[:4])
+    log.info(f"  ✓ Fantasmas: {len(fant)} caravanas leídas en salida que siguen en stock ({_det})")
+    return salida
 
 
 def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
