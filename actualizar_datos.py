@@ -7621,6 +7621,37 @@ def _rr_rfid(v):
     return d or None
 
 
+# v15.68.5 · Regla de Nicolás: SOLO la caravana electrónica se cruza contra la
+# balanza. El código visual y el placeholder que pone el cargador cuando no hay
+# caravana son "sin caravana" directo, sin consultar Datamars.
+#
+#   032010036311450  → electrónica (15 dígitos, sin letras)   → se busca
+#   HI215A238        → visual (tiene letras)                  → SC directo
+#   13052026-001     → placeholder del cargador (ddmmyyyy-NNN)→ SC directo
+#   (vacío)          → SC directo
+#
+# Todos los EID de Datamars son de 15 dígitos (verificado sobre 5.404 distintos),
+# así que las no electrónicas no matchearían igual: el desglose es informativo y
+# no mueve el conteo de SC.
+_RR_PLACEHOLDER = re.compile(r"^\d{6,8}-\d+[A-Za-z]*$")
+
+
+def _rr_caravana_tipo(raw):
+    """Tipo de caravana de WinCampo. Solo 'electronica' se cruza con Datamars."""
+    t = str(raw or "").strip()
+    if not t:
+        return "vacia"
+    if _RR_PLACEHOLDER.match(t):
+        return "placeholder"
+    if re.search(r"[A-Za-z]", t):
+        return "visual"
+    if len(re.sub(r"\D", "", t)) == 15:
+        return "electronica"
+    # ni 15 dígitos ni letras ni placeholder: 3 casos en el histórico
+    # (un '9820004543431100' de 16 dígitos y dos de 8). Tampoco se cruzan.
+    return "otra"
+
+
 def _rr_moda(vals):
     """Valor más repetido, determinista ante empate (orden por str)."""
     vals = [v for v in vals if v is not None]
@@ -7656,6 +7687,7 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
             "sesiones_cache": 0, "ultima_sesion": None,
             "remitos_verificados": 0, "remitos_sin_datamars": 0,
             "confirmadas_total": 0, "sc_total": 0,
+            "sc_sin_electronica_total": 0, "sc_no_leida_total": 0,
             "confirmadas_salida_total": 0, "confirmadas_anterior_total": 0,
             "dobles_lectura_total": 0,
             "cab_total": sum(len(f) for f in filas_rem.values())}
@@ -7724,13 +7756,23 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
         conf, sc = [], []
         dias_dm = []
         n_salida = n_anterior = n_doble = 0
+        n_sin_elec = n_no_leida = 0
         for x in filas:
+            # visual, placeholder o vacía: sin caravana directo, sin consultar
+            # Datamars. Solo la electrónica se cruza.
+            if x["car_tipo"] != "electronica":
+                x["sc_tipo"] = "sin_electronica"
+                n_sin_elec += 1
+                sc.append(x)
+                continue
             r = x["rfid"]
             cand = (lecturas.get(r) or []) if r else []
             if r and not cand:
                 cand = lecturas_slz.get(r.lstrip("0")) or []
             enventana = [(f, p) for f, p in cand if desde <= f <= hasta]
             if not enventana:
+                x["sc_tipo"] = "no_leida"
+                n_no_leida += 1
                 sc.append(x)
                 continue
             # la lectura más cercana a la fecha de egreso
@@ -7762,6 +7804,10 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
             "ventana_dias": RR_DM_VENTANA_DIAS,
             "desde": desde.isoformat(), "hasta": hasta.isoformat(),
             "confirmadas": len(conf), "sc": n_sc,
+            # desglose de los sin caravana: los que WinCampo no tiene con
+            # caravana electrónica, y los que sí la tienen pero el bastón no la
+            # leyó. Suman `sc`.
+            "sc_sin_electronica": n_sin_elec, "sc_no_leida": n_no_leida,
             "sc_pct_cab": round(n_sc / len(filas) * 100, 1) if filas else None,
             "sc_pct_kg": round(kge_sc / kge_tot * 100, 1) if kge_tot else None,
             # informativos: de las confirmadas, cuántas por su pesada de salida
@@ -7776,6 +7822,8 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
         meta["remitos_verificados"] += 1
         meta["confirmadas_total"] += len(conf)
         meta["sc_total"] += n_sc
+        meta["sc_sin_electronica_total"] += n_sin_elec
+        meta["sc_no_leida_total"] += n_no_leida
         meta["confirmadas_salida_total"] += n_salida
         meta["confirmadas_anterior_total"] += n_anterior
         meta["dobles_lectura_total"] += n_doble
@@ -7953,6 +8001,7 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "kgi": float(e.get("KgIngreso") or 0),
             "kge": float(e.get("KgEgreso") or 0),
             "estadia": e.get("Estadia"), "rfid": _rr_rfid(e.get("RFID")),
+            "car_tipo": _rr_caravana_tipo(e.get("RFID")),
             "origen": "sin_verificar",
         })
 
@@ -7978,6 +8027,7 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 # ganancia que calcula Datamars desde la primera pesada del EID.
                 "dm_dias_l": [], "dm_gpv_l": [], "dm_fecha": None,
                 "dm_tipos": set(), "dm_dobles": 0,
+                "car_tipos": set(), "sc_tipos": set(),
             })
             g["cab"] += 1
             g["kgi"] += x["kgi"]
@@ -7992,6 +8042,9 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 g["dm_tipos"].add(x["dm_tipo"])
             if x.get("dm_doble"):
                 g["dm_dobles"] += 1
+            g["car_tipos"].add(x["car_tipo"])
+            if x.get("sc_tipo"):
+                g["sc_tipos"].add(x["sc_tipo"])
 
     if not grupos:
         log.warning(f"  ⚠ sin egresos de venta con remito desde {RR_DESDE}")
@@ -8119,6 +8172,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "fecha_lectura_datamars": (g["dm_fecha"].isoformat() if g["dm_fecha"] else None),
                 "tipo_lectura": (None if not g["dm_tipos"]
                                  else (list(g["dm_tipos"])[0] if len(g["dm_tipos"]) == 1 else "mixto")),
+                "caravana_tipo": (None if not g["car_tipos"]
+                                  else (list(g["car_tipos"])[0] if len(g["car_tipos"]) == 1 else "mixto")),
+                "sc_tipo": (None if not g["sc_tipos"]
+                            else (list(g["sc_tipos"])[0] if len(g["sc_tipos"]) == 1 else "mixto")),
                 "dobles_lectura": g["dm_dobles"],
                 "dias_datamars": (round(sum(g["dm_dias_l"]) / len(g["dm_dias_l"]), 1)
                                   if g["dm_dias_l"] else None),
@@ -8232,6 +8289,8 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                  f"{meta_dm['remitos_sin_datamars']} sin lecturas · "
                  f"{meta_dm['confirmadas_total']} caravanas leídas · "
                  f"{meta_dm['sc_total']} sin caravana de {meta_dm['cab_total']} cab · "
+                 f"{meta_dm['sc_sin_electronica_total']} sin caravana electrónica + "
+                 f"{meta_dm['sc_no_leida_total']} electrónicas no leídas · "
                  f"{meta_dm['confirmadas_salida_total']} confirmadas por su pesada de salida, "
                  f"{meta_dm['confirmadas_anterior_total']} por una lectura anterior")
     else:

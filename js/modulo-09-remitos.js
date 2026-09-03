@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.68.4 (2026-09-03)
+/* modulo-09-remitos.js — Resultado por Remito · v15.68.5 (2026-09-03)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -116,7 +116,7 @@ function remConsolidar(ids) {
   var fechas = [], sinPv = 0;
   // v15.68: verificación sumada del grupo — cabezas sin caravana de todos sus
   // remitos, y las tropas a las que se les imputó el origen.
-  var VER = { sc: 0, kgSc: 0, conf: 0, ant: 0, dobles: 0, vent: 0, estados: {}, tropas: [], imputado: null };
+  var VER = { sc: 0, kgSc: 0, conf: 0, ant: 0, dobles: 0, sinE: 0, noL: 0, vent: 0, estados: {}, tropas: [], imputado: null };
 
   orden.forEach(function (id) {
     var r = R[id]; if (!r) return;
@@ -142,6 +142,8 @@ function remConsolidar(ids) {
     VER.conf += vv.confirmadas || 0;
     VER.ant += vv.confirmadas_anterior || 0;
     VER.dobles += vv.dobles_lectura || 0;
+    VER.sinE += vv.sc_sin_electronica || 0;
+    VER.noL += vv.sc_no_leida || 0;
     VER.vent = vv.ventana_dias || VER.vent;
     if (vv.tropa_imputada && VER.tropas.indexOf(vv.tropa_imputada) < 0) VER.tropas.push(vv.tropa_imputada);
     if (vv.imputado && !VER.imputado) VER.imputado = vv.imputado;   // prefill del grupo
@@ -207,6 +209,8 @@ function remConsolidar(ids) {
       confirmadas_anterior: VER.ant,
       confirmadas_salida: VER.conf - VER.ant,
       dobles_lectura: VER.dobles,
+      sc_sin_electronica: VER.sinE,
+      sc_no_leida: VER.noL,
       tropa_imputada: VER.tropas.join(' · ') || null,
       imputado: VER.imputado,
       esGrupo: true, remitos_estados: VER.estados
@@ -528,7 +532,9 @@ function _remSCLineaPDF(r) {
   if (v.estado !== 'verificado')
     return 'Origen sin verificar (sin lecturas de Datamars en la ventana) — vale lo cargado en WinCampo.';
   if (!v.confirmadas)
-    return 'Ninguna caravana leida en los ultimos ' + vent + ' dias — vale lo cargado en WinCampo.';
+    return 'Ninguna caravana verificada en los ultimos ' + vent + ' dias'
+      + (_remSCDesglose(v, true) ? ' (' + _remSCDesglose(v, true) + ')' : '')
+      + ' — vale lo cargado en WinCampo.';
   var ant = v.confirmadas_anterior || 0;
   var sufAnt = ant ? (ant === v.confirmadas ? ' Ninguna se leyo al salir: la verificacion sale de'
                         + ' lecturas anteriores (el ingreso).'
@@ -538,8 +544,10 @@ function _remSCLineaPDF(r) {
     return 'Verificado contra las lecturas de Datamars de los ultimos ' + vent + ' dias: '
       + v.confirmadas + ' caravanas leidas, ningun animal sin caravana.' + sufAnt;
   var SC = remSCEstado(r);
+  var desP = _remSCDesglose(v, true);
   return 'Verificado contra las lecturas de Datamars de los ultimos ' + vent + ' dias. '
-    + v.sc + ' animal(es) sin caravana (' + _remN(v.sc_pct_cab, 1) + ' % de las cabezas) — '
+    + v.sc + ' animal(es) sin caravana (' + _remN(v.sc_pct_cab, 1) + ' % de las cabezas'
+    + (desP ? '; ' + desP : '') + ') — '
     + (SC.manual
         ? ('origen manual $ ' + _remN(SC.precio) + '/kg · ' + _remN(SC.kgCab, 1) + ' kg/cab · ' + _remFec(SC.fecha))
         : ('origen imputado a tropa ' + (v.tropa_imputada || '—')))
@@ -688,7 +696,7 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.68.4 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.68.5 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -730,6 +738,24 @@ function remSCEstado(r) {
 
 function _remFec(f) { return f ? String(f).split('-').reverse().join('/') : '—'; }
 
+/* v15.68.5 · Desglose de los sin caravana. Son dos problemas distintos:
+   - sin caravana electrónica: WinCampo no tiene el número (código visual o el
+     placeholder que pone el cargador) — no hay nada que cruzar contra la balanza.
+   - electrónica no leída: el número está, pero el bastón no lo leyó en los
+     últimos 30 días.
+   Las dos se imputan igual; la diferencia dice de qué lado está el problema. */
+function _remSCDesglose(v, ascii) {
+  var a = v.sc_sin_electronica || 0, b = v.sc_no_leida || 0;
+  if (!a && !b) return '';
+  var p = [];
+  if (a) p.push(a + (ascii ? ' sin caravana electronica' : ' sin caravana electrónica'));
+  if (b) p.push(b + (ascii ? ' electronica(s) no leida(s)' : ' electrónica' + (b === 1 ? '' : 's') + ' no leída' + (b === 1 ? '' : 's')));
+  return p.join(' · ');
+}
+var REM_SC_TOOLTIP = 'Solo la caravana electrónica se cruza con la balanza; un código visual o el '
+  + 'placeholder del cargador es sin caravana directo. Todas se imputan igual — el desglose dice si '
+  + 'el problema es la carga en WinCampo o la lectura del bastón.';
+
 /* Texto y tono del badge de verificación (lo comparten el módulo y el PDF).
 
    v15.68.2: el pipeline ya no matchea remito contra sesión de balanza — busca
@@ -748,9 +774,11 @@ function remVerifInfo(r, SC) {
                               : ant + ' por lectura anterior, no al salir') : '';
   if (v.estado !== 'verificado')
     return { tono: 'gris', txt: 'Sin lecturas de Datamars en la ventana — valen los datos de WinCampo.' };
-  if (!conf)
-    return { tono: 'mal', txt: 'Ninguna caravana leída en los últimos ' + vent
-      + ' días — vale WinCampo, hay que cargar el origen a mano.' };
+  if (!conf) {
+    var desR = _remSCDesglose(v);
+    return { tono: 'mal', txt: 'Ninguna caravana verificada en los últimos ' + vent + ' días'
+      + (desR ? ' (' + desR + ')' : '') + ' — vale WinCampo, hay que cargar el origen a mano.' };
+  }
   if (!sc)
     return { tono: ant ? 'aviso' : 'ok',
       txt: '&#10003; Datamars · ' + conf + ' caravana' + (conf === 1 ? '' : 's')
@@ -759,11 +787,14 @@ function remVerifInfo(r, SC) {
   var org = (SC && SC.manual)
     ? ('origen manual $ ' + _remN(SC.precio) + '/kg · ' + _remN(SC.kgCab) + ' kg/cab · ' + _remFec(SC.fecha))
     : ('origen imputado a tropa ' + (v.tropa_imputada || '—'));
+  var des = _remSCDesglose(v);
   return {
     tono: 'aviso',
     txt: '&#10003; Datamars · <strong>' + sc + ' sin caravana</strong> (' + _remN(v.sc_pct_cab, 1)
-      + ' % cab · ' + _remN(v.sc_pct_kg, 1) + ' % kg)' + sufAnt
-      + ' — ' + org
+      + ' % cab · ' + _remN(v.sc_pct_kg, 1) + ' % kg)'
+      + (des ? ' — <span title="' + REM_SC_TOOLTIP + '" style="border-bottom:1px dotted;cursor:help">'
+               + des + '</span>' : '')
+      + sufAnt + ' — ' + org
   };
 }
 
@@ -1033,11 +1064,26 @@ function renderRemitos(soloResultado) {
     var tag = '<span style="display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:2px;background:rgba(184,146,42,.15);color:#7a5c14;margin-left:6px">';
     // v15.68: la fila imputada (sin caravana) va en tono aparte y con marca —
     // su tropa y su fecha de ingreso las puso el cruce, no WinCampo.
-    var tagSC = '<span title="Sin caravana: el bastón no leyó estos animales, así que el origen '
-      + 'está imputado a la tropa mayoritaria confirmada del remito' + (f.manual ? ' y pisado a mano' : '')
-      + '." style="display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;'
+    // v15.68.5: dos chips distintos según de qué lado está el problema.
+    var scLbl = f.sc_tipo === 'sin_electronica' ? 's/car electrónica'
+              : f.sc_tipo === 'no_leida' ? 's/car no leída'
+              : 's/caravana';
+    var scDet = f.sc_tipo === 'sin_electronica'
+      ? 'WinCampo no tiene caravana electrónica para estos animales (código visual o placeholder del cargador): no hay nada que cruzar contra la balanza.'
+      : f.sc_tipo === 'no_leida'
+        ? 'Tienen caravana electrónica, pero el bastón no la leyó en los últimos 30 días.'
+        : 'Sin caravana verificable contra la balanza.';
+    // En un remito sin ninguna confirmada no hay de dónde imputar: la fila
+    // conserva lo de WinCampo, pero igual se marca — su identidad no está
+    // verificada y eso es lo que el chip dice.
+    var tagSC = !f.sc_tipo ? '' : ('<span title="' + scDet + ' '
+      + (f.imputado
+          ? ('El origen está imputado a la tropa mayoritaria confirmada del remito'
+             + (f.manual ? ' y pisado a mano' : '') + '.')
+          : 'No hay ninguna caravana confirmada en el remito, así que no se imputó nada: valen los datos de WinCampo.')
+      + '" style="display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;'
       + 'padding:2px 6px;border-radius:2px;background:rgba(192,57,43,.12);color:#a3311f;margin-left:6px;cursor:help">'
-      + (f.manual ? '&#9679; s/car manual' : '&#9679; s/caravana') + '</span>';
+      + '&#9679; ' + (f.manual ? scLbl + ' manual' : scLbl) + '</span>');
     // v15.68.4: la fila confirmada por una lectura ANTERIOR (su ingreso) no se
     // vio salir — vale la pena distinguirla de la que paso por la balanza el
     // dia del remito.
@@ -1048,9 +1094,9 @@ function renderRemitos(soloResultado) {
         + 'text-transform:uppercase;padding:2px 6px;border-radius:2px;background:rgba(45,106,138,.12);'
         + 'color:#2d6a8a;margin-left:6px;cursor:help">lectura ' + f.tipo_lectura + '</span>'
       : '';
-    h += '<tr' + (f.imputado ? ' style="background:#fdf6f4"' : (f.estimado ? ' style="background:#fffbf0"' : '')) + '>'
+    h += '<tr' + (f.sc_tipo ? ' style="background:#fdf6f4"' : (f.estimado ? ' style="background:#fffbf0"' : '')) + '>'
       + (esGrupo ? '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.5)">' + f.remito + '</td>' : '')
-      + '<td style="' + td + ';text-align:left">' + f.tropa + (f.imputado ? tagSC : tagAnt)
+      + '<td style="' + td + ';text-align:left">' + f.tropa + (f.sc_tipo ? tagSC : tagAnt)
       + (f.estimado ? tag + 'est</span>' : '') + '</td>'
       + '<td style="' + td + '">' + f.cabezas + '</td>'
       + '<td style="' + td + '">' + f.fecha_ingreso.split('-').reverse().join('/') + '</td>'
