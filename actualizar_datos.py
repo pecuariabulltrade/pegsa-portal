@@ -8147,6 +8147,7 @@ def _cab_promedios(serie, dias_mes=RR_CAB_DIAS_MES):
 # repo va únicamente el consolidado `resultados_ventas.json`.
 RR_RV_DIRNAME = "resultados_ventas"
 RR_RV_TIMEOUT = 30       # s · la base nunca puede colgar el tick
+RV_MIN_CAB    = 5        # cabezas mínimas para que una tropa entre al ranking
 RR_RV_PAGE    = 500
 
 
@@ -8254,55 +8255,101 @@ def generar_resultados_ventas(carpeta_out, log=None):
 
     lista = sorted(ventas.values(), key=lambda v: (str(v.get("fecha_egreso") or ""), v["id"]))
 
-    def _acc(dst, k, v, cab, kge, neta, costo, extra_set=None, extra_val=None):
+    # ── v15.71.2 · Agregados para los informes acumulados ──────────
+    # Todo sale de las FILAS (una por tropa dentro de la venta), con la venta
+    # neta ya prorrateada por kg de egreso. Los kg de carne se prorratean con
+    # la misma proporción, así el rinde por tropa cierra contra el de la venta.
+    #
+    # ⚠ El rinde se conoce por VENTA (kg carne total ÷ kg vivo total), no por
+    # animal: la planta liquida la media res del camión entero. El rinde por
+    # tropa es entonces el promedio de los rindes de las ventas en las que esa
+    # tropa participó, ponderado por sus kg vivos. Para tener el rinde real por
+    # animal haría falta el romaneo por caravana.
+    def _nuevo():
+        return {"_ids": set(), "cabezas": 0, "kg_ingreso": 0.0, "kg_egreso": 0.0,
+                "kg_carne": 0.0, "venta_neta": 0.0, "costo": 0.0,
+                "compra": 0.0, "alim_estr_san": 0.0, "dias_animal": 0.0,
+                "_hot": {}, "_cat": {}}
+
+    def _acc(dst, k, vid, cab, kgi, kge, kgc, neta, costo, compra=0.0,
+             aes=0.0, dias_animal=0.0, hot=None, cat=None):
         if k in (None, ""):
             k = "—"
-        a = dst.setdefault(k, {"ventas": 0, "cabezas": 0, "kg_egreso": 0.0,
-                               "venta_neta": 0.0, "costo": 0.0, "resultado": 0.0,
-                               "_ids": set(), "_extra": set()})
-        a["_ids"].add(v["id"])
+        a = dst.setdefault(k, _nuevo())
+        a["_ids"].add(vid)
         a["cabezas"] += cab or 0
+        a["kg_ingreso"] += kgi or 0.0
         a["kg_egreso"] += kge or 0.0
+        a["kg_carne"] += kgc or 0.0
         a["venta_neta"] += neta or 0.0
         a["costo"] += costo or 0.0
-        if extra_set is not None and extra_val:
-            a["_extra"].add(extra_val)
+        a["compra"] += compra or 0.0
+        a["alim_estr_san"] += aes or 0.0
+        a["dias_animal"] += dias_animal or 0.0
+        if hot:
+            a["_hot"][hot] = a["_hot"].get(hot, 0) + (cab or 0)
+        if cat:
+            a["_cat"][cat] = a["_cat"].get(cat, 0) + (cab or 0)
+        return a
 
-    por_tropa, por_hotelero, por_mes, por_comprador = {}, {}, {}, {}
+    por_tropa, por_hotelero, por_categoria = {}, {}, {}
+    por_mes, por_comprador = {}, {}
     for v in lista:
-        # tropa y hotelero son dimensiones de la FILA: se agregan desde `filas`,
-        # con la venta ya prorrateada por kg de egreso.
-        for f in (v.get("filas") or []):
-            _acc(por_tropa, f.get("tropa"), v, f.get("cabezas"), f.get("kg_egreso"),
-                 f.get("venta_prorrateada"), f.get("costo_fila"),
-                 extra_set=True, extra_val=f.get("hotelero"))
-            _acc(por_hotelero, f.get("hotelero"), v, f.get("cabezas"), f.get("kg_egreso"),
-                 f.get("venta_prorrateada"), f.get("costo_fila"))
-        # mes y comprador son dimensiones de la VENTA: se agregan enteros (exacto,
-        # sin prorrateo).
-        _c = (v.get("costos") or {}).get("total")
-        _n = (v.get("venta") or {}).get("neta")
+        vid = v["id"]
+        filas = v.get("filas") or []
+        _kge_tot = sum((f.get("kg_egreso") or 0) for f in filas)
+        _kgc_venta = (v.get("venta") or {}).get("kg_carne") or 0
         _mes = str(v.get("fecha_egreso") or "")[:7] or "—"
-        _acc(por_mes, _mes, v, v.get("cabezas"), v.get("kg_egreso"), _n, _c)
-        _acc(por_comprador, v.get("comprador"), v, v.get("cabezas"), v.get("kg_egreso"), _n, _c)
+        for f in filas:
+            kge = f.get("kg_egreso") or 0
+            # kg de carne de la fila: misma proporción que la venta prorrateada
+            kgc = (_kgc_venta * kge / _kge_tot) if (_kge_tot and _kgc_venta) else 0.0
+            cab = f.get("cabezas") or 0
+            aes = (f.get("alimento") or 0) + (f.get("estructura") or 0) + (f.get("sanidad") or 0)
+            da = (f.get("dias") or 0) * cab
+            args = (vid, cab, f.get("kg_ingreso"), kge, kgc,
+                    f.get("venta_prorrateada"), f.get("costo_fila"),
+                    f.get("costo_compra") or 0, aes, da)
+            _acc(por_tropa, f.get("tropa"), *args, hot=f.get("hotelero"), cat=f.get("categoria"))
+            _acc(por_hotelero, f.get("hotelero"), *args, cat=f.get("categoria"))
+            _acc(por_categoria, f.get("categoria"), *args, hot=f.get("hotelero"))
+            _acc(por_mes, _mes, *args, hot=f.get("hotelero"), cat=f.get("categoria"))
+            _acc(por_comprador, v.get("comprador"), *args, cat=f.get("categoria"))
 
-    def _cerrar(dst, con_hoteleros=False):
+    def _cerrar(dst, con_tropa_extra=False):
         out = {}
         for k, a in dst.items():
             cab = a["cabezas"]
+            res = a["venta_neta"] - a["costo"]
+            kg_prod = a["kg_egreso"] - a["kg_ingreso"]
             r = {
                 "ventas": len(a["_ids"]),
                 "cabezas": cab,
+                "kg_ingreso": round(a["kg_ingreso"], 1),
                 "kg_egreso": round(a["kg_egreso"], 1),
+                "kg_producidos": round(kg_prod, 1),
+                "kg_carne": round(a["kg_carne"], 1),
                 "venta_neta": round(a["venta_neta"], 2),
                 "costo": round(a["costo"], 2),
-                "resultado": round(a["venta_neta"] - a["costo"], 2),
-                "resultado_por_cab": (round((a["venta_neta"] - a["costo"]) / cab, 2) if cab else None),
-                "pct_costo": (round((a["venta_neta"] - a["costo"]) / a["costo"] * 100, 1)
-                              if a["costo"] else None),
+                "resultado": round(res, 2),
+                "resultado_pct": (round(res / a["costo"] * 100, 1) if a["costo"] else None),
+                "resultado_cab": (round(res / cab, 2) if cab else None),
+                "rinde_pond": (round(a["kg_carne"] / a["kg_egreso"] * 100, 2)
+                               if a["kg_egreso"] and a["kg_carne"] else None),
+                "precio_kg_vivo": (round(a["venta_neta"] / a["kg_egreso"], 2)
+                                   if a["kg_egreso"] else None),
             }
-            if con_hoteleros:
-                r["hoteleros"] = sorted(x for x in a["_extra"] if x)
+            if con_tropa_extra:
+                r["adp"] = (round(kg_prod / a["dias_animal"], 3) if a["dias_animal"] else None)
+                r["costo_kg_prod"] = (round(a["alim_estr_san"] / kg_prod, 2) if kg_prod > 0 else None)
+                r["precio_pagado"] = (round(a["compra"] / a["kg_ingreso"], 2)
+                                      if a["kg_ingreso"] else None)
+                r["hotelero"] = (max(a["_hot"].items(), key=lambda kv: kv[1])[0]
+                                 if a["_hot"] else None)
+                r["hoteleros"] = sorted(a["_hot"])
+                r["categoria"] = (max(a["_cat"].items(), key=lambda kv: kv[1])[0]
+                                  if a["_cat"] else None)
+                r["en_ranking"] = cab >= RV_MIN_CAB
             out[k] = r
         return dict(sorted(out.items(), key=lambda kv: -abs(kv[1]["resultado"] or 0)))
 
@@ -8320,13 +8367,17 @@ def generar_resultados_ventas(carpeta_out, log=None):
             "desde": min(fechas) if fechas else None,
             "hasta": max(fechas) if fechas else None,
             "carpeta": f"datos\\{RR_RV_DIRNAME}\\",
-            "nota": ("tropa y hotelero salen de las filas con la venta prorrateada por kg de "
-                     "egreso; mes y comprador se agregan por venta entera"),
+            "min_cab_ranking": RV_MIN_CAB,
+            "nota": ("todos los agregados salen de las filas, con la venta neta y los kg de carne "
+                     "prorrateados por kg de egreso. El rinde por tropa es el de sus ventas "
+                     "ponderado por kg vivo: el rinde real por animal necesitaría romaneo por "
+                     "caravana"),
         },
         "ventas": lista,
-        "por_tropa": _cerrar(por_tropa, con_hoteleros=True),
+        "por_tropa": _cerrar(por_tropa, con_tropa_extra=True),
+        "por_categoria": _cerrar(por_categoria),
         "por_hotelero": _cerrar(por_hotelero),
-        "por_mes": _cerrar(por_mes),
+        "por_mes": dict(sorted(_cerrar(por_mes).items())),
         "por_comprador": _cerrar(por_comprador),
     }
     guardar(salida, carpeta_out, "resultados_ventas.json")

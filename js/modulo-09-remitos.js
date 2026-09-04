@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.71 (2026-09-04)
+/* modulo-09-remitos.js — Resultado por Remito · v15.71.2 (2026-09-04)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -725,7 +725,7 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.71 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.71.2 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -746,6 +746,418 @@ function remInformePDF() {
   win.document.close();
   // Dar tiempo a que bajen las fuentes antes de abrir el diálogo de impresión
   win.onload = function () { setTimeout(function () { win.focus(); win.print(); }, 550); };
+}
+
+/* ════════════════════════════════════════════════════════════
+   v15.71.2 · RESULTADOS ACUMULADOS
+   ────────────────────────────────────────────────────────────
+   Todo lo que se fue guardando con "Informe PDF", junto: resultado del
+   período, por categoría y el ranking de tropas de origen.
+
+   Los agregados se recalculan ACÁ desde `ventas[].filas` en vez de usar los
+   bloques `por_*` que ya trae el JSON, porque esos son de todas las ventas y
+   la sección tiene filtros (período, hotelero, comprador, categoría). La
+   cuenta es la misma que hace el pipeline — los bloques `por_*` quedan como
+   contraste sin filtrar.
+
+   ⚠ El rinde se conoce por VENTA (kg carne del camión ÷ kg vivo del camión),
+   no por animal: la planta liquida la media res del embarque entero. El rinde
+   por tropa es el de las ventas en las que participó, ponderado por sus kg
+   vivos. Para tenerlo por animal haría falta el romaneo por caravana.
+   ════════════════════════════════════════════════════════════ */
+var _rvOpen = false;
+var _rvPer  = 'todo';    // todo | mes | trim | anio | rango
+var _rvDesde = '', _rvHasta = '';
+var _rvHot = '', _rvComp = '', _rvCat = '';
+var _rvOrden = 'resultado';   // resultado | pct | rinde | adp | cabezas
+var _rvTop = 10;              // 0 = todas
+
+function rvVentas() { return (_remHist && _remHist.ventas) || []; }
+function rvMinCab() { return ((_remHist || {}).meta || {}).min_cab_ranking || 5; }
+
+function rvToggle() { _rvOpen = !_rvOpen; renderRemitos(); }
+function rvFiltro(campo, v) {
+  if (campo === 'per')  { _rvPer = v; }
+  else if (campo === 'hot')  { _rvHot = (v === _rvHot ? '' : v); }
+  else if (campo === 'comp') { _rvComp = (v === _rvComp ? '' : v); }
+  else if (campo === 'cat')  { _rvCat = (v === _rvCat ? '' : v); }
+  else if (campo === 'desde') { _rvDesde = v; _rvPer = 'rango'; }
+  else if (campo === 'hasta') { _rvHasta = v; _rvPer = 'rango'; }
+  else if (campo === 'orden') { _rvOrden = v; }
+  else if (campo === 'top')   { _rvTop = parseInt(v, 10) || 0; }
+  renderRemitos();
+}
+function rvLimpiar() {
+  _rvPer = 'todo'; _rvDesde = ''; _rvHasta = ''; _rvHot = ''; _rvComp = ''; _rvCat = '';
+  renderRemitos();
+}
+
+/* Ventana del período elegido, contra la fecha de egreso de la venta. */
+function rvEnPeriodo(fe) {
+  if (!fe) return _rvPer === 'todo';
+  if (_rvPer === 'todo') return true;
+  var hoy = new Date();
+  var d = new Date(fe + 'T00:00:00');
+  if (_rvPer === 'mes')  return fe.slice(0, 7) === hoy.toISOString().slice(0, 7);
+  if (_rvPer === 'anio') return fe.slice(0, 4) === String(hoy.getFullYear());
+  if (_rvPer === 'trim') {
+    var t0 = new Date(hoy); t0.setMonth(t0.getMonth() - 3);
+    return d >= t0 && d <= hoy;
+  }
+  if (_rvPer === 'rango') {
+    if (_rvDesde && fe < _rvDesde) return false;
+    if (_rvHasta && fe > _rvHasta) return false;
+    return true;
+  }
+  return true;
+}
+
+/* Filas que pasan los filtros, cada una con su venta y sus kg de carne
+   prorrateados (misma proporción que la venta prorrateada). */
+function rvFilas() {
+  var out = [];
+  rvVentas().forEach(function (v) {
+    if (!rvEnPeriodo(v.fecha_egreso)) return;
+    if (_rvComp && v.comprador !== _rvComp) return;
+    var filas = v.filas || [];
+    var kgeTot = filas.reduce(function (a, f) { return a + (f.kg_egreso || 0); }, 0);
+    var kgcV = ((v.venta || {}).kg_carne) || 0;
+    filas.forEach(function (f) {
+      if (_rvHot && f.hotelero !== _rvHot) return;
+      if (_rvCat && f.categoria !== _rvCat) return;
+      out.push({
+        v: v, f: f,
+        kg_carne: (kgeTot && kgcV) ? kgcV * (f.kg_egreso || 0) / kgeTot : 0
+      });
+    });
+  });
+  return out;
+}
+
+/* Agregador — la misma cuenta que hace el pipeline. */
+function rvAgg(rows, keyFn) {
+  var m = {};
+  rows.forEach(function (r) {
+    var k = keyFn(r) || '—';
+    var a = m[k] || (m[k] = { k: k, ids: {}, cabezas: 0, kg_ingreso: 0, kg_egreso: 0,
+      kg_carne: 0, venta_neta: 0, costo: 0, compra: 0, aes: 0, diasAnimal: 0,
+      hot: {}, cat: {} });
+    var f = r.f;
+    a.ids[r.v.id] = 1;
+    a.cabezas += f.cabezas || 0;
+    a.kg_ingreso += f.kg_ingreso || 0;
+    a.kg_egreso += f.kg_egreso || 0;
+    a.kg_carne += r.kg_carne || 0;
+    a.venta_neta += f.venta_prorrateada || 0;
+    a.costo += f.costo_fila || 0;
+    a.compra += f.costo_compra || 0;
+    a.aes += (f.alimento || 0) + (f.estructura || 0) + (f.sanidad || 0);
+    a.diasAnimal += (f.dias || 0) * (f.cabezas || 0);
+    if (f.hotelero) a.hot[f.hotelero] = (a.hot[f.hotelero] || 0) + (f.cabezas || 0);
+    if (f.categoria) a.cat[f.categoria] = (a.cat[f.categoria] || 0) + (f.cabezas || 0);
+  });
+  var moda = function (o) {
+    var mk = null, mv = -1;
+    Object.keys(o).forEach(function (k) { if (o[k] > mv) { mv = o[k]; mk = k; } });
+    return mk;
+  };
+  return Object.keys(m).map(function (k) {
+    var a = m[k], res = a.venta_neta - a.costo, kgProd = a.kg_egreso - a.kg_ingreso;
+    return {
+      clave: k,
+      ventas: Object.keys(a.ids).length,
+      cabezas: a.cabezas,
+      kg_ingreso: a.kg_ingreso, kg_egreso: a.kg_egreso,
+      kg_producidos: kgProd, kg_carne: a.kg_carne,
+      venta_neta: a.venta_neta, costo: a.costo, resultado: res,
+      resultado_pct: a.costo ? res / a.costo * 100 : null,
+      resultado_cab: a.cabezas ? res / a.cabezas : null,
+      rinde: a.kg_egreso ? a.kg_carne / a.kg_egreso * 100 : null,
+      precio_kg_vivo: a.kg_egreso ? a.venta_neta / a.kg_egreso : null,
+      adp: a.diasAnimal ? kgProd / a.diasAnimal : null,
+      costo_kg_prod: kgProd > 0 ? a.aes / kgProd : null,
+      precio_pagado: a.kg_ingreso ? a.compra / a.kg_ingreso : null,
+      hotelero: moda(a.hot), categoria: moda(a.cat)
+    };
+  });
+}
+
+function rvTotal(rows) {
+  var t = rvAgg(rows, function () { return 'TOTAL'; });
+  return t.length ? t[0] : null;
+}
+
+/* Valores únicos para los chips de filtro. */
+function rvOpciones() {
+  var hot = {}, comp = {}, cat = {};
+  rvVentas().forEach(function (v) {
+    if (v.comprador) comp[v.comprador] = 1;
+    (v.filas || []).forEach(function (f) {
+      if (f.hotelero) hot[f.hotelero] = 1;
+      if (f.categoria) cat[f.categoria] = 1;
+    });
+  });
+  return { hot: Object.keys(hot).sort(), comp: Object.keys(comp).sort(), cat: Object.keys(cat).sort() };
+}
+
+function rvCSV(cual) {
+  var rows, cols, nombre;
+  var fs = rvFilas();
+  if (cual === 'cat') {
+    rows = rvAgg(fs, function (r) { return r.f.categoria; });
+    nombre = 'resultados_por_categoria';
+  } else {
+    rows = rvAgg(fs, function (r) { return r.f.tropa; });
+    nombre = 'resultados_por_tropa';
+  }
+  cols = ['clave', 'hotelero', 'categoria', 'ventas', 'cabezas', 'kg_ingreso', 'kg_egreso',
+          'kg_producidos', 'kg_carne', 'venta_neta', 'costo', 'resultado', 'resultado_pct',
+          'resultado_cab', 'rinde', 'precio_kg_vivo', 'adp', 'costo_kg_prod', 'precio_pagado'];
+  var txt = cols.join(';') + '\n' + rows.map(function (r) {
+    return cols.map(function (c) {
+      var v = r[c];
+      if (v == null) return '';
+      if (typeof v === 'number') return String(Math.round(v * 100) / 100).replace('.', ',');
+      return /[;"\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+    }).join(';');
+  }).join('\n');
+  try {
+    var blob = new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  } catch (e) {}
+}
+
+/* Sección completa. Devuelve el HTML. */
+function rvSeccionHTML(S) {
+  var meta = (_remHist || {}).meta || {};
+  var ventas = rvVentas();
+  var h = '<div style="background:#fff;border:1px solid var(--border);border-radius:3px;margin:18px 0">'
+    + '<div onclick="rvToggle()" style="padding:13px 18px;cursor:pointer;display:flex;align-items:center;'
+    + 'gap:12px;flex-wrap:wrap">'
+    + '<span style="font-family:\'Playfair Display\',serif;font-size:18px;font-weight:700">Resultados acumulados</span>'
+    + '<span style="' + S.SUB + ';margin:0;flex:1;min-width:220px">'
+    + (ventas.length ? ventas.length + ' venta' + (ventas.length === 1 ? '' : 's') + ' guardada'
+        + (ventas.length === 1 ? '' : 's') + (meta.hasta ? ' · última ' + _remFec(meta.hasta) : '')
+        + (meta.fuente ? ' · ' + meta.fuente : '')
+      : 'todavía no hay ventas guardadas — generá un Informe PDF')
+    + '</span>'
+    + '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--gold)">'
+    + (_rvOpen ? '&#9650; ocultar' : '&#9660; ver') + '</span></div>';
+  if (!_rvOpen) return h + '</div>';
+  if (!ventas.length) {
+    return h + '<div style="padding:0 18px 20px;' + S.SUB + '">Cada vez que generás el Informe PDF de '
+      + 'un remito o un grupo, el resultado se guarda y aparece acá.</div></div>';
+  }
+
+  var op = rvOpciones();
+  var fs = rvFilas();
+  var T = rvTotal(fs);
+  h += '<div style="padding:0 18px 18px">';
+
+  // ── filtros ──
+  var chip = function (txt, on, click) {
+    return '<span onclick="' + click + '" style="cursor:pointer;padding:3px 9px;border-radius:2px;'
+      + 'font-family:\'DM Mono\',monospace;font-size:11px;margin:0 5px 5px 0;display:inline-block;'
+      + (on ? 'background:var(--ink);color:#d4a84b;border:1px solid var(--ink)'
+            : 'background:#faf8f4;color:var(--ink);border:1px solid #e3e1da') + '">' + txt + '</span>';
+  };
+  h += '<div style="margin-bottom:6px">'
+    + [['todo', 'Todo'], ['mes', 'Este mes'], ['trim', 'Últimos 3 meses'], ['anio', 'Este año']]
+        .map(function (p) { return chip(p[1], _rvPer === p[0], 'rvFiltro(\'per\',\'' + p[0] + '\')'); }).join('')
+    + '<input type="date" value="' + _rvDesde + '" onchange="rvFiltro(\'desde\',this.value)" style="' + S.INP + ';width:135px;padding:3px 7px;font-size:11px;margin-right:4px">'
+    + '<input type="date" value="' + _rvHasta + '" onchange="rvFiltro(\'hasta\',this.value)" style="' + S.INP + ';width:135px;padding:3px 7px;font-size:11px">'
+    + '</div>';
+  if (op.hot.length > 1) h += '<div style="margin-bottom:4px">' + op.hot.map(function (k) {
+      return chip(k, _rvHot === k, 'rvFiltro(\'hot\',\'' + k.replace(/'/g, "\\'") + '\')'); }).join('') + '</div>';
+  if (op.cat.length > 1) h += '<div style="margin-bottom:4px">' + op.cat.map(function (k) {
+      return chip(k, _rvCat === k, 'rvFiltro(\'cat\',\'' + k.replace(/'/g, "\\'") + '\')'); }).join('') + '</div>';
+  if (op.comp.length > 1) h += '<div style="margin-bottom:4px">' + op.comp.map(function (k) {
+      return chip(k, _rvComp === k, 'rvFiltro(\'comp\',\'' + k.replace(/'/g, "\\'") + '\')'); }).join('') + '</div>';
+  h += '<div style="margin-bottom:12px">'
+    + ((_rvHot || _rvCat || _rvComp || _rvPer !== 'todo')
+        ? '<a onclick="rvLimpiar()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
+          + 'color:var(--gold);text-decoration:underline">quitar filtros</a>' : '')
+    + '<button onclick="rvInformePDF()" style="float:right;margin-left:6px;padding:6px 14px;background:var(--ink);'
+    + 'border:1px solid var(--ink);border-radius:2px;color:#d4a84b;font-family:\'DM Mono\',monospace;'
+    + 'font-size:11px;cursor:pointer">&#128196; Informe PDF</button></div>';
+
+  if (!T || !fs.length) {
+    return h + '<div style="' + S.SUB + '">Ningún resultado con esos filtros.</div></div></div>';
+  }
+
+  // ── 1 · acumulado del período ──
+  h += '<div style="' + S.GRID + '">'
+    + S.card('Resultado del período', _remM(T.resultado),
+             _remN(T.resultado_pct, 1) + ' % s/costo · ' + _remM(T.resultado_cab) + '/cab', true)
+    + S.card('Venta neta', _remM(T.venta_neta), T.ventas + ' venta' + (T.ventas === 1 ? '' : 's') + ' · ' + T.cabezas + ' cab')
+    + S.card('Costo', _remM(T.costo), '$ ' + _remN(T.costo / T.kg_egreso) + '/kg vivo')
+    + S.card('Rinde promedio', _remN(T.rinde, 2) + ' %', _remN(T.kg_carne) + ' kg carne / ' + _remN(T.kg_egreso) + ' kg vivo')
+    + S.card('Precio kg vivo', '$ ' + _remN(T.precio_kg_vivo), 'neto de gastos')
+    + '</div>';
+
+  // serie mensual: barras de resultado + % arriba
+  var meses = rvAgg(fs, function (r) { return String(r.v.fecha_egreso || '').slice(0, 7); })
+    .sort(function (a, b) { return a.clave < b.clave ? -1 : 1; });
+  if (meses.length > 1) {
+    var maxAbs = Math.max.apply(null, meses.map(function (m) { return Math.abs(m.resultado); })) || 1;
+    h += '<div style="' + S.H2 + ';font-size:16px">Mes a mes</div>'
+      + '<div style="display:flex;align-items:flex-end;gap:8px;height:120px;border-bottom:1px solid var(--border);'
+      + 'padding-bottom:2px;margin-bottom:6px">'
+      + meses.map(function (m) {
+          var pc = Math.abs(m.resultado) / maxAbs * 100;
+          var neg = m.resultado < 0;
+          return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center" '
+            + 'title="' + m.clave + ': ' + _remM(m.resultado) + ' (' + _remN(m.resultado_pct, 1) + ' %)">'
+            + '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:rgba(26,22,18,.5)">'
+            + _remN(m.resultado_pct, 1) + '%</div>'
+            + '<div style="width:100%;height:' + pc + '%;background:' + (neg ? '#c0392b' : '#27613d')
+            + ';border-radius:2px 2px 0 0;min-height:2px"></div></div>';
+        }).join('')
+      + '</div><div style="display:flex;gap:8px;font-family:\'DM Mono\',monospace;font-size:10px;'
+      + 'color:rgba(26,22,18,.45);margin-bottom:8px">'
+      + meses.map(function (m) { return '<div style="flex:1;text-align:center">' + m.clave + '</div>'; }).join('')
+      + '</div>';
+  }
+
+  // ── 2 · por categoría ──
+  var cats = rvAgg(fs, function (r) { return r.f.categoria; })
+    .sort(function (a, b) { return b.resultado - a.resultado; });
+  h += '<div style="' + S.H2 + ';font-size:16px">Por categoría'
+    + '<button onclick="rvCSV(\'cat\')" style="float:right;padding:4px 11px;background:#faf8f4;'
+    + 'border:1px solid #d8d6ce;border-radius:2px;font-family:\'DM Mono\',monospace;font-size:11px;'
+    + 'cursor:pointer">&#11015; CSV</button></div>';
+  h += rvTabla(['Categoría', 'Cab', 'Ventas', 'Resultado', '% s/costo', '$/cab', 'Rinde'], cats.map(function (c) {
+    return [c.clave, _remN(c.cabezas), c.ventas, _remM(c.resultado), _remN(c.resultado_pct, 1) + ' %',
+            _remM(c.resultado_cab), _remN(c.rinde, 2) + ' %'];
+  }), S, cats.map(function (c) { return c.resultado < 0; }));
+
+  // ── 3 y 4 · ranking de tropas (incluye el rinde) ──
+  var minCab = rvMinCab();
+  var tropas = rvAgg(fs, function (r) { return r.f.tropa; });
+  var elegibles = tropas.filter(function (t) { return t.cabezas >= minCab; });
+  var cmp = {
+    resultado: function (a, b) { return b.resultado - a.resultado; },
+    pct:       function (a, b) { return (b.resultado_pct || -1e9) - (a.resultado_pct || -1e9); },
+    rinde:     function (a, b) { return (b.rinde || -1e9) - (a.rinde || -1e9); },
+    adp:       function (a, b) { return (b.adp || -1e9) - (a.adp || -1e9); },
+    cabezas:   function (a, b) { return b.cabezas - a.cabezas; }
+  }[_rvOrden];
+  elegibles.sort(cmp);
+  var muestra = _rvTop > 0 && elegibles.length > _rvTop * 2
+    ? elegibles.slice(0, _rvTop).concat(elegibles.slice(-_rvTop))
+    : elegibles;
+  h += '<div style="' + S.H2 + ';font-size:16px">Tropas de origen'
+    + '<button onclick="rvCSV(\'tropa\')" style="float:right;padding:4px 11px;background:#faf8f4;'
+    + 'border:1px solid #d8d6ce;border-radius:2px;font-family:\'DM Mono\',monospace;font-size:11px;'
+    + 'cursor:pointer">&#11015; CSV</button></div>';
+  h += '<div style="' + S.SUB + ';margin:-6px 0 8px">Ordenar por '
+    + [['resultado', 'resultado $'], ['pct', '% s/costo'], ['rinde', 'rinde'], ['adp', 'ADP'], ['cabezas', 'cabezas']]
+        .map(function (o) { return chip(o[1], _rvOrden === o[0], 'rvFiltro(\'orden\',\'' + o[0] + '\')'); }).join('')
+    + ' · ' + [['10', 'top/bottom 10'], ['0', 'todas']]
+        .map(function (o) { return chip(o[1], String(_rvTop) === o[0], 'rvFiltro(\'top\',\'' + o[0] + '\')'); }).join('')
+    + '<br>' + elegibles.length + ' de ' + tropas.length + ' tropas con al menos ' + minCab + ' cabezas vendidas. '
+    + '<span title="El rinde se conoce por VENTA (kg carne del camión ÷ kg vivo del camión), no por animal: '
+    + 'la planta liquida la media res del embarque entero. Acá es el rinde de las ventas en las que la tropa '
+    + 'participó, ponderado por sus kg vivos. El rinde real por animal necesitaría romaneo por caravana." '
+    + 'style="border-bottom:1px dotted;cursor:help">El rinde es de la venta, prorrateado.</span></div>';
+  h += rvTabla(['Tropa', 'Hotelero', 'Cat', 'Cab', 'Kg prod', 'Resultado', '% s/costo', '$/cab',
+                'Rinde', 'ADP', '$/kg prod', '$/kg pagado'],
+    muestra.map(function (t) {
+      return [t.clave, t.hotelero || '—', t.categoria || '—', _remN(t.cabezas), _remN(t.kg_producidos),
+              _remM(t.resultado), _remN(t.resultado_pct, 1) + ' %', _remM(t.resultado_cab),
+              _remN(t.rinde, 2) + ' %', _remN(t.adp, 3), _remM(t.costo_kg_prod), '$ ' + _remN(t.precio_pagado)];
+    }), S, muestra.map(function (t) { return t.resultado < 0; }));
+
+  return h + '</div></div>';
+}
+
+/* Tabla del estilo del portal. `neg` marca las filas en rojo. */
+function rvTabla(cols, filas, S, neg) {
+  var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:#fff;'
+    + 'border:1px solid var(--border);font-family:\'DM Mono\',monospace"><thead><tr>'
+    + cols.map(function (c, i) {
+        return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);'
+          + 'padding:8px 9px;border-bottom:2px solid var(--border);text-align:' + (i === 0 ? 'left' : 'right')
+          + ';white-space:nowrap">' + c + '</th>';
+      }).join('') + '</tr></thead><tbody>';
+  filas.forEach(function (f, i) {
+    var td = 'padding:7px 9px;border-bottom:1px solid #f0eee8;font-size:12.5px;white-space:nowrap';
+    h += '<tr' + (neg && neg[i] ? ' style="background:#fdf6f4"' : '') + '>'
+      + f.map(function (v, j) {
+          return '<td style="' + td + ';text-align:' + (j === 0 ? 'left' : 'right') + '">' + v + '</td>';
+        }).join('') + '</tr>';
+  });
+  return h + '</tbody></table></div>';
+}
+
+/* Informe PDF de la sección — una página, mismo estilo que el de remitos. */
+function rvInformePDF() {
+  var fs = rvFilas(), T = rvTotal(fs);
+  if (!T) return;
+  var cats = rvAgg(fs, function (r) { return r.f.categoria; }).sort(function (a, b) { return b.resultado - a.resultado; });
+  var minCab = rvMinCab();
+  var tropas = rvAgg(fs, function (r) { return r.f.tropa; })
+    .filter(function (t) { return t.cabezas >= minCab; })
+    .sort(function (a, b) { return b.resultado - a.resultado; });
+  var per = { todo: 'todas las ventas', mes: 'este mes', trim: 'últimos 3 meses',
+              anio: 'este año', rango: (_rvDesde || '…') + ' a ' + (_rvHasta || '…') }[_rvPer];
+  var filtros = [per];
+  if (_rvHot) filtros.push('hotelero ' + _rvHot);
+  if (_rvCat) filtros.push('categoría ' + _rvCat);
+  if (_rvComp) filtros.push('comprador ' + _rvComp);
+
+  var fila = function (c) {
+    return '<tr><td>' + c[0] + '</td>' + c.slice(1).map(function (x) {
+      return '<td style="text-align:right">' + x + '</td>'; }).join('') + '</tr>';
+  };
+  var h = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Resultados acumulados</title>'
+    + '<style>@page{size:A4;margin:12mm}body{font-family:Georgia,serif;color:#1a1612;font-size:11px}'
+    + 'h1{font-size:20px;margin:0 0 2px}.s{font-size:10px;color:#6b6560;margin-bottom:12px}'
+    + '.k{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px}'
+    + '.kc{border:1px solid #e3e1da;padding:8px 10px;border-radius:2px}'
+    + '.l{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
+    + '.v{font-size:15px;font-weight:700;margin-top:2px}.u{font-size:8.5px;color:#8a827a}'
+    + '.sec{font-size:13px;font-weight:700;margin:14px 0 5px;border-bottom:1px solid #e3e1da;padding-bottom:3px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:9.5px}'
+    + 'th{text-align:right;font-size:8px;text-transform:uppercase;color:#8a827a;border-bottom:1px solid #e3e1da;padding:3px 4px}'
+    + 'th:first-child{text-align:left}td{padding:3px 4px;border-bottom:1px solid #f2f0ea}'
+    + '.ft{margin-top:14px;font-size:8.5px;color:#8a827a;border-top:1px solid #e3e1da;padding-top:6px}</style>'
+    + '</head><body>'
+    + '<h1>Resultados acumulados</h1><div class="s">' + filtros.join(' · ') + ' · '
+    + T.ventas + ' venta(s) · ' + T.cabezas + ' cabezas</div>'
+    + '<div class="k">'
+    + '<div class="kc"><div class="l">Resultado</div><div class="v">' + _remM(T.resultado) + '</div>'
+    + '<div class="u">' + _remN(T.resultado_pct, 1) + ' % s/costo</div></div>'
+    + '<div class="kc"><div class="l">Venta neta</div><div class="v">' + _remM(T.venta_neta) + '</div><div class="u">&nbsp;</div></div>'
+    + '<div class="kc"><div class="l">Costo</div><div class="v">' + _remM(T.costo) + '</div><div class="u">&nbsp;</div></div>'
+    + '<div class="kc"><div class="l">Rinde</div><div class="v">' + _remN(T.rinde, 2) + ' %</div>'
+    + '<div class="u">' + _remN(T.kg_carne) + ' kg carne</div></div>'
+    + '<div class="kc"><div class="l">$/cab</div><div class="v">' + _remM(T.resultado_cab) + '</div><div class="u">&nbsp;</div></div>'
+    + '</div>'
+    + '<div class="sec">Por categoría</div><table><thead><tr><th>Categoría</th><th>Cab</th>'
+    + '<th>Resultado</th><th>% s/costo</th><th>$/cab</th><th>Rinde</th></tr></thead><tbody>'
+    + cats.map(function (c) { return fila([c.clave, _remN(c.cabezas), _remM(c.resultado),
+        _remN(c.resultado_pct, 1) + ' %', _remM(c.resultado_cab), _remN(c.rinde, 2) + ' %']); }).join('')
+    + '</tbody></table>'
+    + '<div class="sec">Tropas de origen (' + minCab + ' cabezas o más)</div>'
+    + '<table><thead><tr><th>Tropa</th><th>Hotelero</th><th>Cat</th><th>Cab</th><th>Resultado</th>'
+    + '<th>% s/costo</th><th>$/cab</th><th>Rinde</th><th>ADP</th></tr></thead><tbody>'
+    + tropas.slice(0, 30).map(function (t) { return fila([t.clave, t.hotelero || '—', t.categoria || '—',
+        _remN(t.cabezas), _remM(t.resultado), _remN(t.resultado_pct, 1) + ' %', _remM(t.resultado_cab),
+        _remN(t.rinde, 2) + ' %', _remN(t.adp, 3)]); }).join('')
+    + '</tbody></table>'
+    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.71.2 · '
+    + 'La venta de cada remito se prorratea entre sus tropas por kg de egreso. El rinde es el de la '
+    + 'venta (kg carne del camión ÷ kg vivo del camión) ponderado por los kg vivos de la tropa: el '
+    + 'rinde real por animal necesitaría romaneo por caravana.</div></body></html>';
+  var win = window.open('', '_blank');
+  if (!win) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes.'); return; }
+  win.document.open(); win.document.write(h); win.document.close();
+  win.onload = function () { setTimeout(function () { win.focus(); win.print(); }, 400); };
 }
 
 /* v15.68 · Estado efectivo del origen de los sin caravana: lo que cargó el
@@ -825,7 +1237,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.71.1',
+    version_portal: 'v15.71.2',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -1268,6 +1680,10 @@ function renderRemitos(soloResultado) {
     + '<button onclick="remInformePDF()" style="padding:8px 16px;background:var(--ink);border:1px solid var(--ink);border-radius:2px;'
     + 'color:#d4a84b;font-family:\'DM Mono\',monospace;font-size:12px;cursor:pointer;white-space:nowrap">&#128196; Informe PDF</button></div>';
   h += '</div>';
+  // v15.71.2 · Resultados acumulados (debajo del selector). Recibe los estilos
+  // del render para no duplicar la paleta.
+  h += rvSeccionHTML({ SUB: SUB, GRID: GRID, H2: H2, INP: INP, card: card });
+
   h += '<div style="' + SUB + ';margin:0 0 16px">Carga local en este navegador — se migrará a base de datos.'
     + (_remHist && _remHist.meta && _remHist.meta.n_ventas
         ? ' · Historial: <strong>' + _remHist.meta.n_ventas + ' venta'
