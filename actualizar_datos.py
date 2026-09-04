@@ -3954,7 +3954,8 @@ def main():
             log.warning("  ⚠ Sin serie de cabezas: los días de stock quedan sin normalizar")
 
         insumos_enriquecidos = []
-        consumo_total_norm = 0.0
+        consumo_total_norm = 0.0      # ya ajustado
+        consumo_total_sin_aj = 0.0    # referencia, sin ajuste
         for ins in insumos:
             nombre_up = ins["nombre"].strip().upper()
             kg_dia_anio = kg_dia_anio_por.get(nombre_up) or 0
@@ -3962,15 +3963,25 @@ def main():
             if not kg_dia_anio:
                 kg_dia_anio = kg_dia_30_por.get(nombre_up) or 0
                 fuente = "30d" if kg_dia_anio else None
-            dias, consumo_norm = dias_stock_normalizado(
+            _dias_sin, consumo_norm = dias_stock_normalizado(
                 ins["stock_kg"], kg_dia_anio, cab_anio, cab_mes)
+            # v15.70.1: el factor agranda el consumo (acorta los días).
+            factor = _ins_ajuste(nombre_up)
+            consumo_aj = consumo_norm * factor if consumo_norm else None
+            dias = (round(ins["stock_kg"] / consumo_aj, 1)
+                    if (consumo_aj and ins["stock_kg"] is not None) else None)
+            if consumo_aj:
+                consumo_total_norm += consumo_aj
             if consumo_norm:
-                consumo_total_norm += consumo_norm
+                consumo_total_sin_aj += consumo_norm
 
             ins_enr = dict(ins)
-            # consumo_diario_tc pasa a ser el NORMALIZADO (lo que consume el
-            # portal); el de 3 días queda al lado como referencia.
-            ins_enr["consumo_diario_tc"] = (round(consumo_norm, 1) if consumo_norm else None)
+            # consumo_diario_tc pasa a ser el normalizado YA AJUSTADO (lo que
+            # consume el portal); al lado quedan el normalizado sin ajuste y el
+            # de 3 días, los dos como referencia.
+            ins_enr["consumo_diario_tc"] = (round(consumo_aj, 1) if consumo_aj else None)
+            ins_enr["consumo_dia_norm"]  = (round(consumo_norm, 1) if consumo_norm else None)
+            ins_enr["ajuste_factor"]     = factor
             ins_enr["consumo_3d_tc"]     = next(
                 (i.get("promedio_diario") for i in cs.get("por_insumo", [])
                  if str(i.get("desc") or "").strip().upper() == nombre_up), None)
@@ -3981,8 +3992,9 @@ def main():
 
             if dias is not None:
                 log.info(f"  {ins['nombre']:<28} stock {ins['stock_kg']:>12,.0f} kg ÷ "
-                         f"{consumo_norm:>9,.1f} kg/día "
-                         f"(año {kg_dia_anio:,.1f}/día · cab {cab_anio:,.0f}→{cab_mes:,.0f}"
+                         f"{consumo_aj:>9,.1f} kg/día "
+                         f"(norm {consumo_norm:,.1f} × {factor:g} · año {kg_dia_anio:,.1f}/día "
+                         f"· cab {cab_anio:,.0f}→{cab_mes:,.0f}"
                          f"{'' if fuente == 'normalizado_365' else ' · fuente 30d'}) "
                          f"= {dias:>6.1f} días")
             else:
@@ -4000,9 +4012,15 @@ def main():
             "dias_cab_mes":       _nd_mes,
             "dias_registro_365":  c365.get("dias_con_registro"),
             "consumo_total_norm": round(consumo_total_norm, 1) if consumo_total_norm else None,
+            "consumo_total_sin_ajuste": (round(consumo_total_sin_aj, 1)
+                                         if consumo_total_sin_aj else None),
             "dias_totales":       dias_totales,
+            "dias_totales_sin_ajuste": (round(total_kg / consumo_total_sin_aj, 1)
+                                        if consumo_total_sin_aj > 0 else None),
+            "ajuste_consumo":     dict(INS_AJUSTE_CONSUMO),
             "formula":            ("dias = stock_kg / ((kg_dia_anio / cab_prom_anio) * "
-                                   "cab_prom_mes); cabezas de El Haras, todos los propietarios"),
+                                   "cab_prom_mes * ajuste); cabezas de El Haras, todos los "
+                                   "propietarios"),
         })
 
         guardar({
@@ -4011,9 +4029,11 @@ def main():
             "total_kg": round(total_kg, 2),
         }, carpeta, f"stock_insumos_{periodo}.json")
         if dias_totales is not None:
+            _sin = (round(total_kg / consumo_total_sin_aj, 1)
+                    if consumo_total_sin_aj > 0 else None)
             log.info(f"  ✓ Días totales de stock: {dias_totales:,.1f} "
-                     f"(stock {total_kg:,.0f} kg ÷ consumo normalizado "
-                     f"{consumo_total_norm:,.1f} kg/día)")
+                     f"(stock {total_kg:,.0f} kg ÷ consumo ajustado "
+                     f"{consumo_total_norm:,.1f} kg/día · sin ajuste daban {_sin})")
         log.info(f"  ✓ stock_insumos_{periodo}.json actualizado con días restantes")
     except Exception as e:
         log.warning(f"  ⚠ No se pudieron calcular días restantes: {e}")
@@ -8005,6 +8025,22 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
 #
 # Su ejemplo: 10.000.000 kg ÷ ((12.000 ÷ 7.500) × 6.500) = 961,5 días.
 RR_CAB_DIAS_MES = 30
+
+# v15.70.1: factor de ajuste del consumo normalizado (decisión Nicolás 04/09).
+# Agranda el denominador, o sea ACORTA los días de stock: es margen de seguridad,
+# y de paso compensa que las cabezas del año salen en parte de snapshots de fin
+# de mes que sobreestiman (ver _cab_serie_diaria) y dejaban los días optimistas.
+# "*" aplica a todo insumo sin entrada propia. Nombres en mayúsculas, como en el
+# mixer. Poner {"*": 1.0} reproduce v15.70 exacto.
+INS_AJUSTE_CONSUMO = {
+    "*":          1.10,   # +10 % general
+    "MAIZ GRANO": 1.05,   # +5 % el maíz grano
+}
+
+
+def _ins_ajuste(nombre_up):
+    """Factor de ajuste del insumo. Sin entrada propia → el general."""
+    return INS_AJUSTE_CONSUMO.get(nombre_up, INS_AJUSTE_CONSUMO.get("*", 1.0))
 
 
 def dias_stock_normalizado(stock_kg, kg_dia_anio, cab_anio, cab_mes):

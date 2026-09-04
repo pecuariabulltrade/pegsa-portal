@@ -433,6 +433,12 @@
       var t = kg / 1000;
       return (Math.abs(t) >= 100 ? Math.round(t) : t.toFixed(1).replace(".", ",")) + " t";
     }
+    // v15.70.1: sufijo del ajuste del consumo (" · ajuste +10 %").
+    function fmtAjuste(f) {
+      if (f == null || Number(f) === 1) return "";
+      var p = Math.round((Number(f) - 1) * 100);
+      return " \u00b7 ajuste " + (p >= 0 ? "+" : "") + p + " %";
+    }
     function fmtTDia(kg) {
       if (kg == null) return "—";
       var t = kg / 1000;
@@ -450,12 +456,12 @@
         rows = [
           { k: "Estado", v: "Datos inconsistentes" },
           { k: "Stock",       v: fmtT(it.stock_kg) },
-          { k: "Consumo/día", v: fmtTDia(it.consumo_kg_dia) }
+          { k: "Consumo/día", v: fmtTDia(it.consumo_kg_dia) + fmtAjuste(it.ajuste_factor) }
         ];
       } else {
         rows = [
           { k: "Stock",       v: fmtT(it.stock_kg) },
-          { k: "Consumo/día", v: fmtTDia(it.consumo_kg_dia) },
+          { k: "Consumo/día", v: fmtTDia(it.consumo_kg_dia) + fmtAjuste(it.ajuste_factor) },
           { k: it.fecha_ult_compra ? "Últ. compra" : "Reposición",
             v: it.fecha_ult_compra ? fmtFechaCorta(it.fecha_ult_compra) : "N/D" }
         ];
@@ -471,6 +477,7 @@
         inconsistente: !!it.inconsistente,
         stockKg: it.stock_kg,
         consumoKgDia: it.consumo_kg_dia,
+        ajusteFactor: it.ajuste_factor != null ? it.ajuste_factor : null,
         ultCompra: it.fecha_ult_compra,
         rows: rows
       };
@@ -528,6 +535,7 @@
             descripcion:  it.descripcion,
             stockKg:      it.stock_kg,
             consumoKgDia: it.consumo_kg_dia,
+            ajusteFactor: it.ajuste_factor != null ? it.ajuste_factor : null,
             dias:         it.dias,
             diasFmt:      it.dias == null ? "—" : Number(it.dias).toFixed(1).replace(".", ","),
             semaforo:     it.semaforo,

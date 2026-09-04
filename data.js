@@ -601,6 +601,9 @@ window.PEGSA_DATA = {
           descripcion: INSUMO_DESCRIPCIONES[i.nombre] || null,
           stock_kg: stock,
           consumo_kg_dia: i.consumo_diario_tc,
+          // v15.70.1: el consumo ya viene ajustado del pipeline; el factor va
+          // solo para poder etiquetarlo. No se recalcula nada acá.
+          ajuste_factor: i.ajuste_factor != null ? i.ajuste_factor : null,
           dias: dias,
           estado: estado,
           inconsistente: isInconsistente,
@@ -636,6 +639,7 @@ window.PEGSA_DATA = {
           descripcion: INSUMO_DESCRIPCIONES[i.nombre] || null,
           stock_kg: stock,
           consumo_kg_dia: i.consumo_diario_tc,
+          ajuste_factor: i.ajuste_factor != null ? i.ajuste_factor : null,
           dias: dias,
           semaforo: semaforo,
           estado: estado,

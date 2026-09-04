@@ -25,6 +25,26 @@ async function cargarInsumos() {
   }
 }
 
+/* v15.70.1 · " · ajuste +10 %" a partir del factor. Vacio si no hay ajuste. */
+function insAjusteTxt(f) {
+  if (f == null || Number(f) === 1) return '';
+  var p = Math.round((Number(f) - 1) * 100);
+  return ' \u00b7 ajuste ' + (p >= 0 ? '+' : '') + p + ' %';
+}
+/* Resumen de la tabla de ajustes para el subtitulo del KPI. */
+function insAjusteResumen(tabla) {
+  if (!tabla) return '';
+  var gen = tabla['*'];
+  var otros = Object.keys(tabla).filter(function (k) { return k !== '*'; })
+    .map(function (k) {
+      var p = Math.round((Number(tabla[k]) - 1) * 100);
+      return k.toLowerCase() + ' ' + (p >= 0 ? '+' : '') + p + ' %';
+    });
+  var g = gen != null ? 'ajuste ' + (Math.round((Number(gen) - 1) * 100) >= 0 ? '+' : '')
+                        + Math.round((Number(gen) - 1) * 100) + ' %' : '';
+  return g + (otros.length ? ' (' + otros.join(' \u00b7 ') + ')' : '');
+}
+
 function renderInsumos(data) {
   document.getElementById('insLoading').style.display = 'none';
   document.getElementById('insData').style.display    = 'block';
@@ -51,7 +71,8 @@ function renderInsumos(data) {
         ? ('consumo normalizado: ' + Number(Math.round(meta.consumo_total_norm)).toLocaleString('es-AR')
            + ' kg/dia \u00b7 ' + Number(Math.round(meta.cab_prom_mes)).toLocaleString('es-AR')
            + ' cab hoy vs ' + Number(Math.round(meta.cab_prom_anio)).toLocaleString('es-AR')
-           + ' cab prom. a\u00f1o')
+           + ' cab prom. a\u00f1o'
+           + (meta.ajuste_consumo ? ' \u00b7 ' + insAjusteResumen(meta.ajuste_consumo) : ''))
         : 'consumo normalizado';
     }
   }
@@ -72,7 +93,10 @@ function renderInsumos(data) {
       + ' cab prom. del anio) x '
       + (meta.cab_prom_mes != null ? Number(Math.round(meta.cab_prom_mes)).toLocaleString('es-AR') : '?')
       + ' cab del ultimo mes.'
-      + (ins.fuente === '30d' ? ' Sin consumo en los ultimos 365 dias: se usa el promedio de 30 dias.' : '');
+      + (ins.fuente === '30d' ? ' Sin consumo en los ultimos 365 dias: se usa el promedio de 30 dias.' : '')
+      + (ins.consumo_dia_norm != null && ins.ajuste_factor && Number(ins.ajuste_factor) !== 1
+          ? ' Sin ajuste: ' + Number(Math.round(ins.consumo_dia_norm)).toLocaleString('es-AR') + ' kg/dia.'
+          : '');
     var _ref3d = ins.consumo_3d_tc
       ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);text-align:right;margin-top:2px">'
         + '\u00faltimos 3 d\u00edas: ' + Number(Math.round(ins.consumo_3d_tc)).toLocaleString('es-AR') + ' kg/d\u00eda</div>'
@@ -90,7 +114,8 @@ function renderInsumos(data) {
     var diasHTML = dias != null
       ? '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px dashed rgba(26,22,18,.1);padding-top:7px;margin-top:4px">'
           +'<span style="color:rgba(26,22,18,.5);border-bottom:1px dotted rgba(26,22,18,.25);cursor:help" title="'+_tip+'">Consumo/día</span>'
-          +'<span style="font-family:DM Mono,monospace;color:rgba(26,22,18,.55);font-size:13px" title="'+_tip+'">'+(promTC ? Number(Math.round(promTC)).toLocaleString('es-AR')+' kg/día' : '—')+'</span>'
+          +'<span style="font-family:DM Mono,monospace;color:rgba(26,22,18,.55);font-size:13px" title="'+_tip+'">'+(promTC ? Number(Math.round(promTC)).toLocaleString('es-AR')+' kg/día' : '—')
+          +'<span style="font-size:11px;color:rgba(26,22,18,.35)">'+insAjusteTxt(ins.ajuste_factor)+'</span></span>'
         +'</div>'
         + _ref3d
         +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px dashed rgba(26,22,18,.08);padding-top:7px;margin-top:4px;background:'+diasBg+';border-radius:2px;padding:6px 8px;margin-left:-8px;margin-right:-8px">'

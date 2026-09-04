@@ -470,6 +470,14 @@ function Alertas() {
 /* ============================================================
    Helpers para construir contenido de modales
    ============================================================ */
+/* v15.70.1 · sufijo del ajuste del consumo (" · ajuste +10 %").
+   El consumo ya viene ajustado del pipeline; esto solo lo etiqueta. */
+function ajusteSufijo(f) {
+  if (f == null || Number(f) === 1) return "";
+  const p = Math.round((Number(f) - 1) * 100);
+  return " · ajuste " + (p >= 0 ? "+" : "") + p + " %";
+}
+
 function kvList(rows) {
   return (
     <div className="modal-kv">
@@ -832,7 +840,8 @@ function InsumoCard({ insumo }) {
               { k: "Días",         v: insumo.inconsistente ? "Datos inconsistentes" : insumo.dias },
               { k: "Stock",        v: insumo.stockKg != null ? (insumo.stockKg < 0 ? "−" : "") + D.fmt(Math.abs(insumo.stockKg)) + " kg" : "N/D",
                 cls: (insumo.stockKg != null && insumo.stockKg < 0) ? "neg" : "" },
-              { k: "Consumo / día", v: insumo.consumoKgDia != null ? D.fmt(insumo.consumoKgDia) + " kg" : "N/D" },
+              { k: "Consumo / día", v: insumo.consumoKgDia != null
+                  ? D.fmt(insumo.consumoKgDia) + " kg" + ajusteSufijo(insumo.ajusteFactor) : "N/D" },
               { k: "Última compra", v: insumo.ultCompra ? D.fmtFechaCorta(insumo.ultCompra) : "N/D" }
             ])}
           </div>
@@ -934,7 +943,8 @@ function InsumosAllList({ items, total, clickable, highlight }) {
               { k: "Días restantes",  v: it.dias != null ? it.diasFmt + " d" : "N/D", cls: semClass },
               { k: "Stock",           v: it.stockKg != null ? (it.stockKg < 0 ? "−" : "") + fmt(Math.round(Math.abs(it.stockKg))) + " kg" : "N/D",
                 cls: (it.stockKg != null && it.stockKg < 0) ? "neg" : "" },
-              { k: "Consumo / día",   v: it.consumoKgDia != null ? fmt(Math.round(it.consumoKgDia)) + " kg" : "—" },
+              { k: "Consumo / día",   v: it.consumoKgDia != null
+                  ? fmt(Math.round(it.consumoKgDia)) + " kg" + ajusteSufijo(it.ajusteFactor) : "—" },
               { k: "% del stock total", v: it.pctTotal != null ? it.pctTotal.toFixed(1).replace(".", ",") + "%" : "—" }
             ])}
           </div>
