@@ -3920,41 +3920,104 @@ def main():
         log.warning(f"  ⚠ No se pudieron calcular precios de indiferencia: {e}")
 
     # ── 11. Enriquecer stock_insumos con días de consumo restantes ──
+    # v15.70: el divisor ya no es el promedio de 3 días sino el consumo del
+    # último año por cabeza, llevado a las cabezas de hoy.
     separador("Días de Stock Restantes")
     try:
-        # Mapa nombre → promedio_diario TC desde consumo semanal
-        consumo_por_nombre = {}
-        for ins_c in cs.get("por_insumo", []):
-            nombre = ins_c.get("desc", "").strip().upper()
-            consumo_por_nombre[nombre] = ins_c.get("promedio_diario", 0)
+        c365 = consumo_data.get("ult_365") or {}
+        kg_dia_anio_por = {}
+        for x in (c365.get("por_insumo") or []):
+            kg_dia_anio_por[str(x.get("desc") or "").strip().upper()] = x.get("kg_dia") or 0
 
-        # Enriquecer cada insumo del stock
+        # Fallback para el insumo que no tuvo movimiento en los 365 días (uno
+        # nuevo, o uno que se dejó de usar): promedio de los últimos 30 días.
+        kg_dia_30_por = {}
+        _dias30 = [d for d in ((consumo_data.get("diario") or {}).get("dias") or [])
+                   if not d.get("descartado")]
+        if _dias30:
+            _acc = {}
+            for d in _dias30:
+                for k, v in (d.get("por_insumo") or {}).items():
+                    _acc[str(k).strip().upper()] = _acc.get(str(k).strip().upper(), 0.0) + (v or 0)
+            for k, v in _acc.items():
+                kg_dia_30_por[k] = v / len(_dias30)
+
+        # Cabezas: la misma serie para los dos promedios (lo que importa es el
+        # cociente mes/año).
+        _serie_cab = _cab_serie_diaria(carpeta, log)
+        cab_anio, cab_mes, _nd_anio, _nd_mes = _cab_promedios(_serie_cab)
+        _factor = round(cab_mes / cab_anio, 4) if (cab_anio and cab_mes) else None
+        log.info(f"  Cabezas El Haras: prom. año {cab_anio if cab_anio else '—'} "
+                 f"({_nd_anio} días) → prom. últimos {RR_CAB_DIAS_MES} d "
+                 f"{cab_mes if cab_mes else '—'} ({_nd_mes} días) · factor {_factor}")
+        if not (cab_anio and cab_mes):
+            log.warning("  ⚠ Sin serie de cabezas: los días de stock quedan sin normalizar")
+
         insumos_enriquecidos = []
+        consumo_total_norm = 0.0
         for ins in insumos:
             nombre_up = ins["nombre"].strip().upper()
-            prom_tc   = consumo_por_nombre.get(nombre_up, None)
-            if prom_tc and prom_tc > 0:
-                dias = round(ins["stock_kg"] / prom_tc, 1)
-            else:
-                dias = None
-            ins_enr = dict(ins)
-            ins_enr["consumo_diario_tc"] = prom_tc
-            ins_enr["dias_restantes"]    = dias
-            insumos_enriquecidos.append(ins_enr)
-            if dias is not None:
-                log.info(f"  {ins['nombre']:<28} stock {ins['stock_kg']:>12,.0f} kg ÷ {prom_tc:>8,.1f} kg/día = {dias:>6.1f} días")
-            else:
-                log.info(f"  {ins['nombre']:<28} stock {ins['stock_kg']:>12,.0f} kg  (sin consumo registrado)")
+            kg_dia_anio = kg_dia_anio_por.get(nombre_up) or 0
+            fuente = "normalizado_365"
+            if not kg_dia_anio:
+                kg_dia_anio = kg_dia_30_por.get(nombre_up) or 0
+                fuente = "30d" if kg_dia_anio else None
+            dias, consumo_norm = dias_stock_normalizado(
+                ins["stock_kg"], kg_dia_anio, cab_anio, cab_mes)
+            if consumo_norm:
+                consumo_total_norm += consumo_norm
 
-        # Reescribir stock_insumos con dias_restantes incluido
+            ins_enr = dict(ins)
+            # consumo_diario_tc pasa a ser el NORMALIZADO (lo que consume el
+            # portal); el de 3 días queda al lado como referencia.
+            ins_enr["consumo_diario_tc"] = (round(consumo_norm, 1) if consumo_norm else None)
+            ins_enr["consumo_3d_tc"]     = next(
+                (i.get("promedio_diario") for i in cs.get("por_insumo", [])
+                 if str(i.get("desc") or "").strip().upper() == nombre_up), None)
+            ins_enr["kg_dia_anio"]  = round(kg_dia_anio, 1) if kg_dia_anio else None
+            ins_enr["dias_restantes"] = dias
+            ins_enr["fuente"] = fuente
+            insumos_enriquecidos.append(ins_enr)
+
+            if dias is not None:
+                log.info(f"  {ins['nombre']:<28} stock {ins['stock_kg']:>12,.0f} kg ÷ "
+                         f"{consumo_norm:>9,.1f} kg/día "
+                         f"(año {kg_dia_anio:,.1f}/día · cab {cab_anio:,.0f}→{cab_mes:,.0f}"
+                         f"{'' if fuente == 'normalizado_365' else ' · fuente 30d'}) "
+                         f"= {dias:>6.1f} días")
+            else:
+                log.info(f"  {ins['nombre']:<28} stock {ins['stock_kg']:>12,.0f} kg  "
+                         f"(sin consumo registrado)")
+
+        dias_totales = (round(total_kg / consumo_total_norm, 1)
+                        if consumo_total_norm > 0 else None)
+        meta_ins_v = dict(meta_ins)
+        meta_ins_v.update({
+            "cab_prom_anio":      cab_anio,
+            "cab_prom_mes":       cab_mes,
+            "factor_cab":         _factor,
+            "dias_cab_anio":      _nd_anio,
+            "dias_cab_mes":       _nd_mes,
+            "dias_registro_365":  c365.get("dias_con_registro"),
+            "consumo_total_norm": round(consumo_total_norm, 1) if consumo_total_norm else None,
+            "dias_totales":       dias_totales,
+            "formula":            ("dias = stock_kg / ((kg_dia_anio / cab_prom_anio) * "
+                                   "cab_prom_mes); cabezas de El Haras, todos los propietarios"),
+        })
+
         guardar({
-            "meta":     meta_ins,
+            "meta":     meta_ins_v,
             "insumos":  insumos_enriquecidos,
             "total_kg": round(total_kg, 2),
         }, carpeta, f"stock_insumos_{periodo}.json")
+        if dias_totales is not None:
+            log.info(f"  ✓ Días totales de stock: {dias_totales:,.1f} "
+                     f"(stock {total_kg:,.0f} kg ÷ consumo normalizado "
+                     f"{consumo_total_norm:,.1f} kg/día)")
         log.info(f"  ✓ stock_insumos_{periodo}.json actualizado con días restantes")
     except Exception as e:
         log.warning(f"  ⚠ No se pudieron calcular días restantes: {e}")
+        import traceback; log.warning(traceback.format_exc())
 
     # ── 12. JSON Tesorería (Excel YYYY-MM-DD_financiero.xlsx en OneDrive) ──
     separador("Tesorería Financiera")
@@ -7926,6 +7989,114 @@ def _rr_datamars(carpeta_datos, filas_rem, por_tropa, log):
         verif[rem] = bloque
 
     return verif, meta
+
+
+# ── v15.70 · DÍAS DE STOCK CON CONSUMO NORMALIZADO POR CABEZAS ──────
+# Los días de stock salían de dividir por el promedio de 3 días del mixer. Es
+# volátil (un día de lluvia o una descarga chica movía el silo de 476 a 300
+# días) y encima ignora cuántas cabezas hay comiendo hoy contra cuando se dieron
+# esos kilos.
+#
+# Regla de Nicolás (04/09/2026): el consumo diario que divide al stock es el
+# consumo POR CABEZA del último año, aplicado a las cabezas de hoy:
+#
+#     consumo_dia_norm = (kg_dia_anio ÷ cab_prom_anio) × cab_prom_mes
+#     dias_restantes   = stock_kg ÷ consumo_dia_norm
+#
+# Su ejemplo: 10.000.000 kg ÷ ((12.000 ÷ 7.500) × 6.500) = 961,5 días.
+RR_CAB_DIAS_MES = 30
+
+
+def dias_stock_normalizado(stock_kg, kg_dia_anio, cab_anio, cab_mes):
+    """(dias, consumo_dia_norm). Cualquier dato faltante o <= 0 → (None, None).
+
+    >>> dias_stock_normalizado(10_000_000, 12_000, 7_500, 6_500)[0]
+    961.5
+    """
+    try:
+        if not (kg_dia_anio and cab_anio and cab_mes):
+            return None, None
+        if kg_dia_anio <= 0 or cab_anio <= 0 or cab_mes <= 0:
+            return None, None
+        consumo = kg_dia_anio / cab_anio * cab_mes
+        if consumo <= 0:
+            return None, None
+        return (round(stock_kg / consumo, 1) if stock_kg is not None else None), consumo
+    except (TypeError, ZeroDivisionError):
+        return None, None
+
+
+def _cab_serie_diaria(carpeta_out, log, dias=365):
+    """Cabezas de El Haras (TODOS los propietarios) por día, últimos `dias`.
+
+    Preferencia: la serie diaria de `eficiencia_historico.json` — la misma que
+    usa el %PV. Solo cubre desde 2026-04-30, así que para lo anterior se rellena
+    con el promedio mensual de `analisis_costos_operativos.json` (`cab`), que es
+    exactamente la misma magnitud (El Haras, todos los propietarios) y la fuente
+    que ya usa ese módulo para los meses viejos.
+
+    ⚠ Los meses viejos salen de los snapshots de fin de mes, que el propio
+    generador de operativos advierte que pueden sobreestimar un poco. Eso empuja
+    `cab_prom_anio` para arriba y por lo tanto los días de stock también.
+
+    Devuelve {date: cabezas}.
+    """
+    from datetime import date as _date, timedelta as _tdd
+    base = Path(carpeta_out)
+
+    def _load(nombre):
+        try:
+            with (base / nombre).open(encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            log.warning(f"  ⚠ cabezas: no pude leer {nombre}: {e}")
+            return None
+
+    diario = {}
+    for r in ((_load("eficiencia_historico.json") or {}).get("registros") or []):
+        f, c = str(r.get("fecha") or "")[:10], r.get("cabezas")
+        if not (f and c):
+            continue
+        try:
+            diario[_date.fromisoformat(f)] = float(c)
+        except ValueError:
+            continue
+
+    mensual = {}
+    for m, v in (_load("analisis_costos_operativos.json") or {}).items():
+        if isinstance(v, dict) and v.get("cab"):
+            mensual[m] = float(v["cab"])
+
+    if not diario and not mensual:
+        return {}
+    hasta = max(diario) if diario else _date.today()
+    serie = {}
+    for i in range(dias):
+        d = hasta - _tdd(days=i)
+        v = diario.get(d)
+        if v is None:
+            v = mensual.get(f"{d.year:04d}-{d.month:02d}")
+        if v is not None:
+            serie[d] = v
+    return serie
+
+
+def _cab_promedios(serie, dias_mes=RR_CAB_DIAS_MES):
+    """(cab_prom_anio, cab_prom_mes, n_dias_anio, n_dias_mes) desde la serie diaria.
+
+    Los dos promedios salen de la MISMA serie: el cociente mes/año es lo que
+    importa y mezclar fuentes distintas lo rompería.
+    """
+    from datetime import timedelta as _tdd
+    if not serie:
+        return None, None, 0, 0
+    hasta = max(serie)
+    v_anio = list(serie.values())
+    v_mes = [serie[hasta - _tdd(days=i)] for i in range(dias_mes)
+             if (hasta - _tdd(days=i)) in serie]
+    return (round(sum(v_anio) / len(v_anio), 1) if v_anio else None,
+            round(sum(v_mes) / len(v_mes), 1) if v_mes else None,
+            len(v_anio), len(v_mes))
 
 
 # ── v15.69.1 · HISTORIAL DE RESULTADOS POR VENTA ────────────────────

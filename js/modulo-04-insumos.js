@@ -36,6 +36,26 @@ function renderInsumos(data) {
   document.getElementById('ins-kpi-count').textContent = insumos.length;
   document.getElementById('ins-kpi-fecha').textContent = meta.generado ? new Date(meta.generado).toLocaleString('es-AR') : '-';
 
+  /* v15.70 · Los dias de stock ya no salen de dividir por el promedio de 3 dias
+     (volatil: un dia de lluvia movia el silo de 476 a 300 dias) sino por el
+     consumo POR CABEZA del ultimo anio llevado a las cabezas de hoy:
+         (kg_dia_anio / cab_prom_anio) x cab_prom_mes                        */
+  var _kd = document.getElementById('ins-kpi-dias');
+  var _kds = document.getElementById('ins-kpi-dias-sub');
+  if (_kd) {
+    _kd.textContent = meta.dias_totales != null
+      ? Number(meta.dias_totales).toLocaleString('es-AR', {minimumFractionDigits:1, maximumFractionDigits:1})
+      : '\u2014';
+    if (_kds) {
+      _kds.textContent = (meta.consumo_total_norm != null && meta.cab_prom_mes && meta.cab_prom_anio)
+        ? ('consumo normalizado: ' + Number(Math.round(meta.consumo_total_norm)).toLocaleString('es-AR')
+           + ' kg/dia \u00b7 ' + Number(Math.round(meta.cab_prom_mes)).toLocaleString('es-AR')
+           + ' cab hoy vs ' + Number(Math.round(meta.cab_prom_anio)).toLocaleString('es-AR')
+           + ' cab prom. a\u00f1o')
+        : 'consumo normalizado';
+    }
+  }
+
   // Cards
   var grid = document.getElementById('insCards');
   grid.innerHTML = '';
@@ -43,7 +63,20 @@ function renderInsumos(data) {
     var pct  = totalKg > 0 ? (ins.stock_kg/totalKg*100).toFixed(1) : '0.0';
     var col  = INS_COLS[i % INS_COLS.length];
     var dias = ins.dias_restantes != null ? ins.dias_restantes : (ins.dias_cons != null ? ins.dias_cons : null);
-    var promTC = ins.consumo_diario_tc;
+    var promTC = ins.consumo_diario_tc;   // v15.70: ya es el normalizado
+    // Las tres componentes, para el tooltip, y el viejo de 3 dias como referencia.
+    var _tip = 'Consumo normalizado por cabezas: ('
+      + (ins.kg_dia_anio != null ? Number(Math.round(ins.kg_dia_anio)).toLocaleString('es-AR') : '?')
+      + ' kg/dia del ultimo anio \u00f7 '
+      + (meta.cab_prom_anio != null ? Number(Math.round(meta.cab_prom_anio)).toLocaleString('es-AR') : '?')
+      + ' cab prom. del anio) x '
+      + (meta.cab_prom_mes != null ? Number(Math.round(meta.cab_prom_mes)).toLocaleString('es-AR') : '?')
+      + ' cab del ultimo mes.'
+      + (ins.fuente === '30d' ? ' Sin consumo en los ultimos 365 dias: se usa el promedio de 30 dias.' : '');
+    var _ref3d = ins.consumo_3d_tc
+      ? '<div style="font-family:DM Mono,monospace;font-size:11px;color:rgba(26,22,18,.35);text-align:right;margin-top:2px">'
+        + '\u00faltimos 3 d\u00edas: ' + Number(Math.round(ins.consumo_3d_tc)).toLocaleString('es-AR') + ' kg/d\u00eda</div>'
+      : '';
 
     // Semáforo días: <7 rojo, 7-15 amarillo, >15 verde
     var diasCol = '#aaa';
@@ -56,9 +89,10 @@ function renderInsumos(data) {
 
     var diasHTML = dias != null
       ? '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px dashed rgba(26,22,18,.1);padding-top:7px;margin-top:4px">'
-          +'<span style="color:rgba(26,22,18,.5)">Consumo/día</span>'
-          +'<span style="font-family:DM Mono,monospace;color:rgba(26,22,18,.55);font-size:13px">'+(promTC ? Number(Math.round(promTC)).toLocaleString('es-AR')+' kg/día' : '—')+'</span>'
+          +'<span style="color:rgba(26,22,18,.5);border-bottom:1px dotted rgba(26,22,18,.25);cursor:help" title="'+_tip+'">Consumo/día</span>'
+          +'<span style="font-family:DM Mono,monospace;color:rgba(26,22,18,.55);font-size:13px" title="'+_tip+'">'+(promTC ? Number(Math.round(promTC)).toLocaleString('es-AR')+' kg/día' : '—')+'</span>'
         +'</div>'
+        + _ref3d
         +'<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;border-top:1px dashed rgba(26,22,18,.08);padding-top:7px;margin-top:4px;background:'+diasBg+';border-radius:2px;padding:6px 8px;margin-left:-8px;margin-right:-8px">'
           +'<span style="color:rgba(26,22,18,.5);font-weight:600">Días restantes</span>'
           +'<span style="font-family:DM Mono,monospace;font-weight:700;font-size:15px;color:'+diasCol+'">'+Number(dias).toFixed(1).replace('.',',')+'</span>'

@@ -342,6 +342,42 @@ def procesar_consumo_mixer(mixer_path=None, periodo=None, dias_diario=30, log=No
             for d, kg in sorted(sin_ms_pct.items(), key=lambda x: -x[1]):
                 log.info(f"    - {d}: {kg:,.0f} kg")
 
+    # ── v15.70 · Ventana movil de 365 dias, por insumo ────────────────
+    # Los dias de stock del portal se dividian por el promedio de 3 dias, que es
+    # volatil (un dia de lluvia o una descarga chica movia los dias de 476 a
+    # 300). Este bloque da el consumo diario del ANIO, que despues
+    # actualizar_datos normaliza por las cabezas de hoy.
+    #
+    # Se descartan los mismos dias que descarta por_mes (mixer que no subio
+    # datos), no los de la ventana 3d: son los dias anomalos de toda la historia.
+    # El divisor es el numero de dias CON REGISTRO del total, igual para todos
+    # los insumos: si un insumo no se dio un dia, ese dia cuenta 0 — es consumo
+    # real, no un dato faltante.
+    _desc_365 = {f for m in meses_out.values() for f in m["dias_descartados"]}
+    dias_365 = [f for f in fechas_con_datos
+                if hace_anio <= f < hoy and f.isoformat() not in _desc_365]
+    set_365 = set(dias_365)
+    kg_365 = defaultdict(float)
+    total_365 = 0.0
+    for c in cargas_con_fecha:
+        if c["fecha"] in set_365 and c["desc"] != "AGUA":
+            kg_365[c["desc"]] += c["kg"]
+            total_365 += c["kg"]
+    n_365 = len(dias_365)
+    por_insumo_365 = []
+    for d, kg in sorted(kg_365.items(), key=lambda x: -x[1]):
+        por_insumo_365.append({
+            "desc":   d,
+            "kg":     round(kg, 1),
+            "kg_dia": round(kg / n_365, 1) if n_365 else None,
+        })
+    _n_desc_365 = sum(1 for f in fechas_con_datos
+                      if hace_anio <= f < hoy and f.isoformat() in _desc_365)
+    log.info(f"  Mixer | ult_365: {n_365} dias con registro "
+             f"({hace_anio} -> {hoy - timedelta(days=1)}) · {_n_desc_365} descartado(s) · "
+             f"{total_365:,.0f} kg = {(total_365 / n_365 if n_365 else 0):,.1f} kg/dia · "
+             f"{len(por_insumo_365)} insumos")
+
     _n_desc_mes = sum(len(m["dias_descartados"]) for m in meses_out.values())
     log.info(f"  Mixer | por_mes: {len(meses_out)} meses "
              f"({min(meses_out) if meses_out else '—'} -> {max(meses_out) if meses_out else '—'}) "
@@ -381,6 +417,20 @@ def procesar_consumo_mixer(mixer_path=None, periodo=None, dias_diario=30, log=No
             "hasta":      ultimo_completo.isoformat(),
             "dias_count": len(dias_lista),
             "dias":       dias_lista,
+        },
+        # v15.70: ventana movil de 365 dias. La usa actualizar_datos para los
+        # dias de stock, normalizando por las cabezas del ultimo mes.
+        "ult_365": {
+            "desde":             hace_anio.isoformat(),
+            "hasta":             (hoy - timedelta(days=1)).isoformat(),
+            "dias_con_registro": n_365,
+            "dias_descartados":  _n_desc_365,
+            "kg_total":          round(total_365, 1),
+            "kg_dia":            round(total_365 / n_365, 1) if n_365 else None,
+            "nota":              ("kg_dia de cada insumo divide por los dias con registro del "
+                                  "TOTAL: un dia sin ese insumo cuenta 0 (consumo real, no dato "
+                                  "faltante). Se excluyen los dias que descarta por_mes."),
+            "por_insumo":        por_insumo_365,
         },
         # v15.58: corte mensual de toda la historia, insumo de pct_pv_mensual.json.
         "por_mes": {
