@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.69.1 (2026-09-03)
+/* modulo-09-remitos.js — Resultado por Remito · v15.71 (2026-09-04)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -679,10 +679,20 @@ function remInformePDF() {
       + (V.comVenta ? '<div class="u">com. venta ' + _remM(V.comVenta) + ' (' + _remN(V.comPct, 1) + ' %)</div>'
                       + '<div class="u">flete y guías ' + _remM(V.otros) + '</div>'
                     : '<div class="u">$ ' + _remN(gastos / kgc, 2) + '/kg carne</div>') + '</div>'
-      + '<div class="kc"><div class="l">Venta neta</div><div class="v">' + _remMM(neto) + '</div><div class="u">rinde ' + _remN(kgc / r.kg_egreso * 100, 2) + ' %</div></div>'
+      + '<div class="kc"><div class="l">Venta neta</div><div class="v">' + _remMM(neto) + '</div><div class="u">' + _remN(kgc) + ' kg carne</div></div>'
       + '<div class="kc big"><div class="l">Resultado</div><div class="v">' + _remMM(res) + '</div><div class="u">'
       + _remN(res / C.total * 100, 1) + ' % s/costo · ' + _remM(res / r.cabezas) + '/cab</div></div>'
       + '</div>';
+    // v15.71 · rinde y precio por kg vivo, misma fila de tarjetas
+    var KVp = remVentaKgVivo(r, V);
+    if (KVp) {
+      h += '<div class="k" style="grid-template-columns:repeat(2,1fr)">'
+        + '<div class="kc"><div class="l">Rinde</div><div class="v">' + _remN(KVp.rinde, 2) + ' %</div>'
+        + '<div class="u">' + _remN(kgc) + ' kg carne / ' + _remN(KVp.kgVivo) + ' kg vivo</div></div>'
+        + '<div class="kc"><div class="l">Precio kg vivo</div><div class="v">$ ' + _remN(KVp.bruto) + '</div>'
+        + '<div class="u">neto de gastos: $ ' + _remN(KVp.neto) + '/kg vivo</div></div>'
+        + '</div>';
+    }
   } else {
     h += '<div class="kc" style="text-align:center;color:#8a827a;padding:14px">Sin venta cargada — el informe muestra el costo y los indicadores.</div>';
   }
@@ -715,7 +725,7 @@ function remInformePDF() {
     + '</div>';
 
   // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.69.1 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.71 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -760,6 +770,20 @@ function remSCEstado(r) {
 
 function _remFec(f) { return f ? String(f).split('-').reverse().join('/') : '—'; }
 
+/* v15.71 · Las dos medidas de la venta contra el KG VIVO de egreso (no contra
+   los kg de carne): el rinde y lo que se termina cobrando por kilo de animal
+   que salio del corral. Es la forma en que Nicolas compara ventas entre si. */
+function remVentaKgVivo(r, V) {
+  var kgv = r.kg_egreso || 0;
+  if (!kgv || !V || !(V.bruto > 0)) return null;
+  return {
+    kgVivo: kgv,
+    rinde: V.kgc ? V.kgc / kgv * 100 : null,
+    bruto: V.bruto / kgv,
+    neto: V.neto / kgv
+  };
+}
+
 /* v15.69.1 · Snapshot del resultado de una venta ───────────────────
    Todo lo que muestra el PDF, ya con los overrides aplicados, en un JSON que se
    baja al disco. La venta se prorratea por fila segun sus kg de egreso, asi que
@@ -774,6 +798,7 @@ function remSnapshot(r) {
   // de venta_prorrateada da la neta exacta.
   var kge = (r.filas || []).reduce(function (a, f) { return a + (f.kg_egreso || 0); }, 0);
   var res = V.neto - C.total;
+  var _kv = remVentaKgVivo(r, V);
   var v = r.verificacion || {};
 
   var filas = (r.filas || []).map(function (f) {
@@ -800,7 +825,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.69.1',
+    version_portal: 'v15.71',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -814,7 +839,11 @@ function remSnapshot(r) {
       guia_senasa: venta.guia_senasa || 0, guia_comuna: venta.guia_comuna || 0,
       com_venta_pct: (V.bruto ? V.comVenta / V.bruto * 100 : null),
       com_venta_monto: V.comVenta, com_venta_manual: !!V.comManual,
-      gastos: V.gastos, neta: V.neto
+      gastos: V.gastos, neta: V.neto,
+      // v15.71: las tres medidas contra el kg vivo de egreso
+      rinde_pct: (_kv ? _kv.rinde : null),
+      precio_kg_vivo_bruto: (_kv ? _kv.bruto : null),
+      precio_kg_vivo_neto: (_kv ? _kv.neto : null)
     },
     costos: {
       compra: C.compra, comision: C.comision, alimento: C.alimento,
@@ -1346,9 +1375,19 @@ function renderRemitos(soloResultado) {
       + card('Gastos venta', _remM(-gastos),
              V.comVenta ? 'com. venta ' + _remM(V.comVenta) + ' (' + _remN(V.comPct, 1) + ' %) + otros ' + _remM(V.otros)
                         : (kgc ? '$ ' + _remN(gastos / kgc, 2) + ' por kg carne' : ''))
-      + card('Venta neta', _remM(neto), 'rinde ' + _remN(kgc / r.kg_egreso * 100, 2) + ' %')
+      + card('Venta neta', _remM(neto), _remN(kgc) + ' kg carne')
       + card('Resultado', _remM(res), _remN(res / costo * 100, 1) + ' % s/costo · ' + _remM(res / r.cabezas) + '/cab', true)
       + '</div>';
+    // v15.71 · la venta medida contra el kg vivo que salio
+    var KV = remVentaKgVivo(r, V);
+    if (KV) {
+      h += '<div style="' + GRID + '">'
+        + card('Rinde', _remN(KV.rinde, 2) + ' %',
+               _remN(kgc) + ' kg carne / ' + _remN(KV.kgVivo) + ' kg vivo')
+        + card('Precio kg vivo', '$ ' + _remN(KV.bruto),
+               'neto de gastos: $ ' + _remN(KV.neto) + '/kg vivo')
+        + '</div>';
+    }
   } else {
     h += '<div style="' + WARN + '">Cargá <strong>kg carne</strong> y <strong>$/kg carne</strong> para ver el resultado.</div>';
   }
