@@ -1,52 +1,82 @@
 {
   "meta": {
-    "generado": "2026-09-04T17:02:47.781594",
+    "generado": "2026-09-04T18:03:08.619459",
     "periodo": "2025",
     "tabla": "v_PB_StockInsumo",
-    "registros": 7
+    "registros": 7,
+    "cab_prom_anio": 8145.0,
+    "cab_prom_mes": 5589.6,
+    "factor_cab": 0.6863,
+    "dias_cab_anio": 365,
+    "dias_cab_mes": 30,
+    "dias_registro_365": 362,
+    "consumo_total_norm": 75125.6,
+    "dias_totales": 217.8,
+    "formula": "dias = stock_kg / ((kg_dia_anio / cab_prom_anio) * cab_prom_mes); cabezas de El Haras, todos los propietarios"
   },
   "insumos": [
     {
       "nombre": "SILO DE MAIZ",
       "stock_kg": 8249841.0,
-      "consumo_diario_tc": 17338.3,
-      "dias_restantes": 475.8
+      "consumo_diario_tc": 17724.5,
+      "consumo_3d_tc": 17338.3,
+      "kg_dia_anio": 25827.6,
+      "dias_restantes": 465.4,
+      "fuente": "normalizado_365"
     },
     {
       "nombre": "MAIZ GRANO",
       "stock_kg": 7215681.0,
-      "consumo_diario_tc": 30188.3,
-      "dias_restantes": 239.0
+      "consumo_diario_tc": 23200.0,
+      "consumo_3d_tc": 30188.3,
+      "kg_dia_anio": 33806.4,
+      "dias_restantes": 311.0,
+      "fuente": "normalizado_365"
     },
     {
       "nombre": "GLUTEN DE MAIZ",
       "stock_kg": 732169.0,
-      "consumo_diario_tc": 25218.3,
-      "dias_restantes": 29.0
+      "consumo_diario_tc": 23081.7,
+      "consumo_3d_tc": 25218.3,
+      "kg_dia_anio": 33633.9,
+      "dias_restantes": 31.7,
+      "fuente": "normalizado_365"
     },
     {
       "nombre": "NUCLEO CONC 5% LDB",
       "stock_kg": 95303.0,
-      "consumo_diario_tc": 3896.7,
-      "dias_restantes": 24.5
+      "consumo_diario_tc": 3045.6,
+      "consumo_3d_tc": 3896.7,
+      "kg_dia_anio": 4438.0,
+      "dias_restantes": 31.3,
+      "fuente": "normalizado_365"
     },
     {
       "nombre": "HARINA GERMEN",
       "stock_kg": 57430.0,
-      "consumo_diario_tc": 7725.0,
-      "dias_restantes": 7.4
+      "consumo_diario_tc": 8073.8,
+      "consumo_3d_tc": 7725.0,
+      "kg_dia_anio": 11764.9,
+      "dias_restantes": 7.1,
+      "fuente": "normalizado_365"
     },
     {
       "nombre": "DIESEL",
       "stock_kg": 8506.0,
       "consumo_diario_tc": null,
-      "dias_restantes": null
+      "consumo_3d_tc": null,
+      "kg_dia_anio": null,
+      "dias_restantes": null,
+      "fuente": null
     },
     {
       "nombre": "SOJA",
       "stock_kg": -0.39,
       "consumo_diario_tc": null,
-      "dias_restantes": null
+      "consumo_3d_tc": null,
+      "kg_dia_anio": null,
+      "dias_restantes": null,
+      "fuente": null
     }
   ],
   "total_kg": 16358929.61
