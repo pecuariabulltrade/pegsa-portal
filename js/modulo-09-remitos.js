@@ -825,7 +825,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.71',
+    version_portal: 'v15.71.1',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -883,16 +883,16 @@ function remSnapshot(r) {
   };
 }
 
-/* Guarda el snapshot en localStorage y lo baja al disco. */
-function remGuardarSnapshot(r) {
-  var snap = remSnapshot(r);
-  var hist = [];
-  try { hist = JSON.parse(localStorage.getItem(REM_LS_HIST) || '[]') || []; } catch (e) { hist = []; }
-  // una venta = un registro: la ultima version manda
-  hist = hist.filter(function (x) { return x.id !== snap.id; });
-  hist.push(snap);
-  try { localStorage.setItem(REM_LS_HIST, JSON.stringify(hist)); } catch (e) {}
+/* v15.71.1 · ¿hay base configurada? js/config-supabase.js trae solo la URL y
+   la clave publica; vacias = no configurada y todo sigue como en v15.69 B. */
+function remSBConfig() {
+  var c = (typeof window !== 'undefined') ? window.PEGSA_SB : null;
+  return (c && c.url && c.anon) ? c : null;
+}
 
+/* Baja el snapshot al disco (mecanismo de v15.69 B, ahora tambien el fallback
+   cuando la base no esta o falla). */
+function remBajarJSON(snap, motivo) {
   var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
   var stamp = d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate())
             + '-' + z(d.getHours()) + z(d.getMinutes());
@@ -906,8 +906,51 @@ function remGuardarSnapshot(r) {
     document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   } catch (e) {}
-  remToast('Resultado guardado — mové <strong>' + nombre + '</strong> a '
+  remToast((motivo ? motivo + '<br>' : '')
+    + 'Resultado guardado — mové <strong>' + nombre + '</strong> a '
     + '<code>PEGSA_Portal\\datos\\resultados_ventas\\</code> para que entre al historial');
+}
+
+/* Upsert del snapshot en la base. Una sola llamada a la funcion guardar_venta,
+   que reemplaza la venta y sus filas en una transaccion. Mismo id = actualiza,
+   no duplica. Si algo falla, se baja el JSON como respaldo. */
+function remGuardarEnBase(snap) {
+  var SB = remSBConfig();
+  if (!SB) { remBajarJSON(snap); return; }
+  fetch(SB.url.replace(/\/+$/, '') + '/rest/v1/rpc/guardar_venta', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SB.anon,
+      'Authorization': 'Bearer ' + SB.anon
+    },
+    body: JSON.stringify({ p: snap })
+  }).then(function (resp) {
+    if (!resp.ok) {
+      return resp.text().then(function (t) {
+        throw new Error('HTTP ' + resp.status + (t ? ' · ' + t.slice(0, 160) : ''));
+      });
+    }
+    remToast('&#10003; Resultado guardado en la base (id <strong>' + snap.id + '</strong>) · '
+      + (snap.filas || []).length + ' tropas');
+  }).catch(function (e) {
+    remBajarJSON(snap, '&#9888; No se pudo guardar en la base ('
+      + String((e && e.message) || e).slice(0, 140) + ').');
+  });
+}
+
+/* Guarda el snapshot: localStorage siempre, y despues la base (o el disco). */
+function remGuardarSnapshot(r) {
+  var snap = remSnapshot(r);
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(REM_LS_HIST) || '[]') || []; } catch (e) { hist = []; }
+  // una venta = un registro: la ultima version manda
+  hist = hist.filter(function (x) { return x.id !== snap.id; });
+  hist.push(snap);
+  try { localStorage.setItem(REM_LS_HIST, JSON.stringify(hist)); } catch (e) {}
+
+  if (remSBConfig()) remGuardarEnBase(snap);
+  else remBajarJSON(snap);
   return snap;
 }
 

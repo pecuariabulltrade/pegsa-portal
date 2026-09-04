@@ -8146,6 +8146,59 @@ def _cab_promedios(serie, dias_mes=RR_CAB_DIAS_MES):
 # que el `for %%F in ("%ORIGEN%\*.json")` del .bat no la toca (no recursa) — al
 # repo va únicamente el consolidado `resultados_ventas.json`.
 RR_RV_DIRNAME = "resultados_ventas"
+RR_RV_TIMEOUT = 30       # s · la base nunca puede colgar el tick
+RR_RV_PAGE    = 500
+
+
+def _rv_leer_supabase(carpeta_out, log):
+    """v15.71.1: los snapshots que el portal guardó en Supabase.
+
+    Se lee la columna `raw` (el snapshot entero tal cual lo armó el módulo), así
+    que salen con el MISMO shape que los archivos de `resultados_ventas\` y se
+    mezclan sin traducir nada.
+
+    Sin SUPABASE_URL / SUPABASE_SERVICE_KEY devuelve ([], motivo) y el pipeline
+    sigue solo con los archivos. Cualquier error de red se traga: nunca rompe
+    el tick.
+    """
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(Path(carpeta_out).parent / ".env")
+    except Exception:
+        pass
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY")
+    if not (url and key):
+        return [], "sin credenciales"
+    try:
+        import requests
+    except Exception as e:
+        return [], f"sin requests ({e})"
+
+    base = url.rstrip("/") + "/rest/v1/"
+    hdr = {"apikey": key, "Authorization": f"Bearer {key}", "Accept": "application/json"}
+    out, off = [], 0
+    try:
+        while True:
+            r = requests.get(base + "ventas_resultado", headers=hdr, timeout=RR_RV_TIMEOUT,
+                             params={"select": "id,generado,raw", "order": "id",
+                                     "offset": off, "limit": RR_RV_PAGE})
+            r.raise_for_status()
+            filas = r.json() or []
+            for x in filas:
+                snap = x.get("raw")
+                if isinstance(snap, dict) and snap.get("id"):
+                    # `generado` de la columna manda si el raw viniera sin él
+                    snap.setdefault("generado", x.get("generado"))
+                    out.append(snap)
+            if len(filas) < RR_RV_PAGE:
+                break
+            off += RR_RV_PAGE
+    except Exception as e:
+        log.warning(f"  ⚠ Resultados de ventas: no pude leer Supabase "
+                    f"({type(e).__name__}: {str(e)[:160]}) — sigo con los archivos")
+        return [], f"{type(e).__name__}"
+    return out, None
 
 
 def generar_resultados_ventas(carpeta_out, log=None):
@@ -8169,6 +8222,17 @@ def generar_resultados_ventas(carpeta_out, log=None):
 
     archivos = sorted(d.glob("resultado_*.json"))
     ventas, malos = {}, []
+
+    # v15.71.1: primero lo que haya en la base; los archivos se mezclan encima
+    # con la misma regla (gana el `generado` más nuevo, venga de donde venga).
+    sb_snaps, sb_motivo = _rv_leer_supabase(carpeta_out, log)
+    for v in sb_snaps:
+        prev = ventas.get(v["id"])
+        if prev is None or str(v.get("generado") or "") >= str(prev.get("generado") or ""):
+            ventas[v["id"]] = v
+    if sb_snaps:
+        log.info(f"  Resultados de ventas: {len(sb_snaps)} venta(s) leídas de Supabase")
+
     for p in archivos:
         try:
             with p.open(encoding="utf-8") as f:
@@ -8249,6 +8313,9 @@ def generar_resultados_ventas(carpeta_out, log=None):
             "n_ventas": len(lista),
             "n_remitos": len({r for v in lista for r in (v.get("remitos") or [])}),
             "n_archivos": len(archivos),
+            "n_supabase": len(sb_snaps),
+            "fuente": ("supabase+archivos" if sb_snaps else "archivos"),
+            "supabase": (sb_motivo or "ok"),
             "archivos_invalidos": malos,
             "desde": min(fechas) if fechas else None,
             "hasta": max(fechas) if fechas else None,
@@ -8263,9 +8330,9 @@ def generar_resultados_ventas(carpeta_out, log=None):
         "por_comprador": _cerrar(por_comprador),
     }
     guardar(salida, carpeta_out, "resultados_ventas.json")
-    log.info(f"  ✓ Resultados de ventas: {len(archivos)} archivos → {len(lista)} ventas "
-             f"consolidadas ({len(salida['por_tropa'])} tropas, "
-             f"{len(salida['por_hotelero'])} hoteleros)")
+    log.info(f"  ✓ Resultados de ventas: {len(archivos)} archivo(s) + {len(sb_snaps)} de la base "
+             f"→ {len(lista)} ventas consolidadas ({len(salida['por_tropa'])} tropas, "
+             f"{len(salida['por_hotelero'])} hoteleros) · fuente {salida['meta']['fuente']}")
     return salida
 
 
