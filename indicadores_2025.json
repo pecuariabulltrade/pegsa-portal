@@ -1,21 +1,21 @@
 {
-  "generado": "2026-09-05T04:07:55.438789",
-  "denominador": "PEGSA total",
+  "generado": "2026-09-05T05:06:13.132860",
+  "denominador": "El Haras",
   "fuentes": {
-    "kg_stock_haras": 0,
-    "kg_stock_total": 0,
-    "cab_haras": 0,
-    "cab_total": 0,
+    "kg_stock_haras": 2744811,
+    "kg_stock_total": 3687378,
+    "cab_haras": 5546,
+    "cab_total": 9314,
     "prom_diario_ms": 58341.3,
     "prom_diario_tc": 84366.7,
     "adp_promedio": 1.096,
     "adp_mes": "2026-09",
-    "prod_diaria_kg": 0,
+    "prod_diaria_kg": 6078.4,
     "dias_consumo": 3
   },
   "indicadores": {
     "pct_peso_vivo": {
-      "valor": null,
+      "valor": 2.13,
       "unidad": "% PV",
       "descripcion": "Consumo MS como % del peso vivo — El Haras",
       "esc_min": 1.5,
@@ -30,8 +30,8 @@
       "formula": "kg MS/día ÷ kg PV El Haras × 100"
     },
     "consumo_por_cabeza": {
-      "valor_tc": null,
-      "valor_ms": null,
+      "valor_tc": 15.21,
+      "valor_ms": 10.52,
       "unidad": "kg/cab/día",
       "descripcion": "Alimento por animal por día — El Haras",
       "esc_min": 8.0,
@@ -45,7 +45,7 @@
       "formula": "kg TC/día ÷ cabezas El Haras"
     },
     "conversion_alimenticia": {
-      "valor": null,
+      "valor": 9.6,
       "unidad": "kg MS : kg carne",
       "descripcion": "Kg MS por cab por día dividido ADP — El Haras",
       "esc_min": 5.0,

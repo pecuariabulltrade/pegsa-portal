@@ -1,10 +1,11 @@
 {
-  "generado": "2026-09-05T04:00:03.883273",
+  "generado": "2026-09-05T05:00:03.851934",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
-      "ok": false,
-      "error": "ConnectTimeout: HTTPSConnectionPool(host='elgarabi-api.wincampo.com', port=443): Max retries exceeded with url: /api/caravanas_stock (Caused by ConnectTimeoutError(<HTTPSConnection(host='elgarabi-api.wincampo.com', p"
+      "ok": true,
+      "registros": 9314,
+      "cabezas": 9314
     },
     "stock_insumos": {
       "ok": true,
@@ -18,12 +19,12 @@
       "ok": true,
       "total_anio": 258,
       "total_mes_ant": 25,
-      "tasa_mensual_pct": 1.53
+      "tasa_mensual_pct": 1.151
     },
     "muertes_30d": {
       "ok": true,
       "total_30d": 25,
-      "tasa_mensual_pct": 2.224
+      "tasa_mensual_pct": 0.375
     },
     "productivo": {
       "ok": true,
@@ -38,11 +39,11 @@
     },
     "indicadores": {
       "ok": true,
-      "denominador": "PEGSA total",
-      "pct_peso_vivo": null,
-      "consumo_cab_tc": null,
-      "consumo_cab_ms": null,
-      "conversion": null
+      "denominador": "El Haras",
+      "pct_peso_vivo": 2.13,
+      "consumo_cab_tc": 15.21,
+      "consumo_cab_ms": 10.52,
+      "conversion": 9.6
     },
     "tesoreria": {
       "ok": true,
@@ -64,8 +65,10 @@
       "periodos": 20
     },
     "stock_diario": {
-      "ok": false,
-      "error": "stock_hacienda no disponible este run"
+      "ok": true,
+      "dias": 91,
+      "ultima_fecha": "2026-09-05",
+      "metodo": "running_balance"
     },
     "tesoreria_darwash": {
       "ok": true,
