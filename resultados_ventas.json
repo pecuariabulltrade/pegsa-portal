@@ -1,17 +1,22 @@
 {
   "meta": {
-    "generado": "2026-09-04T20:08:01.298475",
+    "generado": "2026-09-04T21:07:29.664418",
     "n_ventas": 0,
     "n_remitos": 0,
     "n_archivos": 0,
+    "n_supabase": 0,
+    "fuente": "archivos",
+    "supabase": "sin credenciales",
     "archivos_invalidos": [],
     "desde": null,
     "hasta": null,
     "carpeta": "datos\\resultados_ventas\\",
-    "nota": "tropa y hotelero salen de las filas con la venta prorrateada por kg de egreso; mes y comprador se agregan por venta entera"
+    "min_cab_ranking": 5,
+    "nota": "todos los agregados salen de las filas, con la venta neta y los kg de carne prorrateados por kg de egreso. El rinde por tropa es el de sus ventas ponderado por kg vivo: el rinde real por animal necesitaría romaneo por caravana"
   },
   "ventas": [],
   "por_tropa": {},
+  "por_categoria": {},
   "por_hotelero": {},
   "por_mes": {},
   "por_comprador": {}
