@@ -1,5 +1,5 @@
 {
-  "generado": "2026-09-05T18:07:10.857967",
+  "generado": "2026-09-05T19:06:36.080853",
   "cortes": [
     {
       "archivo": "La Anónima",
@@ -12517,6 +12517,678 @@
             -3082563815.64,
             -4138250170.64,
             -5193936525.64
+          ]
+        }
+      }
+    },
+    {
+      "archivo": "Carnes Pameanas",
+      "fecha_corte": "2026-09-05",
+      "posicion": {
+        "bancos_peg": [
+          {
+            "nombre": "PECUARIA BNA",
+            "saldo": 4746801.01
+          },
+          {
+            "nombre": "PECUARIA BANCOR",
+            "saldo": 314094.76
+          },
+          {
+            "nombre": "PECUARIA LA PAMPA",
+            "saldo": 96605.89
+          },
+          {
+            "nombre": "PECUARIA GALICIA",
+            "saldo": 9062902.1
+          }
+        ],
+        "bancos_bull": [
+          {
+            "nombre": "BULLTRADE BNA",
+            "saldo": 118081758.13
+          },
+          {
+            "nombre": "BULLTRADE BANCOR",
+            "saldo": 79534.94
+          },
+          {
+            "nombre": "BULLTRADE LA PAMPA",
+            "saldo": 20261.39
+          },
+          {
+            "nombre": "BULLTRADE GALICIA",
+            "saldo": -70692734.42999995
+          }
+        ],
+        "efectivo": 15000000.0,
+        "becerra": 0,
+        "fima_bull": 75151706.82,
+        "fima_peg": 0,
+        "fci": 75151706.82,
+        "echeq": 0,
+        "saldo_disponibilidades": 151860930.61,
+        "usd_ars": 1891598488.8,
+        "usd_cant": 1244472.69
+      },
+      "cheques": {
+        "total_cartera": 1515809065.58,
+        "por_vencimiento": [
+          {
+            "bucket": "0-7 días",
+            "monto": 748294764.81,
+            "cantidad": 176
+          },
+          {
+            "bucket": "8-14 días",
+            "monto": 133883637.54,
+            "cantidad": 27
+          },
+          {
+            "bucket": "15-30 días",
+            "monto": 606644414.48,
+            "cantidad": 53
+          },
+          {
+            "bucket": "31-60 días",
+            "monto": 21237800.0,
+            "cantidad": 12
+          },
+          {
+            "bucket": "+60 días",
+            "monto": 5748448.75,
+            "cantidad": 2
+          }
+        ]
+      },
+      "hacienda": {
+        "compras": [],
+        "ventas": [
+          {
+            "fecha": "2026-09-12",
+            "monto": 891571291.82,
+            "detalle": [
+              {
+                "empresa": "La Anónima",
+                "monto": 515922394.96
+              },
+              {
+                "empresa": "Coto",
+                "monto": 375648896.86
+              }
+            ]
+          },
+          {
+            "fecha": "2026-09-19",
+            "monto": 1629452771.3,
+            "detalle": [
+              {
+                "empresa": "La Anónima",
+                "monto": 742687539.87
+              },
+              {
+                "empresa": "Coto",
+                "monto": 267626497.12
+              },
+              {
+                "empresa": "Millan sa",
+                "monto": 619138734.31
+              }
+            ]
+          },
+          {
+            "fecha": "2026-09-26",
+            "monto": 1338871656.0,
+            "detalle": [
+              {
+                "empresa": "Frimsa SA",
+                "monto": 785856779.52
+              },
+              {
+                "empresa": "Coto",
+                "monto": 426275850.0
+              },
+              {
+                "empresa": "Cencosud sa",
+                "monto": 126739026.48
+              }
+            ]
+          },
+          {
+            "fecha": "2026-10-03",
+            "monto": 406148275.0,
+            "detalle": [
+              {
+                "empresa": "Frimsa SA",
+                "monto": 406148275.0
+              }
+            ]
+          },
+          {
+            "fecha": "2026-10-10",
+            "monto": 1071288660.0,
+            "detalle": [
+              {
+                "empresa": "Frimsa SA",
+                "monto": 583910730.0
+              },
+              {
+                "empresa": "Carnes Pameanas",
+                "monto": 487377930.0
+              }
+            ]
+          }
+        ]
+      },
+      "gastos": [
+        {
+          "categoria": "Egresos Extraordinarios",
+          "concepto": "DESARROLLO INMOBILIARIO",
+          "monto_bruto": 43000000.0,
+          "monto_total": 43000000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Egresos Extraordinarios",
+          "concepto": "COMPRA DOLARES",
+          "monto_bruto": 72500000.0,
+          "monto_total": 72500000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pagos De Feedlot",
+          "concepto": "Gastos Operativos Sin Combust",
+          "monto_bruto": 2500000.0,
+          "monto_total": 3025000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pagos De Feedlot",
+          "concepto": "Combustible",
+          "monto_bruto": 15723500.0,
+          "monto_total": 19025435.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pagos De Feedlot",
+          "concepto": "Alimentacion (glucovil + leones + GASA)",
+          "monto_bruto": 72500000.0,
+          "monto_total": 87725000.0,
+          "frecuencia": "semanal"
+        },
+        {
+          "categoria": "Pagos De Feedlot",
+          "concepto": "Maiz Compra",
+          "monto_bruto": 36000000.0,
+          "monto_total": 39780000.0,
+          "frecuencia": "semanal"
+        },
+        {
+          "categoria": "Pagos De Administracio",
+          "concepto": "Gastos Varios Admin (luz, internet, etc)",
+          "monto_bruto": 1000000.0,
+          "monto_total": 1210000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pagos De Administracio",
+          "concepto": "Luz del Haras",
+          "monto_bruto": 1200000.0,
+          "monto_total": 1452000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pagos De Administracio",
+          "concepto": "Honorarios",
+          "monto_bruto": 7500000.0,
+          "monto_total": 7500000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pagos De Administracio",
+          "concepto": "Suelodos y Jornales",
+          "monto_bruto": 34000000.0,
+          "monto_total": 34000000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pago Impuestos",
+          "concepto": "Sicore",
+          "monto_bruto": 35000000.0,
+          "monto_total": 35000000.0,
+          "frecuencia": "quincenal"
+        },
+        {
+          "categoria": "Pago Impuestos",
+          "concepto": "Ingresos Brutos",
+          "monto_bruto": 200000.0,
+          "monto_total": 200000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pago Impuestos",
+          "concepto": "DGR Buenos Aires",
+          "monto_bruto": 145000.0,
+          "monto_total": 145000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pago Felete",
+          "concepto": "Materia Prima",
+          "monto_bruto": 4950000.0,
+          "monto_total": 5989500.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pago Felete",
+          "concepto": "Hacienda",
+          "monto_bruto": 9070000.0,
+          "monto_total": 10974700.0,
+          "frecuencia": "semanal"
+        },
+        {
+          "categoria": "Pago Agricultura",
+          "concepto": "Compra Campo El Haras",
+          "monto_bruto": 20000000.0,
+          "monto_total": 10000000.0,
+          "frecuencia": "quincenal"
+        },
+        {
+          "categoria": "Pago Agricultura",
+          "concepto": "Arrendamiento El Takuru",
+          "monto_bruto": 10000000.0,
+          "monto_total": 10000000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pago Agricultura",
+          "concepto": "Arrendamiento El Martillo",
+          "monto_bruto": 31600000.0,
+          "monto_total": 31600000.0,
+          "frecuencia": "mensual"
+        },
+        {
+          "categoria": "Pago Agricultura",
+          "concepto": "Labores y siembra",
+          "monto_bruto": 3000000.0,
+          "monto_total": 3000000.0,
+          "frecuencia": "mensual"
+        }
+      ],
+      "darwash": [
+        {
+          "nombre": "Darwash pecuaria Hacienda",
+          "items": [
+            {
+              "fecha": "2026-09-19",
+              "monto": -154364720.08,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-10-03",
+              "monto": -166592507.48999998,
+              "tipo": "egreso"
+            }
+          ]
+        },
+        {
+          "nombre": "Darwash pecuaria Feedlot",
+          "items": [
+            {
+              "fecha": "2026-09-05",
+              "monto": 78131859.48,
+              "tipo": "ingreso"
+            }
+          ]
+        },
+        {
+          "nombre": "Darwash Bulltrade Hacienda",
+          "items": [
+            {
+              "fecha": "2026-09-12",
+              "monto": -122418489.59,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-09-19",
+              "monto": -256041863.79,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-09-26",
+              "monto": -216171087.89000002,
+              "tipo": "egreso"
+            }
+          ]
+        },
+        {
+          "nombre": "Darwash Carlos Casares UTE",
+          "items": [
+            {
+              "fecha": "2026-09-05",
+              "monto": -220354363.62,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-09-12",
+              "monto": -51438324.68,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-09-19",
+              "monto": 29124328.0,
+              "tipo": "ingreso"
+            }
+          ]
+        },
+        {
+          "nombre": "Darwash Varios",
+          "items": [
+            {
+              "fecha": "2026-09-05",
+              "monto": -126379916.77,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-09-12",
+              "monto": -179619485.66,
+              "tipo": "egreso"
+            },
+            {
+              "fecha": "2026-09-26",
+              "monto": -146460352.5,
+              "tipo": "egreso"
+            }
+          ]
+        }
+      ],
+      "flujo": {
+        "semanas": [
+          "05/09",
+          "12/09",
+          "19/09",
+          "26/09",
+          "03/10",
+          "10/10",
+          "17/10",
+          "24/10",
+          "31/10",
+          "07/11",
+          "14/11",
+          "21/11",
+          "28/11",
+          "05/12",
+          "12/12",
+          "19/12",
+          "26/12"
+        ],
+        "saldo_inicial": 151860930.61,
+        "series": {
+          "cheques_cobro": [
+            -255025348.07,
+            -135778843.8,
+            -585962046.75,
+            -46919108.55,
+            -4932771.74,
+            -6600000.0,
+            -2000000.0,
+            -7637800.0,
+            -3000000.0,
+            -2780000.0,
+            -2968448.75,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "saldo_acum_bancos": [
+            -103164417.46,
+            -238943261.26,
+            -824905308.01,
+            -871824416.56,
+            -876757188.3,
+            -883357188.3,
+            -885357188.3,
+            -892994988.3,
+            -895994988.3,
+            -898774988.3,
+            -901743437.05,
+            -901743437.05,
+            -901743437.05,
+            -901743437.05,
+            -901743437.05,
+            -901743437.05,
+            -901743437.05
+          ],
+          "venta_hacienda": [
+            891571291.82,
+            1629452771.3,
+            1369121656.0,
+            406148275.0,
+            1071288660.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            30250000.0,
+            30250000.0,
+            30250000.0
+          ],
+          "hoteleria": [
+            0.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            30250000.0,
+            30250000.0,
+            30250000.0
+          ],
+          "total_ingresos": [
+            891571291.82,
+            1629452771.3,
+            1369121656.0,
+            406148275.0,
+            1071288660.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            30250000.0,
+            0.0,
+            0.0,
+            30250000.0,
+            30250000.0,
+            30250000.0
+          ],
+          "pagos_feedlot": [
+            0.0,
+            127505000.0,
+            127505000.0,
+            127505000.0,
+            149555435.0,
+            127505000.0,
+            127505000.0,
+            127505000.0,
+            149555435.0,
+            127505000.0,
+            127505000.0,
+            127505000.0,
+            149555435.0,
+            127505000.0,
+            532070435.0,
+            532070435.0,
+            532070435.0
+          ],
+          "pagos_admin": [
+            0.0,
+            0.0,
+            0.0,
+            44162000.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            44162000.0,
+            0.0,
+            0.0,
+            0.0,
+            44162000.0,
+            0.0,
+            44162000.0,
+            44162000.0,
+            44162000.0
+          ],
+          "pago_impuestos": [
+            0.0,
+            0.0,
+            35345000.0,
+            0.0,
+            35000000.0,
+            0.0,
+            35345000.0,
+            0.0,
+            35000000.0,
+            0.0,
+            35345000.0,
+            0.0,
+            35000000.0,
+            0.0,
+            70345000.0,
+            70345000.0,
+            70345000.0
+          ],
+          "pago_flete": [
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            4241050.0,
+            16964200.0,
+            16964200.0,
+            16964200.0
+          ],
+          "pago_agricultura": [
+            0.0,
+            79600000.0,
+            0.0,
+            10000000.0,
+            0.0,
+            54600000.0,
+            0.0,
+            10000000.0,
+            0.0,
+            54600000.0,
+            0.0,
+            10000000.0,
+            0.0,
+            54600000.0,
+            64600000.0,
+            64600000.0,
+            64600000.0
+          ],
+          "total_egresos": [
+            4241050.0,
+            513346050.0,
+            469091050.0,
+            228908050.0,
+            188796485.0,
+            186346050.0,
+            167091050.0,
+            141746050.0,
+            348458485.0,
+            186346050.0,
+            167091050.0,
+            141746050.0,
+            348458485.0,
+            186346050.0,
+            1343641635.0,
+            1093641635.0,
+            1093641635.0
+          ],
+          "darwash": [
+            268602420.91,
+            353476299.93,
+            381282255.87,
+            362631440.39,
+            166592507.49,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "saldo_semanal": [
+            363702472.84,
+            626851577.57,
+            -67213696.62,
+            -232310323.94,
+            710966895.77,
+            -192946050.0,
+            -138841050.0,
+            -149383850.0,
+            -351458485.0,
+            -189126050.0,
+            -170059498.75,
+            -111496050.0,
+            -348458485.0,
+            -186346050.0,
+            -1313391635.0,
+            -1063391635.0,
+            -1063391635.0
+          ],
+          "saldo_acumulado": [
+            515563403.45,
+            1142414981.02,
+            1075201284.4,
+            842890960.46,
+            1553857856.23,
+            1360911806.23,
+            1222070756.23,
+            1072686906.23,
+            721228421.23,
+            532102371.23,
+            362042872.48,
+            250546822.48,
+            -97911662.52,
+            -284257712.52,
+            -1597649347.52,
+            -2661040982.52,
+            -3724432617.52
           ]
         }
       }
