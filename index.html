@@ -82,6 +82,13 @@
     <a class="sb-item" data-target="analisis-costos" href="analisis_costos.html">
       <span class="sb-num">10</span><span class="sb-text">An&aacute;lisis de Costos</span>
     </a>
+    <!-- v15.71.3: los informes acumulados salieron de adentro del modulo 07 y
+         son pantalla propia. Como sbInit() esconde todo .sb-item cuyo
+         data-target no este en user.modules, 'acumulados' tiene que figurar en
+         gerencia y admin de core-home.js (leccion v15.61.1). -->
+    <a class="sb-item" data-target="acumulados" onclick="sbNavigate('acumulados')">
+      <span class="sb-num">11</span><span class="sb-text">Resultados Acumulados</span>
+    </a>
   </div>
 
   <div class="sb-user">
@@ -2402,6 +2409,25 @@
   </div>
 </div>
 
+<div id="screenAcumulados" class="screen" style="display:none">
+  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">M&oacute;dulo 11 &middot; Ventas</div>
+        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">RESULTADOS ACUMULADOS</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(212,168,75,.5);margin-top:6px">Resultado por tramo de tiempo &middot; por categor&iacute;a &middot; ranking de tropas de origen &middot; rinde</div>
+      </div>
+      <div style="text-align:right">
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;">&#8592; Panel Principal</button>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1180px;margin:0 auto;padding:24px 32px 60px">
+    <div id="rvLoading" style="padding:60px;text-align:center;font-family:'DM Mono',monospace;opacity:.5">Cargando&hellip;</div>
+    <div id="rvContent" style="display:none"></div>
+  </div>
+</div>
+
 <div id="screenHistorico" class="screen" style="display:none">
   <!-- Header -->
   <div style="background:var(--ink);color:var(--cream);padding:24px 40px 20px">
@@ -2662,7 +2688,7 @@
   </div>
 </div>
 
-<script src="js/core-home.js?v=15611"></script>
+<script src="js/core-home.js?v=15713"></script>
 <script src="js/modulo-05-mercado.js?v=1566"></script>
 <script src="js/modulo-07-simulador.js"></script>
 
@@ -2675,7 +2701,9 @@
 <!-- ══ MÓDULO 08 · HISTÓRICO JS ══ -->
 <script src="js/modulo-08-historico.js?v=1556"></script>
 <script src="js/config-supabase.js?v=15711"></script>
-<script src="js/modulo-09-remitos.js?v=15712"></script>
+<script src="js/modulo-09-remitos.js?v=15713"></script>
+<!-- v15.71.3: 10 depende de 09 (usa _remM/_remN/_remFec y REM_STYLES) -->
+<script src="js/modulo-10-acumulados.js?v=15713"></script>
 
 
 <!-- Panel Principal — React + Babel -->
