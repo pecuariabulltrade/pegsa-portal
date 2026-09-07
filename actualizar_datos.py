@@ -2660,14 +2660,57 @@ def _scrap_mep_tc_ambito(periodo):
         return None
 
 
-def _scrap_bna_tc():
+def _bna_num(txt):
+    """Número de la página del BNA. Las dos tablas usan formatos DISTINTOS:
+
+        Billetes  '1.530,00'   → coma decimal, punto de miles (es-AR)
+        Divisas   '1508.0000'  → punto decimal, cuatro decimales
+
+    Por eso no se puede usar _ar_num() acá: convertiría '1508.0000' en
+    15.080.000 (le saca el punto pensando que es de miles) y el dólar del portal
+    quedaría 10.000 veces más caro sin que nada avise.
     """
-    Scraping BNA: devuelve el tipo de cambio dólar Billete Venta del día actual.
-    Fuente: https://www.bna.com.ar/Personas
-    Tabla 0 = Billete: fila "Dolar U.S.A" → celda[2] = Venta
-    Retorna float (ARS por USD) o None si falla.
+    if txt is None:
+        return None
+    t = str(txt).strip().replace('\xa0', '').replace(' ', '').replace('$', '')
+    if not t or t in ('-', '—'):
+        return None
+    try:
+        if ',' in t:                                  # es-AR: el punto es de miles
+            return float(t.replace('.', '').replace(',', '.'))
+        if re.match(r'^\d+\.\d{1,2}$', t) or re.match(r'^\d+\.\d{4,}$', t):
+            return float(t)                           # punto decimal
+        return float(t.replace('.', ''))              # solo puntos de miles
+    except ValueError:
+        return None
+
+
+# Una sola consulta a BNA por corrida: la sección de valuación y la de mercado
+# piden lo mismo con minutos de diferencia.
+_BNA_TC_CACHE = {}
+
+
+def _scrap_bna_tc(tabla="divisa"):
+    """TC del dólar del Banco Nación. Devuelve (valor, fecha_iso) o (None, None).
+
+    `tabla`: "divisa" (cotización Divisas, la que usa el portal desde v15.72) o
+    "billete" (Billetes, ~1,5 % más alta).
+
+    La página tiene las dos tablas con el mismo `class="table cotizacion"` y el
+    mismo formato, así que NO se eligen por índice: se ancla en los div
+    `id="billetes"` / `id="divisas"` que las envuelven (verificado en vivo el
+    2026-09-07). Si esos anclas desaparecen, se cae al índice con un warning.
+
+    La fecha de cotización está DENTRO de la tabla, en la primera celda del
+    encabezado (`th class="fechaCot"`), así que sale del mismo parseo. Divisas
+    suele ir un día atrás de Billetes (el 07/09, Billetes 07/09 y Divisas
+    04/09): eso es normal, no es un error.
     """
     import urllib.request
+    from datetime import date as _d
+
+    if tabla in _BNA_TC_CACHE:
+        return _BNA_TC_CACHE[tabla]
 
     url = 'https://www.bna.com.ar/Personas'
     try:
@@ -2677,9 +2720,14 @@ def _scrap_bna_tc():
             raw = resp.read()
     except Exception as e:
         log.warning(f'    BNA TC request error: {e}')
-        return None
+        _BNA_TC_CACHE[tabla] = (None, None)
+        return None, None
 
-    # Parsear todas las tablas; tabla[0] = Billete, tabla[1] = Divisa
+    try:
+        txt = raw.decode('utf-8', errors='replace')
+    except Exception:
+        txt = raw.decode('latin-1', errors='replace')
+
     from html.parser import HTMLParser
 
     class _AllTables(HTMLParser):
@@ -2687,16 +2735,16 @@ def _scrap_bna_tc():
             super().__init__()
             self.tables = []
             self._cur_table = None
-            self._cur_row   = None
-            self._cur_cell  = None
-            self._depth     = 0
+            self._cur_row = None
+            self._cur_cell = None
+            self._depth = 0
 
         def handle_starttag(self, tag, attrs):
             tag = tag.lower()
             if tag == 'table':
                 self._cur_table = []
                 self._depth += 1
-            elif tag in ('tr',):
+            elif tag == 'tr':
                 if self._cur_table is not None and self._depth == 1:
                     self._cur_row = []
             elif tag in ('td', 'th'):
@@ -2723,30 +2771,91 @@ def _scrap_bna_tc():
             if self._cur_cell is not None:
                 self._cur_cell.append(data)
 
+    # ── elegir la tabla por el id del div que la envuelve ──
+    marca = 'id="divisas"' if tabla == 'divisa' else 'id="billetes"'
+    filas = None
+    i = txt.find(marca)
+    if i >= 0:
+        j = txt.find('</table>', i)
+        if j > 0:
+            p = _AllTables()
+            p.feed(txt[i:j + 8])
+            if p.tables:
+                filas = p.tables[0]
+    if filas is None:
+        log.warning(f'    BNA TC: no encontré el div {marca}, caigo al índice')
+        p = _AllTables()
+        p.feed(txt)
+        cot = [t for t in p.tables
+               if t and len(t[0]) == 3 and 'compra' in ' '.join(t[0]).lower()]
+        idx = 1 if tabla == 'divisa' else 0
+        if len(cot) > idx:
+            filas = cot[idx]
+    if not filas:
+        log.warning('    BNA TC: no se encontró la tabla de cotizaciones')
+        _BNA_TC_CACHE[tabla] = (None, None)
+        return None, None
+
+    fecha_iso = None
+    m = re.search(r'(\d{1,2})/(\d{1,2})/(\d{4})', ' '.join(filas[0]))
+    if m:
+        try:
+            fecha_iso = _d(int(m.group(3)), int(m.group(2)), int(m.group(1))).isoformat()
+        except ValueError:
+            fecha_iso = None
+    if fecha_iso is None:
+        fecha_iso = _d.today().isoformat()
+        log.warning('    BNA TC: sin fecha de cotización en la tabla, uso la de hoy')
+
+    for fila in filas:
+        if fila and 'dolar' in fila[0].lower() and len(fila) >= 3:
+            val = _bna_num(fila[2])          # celda[2] = Venta
+            if val:
+                log.info(f'    BNA TC {tabla} venta: ${val:,.2f}/USD (cotización '
+                         f'{fecha_iso[8:10]}/{fecha_iso[5:7]}/{fecha_iso[:4]})')
+                _BNA_TC_CACHE[tabla] = (val, fecha_iso)
+                return val, fecha_iso
+    log.warning(f'    BNA TC: no se encontró la fila "Dolar U.S.A" en {tabla}')
+    _BNA_TC_CACHE[tabla] = (None, None)
+    return None, None
+
+
+def _dias_habiles(desde_iso, hasta_iso):
+    """Días hábiles (lun-vie) entre dos fechas ISO. No mira feriados."""
+    from datetime import date as _d, timedelta as _td
     try:
-        txt = raw.decode('utf-8', errors='replace')
+        a = _d.fromisoformat(str(desde_iso)[:10])
+        b = _d.fromisoformat(str(hasta_iso)[:10])
     except Exception:
-        txt = raw.decode('latin-1', errors='replace')
-
-    parser = _AllTables()
-    parser.feed(txt)
-
-    if not parser.tables:
-        log.warning('    BNA TC: no se encontraron tablas en la página')
         return None
+    if b < a:
+        return 0
+    n, cur = 0, a
+    while cur < b:
+        cur += _td(days=1)
+        if cur.weekday() < 5:
+            n += 1
+    return n
 
-    # Tabla 0 = Billete
-    tabla_billete = parser.tables[0]
-    for fila in tabla_billete:
-        if fila and 'dolar' in fila[0].lower():
-            # celda[2] = Venta
-            if len(fila) >= 3:
-                val = _ar_num(fila[2])
-                if val:
-                    log.info(f'    BNA TC Billete Venta: ${val:,.2f}/USD')
-                    return val
-    log.warning('    BNA TC: no se encontró fila "Dolar U.S.A" en tabla Billete')
-    return None
+
+def _tc_prom_mes_historico(carpeta, periodo, minimo=10):
+    """v15.72: promedio de los `tc_bna_divisa` diarios de `mercado_precios.json`
+    para ese mes. None si hay menos de `minimo` días — con pocos datos el
+    promedio miente más de lo que ayuda.
+
+    Recién sirve para los meses posteriores a v15.72: antes de eso el campo no
+    existía.
+    """
+    try:
+        with (Path(carpeta) / 'mercado_precios.json').open(encoding='utf-8') as f:
+            hist = (json.load(f) or {}).get('historico') or []
+    except Exception:
+        return None
+    vals = [h['tc_bna_divisa'] for h in hist
+            if str(h.get('fecha', ''))[:7] == periodo and h.get('tc_bna_divisa')]
+    if len(vals) < minimo:
+        return None
+    return round(sum(vals) / len(vals), 2)
 
 
 def actualizar_valuacion(carpeta, snaps_historico):
@@ -2835,7 +2944,9 @@ def actualizar_valuacion(carpeta, snaps_historico):
     from datetime import date as _dtoday
     _periodo_hoy = _dtoday.today().strftime('%Y-%m')
     log.info('  Consultando BNA TC actual...')
-    _bna_tc_hoy = _scrap_bna_tc()   # TC del día de hoy (None si falla)
+    # v15.72: el período corriente se valúa con DIVISA (antes billete, ~1,5 %
+    # más alto). Es la misma cotización que muestra el portal.
+    _bna_tc_hoy, _bna_tc_fecha = _scrap_bna_tc('divisa')
 
     nuevos_snaps = []
 
@@ -2904,8 +3015,16 @@ def actualizar_valuacion(carpeta, snaps_historico):
             if periodo == _periodo_hoy:
                 bna_tc = _bna_tc_hoy
             else:
+                # v15.72 · 0) Promedio de nuestros propios tc_bna_divisa diarios
+                # del mes, si hay al menos 10 días. Es la mejor fuente para los
+                # meses que el portal ya vivió, y no depende de nadie.
+                bna_tc = _tc_prom_mes_historico(carpeta, periodo, minimo=10)
+                if bna_tc:
+                    log.info(f'    TC {periodo}: ${bna_tc:,.2f} (promedio BNA divisa '
+                             f'del histórico propio)')
                 # 1) Intentar MEP promedio mensual desde Ambito (fuente preferida)
-                bna_tc = _scrap_mep_tc_ambito(periodo)
+                if bna_tc is None:
+                    bna_tc = _scrap_mep_tc_ambito(periodo)
                 # 2) Fallback: BNA histórico (último día hábil del mes)
                 if bna_tc is None:
                     bna_tc = _scrap_bna_tc_historico(periodo)
@@ -5565,19 +5684,59 @@ def actualizar_mercado_precios(carpeta, repo):
     negocios     = procesar_negocios(negocios_raw)
     log.info(f"  ✓ Negocios: {negocios['total_ventas']} ventas · {negocios['total_compras']} compras procesadas")
 
-    # ── 6a. Dólar MEP del día (Ambito) ─────────────────────────
-    log.info("  → Scraping Dólar MEP (Ambito)...")
+    # ── 6a. Dólar del día · BNA cotización Divisa, Venta ───────
+    # v15.72: se abandona el MEP de Ámbito. La API
+    # mercados.ambito.com/dolar/mep/... dejó de responder alrededor del
+    # 2026-04-01 y el fallback repetía el último valor SIN marcarlo, así que el
+    # portal mostró $1.414 como si fuera de hoy durante 158 días, con un
+    # "+0,3 %" que no existía. La página del BNA sí es estable.
+    #
+    # Sin fallback silencioso: si BNA no responde, tc_hoy queda en None, el
+    # registro del día lleva tc_bna_divisa null y el frontend muestra la última
+    # cotización real con su fecha y un aviso — nunca un número inventado.
+    log.info("  → Scraping Dólar BNA (divisa venta)...")
     from datetime import date as _date
     _hoy_date = _date.today()
     _mes_actual = _hoy_date.strftime('%Y-%m')
-    mep_hoy = _scrap_mep_tc_ambito(_mes_actual)   # promedio del mes en curso
-    if mep_hoy is None:
-        # Fallback: usar valor anterior o tabla aproximada
-        _prev_mep = next((h.get('tc_mep') for h in reversed(historico) if h.get('tc_mep')), None)
-        mep_hoy = _prev_mep or _TC_APROX_MEP_REF.get(_mes_actual) or insumos_ant.get('dolar', 1422)
-        log.info(f"  ℹ MEP fallback: ${mep_hoy:,.0f}")
+    tc_hoy, tc_fecha = _scrap_bna_tc('divisa')
+    mep_hoy = None            # tc_mep deja de escribirse: la fuente murió
+
+    # última cotización REAL conocida, para el caso de que hoy falle
+    _tc_prev = next((h for h in reversed(historico) if h.get('tc_bna_divisa')), None)
+    if tc_hoy:
+        log.info(f"  ✓ Dólar BNA divisa venta: ${tc_hoy:,.2f}/USD "
+                 f"(cotización {tc_fecha[8:10]}/{tc_fecha[5:7]}/{tc_fecha[:4]})")
+    elif _tc_prev:
+        _atraso = _dias_habiles(_tc_prev.get('tc_fecha') or _tc_prev['fecha'],
+                                _hoy_date.isoformat())
+        log.warning(f"  ⚠ Dólar BNA: sin respuesta — se conserva "
+                    f"${_tc_prev['tc_bna_divisa']:,.2f} del "
+                    f"{(_tc_prev.get('tc_fecha') or _tc_prev['fecha'])[8:10]}/"
+                    f"{(_tc_prev.get('tc_fecha') or _tc_prev['fecha'])[5:7]} "
+                    f"({_atraso} día(s) hábil(es))")
     else:
-        log.info(f"  ✓ MEP hoy: ${mep_hoy:,.0f}/USD")
+        log.warning("  ⚠ Dólar BNA: sin respuesta y sin cotización previa")
+
+    # v15.72 · Limpieza única del fallback de Ámbito: los registros del
+    # 2026-04-01 en adelante con tc_mep == 1414 son el mismo número repetido,
+    # no una cotización. Se anulan y se marcan; el resto de los precios de esos
+    # días es real y la fila se conserva. Idempotente.
+    _limpiadas = 0
+    for _h in historico:
+        if str(_h.get('fecha', '')) >= '2026-04-01' and _h.get('tc_mep') == 1414:
+            _h['tc_mep'] = None
+            _h['tc_mep_fallback'] = True
+            _limpiadas += 1
+    if _limpiadas:
+        log.info(f"  ✓ Histórico: {_limpiadas} fila(s) con el fallback MEP $1.414 "
+                 f"anuladas (tc_mep null + tc_mep_fallback)")
+
+    # el dólar de los costos en USD pasa a ser el de BNA divisa
+    _tc_para_insumos = tc_hoy or (_tc_prev or {}).get('tc_bna_divisa') \
+        or insumos_ant.get('dolar', 1422)
+    insumos['dolar'] = round(_tc_para_insumos, 2) if _tc_para_insumos else None
+    insumos['dolar_fecha'] = tc_fecha or (_tc_prev or {}).get('tc_fecha')
+    insumos['dolar_fuente'] = 'BNA divisa venta'
 
     # ── 6b. Histórico diario ────────────────────────────────────
     nov_precio = next((h["precio"] for h in hacienda
@@ -5629,7 +5788,11 @@ def actualizar_mercado_precios(carpeta, repo):
         "maiz":         precio_maiz,
         "soja":         precio_soja,
         "novillo":      nov_precio,
-        "tc_mep":       round(mep_hoy) if mep_hoy else None,
+        # v15.72: tc_mep queda null (Ámbito murió, no se reintroduce);
+        # el dólar del portal es tc_bna_divisa.
+        "tc_mep":        round(mep_hoy) if mep_hoy else None,
+        "tc_bna_divisa": round(tc_hoy, 2) if tc_hoy else None,
+        "tc_fecha":      tc_fecha,
         # Entre Surcos y Corrales — categorías de referencia para compra
         # Terneros
         "ter_130_160":  _esyc("Terneros 130-160 Kg."),
@@ -5645,6 +5808,35 @@ def actualizar_mercado_precios(carpeta, repo):
     historico.append(hoy)
     historico = sorted(historico, key=lambda x: x.get("fecha", ""))[-365:]
 
+    # ── v15.72 · meta.tc — el estado del dólar, para que el portal pueda avisar
+    # cuando la cotización quedó vieja en vez de mostrarla como si fuera de hoy.
+    _tc_val = tc_hoy or (_tc_prev or {}).get('tc_bna_divisa')
+    _tc_fec = tc_fecha or (_tc_prev or {}).get('tc_fecha') or (_tc_prev or {}).get('fecha')
+    _atraso_h = _dias_habiles(_tc_fec, today) if _tc_fec else None
+    # delta contra la última cotización con FECHA distinta: si BNA repite la del
+    # día anterior (pasa siempre con divisa los lunes), el delta sería 0 falso.
+    _delta = None
+    if _tc_val and _tc_fec:
+        _ant = next((h for h in reversed(historico)
+                     if h.get('tc_bna_divisa') and h.get('tc_fecha')
+                     and h['tc_fecha'] != _tc_fec), None)
+        if _ant and _ant['tc_bna_divisa']:
+            _delta = round((_tc_val / _ant['tc_bna_divisa'] - 1) * 100, 2)
+    _meta_tc = {
+        "valor":       round(_tc_val, 2) if _tc_val else None,
+        "fecha":       _tc_fec,
+        "fuente":      "BNA divisa venta",
+        "capturado":   datetime.now().isoformat(),
+        # 1 día hábil de atraso es normal: la cotización Divisas del BNA sale
+        # con un día de rezago (el lunes muestra la del viernes).
+        "estado":      ("ok" if (_atraso_h is not None and _atraso_h <= 1) else "desactualizado"),
+        "dias_atraso": _atraso_h,
+        "delta_pct":   _delta,
+    }
+    if _meta_tc["estado"] == "desactualizado":
+        log.warning(f"  ⚠ Dólar BNA desactualizado: última cotización {_tc_fec} "
+                    f"({_atraso_h} días hábiles)")
+
     # ── 7. Histórico Excel en OneDrive ──────────────────────────
     log.info("  → Actualizando historico_precios.xlsx...")
     actualizar_historico_excel(hacienda, commodities, carpeta, today)
@@ -5658,6 +5850,8 @@ def actualizar_mercado_precios(carpeta, repo):
         "commodities":  commodities,
         "insumos":      insumos,
         "historico":    historico,
+        # v15.72 · lo que lee el Panel Principal para la tarjeta del dólar.
+        "meta":         {"tc": _meta_tc},
     }
 
     negocios_json = {

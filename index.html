@@ -1735,7 +1735,7 @@
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Vaca ($/kg)</div><div id="mkpi-vaca" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Maíz ($/tn)</div><div id="mkpi-maiz" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
       <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Soja ($/tn)</div><div id="mkpi-soja" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
-      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5b8aba;margin-bottom:6px">Dólar MEP</div><div id="mkpi-mep" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif;color:#5b8aba">—</div></div>
+      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5b8aba;margin-bottom:6px">Dólar BNA</div><div id="mkpi-mep" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif;color:#5b8aba">—</div></div>
     </div>
   </div>
 
@@ -2592,7 +2592,7 @@
         <div class="panel" style="display:block;margin-bottom:24px">
           <div class="section-header">
             <span class="section-title">Patrimonio Total — Evolución Mensual (USD)</span>
-            <span class="section-sub">Total en pesos convertido al Dólar MEP promedio del mes</span>
+            <span class="section-sub">Total en pesos convertido al Dólar BNA (divisa venta) promedio del mes</span>
           </div>
           <div style="position:relative;height:240px"><canvas id="chartValUSD"></canvas></div>
         </div>
@@ -2601,7 +2601,7 @@
         <div class="panel" style="display:block;margin-bottom:24px">
           <div class="section-header">
             <span class="section-title">Precios de Referencia Mensuales</span>
-            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton) · Dólar MEP ($/USD)</span>
+            <span class="section-sub">Índice MAG ($/kg) · Maíz BCR ($/ton) · Soja BCR ($/ton) · Dólar BNA divisa venta ($/USD)</span>
           </div>
           <div id="valTablaPrecios" style="overflow-x:auto"></div>
         </div>
@@ -2688,7 +2688,7 @@
   </div>
 </div>
 
-<script src="js/core-home.js?v=15713"></script>
+<script src="js/core-home.js?v=1572"></script>
 <script src="js/modulo-05-mercado.js?v=1566"></script>
 <script src="js/modulo-07-simulador.js"></script>
 
@@ -2712,7 +2712,7 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 
 <!-- Panel Principal — datos y componentes (ORDEN: data → charts → shell → app) -->
-<script src="data.js?v=1557"></script>
+<script src="data.js?v=1572"></script>
 <script type="text/babel" src="charts.jsx"></script>
 <script type="text/babel" src="shell.jsx"></script>
 <script type="text/babel" src="app.jsx?v=1557"></script>

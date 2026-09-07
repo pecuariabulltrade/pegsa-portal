@@ -18,7 +18,7 @@ window.PEGSA_DATA = {
     ternero: { precio: 5097, label: "Ternero 330–370 kg", unidad: "$/kg vivo", fuente: "E&C", delta: 64 },
     maiz:    { precio: 243150, label: "Maíz BCR",         unidad: "$/tn",      fuente: "BCR", delta: -2100 },
     soja:    { precio: 898987, label: "Soja BCR",         unidad: "$/tn",      fuente: "BCR", delta: 12500 },
-    mep:     { precio: 1414,  label: "Tipo de Cambio MEP", unidad: "$/USD",    fuente: "BCR", delta: 4 }
+    mep:     { precio: 1508,  label: "Dólar BNA divisa venta", unidad: "$/USD", fuente: "BNA", delta: null }
   },
   tesoreria: { posicion: 1138000000, semana: "25/04", cartera: 1138000000, bancos: 463131340, usd_pos: 1907628109 },
   centros: [
@@ -318,6 +318,30 @@ window.PEGSA_DATA = {
     if (ter330?.precio)  { D.mercado.ternero.precio = ter330.precio; D.mercado.ternero.delta = (ter330.variacion != null) ? ter330.variacion : null; }
     const mepP = typeof dolar === 'number' ? dolar : (dolar?.precio || dolar?.valor);
     if (mepP) D.mercado.mep.precio = mepP;
+
+    /* v15.72 · El dólar del portal es el del Banco Nación, cotización Divisa
+       Venta. Antes era el MEP de Ámbito, que dejó de responder el 2026-04-01 y
+       cuyo fallback repetía $1.414 sin marcarlo: el panel lo mostraba como si
+       fuera de hoy, con un delta que no existía.
+       meta.tc trae el valor, la FECHA DE COTIZACIÓN (que no es la del archivo)
+       y si quedó desactualizada. */
+    const tc = mercado.meta?.tc;
+    if (tc && tc.valor) {
+      D.mercado.mep.precio = tc.valor;
+      D.mercado.mep.fecha  = tc.fecha || null;
+      D.mercado.mep.estado = tc.estado || 'ok';
+      D.mercado.mep.fuente = tc.fuente || 'BNA';
+      D.mercado.mep.dias_atraso = tc.dias_atraso;
+      // El panel calcula el % desde un delta ABSOLUTO; se deriva del delta_pct
+      // del pipeline (que compara contra la última cotización con fecha
+      // distinta, no contra ayer si ayer repitió el mismo dato).
+      D.mercado.mep.delta = (tc.estado === 'ok' && tc.delta_pct != null && tc.valor)
+        ? tc.valor - (tc.valor / (1 + tc.delta_pct / 100))
+        : null;
+    } else if (mercado.insumos?.dolar_fecha) {
+      D.mercado.mep.fecha = mercado.insumos.dolar_fecha;
+      D.mercado.mep.delta = null;
+    }
     if (mercado.fecha) D.mercado.fecha = mercado.fecha;
   }
 
@@ -551,6 +575,14 @@ window.PEGSA_DATA = {
   if (Array.isArray(stockInsumos?.insumos)) {
     const crit = stockInsumos.insumos.filter(i => i.dias_restantes != null && i.dias_restantes >= 0).sort((a, b) => a.dias_restantes - b.dias_restantes)[0];
     if (crit) newAl.push({ tipo: 'warn', texto: crit.nombre + ': ' + crit.dias_restantes.toFixed(0) + ' días de stock restantes' });
+  }
+  // v15.72: si BNA dejó de responder, decirlo — igual que con el mixer.
+  if (D.mercado?.mep?.estado === 'desactualizado' && D.mercado.mep.fecha) {
+    newAl.push({
+      tipo:  'warn',
+      texto: '⚠ Dólar BNA desactualizado · última cotización '
+             + D.mercado.mep.fecha.split('-').reverse().slice(0, 2).join('/'),
+    });
   }
   newAl.push({ tipo: 'info', texto: 'Cierre mensual: ' + (financierohist?.cortes?.length ? 'último corte ' + financierohist.cortes[financierohist.cortes.length - 1].fecha_corte : 'pendiente') });
   if (newAl.length > 0) D.alertas = newAl;

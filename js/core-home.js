@@ -248,9 +248,16 @@ function loadHomeKpis(){
         if(mz) setC('hkpi-maiz', fN(mz.precio), 'gold');
         if(sj) setC('hkpi-soja', fN(sj.precio), 'gold');
       }
-      // MEP desde último registro del historial
-      var mepVal = null;
-      if(d.historico && d.historico.length) mepVal = d.historico[d.historico.length-1].tc_mep || null;
+      // v15.72 · Dólar BNA divisa venta desde meta.tc (antes era tc_mep del
+      // último registro, que venía congelado en $1.414 desde abril).
+      // Nota: hoy no hay ningún #hkpi-mep en index.html — la tarjeta del Panel
+      // Principal la pinta app.jsx. Esto queda por si vuelve el KPI al home;
+      // setC() sale solo si el elemento no está.
+      var tcMeta = (d.meta && d.meta.tc) || null;
+      var mepVal = tcMeta && tcMeta.valor ? tcMeta.valor : null;
+      if(!mepVal && d.historico && d.historico.length){
+        for(var _i=d.historico.length-1; _i>=0 && !mepVal; _i--) mepVal = d.historico[_i].tc_bna_divisa || null;
+      }
       if(mepVal) setC('hkpi-mep', '$\u00a0'+Number(mepVal).toLocaleString('es-AR'), '');
       // Ternero E&C 330-370
       if(d.terneros_esyc){
@@ -346,7 +353,7 @@ function loadHomeKpis(){
       setC('hkpi-val-usd', usdStr, '');
     }
     set('hkpi-val-periodo', 'Período '+ult.periodo);
-    if(pr.bna_tc_venta) set('hkpi-val-tc', 'MEP $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD');
+    if(pr.bna_tc_venta) set('hkpi-val-tc', 'BNA $'+Math.round(pr.bna_tc_venta).toLocaleString('es-AR')+'/USD');
   });
 }
 

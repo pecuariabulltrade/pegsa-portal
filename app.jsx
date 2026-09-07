@@ -793,7 +793,18 @@ function Panel() {
               { id: 'ternero', label: 'Ternero E&C',  ctx: '$/kg pie · 330–370 kg' },
               { id: 'maiz',    label: 'Maíz BCR',     ctx: '$/tn · Pizarra' },
               { id: 'soja',    label: 'Soja BCR',     ctx: '$/tn · Pizarra' },
-              { id: 'mep',     label: 'Dólar MEP',    ctx: fechaMep ? `$/USD · cierre ${fechaMep}` : '$/USD' },
+              // v15.72 · Dólar del Banco Nación (cotización Divisa, Venta). La
+              // fecha es la DE LA COTIZACIÓN, no la del archivo: Divisas suele
+              // ir un día hábil atrás y antes se mostraba la del día como si
+              // fuera la del dato.
+              { id: 'mep', label: 'Dólar BNA',
+                ctx: (() => {
+                  const m = D.mercado.mep || {};
+                  const f = m.fecha ? m.fecha.split('-').reverse().slice(0, 2).join('/') : fechaMep;
+                  if (m.estado === 'desactualizado')
+                    return f ? `⚠ cotización del ${f} · sin respuesta de BNA` : '⚠ sin respuesta de BNA';
+                  return f ? `$/USD · divisa venta · ${f}` : '$/USD · divisa venta';
+                })() },
             ];
 
             return (
@@ -814,7 +825,10 @@ function Panel() {
                           </span>
                         )}
                       </div>
-                      <div className="cot-value">${precio.toLocaleString("es-AR")}</div>
+                      <div className="cot-value"
+                           style={m.estado === 'desactualizado' ? { color: 'rgba(26,22,18,.45)' } : undefined}>
+                        ${precio.toLocaleString("es-AR")}
+                      </div>
                       <div className="cot-ctx">{c.ctx}</div>
                     </div>
                   );

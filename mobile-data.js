@@ -421,7 +421,16 @@
         cot("ternero", "Ternero E&C",  "E&C"),
         cot("maiz",    "Maíz BCR",     "BCR"),
         cot("soja",    "Soja BCR",     "BCR"),
-        cot("mep",     "Dólar MEP",    "BCR")
+        // v15.72: mismo dato, ahora BNA divisa venta y con la fecha de la
+        // cotización (o el aviso si BNA no respondió). La clave interna sigue
+        // siendo "mep" para no romper lo que la lee.
+        cot("mep", "Dólar BNA", (function () {
+          var m = (D.mercado && D.mercado.mep) || {};
+          var f = m.fecha ? m.fecha.split("-").reverse().slice(0, 2).join("/") : null;
+          if (m.estado === "desactualizado")
+            return f ? "\u26a0 cotización del " + f + " · sin respuesta de BNA" : "\u26a0 sin respuesta de BNA";
+          return f ? "BNA · divisa venta · " + f : "BNA · divisa venta";
+        })())
       ]
     };
 
