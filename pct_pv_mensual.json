@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-09-07T12:07:54.174312",
+    "generado": "2026-09-07T13:10:21.302195",
     "formula": "(kg_ms_mes / dias_con_registro) / kg_pv_promedio_mes / 0.92 * 100",
     "ajuste_ms": 0.92,
     "fuente_consumo": "consumo_2025.json -> por_mes (mixer Dropbox, dias validos)",
     "fuente_kg_pv": "comportamiento_historico.json -> El Haras pegsa + hoteleros (kg_proyectado), promedio (fin mes ant + fin mes)/2",
     "desde": "2024-12",
-    "hasta": "2026-08",
-    "meses": 21,
+    "hasta": "2026-09",
+    "meses": 22,
     "meses_sin_kg_pv": [
       "2022-07",
       "2022-08",
@@ -37,8 +37,7 @@
       "2024-08",
       "2024-09",
       "2024-10",
-      "2024-11",
-      "2026-09"
+      "2024-11"
     ],
     "meses_sin_consumo": []
   },
@@ -308,13 +307,26 @@
       "kg_ms_dia": 60450.1,
       "dias_calendario": 31,
       "dias_con_registro": 31,
+      "kg_pv_fin_mes": 3079164,
+      "kg_pv_hoteleros_fin_mes": 504653,
+      "kg_pv_haras": 3168998,
+      "fuente_kg_pv": "promedio_snapshots",
+      "pct_pv_crudo": 1.91,
+      "pct_pv_ajustado": 2.07,
+      "parcial": false
+    },
+    "2026-09": {
+      "kg_ms_mes": 175024.2,
+      "kg_ms_dia": 58341.4,
+      "dias_calendario": 30,
+      "dias_con_registro": 3,
       "kg_pv_fin_mes": null,
       "kg_pv_hoteleros_fin_mes": null,
-      "kg_pv_haras": 3258832,
+      "kg_pv_haras": 3079164,
       "fuente_kg_pv": "fin_mes_anterior",
-      "pct_pv_crudo": 1.85,
-      "pct_pv_ajustado": 2.02,
-      "parcial": false
+      "pct_pv_crudo": 1.89,
+      "pct_pv_ajustado": 2.06,
+      "parcial": true
     }
   }
 }
