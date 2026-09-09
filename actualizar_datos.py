@@ -8346,7 +8346,7 @@ RR_RV_PAGE    = 500
 
 
 def _rv_leer_supabase(carpeta_out, log):
-    """v15.71.1: los snapshots que el portal guardó en Supabase.
+    r"""v15.71.1: los snapshots que el portal guardó en Supabase.
 
     Se lee la columna `raw` (el snapshot entero tal cual lo armó el módulo), así
     que salen con el MISMO shape que los archivos de `resultados_ventas\` y se
@@ -8445,7 +8445,7 @@ def generar_resultados_ventas(carpeta_out, log=None):
     for m in malos:
         log.warning(f"  ⚠ Resultados de ventas: archivo inválido, se saltea — {m}")
     if not ventas:
-        log.info(f"  Resultados de ventas: sin snapshots en {RR_RV_DIRNAME}\ todavía")
+        log.info(f"  Resultados de ventas: sin snapshots en {RR_RV_DIRNAME}\\ todavía")
 
     lista = sorted(ventas.values(), key=lambda v: (str(v.get("fecha_egreso") or ""), v["id"]))
 

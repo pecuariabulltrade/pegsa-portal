@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.71.3 (2026-09-04)
+/* modulo-09-remitos.js — Resultado por Remito · v15.73 (2026-09-09)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -16,6 +16,12 @@
    badge y marca propia, y se puede pisar ese origen a mano ($/kg, kg/cab y
    fecha) con recálculo en vivo. Sin sesión de Datamars no cambia nada: vale lo
    cargado en WinCampo.
+
+   v15.73 · "Detalle por tropa" se lee POR CABEZA (kg ÷ cabezas), que es como
+   Nicolás mira una tropa; los kg totales de la fila siguen en el tooltip. Las
+   cinco columnas de costo pasan a un toggle persistente — no se borra nada de
+   lo que la tabla calcula, sólo se oculta. Y una torta de categorías de
+   ingreso contesta "qué categoría salió", en cabezas o en kg vendidos.
 */
 
 var _remData = null;
@@ -644,6 +650,12 @@ function remInformePDF() {
     + '.repo{background:#faf6ea;border:1px solid ' + GOLD + ';border-radius:2px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:center}'
     + '.rl{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
     + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8.5px;color:#8a827a;line-height:1.55}'
+    // v15.73 · tabla del detalle por tropa (vista resumida)
+    + '.dt{width:100%;border-collapse:collapse;font-size:9px}'
+    + '.dt th{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#8a827a;'
+    + 'padding:4px 5px;border-bottom:1px solid #1a1612;white-space:nowrap}'
+    + '.dt td{padding:3.5px 5px;border-bottom:1px solid #f0eee8;text-align:right;white-space:nowrap}'
+    + '.dt tfoot td{font-weight:500;border-top:1px solid #1a1612;border-bottom:none;background:#faf8f4}'
     + '.neg{color:' + RED + '}'
     + '</style></head><body>';
 
@@ -724,8 +736,52 @@ function remInformePDF() {
           + '<div style="font-size:9px;color:#8a827a;margin-top:3px">comprando y alimentando a precios de hoy</div></div>')
     + '</div>';
 
-  // 6 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.71.3 · Supuestos: %PV real por mes (límites '
+  // 6 · Detalle por tropa — v15.73. Vista resumida (por cabeza); las columnas
+  // de costo NO van al PDF: sus totales ya están en las tarjetas de arriba.
+  var filasPDF = r.filas || [];
+  if (filasPDF.length) {
+    var imgCat = '';
+    try { imgCat = remTortaPNG(r, 340); } catch (e) { imgCat = ''; }
+    h += '<div class="sec">Detalle por tropa</div>';
+    h += '<div style="display:flex;align-items:flex-start;gap:12px">';
+    h += '<div style="flex:1;min-width:0"><table class="dt"><thead><tr>'
+      + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa'])
+        .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra'])
+        .map(function (t, i) { return '<th style="text-align:' + (i < (esGrupo ? 3 : 2) ? 'left' : 'right') + '">' + t + '</th>'; }).join('')
+      + '</tr></thead><tbody>';
+    filasPDF.forEach(function (f) {
+      h += '<tr>'
+        + (esGrupo ? '<td style="text-align:left;color:#8a827a">' + f.remito + '</td>' : '')
+        + '<td style="text-align:left">' + f.tropa + (f.sc_tipo ? ' *' : '') + (f.estimado ? ' (est)' : '') + '</td>'
+        + '<td style="text-align:left">' + remCatNombre(f.categoria) + '</td>'
+        + '<td>' + f.cabezas + '</td>'
+        + '<td>' + (f.fecha_ingreso ? f.fecha_ingreso.split('-').reverse().join('/') : '—') + '</td>'
+        + '<td>' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
+        + '<td>' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
+        + '<td>' + f.dias + '</td>'
+        + '<td>' + _remN(f.precio_kg) + '</td></tr>';
+    });
+    h += '</tbody><tfoot><tr>'
+      + (esGrupo ? '<td></td>' : '')
+      + '<td style="text-align:left">TOTAL</td><td></td>'
+      + '<td>' + r.cabezas + '</td><td></td>'
+      + '<td>' + _remN(I.kg_prom_ingreso) + '</td>'
+      + '<td>' + _remN(I.kg_prom_salida) + '</td>'
+      + '<td>' + _remN(I.estadia_prom) + '</td>'
+      + '<td>' + _remN(I.precio_prom_pagado) + '</td>'
+      + '</tr></tfoot></table></div>';
+    if (imgCat) {
+      h += '<div style="flex:none;width:160px;text-align:center">'
+        + '<div class="rl" style="margin-bottom:3px">Categorías de ingreso</div>'
+        + '<img src="' + imgCat + '" alt="Categorías de ingreso" style="width:160px;height:160px">'
+        + '<div style="font-size:8px;color:#8a827a">'
+        + (_remCatModo === 'kg' ? 'reparto por kg de salida' : 'reparto por cabezas') + '</div></div>';
+    }
+    h += '</div>';
+  }
+
+  // 7 · Pie — los supuestos salen de meta, no hardcodeados
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.73 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -827,7 +883,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.71.3',
+    version_portal: 'v15.73',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -1104,6 +1160,169 @@ var REM_STYLES = {
   WARN: 'background:#fdf6e3;border:1px solid var(--gold);border-radius:2px;padding:12px 16px;margin:14px 0;font-family:\'DM Mono\',monospace;font-size:12px;color:#7a5c14;line-height:1.6',
   INP:  'font-family:\'DM Mono\',monospace;font-size:13px;padding:7px 11px;border:1px solid #d8d6ce;border-radius:2px;background:#faf8f4;width:120px'
 };
+
+/* ════════════════════════════════════════════════════════════
+   v15.73 · DETALLE POR TROPA RESUMIDO + TORTA DE CATEGORÍAS
+   ────────────────────────────────────────────────────────────
+   La tabla arranca en vista por cabeza (kg ÷ cabezas) con las columnas de
+   costo escondidas detrás de "ver costos". El toggle NO cambia lo que la
+   tabla calcula: las cinco columnas siguen ahí, sólo dejan de dibujarse.
+   ════════════════════════════════════════════════════════════ */
+var REM_LS_DET_COSTOS = 'pegsa_rem_detalle_costos';
+var _remDetCostos = (function () {
+  try { return localStorage.getItem(REM_LS_DET_COSTOS) === '1'; } catch (e) { return false; }
+})();
+var _remCatModo  = 'cab';    // 'cab' | 'kg' — reparto de la torta. No persiste.
+var _remCatChart = null;     // instancia viva de Chart.js, para no duplicarla
+
+function remDetCostosToggle() {
+  _remDetCostos = !_remDetCostos;
+  try { localStorage.setItem(REM_LS_DET_COSTOS, _remDetCostos ? '1' : '0'); } catch (e) {}
+  renderRemitos();
+}
+function remCatModoSet(m) {
+  if (_remCatModo === m) return;
+  _remCatModo = m;
+  renderRemitos();
+}
+
+/* Color FIJO por categoría — la paleta que ya usan las tarjetas del módulo,
+   asignada por nombre y no por posición, para que Vaca sea el mismo color en
+   todos los remitos. Una categoría que no esté en la tabla cae al ciclo de
+   reserva (mismo criterio que "sin categoría"). */
+var REM_CAT_COLOR = {
+  'Vaca': '#1a1612', 'Vaquillona': '#b8922a', 'Novillo': '#2d6a8a',
+  'Novillito': '#d4a84b', 'Ternero': '#27613d', 'Ternera': '#8a827a',
+  'Toro': '#c0392b'
+};
+var REM_CAT_EXTRA = ['#b9b4ac', '#0F1B64', '#7a5c14', '#5a8f6d', '#a3311f'];
+function remCatColor(cat, i) {
+  return REM_CAT_COLOR[cat] || REM_CAT_EXTRA[(i || 0) % REM_CAT_EXTRA.length];
+}
+function remCatNombre(c) {
+  return String(c == null ? '' : c).trim() || 'sin categoría';
+}
+
+/* Reparto por categoría de ingreso. En modo grupo `r.filas` ya viene con las
+   filas de todos los remitos, así que la torta sale sobre el consolidado sin
+   ramificar nada. */
+function remPorCategoria(r) {
+  var map = {}, orden = [];
+  ((r || {}).filas || []).forEach(function (f) {
+    var k = remCatNombre(f.categoria);
+    if (!map[k]) { map[k] = { cat: k, cabezas: 0, kgIng: 0, kgEgr: 0 }; orden.push(k); }
+    map[k].cabezas += f.cabezas || 0;
+    map[k].kgIng   += f.kg_ingreso || 0;
+    map[k].kgEgr   += f.kg_egreso || 0;
+  });
+  return orden.map(function (k) { return map[k]; })
+    .sort(function (a, b) { return b.cabezas - a.cabezas; });
+}
+
+/* Config del doughnut, compartida entre la torta de pantalla y la del PDF. */
+function _remCatConfig(G, esKg, legendPos, fontSize) {
+  var vals = G.map(function (g) { return esKg ? Math.round(g.kgEgr) : g.cabezas; });
+  var tot  = vals.reduce(function (a, b) { return a + b; }, 0) || 1;
+  return {
+    type: 'doughnut',
+    data: {
+      labels: G.map(function (g) { return g.cat; }),
+      datasets: [{
+        data: vals,
+        backgroundColor: G.map(function (g, i) { return remCatColor(g.cat, i); }),
+        borderColor: '#fff', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: legendPos === 'right', maintainAspectRatio: false,
+      cutout: '52%', animation: false, layout: { padding: 4 },
+      plugins: {
+        legend: {
+          position: legendPos,
+          labels: {
+            boxWidth: 10, boxHeight: 10, padding: 8,
+            font: { family: 'DM Mono, monospace', size: fontSize },
+            color: '#1a1612',
+            generateLabels: function (ch) {
+              var ds = ch.data.datasets[0];
+              return ch.data.labels.map(function (l, i) {
+                return {
+                  text: l + ' · ' + _remN(ds.data[i]) + (esKg ? ' kg' : ' cab')
+                        + ' · ' + _remN(ds.data[i] / tot * 100) + ' %',
+                  fillStyle: ds.backgroundColor[i], strokeStyle: '#fff',
+                  lineWidth: 1, index: i
+                };
+              });
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              var g = G[ctx.dataIndex];
+              return [
+                g.cabezas + ' cab · ' + _remN(g.kgEgr) + ' kg salida',
+                'kg ing/cab ' + _remN(g.cabezas ? g.kgIng / g.cabezas : 0),
+                'kg sal/cab ' + _remN(g.cabezas ? g.kgEgr / g.cabezas : 0)
+              ];
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
+/* La torta se instancia DESPUÉS de asignar el innerHTML: mientras se arma el
+   string el canvas todavía no existe. chart-patch.js ya destruye la instancia
+   previa de un canvas reusado, pero acá el canvas es NUEVO en cada render, así
+   que la vieja quedaría colgada — por eso se guarda la referencia y se mata a
+   mano antes de crear la siguiente. */
+function remRenderTortaCat(r) {
+  try { if (_remCatChart) _remCatChart.destroy(); } catch (e) {}
+  _remCatChart = null;
+  var cv = document.getElementById('remCatChart');
+  if (!cv || typeof Chart === 'undefined') return;
+  var G = remPorCategoria(r);
+  if (!G.length) return;
+  _remCatChart = new Chart(cv.getContext('2d'), _remCatConfig(G, _remCatModo === 'kg', 'right', 11));
+}
+
+/* PNG de la torta para el informe PDF.
+
+   Se dibuja en un canvas propio y CUADRADO con la leyenda abajo, en vez de
+   fotografiar el de pantalla: ese es apaisado (leyenda a la derecha) y a los
+   ~160 px que ocupa en el informe la leyenda queda ilegible. Mismos datos,
+   misma paleta, mismo modo (cabezas / kg) que el que está a la vista.
+   Si Chart no está o el remito no tiene filas, devuelve '' y el informe se
+   arma sin la imagen. */
+function remTortaPNG(r, px) {
+  if (typeof Chart === 'undefined') return '';
+  var G = remPorCategoria(r);
+  if (!G.length) return '';
+  px = px || 340;
+  var cv = document.createElement('canvas');
+  cv.width = px; cv.height = px;
+  var cfg = _remCatConfig(G, _remCatModo === 'kg', 'bottom', 12);
+  // fondo blanco: el PNG de Chart.js sale transparente y algún visor lo
+  // compone sobre oscuro.
+  cfg.plugins = [{
+    id: 'bgBlanco',
+    beforeDraw: function (c) {
+      var x = c.ctx; x.save();
+      x.globalCompositeOperation = 'destination-over';
+      x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      x.restore();
+    }
+  }];
+  var ch = null, url = '';
+  try {
+    ch = new Chart(cv.getContext('2d'), cfg);
+    url = cv.toDataURL('image/png');
+  } catch (e) { url = ''; }
+  try { if (ch) ch.destroy(); } catch (e) {}
+  return url;
+}
 
 function renderRemitos(soloResultado) {
   var el = document.getElementById('remContent');
@@ -1487,11 +1706,45 @@ function renderRemitos(soloResultado) {
     + (bruto > 0 ? card('Resultado a reposición', _remM(resRepo), _remN(resRepo / RPc.total * 100, 1) + ' % s/costo repo · hist ' + _remM(res), true) : '')
     + '</div>';
 
-  // ── Detalle por tropa ──
-  h += '<div style="' + H2 + '">Detalle por tropa</div>';
+  // ── Detalle por tropa (v15.73 · resumida por cabeza + torta de categorías) ──
+  var GC = remPorCategoria(r);
+  var catIdx = {}; GC.forEach(function (g, i) { catIdx[g.cat] = i; });
+  h += '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:26px 0 12px">'
+    + '<div style="' + H2 + ';margin:0">Detalle por tropa</div>'
+    + '<a onclick="remDetCostosToggle()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
+    + 'color:var(--gold);text-decoration:underline">'
+    + (_remDetCostos ? '&#9650; ocultar costos' : '&#9660; ver costos') + '</a></div>';
+
+  // Torta de categorías de ingreso — el canvas nace acá vacío y se llena en
+  // remRenderTortaCat(), después del innerHTML.
+  if (GC.length) {
+    var pill = function (m, txt) {
+      return '<span onclick="remCatModoSet(\'' + m + '\')" style="cursor:pointer;padding:3px 9px;border-radius:2px;'
+        + 'font-family:\'DM Mono\',monospace;font-size:11px;margin-left:5px;display:inline-block;'
+        + (_remCatModo === m ? 'background:var(--ink);color:#d4a84b;border:1px solid var(--ink)'
+                             : 'background:#faf8f4;color:var(--ink);border:1px solid #e3e1da') + '">' + txt + '</span>';
+    };
+    h += '<div style="' + CARD + ';max-width:560px;margin-bottom:12px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">'
+      + '<div style="' + LBL + ';margin:0">Categorías de ingreso</div>'
+      + '<div>' + pill('cab', 'cabezas') + pill('kg', 'kg salida') + '</div></div>'
+      + '<div style="position:relative;height:180px"><canvas id="remCatChart"></canvas></div></div>';
+  }
+
+  var catChip = function (c) {
+    var k = remCatNombre(c);
+    return '<span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:2px;white-space:nowrap;'
+      + 'background:#faf8f4;border:1px solid #e3e1da;color:rgba(26,22,18,.75)">'
+      + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;'
+      + 'margin-right:5px;background:' + remCatColor(k, catIdx[k]) + '"></span>' + k + '</span>';
+  };
+  var COLS_COSTO = ['Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'];
+  var nIzq = esGrupo ? 3 : 2;   // remito · tropa · cat van alineadas a la izquierda
   h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
-    + '<thead><tr>' + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa']).concat(['Cab', 'Ingreso', 'Kg ent', 'Kg sal', 'Días', '$/kg compra', 'Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'])
-      .map(function (t, i) { return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i === 0 ? 'left' : 'right') + ';white-space:nowrap">' + t + '</th>'; }).join('')
+    + '<thead><tr>' + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa'])
+      .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra'])
+      .concat(_remDetCostos ? COLS_COSTO : [])
+      .map(function (t, i) { return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i < nIzq ? 'left' : 'right') + ';white-space:nowrap">' + t + '</th>'; }).join('')
     + '</tr></thead><tbody>';
   (r.filas || []).forEach(function (f) {
     var td = 'padding:8px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:13px;white-space:nowrap';
@@ -1532,29 +1785,43 @@ function renderRemitos(soloResultado) {
       + (esGrupo ? '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.5)">' + f.remito + '</td>' : '')
       + '<td style="' + td + ';text-align:left">' + f.tropa + (f.sc_tipo ? tagSC : tagAnt)
       + (f.estimado ? tag + 'est</span>' : '') + '</td>'
+      + '<td style="' + td + ';text-align:left">' + catChip(f.categoria) + '</td>'
       + '<td style="' + td + '">' + f.cabezas + '</td>'
       + '<td style="' + td + '">' + f.fecha_ingreso.split('-').reverse().join('/') + '</td>'
-      + '<td style="' + td + '">' + _remN(f.kg_ingreso) + '</td>'
-      + '<td style="' + td + '">' + _remN(f.kg_egreso) + '</td>'
+      // v15.73: por cabeza. El total de kg de la fila no se pierde — va en el
+      // tooltip, que es de donde se leía antes.
+      + '<td style="' + td + '" title="' + _remN(f.kg_ingreso) + ' kg de ingreso en la fila">' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
+      + '<td style="' + td + '" title="' + _remN(f.kg_egreso) + ' kg de salida en la fila">' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
       + '<td style="' + td + '">' + f.dias + '</td>'
       + '<td style="' + td + '">' + _remN(f.precio_kg) + '</td>'
-      + '<td style="' + td + '">' + _remM(f.costo_compra) + '</td>'
-      + '<td style="' + td + '">' + _remN(f.kg_ms) + '</td>'
-      + '<td style="' + td + '">' + _remN(f.pct_ms, 2) + (f.acotado ? tag + 'lim</span>' : '') + '</td>'
-      + '<td style="' + td + '">' + _remM(f.alimento) + '</td>'
-      + '<td style="' + td + '">' + _remM(f.estructura + f.sanidad) + '</td></tr>';
+      + (_remDetCostos
+          ? '<td style="' + td + '">' + _remM(f.costo_compra) + '</td>'
+            + '<td style="' + td + '">' + _remN(f.kg_ms) + '</td>'
+            + '<td style="' + td + '">' + _remN(f.pct_ms, 2) + (f.acotado ? tag + 'lim</span>' : '') + '</td>'
+            + '<td style="' + td + '">' + _remM(f.alimento) + '</td>'
+            + '<td style="' + td + '">' + _remM(f.estructura + f.sanidad) + '</td>'
+          : '')
+      + '</tr>';
   });
+  // Total PONDERADO, no promedio de promedios: los tres "por cabeza" salen de
+  // los indicadores del remito (Σkg ÷ Σcab, días-animal ÷ cab, $ ÷ Σkg), que es
+  // exactamente lo que muestran las tarjetas de arriba.
+  var tf = 'padding:8px 10px;text-align:right;font-size:13px';
   h += '</tbody><tfoot><tr style="font-weight:500;border-top:2px solid var(--border);background:#faf8f4">'
     + (esGrupo ? '<td></td>' : '')
-    + '<td style="padding:8px 10px;text-align:left;font-size:13px">TOTAL</td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + r.cabezas + '</td><td></td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remN(r.kg_ingreso) + '</td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remN(r.kg_egreso) + '</td><td></td><td></td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remM(C.compra) + '</td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remN(r.kg_ms) + '</td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remN(I.pct_ms, 2) + '</td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remM(C.alimento) + '</td>'
-    + '<td style="padding:8px 10px;text-align:right;font-size:13px">' + _remM(C.estructura + C.sanidad) + '</td>'
+    + '<td style="' + tf + ';text-align:left">TOTAL</td><td></td>'
+    + '<td style="' + tf + '">' + r.cabezas + '</td><td></td>'
+    + '<td style="' + tf + '" title="' + _remN(r.kg_ingreso) + ' kg de ingreso en total">' + _remN(I.kg_prom_ingreso) + '</td>'
+    + '<td style="' + tf + '" title="' + _remN(r.kg_egreso) + ' kg de salida en total">' + _remN(I.kg_prom_salida) + '</td>'
+    + '<td style="' + tf + '">' + _remN(I.estadia_prom) + '</td>'
+    + '<td style="' + tf + '">' + _remN(I.precio_prom_pagado) + '</td>'
+    + (_remDetCostos
+        ? '<td style="' + tf + '">' + _remM(C.compra) + '</td>'
+          + '<td style="' + tf + '">' + _remN(r.kg_ms) + '</td>'
+          + '<td style="' + tf + '">' + _remN(I.pct_ms, 2) + '</td>'
+          + '<td style="' + tf + '">' + _remM(C.alimento) + '</td>'
+          + '<td style="' + tf + '">' + _remM(C.estructura + C.sanidad) + '</td>'
+        : '')
     + '</tr></tfoot></table>';
 
   // ── Tropas para completar en el Excel ──
@@ -1588,4 +1855,7 @@ function renderRemitos(soloResultado) {
     + '</div>';
 
   el.innerHTML = h;
+  // v15.73 · recién ahora existe el canvas: la torta se instancia sobre el
+  // mismo `r` que armó la tabla (remito suelto o consolidado del grupo).
+  try { remRenderTortaCat(r); } catch (e) {}
 }
