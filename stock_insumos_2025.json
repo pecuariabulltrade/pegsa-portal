@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-10T10:03:45.860907",
+    "generado": "2026-09-10T11:03:34.410934",
     "periodo": "2025",
     "tabla": "v_PB_StockInsumo",
     "registros": 7,
@@ -12,8 +12,8 @@
     "dias_registro_365": 360,
     "consumo_total_norm": 80718.5,
     "consumo_total_sin_ajuste": 74427.1,
-    "dias_totales": 193.9,
-    "dias_totales_sin_ajuste": 210.2,
+    "dias_totales": 189.0,
+    "dias_totales_sin_ajuste": 204.9,
     "ajuste_consumo": {
       "*": 1.1,
       "MAIZ GRANO": 1.05
@@ -23,57 +23,46 @@
   "insumos": [
     {
       "nombre": "SILO DE MAIZ",
-      "stock_kg": 8011160.0,
+      "stock_kg": 7924783.0,
       "consumo_diario_tc": 19325.1,
       "consumo_dia_norm": 17568.3,
       "ajuste_factor": 1.1,
       "consumo_3d_tc": 15271.7,
       "kg_dia_anio": 25797.2,
-      "dias_restantes": 414.5,
+      "dias_restantes": 410.1,
       "fuente": "normalizado_365"
     },
     {
       "nombre": "MAIZ GRANO",
-      "stock_kg": 6937008.0,
+      "stock_kg": 6794026.0,
       "consumo_diario_tc": 24176.8,
       "consumo_dia_norm": 23025.5,
       "ajuste_factor": 1.05,
       "consumo_3d_tc": 26630.0,
       "kg_dia_anio": 33810.5,
-      "dias_restantes": 286.9,
+      "dias_restantes": 281.0,
       "fuente": "normalizado_365"
     },
     {
       "nombre": "GLUTEN DE MAIZ",
-      "stock_kg": 594086.0,
+      "stock_kg": 471798.0,
       "consumo_diario_tc": 25151.5,
       "consumo_dia_norm": 22865.0,
       "ajuste_factor": 1.1,
       "consumo_3d_tc": 21993.3,
       "kg_dia_anio": 33574.8,
-      "dias_restantes": 23.6,
+      "dias_restantes": 18.8,
       "fuente": "normalizado_365"
     },
     {
       "nombre": "NUCLEO CONC 5% LDB",
-      "stock_kg": 58898.0,
+      "stock_kg": 44044.0,
       "consumo_diario_tc": 3316.2,
       "consumo_dia_norm": 3014.7,
       "ajuste_factor": 1.1,
       "consumo_3d_tc": 2720.0,
       "kg_dia_anio": 4426.8,
-      "dias_restantes": 17.8,
-      "fuente": "normalizado_365"
-    },
-    {
-      "nombre": "HARINA GERMEN",
-      "stock_kg": 35865.0,
-      "consumo_diario_tc": 8748.9,
-      "consumo_dia_norm": 7953.6,
-      "ajuste_factor": 1.1,
-      "consumo_3d_tc": 6368.3,
-      "kg_dia_anio": 11679.0,
-      "dias_restantes": 4.1,
+      "dias_restantes": 13.3,
       "fuente": "normalizado_365"
     },
     {
@@ -88,6 +77,17 @@
       "fuente": null
     },
     {
+      "nombre": "HARINA GERMEN",
+      "stock_kg": 6852.0,
+      "consumo_diario_tc": 8748.9,
+      "consumo_dia_norm": 7953.6,
+      "ajuste_factor": 1.1,
+      "consumo_3d_tc": 6368.3,
+      "kg_dia_anio": 11679.0,
+      "dias_restantes": 0.8,
+      "fuente": "normalizado_365"
+    },
+    {
       "nombre": "SOJA",
       "stock_kg": -0.39,
       "consumo_diario_tc": null,
@@ -99,5 +99,5 @@
       "fuente": null
     }
   ],
-  "total_kg": 15647527.61
+  "total_kg": 15252013.61
 }
