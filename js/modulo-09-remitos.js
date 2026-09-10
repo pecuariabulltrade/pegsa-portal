@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.73 (2026-09-09)
+/* modulo-09-remitos.js — Resultado por Remito · v15.73.1 (2026-09-10)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -22,6 +22,11 @@
    cinco columnas de costo pasan a un toggle persistente — no se borra nada de
    lo que la tabla calcula, sólo se oculta. Y una torta de categorías de
    ingreso contesta "qué categoría salió", en cabezas o en kg vendidos.
+
+   v15.73.1 · Los costos vuelven a verse SIEMPRE. El % MS y los montos de
+   compra, alimento y estructura+sanidad eran justamente lo que Nicolás miraba,
+   así que el toggle nace abierto ("ocultar costos") y el PDF vuelve a llevar
+   las 13 columnas. Lo de v15.73 que sí quedó: los kg por cabeza y la torta.
 */
 
 var _remData = null;
@@ -651,10 +656,10 @@ function remInformePDF() {
     + '.rl{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
     + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8.5px;color:#8a827a;line-height:1.55}'
     // v15.73 · tabla del detalle por tropa (vista resumida)
-    + '.dt{width:100%;border-collapse:collapse;font-size:9px}'
-    + '.dt th{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#8a827a;'
-    + 'padding:4px 5px;border-bottom:1px solid #1a1612;white-space:nowrap}'
-    + '.dt td{padding:3.5px 5px;border-bottom:1px solid #f0eee8;text-align:right;white-space:nowrap}'
+    + '.dt{width:100%;border-collapse:collapse;font-size:8px;table-layout:auto}'
+    + '.dt th{font-size:7px;letter-spacing:.05em;text-transform:uppercase;color:#8a827a;'
+    + 'padding:3px 3px;border-bottom:1px solid #1a1612;white-space:nowrap}'
+    + '.dt td{padding:3px 3px;border-bottom:1px solid #f0eee8;text-align:right;white-space:nowrap}'
     + '.dt tfoot td{font-weight:500;border-top:1px solid #1a1612;border-bottom:none;background:#faf8f4}'
     + '.neg{color:' + RED + '}'
     + '</style></head><body>';
@@ -736,17 +741,26 @@ function remInformePDF() {
           + '<div style="font-size:9px;color:#8a827a;margin-top:3px">comprando y alimentando a precios de hoy</div></div>')
     + '</div>';
 
-  // 6 · Detalle por tropa — v15.73. Vista resumida (por cabeza); las columnas
-  // de costo NO van al PDF: sus totales ya están en las tarjetas de arriba.
+  // 6 · Detalle por tropa — v15.73.1. Las 13 columnas, como antes de v15.73:
+  // el % MS y los montos de compra / alimento / estr+san son lo que Nicolás
+  // mira en el informe. La torta ya no va al costado de la tabla — con los
+  // costos puestos, las 13 columnas necesitan el ancho completo del A4 — así
+  // que sube a la derecha del título de la sección.
   var filasPDF = r.filas || [];
   if (filasPDF.length) {
     var imgCat = '';
     try { imgCat = remTortaPNG(r, 340); } catch (e) { imgCat = ''; }
     h += '<div class="sec">Detalle por tropa</div>';
-    h += '<div style="display:flex;align-items:flex-start;gap:12px">';
-    h += '<div style="flex:1;min-width:0"><table class="dt"><thead><tr>'
+    if (imgCat) {
+      h += '<div style="text-align:right;margin:-2px 0 4px">'
+        + '<img src="' + imgCat + '" alt="Categorías de ingreso" style="width:150px;height:150px;vertical-align:middle">'
+        + '<div style="font-size:8px;color:#8a827a;margin-top:-4px">Categorías de ingreso · '
+        + (_remCatModo === 'kg' ? 'reparto por kg de salida' : 'reparto por cabezas') + '</div></div>';
+    }
+    h += '<table class="dt"><thead><tr>'
       + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa'])
-        .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra'])
+        .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra',
+                 'Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'])
         .map(function (t, i) { return '<th style="text-align:' + (i < (esGrupo ? 3 : 2) ? 'left' : 'right') + '">' + t + '</th>'; }).join('')
       + '</tr></thead><tbody>';
     filasPDF.forEach(function (f) {
@@ -759,7 +773,12 @@ function remInformePDF() {
         + '<td>' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
         + '<td>' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
         + '<td>' + f.dias + '</td>'
-        + '<td>' + _remN(f.precio_kg) + '</td></tr>';
+        + '<td>' + _remN(f.precio_kg) + '</td>'
+        + '<td>' + _remM(f.costo_compra) + '</td>'
+        + '<td>' + _remN(f.kg_ms) + '</td>'
+        + '<td>' + _remN(f.pct_ms, 2) + (f.acotado ? ' lim' : '') + '</td>'
+        + '<td>' + _remM(f.alimento) + '</td>'
+        + '<td>' + _remM(f.estructura + f.sanidad) + '</td></tr>';
     });
     h += '</tbody><tfoot><tr>'
       + (esGrupo ? '<td></td>' : '')
@@ -769,19 +788,16 @@ function remInformePDF() {
       + '<td>' + _remN(I.kg_prom_salida) + '</td>'
       + '<td>' + _remN(I.estadia_prom) + '</td>'
       + '<td>' + _remN(I.precio_prom_pagado) + '</td>'
-      + '</tr></tfoot></table></div>';
-    if (imgCat) {
-      h += '<div style="flex:none;width:160px;text-align:center">'
-        + '<div class="rl" style="margin-bottom:3px">Categorías de ingreso</div>'
-        + '<img src="' + imgCat + '" alt="Categorías de ingreso" style="width:160px;height:160px">'
-        + '<div style="font-size:8px;color:#8a827a">'
-        + (_remCatModo === 'kg' ? 'reparto por kg de salida' : 'reparto por cabezas') + '</div></div>';
-    }
-    h += '</div>';
+      + '<td>' + _remM(C.compra) + '</td>'
+      + '<td>' + _remN(r.kg_ms) + '</td>'
+      + '<td>' + _remN(I.pct_ms, 2) + '</td>'
+      + '<td>' + _remM(C.alimento) + '</td>'
+      + '<td>' + _remM(C.estructura + C.sanidad) + '</td>'
+      + '</tr></tfoot></table>';
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.73 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.73.1 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -883,7 +899,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.73',
+    version_portal: 'v15.73.1',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -1164,13 +1180,17 @@ var REM_STYLES = {
 /* ════════════════════════════════════════════════════════════
    v15.73 · DETALLE POR TROPA RESUMIDO + TORTA DE CATEGORÍAS
    ────────────────────────────────────────────────────────────
-   La tabla arranca en vista por cabeza (kg ÷ cabezas) con las columnas de
-   costo escondidas detrás de "ver costos". El toggle NO cambia lo que la
-   tabla calcula: las cinco columnas siguen ahí, sólo dejan de dibujarse.
+   La tabla se lee por cabeza (kg ÷ cabezas). Las columnas de costo se ven por
+   defecto (v15.73.1) y el toggle las esconde; el toggle NO cambia lo que la
+   tabla calcula, sólo si esas cinco columnas se dibujan o no.
    ════════════════════════════════════════════════════════════ */
-var REM_LS_DET_COSTOS = 'pegsa_rem_detalle_costos';
+// v15.73.1 · clave NUEVA a propósito: la de v15.73 tiene guardado el default
+// viejo (cerrado) en los navegadores que ya vieron esa versión, y ese valor hay
+// que ignorarlo una vez. Con `!== '0'` el default es ABIERTO y sólo un "ocultar
+// costos" explícito lo cierra.
+var REM_LS_DET_COSTOS = 'pegsa_rem_detalle_costos2';
 var _remDetCostos = (function () {
-  try { return localStorage.getItem(REM_LS_DET_COSTOS) === '1'; } catch (e) { return false; }
+  try { return localStorage.getItem(REM_LS_DET_COSTOS) !== '0'; } catch (e) { return true; }
 })();
 var _remCatModo  = 'cab';    // 'cab' | 'kg' — reparto de la torta. No persiste.
 var _remCatChart = null;     // instancia viva de Chart.js, para no duplicarla
