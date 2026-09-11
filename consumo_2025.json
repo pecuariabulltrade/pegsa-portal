@@ -1,53 +1,61 @@
 {
   "meta": {
-    "generado": "2026-09-10T23:05:57.189899",
+    "generado": "2026-09-11T00:40:20.380231",
     "periodo": "2025",
     "fuente": "mixer_dropbox",
     "mixer_db": "C:\\Users\\USER\\Dropbox\\Base Nutrir FL\\Base FL Mobilia.mdb",
     "tabla": "Lectura_Viajes + Lectura_Carga",
-    "hoy_parcial": "2026-09-10",
+    "hoy_parcial": "2026-09-11",
     "ultimo_completo": "2026-09-09",
     "ventana_3d": [
       "2026-09-07",
       "2026-09-08",
       "2026-09-09"
     ],
-    "dias_descartados": [],
+    "dias_descartados": [
+      {
+        "fecha": "2026-09-10",
+        "kg": 39230.0,
+        "avg_prev": 76120.0,
+        "ratio": 0.515,
+        "razon": "caida 48% vs prom 3 dias previos"
+      }
+    ],
     "umbral_caida": 0.85
   },
   "anual": {
-    "total_kg": 39674046.0,
-    "total_kg_ms": 26906680.5,
+    "total_kg": 39597431.0,
+    "total_kg_ms": 26855456.0,
     "por_insumo": [
       {
         "desc": "MAIZ GRANO",
-        "kg": 12281713.0,
+        "kg": 12259288.0,
         "ms_pct": 86.0,
-        "kg_ms": 10562273.2
+        "kg_ms": 10542987.7
       },
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12189616.0,
+        "kg": 12162826.0,
         "ms_pct": 51.0,
-        "kg_ms": 6216704.2
+        "kg_ms": 6203041.3
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9359037.0,
+        "kg": 9342072.0,
         "ms_pct": 47.0,
-        "kg_ms": 4398747.4
+        "kg_ms": 4390773.8
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4235466.0,
+        "kg": 4225836.0,
         "ms_pct": 99.0,
-        "kg_ms": 4193111.3
+        "kg_ms": 4183577.6
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1608214.0,
+        "kg": 1607409.0,
         "ms_pct": 95.5,
-        "kg_ms": 1535844.4
+        "kg_ms": 1535075.6
       }
     ]
   },
@@ -535,38 +543,38 @@
     ]
   },
   "ult_365": {
-    "desde": "2025-09-10",
-    "hasta": "2026-09-09",
-    "dias_con_registro": 362,
-    "dias_descartados": 3,
-    "kg_total": 39499946.0,
-    "kg_dia": 109115.9,
+    "desde": "2025-09-11",
+    "hasta": "2026-09-10",
+    "dias_con_registro": 361,
+    "dias_descartados": 4,
+    "kg_total": 39384101.0,
+    "kg_dia": 109097.2,
     "nota": "kg_dia de cada insumo divide por los dias con registro del TOTAL: un dia sin ese insumo cuenta 0 (consumo real, no dato faltante). Se excluyen los dias que descarta por_mes.",
     "por_insumo": [
       {
         "desc": "MAIZ GRANO",
-        "kg": 12229078.0,
-        "kg_dia": 33782.0
+        "kg": 12192383.0,
+        "kg_dia": 33773.9
       },
       {
         "desc": "GLUTEN DE MAIZ",
-        "kg": 12133606.0,
-        "kg_dia": 33518.2
+        "kg": 12097326.0,
+        "kg_dia": 33510.6
       },
       {
         "desc": "SILO DE MAIZ",
-        "kg": 9320167.0,
-        "kg_dia": 25746.3
+        "kg": 9295107.0,
+        "kg_dia": 25748.2
       },
       {
         "desc": "HARINA GERMEN",
-        "kg": 4216751.0,
-        "kg_dia": 11648.5
+        "kg": 4203526.0,
+        "kg_dia": 11644.1
       },
       {
         "desc": "NUCLEO CONC 5% LDB",
-        "kg": 1600344.0,
-        "kg_dia": 4420.8
+        "kg": 1595759.0,
+        "kg_dia": 4420.4
       }
     ]
   },
@@ -1069,7 +1077,9 @@
         "kg_ms_dia": 53371.2,
         "dias_calendario": 30,
         "dias_con_registro": 9,
-        "dias_descartados": [],
+        "dias_descartados": [
+          "2026-09-10"
+        ],
         "parcial": true
       }
     }
