@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.73.1 (2026-09-10)
+/* modulo-09-remitos.js — Resultado por Remito · v15.73.2 (2026-09-10)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -27,6 +27,11 @@
    compra, alimento y estructura+sanidad eran justamente lo que Nicolás miraba,
    así que el toggle nace abierto ("ocultar costos") y el PDF vuelve a llevar
    las 13 columnas. Lo de v15.73 que sí quedó: los kg por cabeza y la torta.
+
+   v15.73.2 · En el informe la torta sube al bloque de arriba, a la derecha de
+   las tarjetas de resultado, para verla de un vistazo antes de la tabla. La
+   leyenda ya no va adentro del canvas (a 150 px quedaba a 5 px de letra): el
+   PNG lleva sólo el anillo y la leyenda se arma en HTML a 8,5 px.
 */
 
 var _remData = null;
@@ -652,6 +657,15 @@ function remInformePDF() {
     + '.kc .u{font-size:9px;color:#8a827a}'
     + '.big{background:#1a1612;border-color:#1a1612}.big .l{color:rgba(255,255,255,.5)}'
     + '.big .v{color:#d4a84b}.big .u{color:rgba(255,255,255,.45)}'
+    // v15.73.2 · tarjetas a la izquierda, torta a la derecha. Las tarjetas
+    // pierden un poco de padding para que el bloque no crezca por la torta.
+    + '.re{display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:start}'
+    + '.re .kc{padding:6px 9px}'
+    + '.tc{text-align:center}.tc img{width:140px;height:140px;display:block;margin:0 auto}'
+    + '.tc .st{font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;color:#8a827a;margin-top:2px}'
+    + '.tl{list-style:none;margin:4px 0 0;padding:0;text-align:left;font-size:8.5px;line-height:1.5}'
+    + '.tl li{display:flex;align-items:center;gap:5px;white-space:nowrap}'
+    + '.tl i{display:inline-block;width:8px;height:8px;border-radius:1px;flex:none}'
     + '.repo{background:#faf6ea;border:1px solid ' + GOLD + ';border-radius:2px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:center}'
     + '.rl{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
     + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8.5px;color:#8a827a;line-height:1.55}'
@@ -692,8 +706,14 @@ function remInformePDF() {
   h += _remPuenteSVG(pasos);
   h += '<div style="text-align:center;font-size:9.5px;color:#6b6560;margin-top:-4px">Composición del costo · ' + comp + '</div>';
 
-  // 3 · Resultado económico
+  // 3 · Resultado económico — v15.73.2: dos columnas, tarjetas + torta.
+  // La torta va SIEMPRE que haya filas, con o sin venta cargada; si no hay
+  // filas (o Chart no está) la columna derecha queda vacía y el layout no
+  // cambia.
+  var tortaHTML = '';
+  try { tortaHTML = _remTortaBloquePDF(r); } catch (e) { tortaHTML = ''; }
   h += '<div class="sec">Resultado económico</div>';
+  h += '<div class="re"><div style="display:grid;gap:7px">';
   if (hayVenta) {
     h += '<div class="k" style="grid-template-columns:repeat(4,1fr)">'
       + '<div class="kc"><div class="l">Venta bruta</div><div class="v">' + _remMM(bruto) + '</div><div class="u">' + _remN(kgc) + ' kg × $ ' + _remN(pkg, 2) + '</div></div>'
@@ -718,6 +738,7 @@ function remInformePDF() {
   } else {
     h += '<div class="kc" style="text-align:center;color:#8a827a;padding:14px">Sin venta cargada — el informe muestra el costo y los indicadores.</div>';
   }
+  h += '</div>' + tortaHTML + '</div>';
 
   // 4 · Indicadores
   h += '<div class="sec">Indicadores</div><div class="k" style="grid-template-columns:repeat(4,1fr)">';
@@ -748,20 +769,11 @@ function remInformePDF() {
 
   // 6 · Detalle por tropa — v15.73.1. Las 13 columnas, como antes de v15.73:
   // el % MS y los montos de compra / alimento / estr+san son lo que Nicolás
-  // mira en el informe. La torta ya no va al costado de la tabla — con los
-  // costos puestos, las 13 columnas necesitan el ancho completo del A4 — así
-  // que sube a la derecha del título de la sección.
+  // mira en el informe. La torta ya no va acá (v15.73.2: está arriba, junto
+  // a las tarjetas) — la tabla usa el ancho completo del A4.
   var filasPDF = r.filas || [];
   if (filasPDF.length) {
-    var imgCat = '';
-    try { imgCat = remTortaPNG(r, 340); } catch (e) { imgCat = ''; }
     h += '<div class="sec">Detalle por tropa</div>';
-    if (imgCat) {
-      h += '<div style="text-align:right;margin:-2px 0 4px">'
-        + '<img src="' + imgCat + '" alt="Categorías de ingreso" style="width:150px;height:150px;vertical-align:middle">'
-        + '<div style="font-size:8px;color:#8a827a;margin-top:-4px">Categorías de ingreso · '
-        + (_remCatModo === 'kg' ? 'reparto por kg de salida' : 'reparto por cabezas') + '</div></div>';
-    }
     h += '<table class="dt"><thead><tr>'
       + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa'])
         .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra',
@@ -802,7 +814,7 @@ function remInformePDF() {
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.73.1 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.73.2 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -904,7 +916,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.73.1',
+    version_portal: 'v15.73.2',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -1315,10 +1327,12 @@ function remRenderTortaCat(r) {
 
 /* PNG de la torta para el informe PDF.
 
-   Se dibuja en un canvas propio y CUADRADO con la leyenda abajo, en vez de
-   fotografiar el de pantalla: ese es apaisado (leyenda a la derecha) y a los
-   ~160 px que ocupa en el informe la leyenda queda ilegible. Mismos datos,
-   misma paleta, mismo modo (cabezas / kg) que el que está a la vista.
+   Se dibuja en un canvas propio y CUADRADO, en vez de fotografiar el de
+   pantalla: ese es apaisado (leyenda a la derecha) y a los ~150 px que ocupa
+   en el informe la leyenda queda ilegible. Mismos datos, misma paleta, mismo
+   modo (cabezas / kg) que el que está a la vista.
+   v15.73.2 · el canvas lleva SÓLO el anillo: la leyenda la arma
+   _remTortaBloquePDF en HTML, a un tamaño de letra que se lee en papel.
    Si Chart no está o el remito no tiene filas, devuelve '' y el informe se
    arma sin la imagen. */
 function remTortaPNG(r, px) {
@@ -1329,6 +1343,7 @@ function remTortaPNG(r, px) {
   var cv = document.createElement('canvas');
   cv.width = px; cv.height = px;
   var cfg = _remCatConfig(G, _remCatModo === 'kg', 'bottom', 12);
+  cfg.options.plugins.legend.display = false;
   // fondo blanco: el PNG de Chart.js sale transparente y algún visor lo
   // compone sobre oscuro.
   cfg.plugins = [{
@@ -1347,6 +1362,24 @@ function remTortaPNG(r, px) {
   } catch (e) { url = ''; }
   try { if (ch) ch.destroy(); } catch (e) {}
   return url;
+}
+
+/* v15.73.2 · Columna derecha del bloque "Resultado económico" del informe:
+   anillo (PNG) + subtítulo con el modo + leyenda en HTML, una línea por
+   categoría (`Vaca · 24 cab · 62 %`). Con una sola categoría sale igual: anillo
+   lleno y leyenda de una línea. Sin filas devuelve ''. */
+function _remTortaBloquePDF(r) {
+  var img = remTortaPNG(r, 340);
+  if (!img) return '';
+  var G = remPorCategoria(r), esKg = _remCatModo === 'kg';
+  var vals = G.map(function (g) { return esKg ? Math.round(g.kgEgr) : g.cabezas; });
+  var tot  = vals.reduce(function (a, b) { return a + b; }, 0) || 1;
+  return '<div class="tc"><img src="' + img + '" alt="Categorías de ingreso">'
+    + '<div class="st">Categorías de ingreso · ' + (esKg ? 'kg salida' : 'cabezas') + '</div>'
+    + '<ul class="tl">' + G.map(function (g, i) {
+        return '<li><i style="background:' + remCatColor(g.cat, i) + '"></i>'
+          + g.cat + ' · ' + _remN(vals[i]) + (esKg ? ' kg' : ' cab') + ' · ' + _remN(vals[i] / tot * 100) + ' %</li>';
+      }).join('') + '</ul></div>';
 }
 
 function renderRemitos(soloResultado) {
