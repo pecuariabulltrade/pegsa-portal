@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.73.2 (2026-09-10)
+/* modulo-09-remitos.js — Resultado por Remito · v15.74.3 (2026-09-14)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -32,6 +32,12 @@
    las tarjetas de resultado, para verla de un vistazo antes de la tabla. La
    leyenda ya no va adentro del canvas (a 150 px quedaba a 5 px de letra): el
    PNG lleva sólo el anillo y la leyenda se arma en HTML a 8,5 px.
+
+   v15.74.3 · El precio de compra puede venir de una LIQUIDACIÓN cargada en el
+   módulo 12, del Excel de compras, o estar estimado con las compañeras del
+   remito. Cada fila dice de dónde salió (`liq.` / `excel` / `est.`) y aparece
+   el rubro `gastos` de compra, que hasta ahora no existía: es 0 en todo lo que
+   no tenga liquidación, así que los remitos de siempre dan el mismo número.
 */
 
 var _remData = null;
@@ -144,7 +150,7 @@ async function cargarRemitos() {
 function remConsolidar(ids) {
   var R = _remData.remitos, orden = ids.slice().sort();
   var filas = [], sinPrecio = [], acot = {}, compradores = [];
-  var C = { compra: 0, comision: 0, alimento: 0, estructura: 0, sanidad: 0, mortandad: 0, total: 0 };
+  var C = { compra: 0, comision: 0, gastos: 0, alimento: 0, estructura: 0, sanidad: 0, mortandad: 0, total: 0 };
   var RP = { compra: 0, comision: 0, alimento: 0, mortandad: 0, total: 0 };
   var cab = 0, kgi = 0, kge = 0, kgms = 0, diasAnimal = 0, pvDen = 0, kgiConPrecio = 0;
   var repoPrecioNum = 0, repoPrecioDen = 0, fuentes = {}, mesMs = null, precioMs = null;
@@ -155,7 +161,9 @@ function remConsolidar(ids) {
 
   orden.forEach(function (id) {
     var r = R[id]; if (!r) return;
-    ['compra', 'comision', 'alimento', 'estructura', 'sanidad', 'mortandad', 'total'].forEach(function (k) {
+    // v15.74.3: 'gastos' entra acá. En los remitos sin liquidación viene 0 (o
+    // ni viene, y `|| 0` lo resuelve), así que el consolidado no se mueve.
+    ['compra', 'comision', 'gastos', 'alimento', 'estructura', 'sanidad', 'mortandad', 'total'].forEach(function (k) {
       C[k] += r.costos[k] || 0;
     });
     ['compra', 'comision', 'alimento', 'mortandad', 'total'].forEach(function (k) {
@@ -210,7 +218,7 @@ function remConsolidar(ids) {
     fecha_egreso: fechas.sort().slice(-1)[0] || null,
     comprador: compradores.join(' · ') || null,
     costos: {
-      compra: C.compra, comision: C.comision, alimento: C.alimento,
+      compra: C.compra, comision: C.comision, gastos: C.gastos, alimento: C.alimento,
       estructura: C.estructura, sanidad: C.sanidad, mortandad: C.mortandad,
       total: C.total, por_kg_vendido: kge ? C.total / kge : null
     },
@@ -374,10 +382,12 @@ function remAplicarSC(r, sc) {
   // Los rubros no imputados se toman del pipeline y solo se les suma el delta:
   // recalcularlos desde las filas arrastraría el redondeo del % de comisión.
   var C = {};
-  ['compra', 'comision', 'alimento', 'estructura', 'sanidad', 'mortandad'].forEach(function (k) {
+  // v15.74.3: 'gastos' va en la lista aunque D no lo toque — si no, el override
+  // de los sin caravana lo borraba del total.
+  ['compra', 'comision', 'gastos', 'alimento', 'estructura', 'sanidad', 'mortandad'].forEach(function (k) {
     C[k] = (r.costos[k] || 0) + (D[k] || 0);
   });
-  C.total = C.compra + C.comision + C.alimento + C.estructura + C.sanidad + C.mortandad;
+  C.total = C.compra + C.comision + C.gastos + C.alimento + C.estructura + C.sanidad + C.mortandad;
   C.por_kg_vendido = kge ? C.total / kge : null;
 
   var RP = r.reposicion, rp = RP.precio_kg || 0, rms = RP.precio_kg_ms || 0;
@@ -606,19 +616,19 @@ function remInformePDF() {
 
   var pasos = hayVenta
     ? [{ lbl: 'VENTA NETA', val: neto, tipo: 'total', color: NAVY },
-       { lbl: 'COMPRA + COM', val: C.compra + C.comision, tipo: 'baja', color: GOLD },
+       { lbl: 'COMPRA + COM', val: C.compra + C.comision + (C.gastos || 0), tipo: 'baja', color: GOLD },
        { lbl: 'ALIMENTO', val: C.alimento, tipo: 'baja', color: GREEN },
        { lbl: 'ESTR + SAN', val: C.estructura + C.sanidad, tipo: 'baja', color: BLUE },
        { lbl: 'MORTANDAD', val: C.mortandad, tipo: 'baja', color: RED },
        { lbl: 'RESULTADO', val: res, tipo: 'final', color: res >= 0 ? GOLD : RED }]
     : [{ lbl: 'COSTO TOTAL', val: C.total, tipo: 'total', color: '#1a1612' },
-       { lbl: 'COMPRA + COM', val: C.compra + C.comision, tipo: 'baja', color: GOLD },
+       { lbl: 'COMPRA + COM', val: C.compra + C.comision + (C.gastos || 0), tipo: 'baja', color: GOLD },
        { lbl: 'ALIMENTO', val: C.alimento, tipo: 'baja', color: GREEN },
        { lbl: 'ESTR + SAN', val: C.estructura + C.sanidad, tipo: 'baja', color: BLUE },
        { lbl: 'MORTANDAD', val: C.mortandad, tipo: 'baja', color: RED }];
 
   var w = function (x) { return C.total > 0 ? x / C.total * 100 : 0; };
-  var comp = 'compra ' + _remN(w(C.compra + C.comision), 1) + ' % · alimento ' + _remN(w(C.alimento), 1)
+  var comp = 'compra ' + _remN(w(C.compra + C.comision + (C.gastos || 0)), 1) + ' % · alimento ' + _remN(w(C.alimento), 1)
     + ' % · estr+san ' + _remN(w(C.estructura + C.sanidad), 1) + ' % · mortandad ' + _remN(w(C.mortandad), 1) + ' %';
 
   var IND = [
@@ -792,7 +802,7 @@ function remInformePDF() {
         + '<td>' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
         + '<td>' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
         + '<td>' + f.dias + '</td>'
-        + '<td>' + _remN(f.precio_kg) + '</td>'
+        + '<td>' + _remN(f.precio_kg) + ' ' + remFuenteInfo(f).lbl + '</td>'
         + '<td>' + _remM(f.costo_compra) + '</td>'
         + '<td>' + _remN(f.kg_ms) + '</td>'
         + '<td>' + _remN(f.pct_ms, 2) + (f.acotado ? ' lim' : '') + '</td>'
@@ -816,13 +826,23 @@ function remInformePDF() {
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.73.2 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.3 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
                     + (RPc.manualMs ? ' y MS $ ' + _remN(RPc.precioMs, 2) : '') : '')
     + (V.comVenta ? ' · comisión de venta ' + _remN(V.comPct, 1) + ' %' : '')
     + (nSin ? ' · ' + nSin + ' tropa(s) sin precio estimadas al promedio de las compañeras' : '')
+    // v15.74.3 · cuántas filas costean con liquidación y cuántas con el Excel
+    + (function () {
+        var n = {liquidacion: 0, excel: 0, estimado: 0};
+        (r.filas || []).forEach(function (f) {
+          n[f.fuente_precio || (f.estimado ? 'estimado' : 'excel')]++;
+        });
+        return ' · precios: ' + n.liquidacion + ' de liquidación · ' + n.excel
+             + ' del Excel · ' + n.estimado + ' estimados'
+             + ((C.gastos || 0) ? ' · gastos de compra ' + _remM(C.gastos) : '');
+      })()
     // v15.68: el origen de los sin caravana es un supuesto, y va dicho.
     + '<br>' + _remSCLineaPDF(r)
     + '</div></body></html>';
@@ -893,8 +913,15 @@ function remSnapshot(r) {
   var v = r.verificacion || {};
 
   var filas = (r.filas || []).map(function (f) {
-    var com = (f.costo_compra || 0) * (f.comision_pct || 0) / 100;
-    var costo = (f.costo_compra || 0) + com + (f.alimento || 0)
+    // v15.74.3: si el pipeline manda el monto, se usa. Recalcularlo con
+    // costo_compra x % daba de menos en las filas con liquidación, donde la
+    // base de la comisión es el importe s/gastos y no el costo_compra.
+    var com = (f.comision != null) ? f.comision
+            : (f.costo_compra || 0) * (f.comision_pct || 0) / 100;
+    // v15.74.3: los gastos de compra son parte del costo de la fila. Valen 0 en
+    // todo lo que no venga de una liquidación, así que los snapshots viejos y
+    // los nuevos de tropas sin liquidar dan el mismo número.
+    var costo = (f.costo_compra || 0) + com + (f.gastos_compra || 0) + (f.alimento || 0)
               + (f.estructura || 0) + (f.sanidad || 0) + (f.mortandad || 0);
     var vp = kge ? V.neto * (f.kg_egreso || 0) / kge : 0;
     return {
@@ -905,6 +932,14 @@ function remSnapshot(r) {
       // v15.71.3: la necesita el tramo con base "ingreso" del modulo 11
       fecha_ingreso: f.fecha_ingreso || null,
       precio_kg: f.precio_kg, estimado: !!f.estimado,
+      // v15.74.3 · de dónde salió el precio, y lo efectivamente pagado
+      fuente_precio: f.fuente_precio || (f.estimado ? 'estimado' : 'excel'),
+      liq_id: f.liq_id || null,
+      precio_kg_cg: f.precio_kg_cg != null ? f.precio_kg_cg : null,
+      precio_cab_cg: f.precio_cab_cg != null ? f.precio_cab_cg : null,
+      gastos_compra: f.gastos_compra || 0,
+      costo_compra_cg: f.costo_compra_cg != null ? f.costo_compra_cg : null,
+      desbaste_pct: f.desbaste_pct != null ? f.desbaste_pct : null,
       costo_compra: f.costo_compra, comision: com,
       alimento: f.alimento, estructura: f.estructura,
       sanidad: f.sanidad, mortandad: f.mortandad,
@@ -918,7 +953,7 @@ function remSnapshot(r) {
   return {
     id: ids.join('-') + '_' + (r.fecha_egreso || ''),
     generado: new Date().toISOString(),
-    version_portal: 'v15.73.2',
+    version_portal: 'v15.74.3',
     remitos: ids,
     es_grupo: !!r.esGrupo,
     fecha_egreso: r.fecha_egreso,
@@ -1384,6 +1419,30 @@ function _remTortaBloquePDF(r) {
       }).join('') + '</ul></div>';
 }
 
+/* v15.74.3 · De dónde salió el precio de compra de una fila.
+   'liq.'   — hay una liquidación cargada en el módulo 12: es lo que se pagó.
+   'excel'  — del Excel de compras (compras de hacienda.xlsx), como siempre.
+   'est.'   — no hay precio para esa tropa: se estimó con las compañeras del
+              mismo remito. Es el chip 'est' que ya existía.
+   Se devuelve la etiqueta corta y el texto largo para el tooltip. */
+function remFuenteInfo(f) {
+  var fu = f.fuente_precio || (f.estimado ? 'estimado' : 'excel');
+  if (fu === 'liquidacion') {
+    return {lbl: 'liq.', color: '#27613d', bg: 'rgba(39,97,61,.12)',
+            det: 'Precio de la liquidación ' + (f.liq_id || '—') + '.'
+                 + (f.precio_kg_cg ? ' Con gastos: $ ' + _remN(f.precio_kg_cg) + '/kg.' : '')
+                 + (f.desbaste_pct != null ? ' Desbaste ' + _remN(f.desbaste_pct, 1) + ' %.' : '')};
+  }
+  if (fu === 'estimado') {
+    return {lbl: 'est.', color: '#7a5c14', bg: 'rgba(184,146,42,.15)',
+            det: 'Sin precio para esta tropa: se estimó con el promedio ponderado '
+                 + 'de las compañeras del mismo remito.'};
+  }
+  return {lbl: 'excel', color: '#2d6a8a', bg: 'rgba(45,106,138,.12)',
+          det: 'Precio del Excel de compras (compras de hacienda.xlsx). '
+               + 'Cuando se cargue la liquidación en el módulo 12, manda esa.'};
+}
+
 function renderRemitos(soloResultado) {
   var el = document.getElementById('remContent');
   if (!el || !_remData) return;
@@ -1665,8 +1724,15 @@ function renderRemitos(soloResultado) {
   }
 
   // ── KPIs de costo ──
+  // v15.74.3 · los gastos de compra van como subtítulo gris de la tarjeta de
+  // compra, no como tarjeta propia: son parte de lo que costó comprar, y en
+  // los remitos sin liquidación valen 0 y la línea no se dibuja.
+  var _gas = C.gastos || 0;
   h += '<div style="' + GRID + '">'
-    + card('Compra + comisión', _remM(C.compra + C.comision), '$ ' + _remN((C.compra + C.comision) / r.kg_ingreso) + '/kg entrada')
+    + card('Compra + comisión', _remM(C.compra + C.comision),
+           '$ ' + _remN((C.compra + C.comision) / r.kg_ingreso) + '/kg entrada'
+           + (_gas ? '<br><span style="color:rgba(26,22,18,.4)">+ gastos de compra '
+                     + _remM(_gas) + ' · $ ' + _remN(_gas / r.kg_ingreso) + '/kg</span>' : ''))
     + card('Alimento', _remM(C.alimento), _remN(C.alimento / r.kg_ms) + ' $/kg MS prom')
     + card('Estructura + sanidad', _remM(C.estructura + C.sanidad), '$/día animal + ingreso')
     + card('Mortandad', _remM(C.mortandad), 'tasa portal × costo compra')
@@ -1676,7 +1742,7 @@ function renderRemitos(soloResultado) {
   // ── Barra de composición ──
   // Los segmentos chicos (estructura, mortandad) no llevan etiqueta adentro:
   // a 2-3 % del ancho el texto se pisa con el del vecino. Van en la leyenda.
-  var SEG = [['compra', C.compra + C.comision, '#b8922a'], ['alimento', C.alimento, '#27613d'],
+  var SEG = [['compra', C.compra + C.comision + (C.gastos || 0), '#b8922a'], ['alimento', C.alimento, '#27613d'],
              ['estr+san', C.estructura + C.sanidad, '#2d6a8a'], ['mortandad', C.mortandad, '#c0392b']];
   h += '<div style="display:flex;height:26px;border-radius:2px;overflow:hidden;margin:8px 0 4px;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
     + SEG.map(function (s) {
@@ -1798,6 +1864,13 @@ function renderRemitos(soloResultado) {
       + '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle;'
       + 'margin-right:5px;background:' + remCatColor(k, catIdx[k]) + '"></span>' + k + '</span>';
   };
+  // v15.74.3 · chip chico con el origen del precio, al lado del $/kg
+  var fuChip = function (f) {
+    var I = remFuenteInfo(f);
+    return '<span title="' + I.det + '" style="display:inline-block;font-size:9px;letter-spacing:.06em;'
+      + 'text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-left:5px;cursor:help;'
+      + 'background:' + I.bg + ';color:' + I.color + '">' + I.lbl + '</span>';
+  };
   var COLS_COSTO = ['Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'];
   var nIzq = esGrupo ? 3 : 2;   // remito · tropa · cat van alineadas a la izquierda
   h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
@@ -1853,7 +1926,7 @@ function renderRemitos(soloResultado) {
       + '<td style="' + td + '" title="' + _remN(f.kg_ingreso) + ' kg de ingreso en la fila">' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
       + '<td style="' + td + '" title="' + _remN(f.kg_egreso) + ' kg de salida en la fila">' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
       + '<td style="' + td + '">' + f.dias + '</td>'
-      + '<td style="' + td + '">' + _remN(f.precio_kg) + '</td>'
+      + '<td style="' + td + '">' + _remN(f.precio_kg) + fuChip(f) + '</td>'
       + (_remDetCostos
           ? '<td style="' + td + '">' + _remM(f.costo_compra) + '</td>'
             + '<td style="' + td + '">' + _remN(f.kg_ms) + '</td>'

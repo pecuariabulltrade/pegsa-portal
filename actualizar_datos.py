@@ -7885,6 +7885,133 @@ def generar_compras_liquidaciones(carpeta_out, log=None):
     return salida
 
 
+# ── v15.74.3 · Las liquidaciones mandan sobre el Excel ───────────
+# `precios_compra_real.json` mantiene EXACTAMENTE la forma de siempre para no
+# tocar el frontend del módulo 07; lo que cambia es de dónde sale cada precio.
+# Orden de precedencia por tropa × categoría:
+#   1. liquidación cargada  → fuente "liquidacion"  (lo que se pagó de verdad)
+#   2. Excel de compras     → fuente "excel"        (lo de siempre)
+#   3. nada                 → el módulo la estima con las compañeras del remito
+# Las claves nuevas (gastos, precio_kg_cg, precio_cab_cg, liq_id, …) se AGREGAN:
+# un consumidor viejo que sólo mira `precio_kg` sigue funcionando igual.
+
+def _pcr_merge_liquidaciones(salida, carpeta_out, log):
+    """Pisa `por_tropa` y `por_categoria_mes` con lo liquidado. Muta y devuelve
+    `salida`. Si no hay liquidaciones no cambia nada."""
+    try:
+        p = Path(carpeta_out) / "compras_liquidaciones.json"
+        if not p.exists():
+            salida["meta"]["fuente"] = "excel"
+            return salida
+        CL = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        log.warning(f"  ⚠ compras: no pude leer compras_liquidaciones.json ({e}); sigo con el Excel")
+        salida["meta"]["fuente"] = "excel"
+        return salida
+
+    ptc = CL.get("por_tropa_cat") or {}
+    if not ptc:
+        salida["meta"]["fuente"] = "excel"
+        return salida
+
+    por_tropa = salida.setdefault("por_tropa", {})
+    n_liq = n_nuevas = 0
+
+    for k, cats in ptc.items():
+        t = por_tropa.get(k)
+        if t is None:
+            # tropa que el Excel no tiene: entra al índice igual, con lo liquidado
+            t = por_tropa[k] = {"tropa": k, "precio_kg": None, "kg": 0.0, "cabezas": 0,
+                                "comision": None, "filas": 0, "por_categoria": {}}
+            n_nuevas += 1
+        pc = t.setdefault("por_categoria", {})
+        for cat, L in cats.items():
+            imp = L.get("importe") or 0.0
+            # fracciones equivalentes sobre el importe s/gastos — es lo que el
+            # módulo 07 espera en `comision` (una fracción, no un monto)
+            com_fr = ((L.get("comision_cat") or 0.0) / imp) if imp else None
+            gas_fr = ((L.get("gastos_cat") or 0.0) / imp) if imp else None
+            pc[cat] = {
+                "precio_kg":      round(L["precio_kg"], 2) if L.get("precio_kg") is not None else None,
+                "precio_kg_pond": round(L["precio_kg"], 2) if L.get("precio_kg") is not None else None,
+                "precio_kg_cg":   round(L["precio_kg_cg"], 2) if L.get("precio_kg_cg") is not None else None,
+                "precio_cab_cg":  round(L["precio_cab_cg"], 2) if L.get("precio_cab_cg") is not None else None,
+                "comision":       round(com_fr, 6) if com_fr is not None else None,
+                "gastos":         round(gas_fr, 6) if gas_fr is not None else None,
+                "kg":             round(L.get("kg_liq") or 0.0, 1),
+                "kg_liq":         round(L.get("kg_liq") or 0.0, 1),
+                "cab_liq":        L.get("cabezas_liq"),
+                "desbaste_pct":   (round(L["desbaste_pct"], 2)
+                                   if L.get("desbaste_pct") is not None else None),
+                "filas":          1, "multiprecio": False,
+                "fuente":         "liquidacion", "liq_id": L.get("liq_id"),
+            }
+            n_liq += 1
+
+    # el precio de la tropa (sin abrir por categoría) se recalcula ponderado
+    for k, t in por_tropa.items():
+        num = den = 0.0
+        for cat, c in (t.get("por_categoria") or {}).items():
+            if c.get("fuente") != "liquidacion":
+                continue
+            kg = c.get("kg") or 0.0
+            if c.get("precio_kg") and kg:
+                num += c["precio_kg"] * kg
+                den += kg
+        if den:
+            t["precio_kg"] = round(num / den, 2)
+            t["fuente"] = "liquidacion"
+        else:
+            t.setdefault("fuente", "excel")
+        for cat, c in (t.get("por_categoria") or {}).items():
+            c.setdefault("fuente", "excel")
+
+    # ── precio de reposición: mes × categoría desde lo liquidado ──
+    # El Excel queda SÓLO para los meses que no tienen ninguna liquidación: si
+    # un mes tiene aunque sea una, ese mes se arma con liquidaciones (mezclar
+    # las dos fuentes en el mismo promedio da un número que no es de ninguna).
+    acc = {}
+    for o in (CL.get("liquidaciones") or []):
+        mes = str(o.get("fecha") or "")[:7]
+        if not mes:
+            continue
+        for c in (o.get("categorias") or []):
+            cat, kg = c.get("categoria"), (c.get("kg_liq") or 0.0)
+            if not cat or not kg or c.get("precio_kg") is None:
+                continue
+            a = acc.setdefault(cat, {}).setdefault(mes, {"kg": 0.0, "plata": 0.0, "cabezas": 0})
+            a["kg"] += kg
+            a["plata"] += c["precio_kg"] * kg
+            a["cabezas"] += c.get("cabezas_liq") or 0
+
+    cm = salida.setdefault("por_categoria_mes", {})
+    n_mes = 0
+    for cat, meses in acc.items():
+        dst = cm.setdefault(cat, {})
+        for mes, a in meses.items():
+            if not a["kg"]:
+                continue
+            dst[mes] = {"precio_kg": round(a["plata"] / a["kg"], 2),
+                        "kg": round(a["kg"], 1), "cabezas": a["cabezas"],
+                        "fuente": "liquidacion"}
+            n_mes += 1
+        salida["por_categoria_mes"][cat] = dict(sorted(dst.items()))
+    for cat, meses in cm.items():
+        for mes, v in meses.items():
+            v.setdefault("fuente", "excel")
+
+    _n_ex = sum(1 for t in por_tropa.values()
+                for c in (t.get("por_categoria") or {}).values()
+                if c.get("fuente") == "excel")
+    salida["meta"]["fuente"] = "liquidaciones+excel" if _n_ex else "liquidaciones"
+    salida["meta"]["por_fuente"] = {"liquidacion": n_liq, "excel": _n_ex}
+    salida["meta"]["tropas_solo_liquidacion"] = n_nuevas
+    salida["meta"]["meses_repo_liquidacion"] = n_mes
+    log.info(f"  ✓ Compras: {n_liq} tropa-categoria desde liquidaciones · {_n_ex} desde el Excel "
+             f"· {n_nuevas} tropas que el Excel no tenia · {n_mes} meses de reposicion liquidados")
+    return salida
+
+
 def procesar_compras_reales(carpeta_out, log=None):
     """v15.57: lee 'compras de hacienda.xlsx' (hoja OK) y genera
     precios_compra_real.json con el precio REALMENTE pagado por categoría,
@@ -8177,6 +8304,14 @@ def procesar_compras_reales(carpeta_out, log=None):
         if grafias_desconocidas:
             salida["meta"]["categorias_desconocidas"] = grafias_desconocidas
 
+        # v15.74.3: lo liquidado pisa al Excel, tropa x categoria.
+        try:
+            salida = _pcr_merge_liquidaciones(salida, carpeta_out, log)
+        except Exception as e:
+            log.warning(f"  ⚠ merge de liquidaciones falló ({e}); queda solo el Excel")
+            import traceback; log.warning(traceback.format_exc())
+            salida["meta"]["fuente"] = "excel"
+
         out_path = Path(carpeta_out) / "precios_compra_real.json"
         with out_path.open("w", encoding="utf-8") as f:
             json.dump(salida, f, ensure_ascii=False, indent=2, default=str)
@@ -8406,6 +8541,17 @@ def _rr_cat(c):
 # versión era demasiado estricto para la realidad de la balanza (remitos
 # cruzados o combinados en una sesión, sesiones de ingreso el mismo día) y
 # dejaba 38 de 60 remitos con el control en rojo.
+# v15.74.3 · Con qué se costea la compra de una fila que TIENE liquidación.
+#   True  → cabezas × $/cab con gastos. Es lo que se pagó por esas cabezas y no
+#           depende del kg que WinCampo tenga cargado, que es el dato más
+#           ruidoso de los dos (el desbaste medido da p10 −3,5 % / p90 +8 % aun
+#           cuando las cabezas de las dos fuentes coinciden).
+#   False → kg de WinCampo × $/kg con gastos, el criterio proporcional de
+#           siempre.
+# Confirmado con Nicolás el 14/09/2026. Las filas sin liquidación (fuente
+# "excel" o estimadas) NO pasan por acá: siguen con el cálculo de siempre.
+RR_COMPRA_POR_CABEZA = True
+
 RR_DM_VENTANA_DIAS  = 30     # se busca la caravana en [fe − 30, fe + 1]
 RR_DM_DIAS_ADELANTE = 1
 RR_DM_DIAS_SALIDA   = 3      # lectura a ±3 días del egreso = la pesada de salida
@@ -9429,37 +9575,60 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
 
         # Precio de cada fila: tropa+categoría; si no está, promedio ponderado
         # de las compañeras del MISMO remito (y se marca estimado).
+        # v15.74.3: devuelve también el bloque de la categoría, que es donde
+        # viven `fuente`, `gastos` y `precio_cab_cg` cuando hay liquidación.
         def _precio(g):
             t = por_tropa.get(_norm_tropa(g["tropa"]))
             if not t:
-                return None, None
+                return None, None, None
             pc = (t.get("por_categoria") or {}).get(g["cat"])
             com = t.get("comision")
             if pc and pc.get("precio_kg"):
-                return pc["precio_kg"], com
+                # la comisión de la liquidación es de la categoría, no de la tropa
+                if pc.get("fuente") == "liquidacion" and pc.get("comision") is not None:
+                    com = pc["comision"]
+                return pc["precio_kg"], com, pc
             # tropa conocida pero sin esa categoría → promedio de la tropa
-            return t.get("precio_kg"), com
+            return t.get("precio_kg"), com, None
 
         kg_con, imp_con = 0.0, 0.0
         for g in filas_g:
-            p, _ = _precio(g)
+            p, _, _ = _precio(g)
             if p:
                 kg_con += g["kgi"]
                 imp_con += g["kgi"] * p
         prom = imp_con / kg_con if kg_con else 0.0
 
-        compra = comision = ali = est = san = mort = 0.0
+        compra = comision = gastos = ali = est = san = mort = 0.0
         cab = kgi = kge = ms_tot = pv_den = a_dias = kg_sin = kgi_mort = 0.0
         n_sin = 0
         clamped, sin_pv = {}, 0
         filas_out, tropas_sin = [], []
 
         for g in sorted(filas_g, key=lambda x: (-x["kgi"],)):
-            p_real, com_tropa = _precio(g)
+            p_real, com_tropa, pc = _precio(g)
             estimado = p_real is None
             p = p_real if p_real else prom
             com_pct = com_tropa if com_tropa is not None else RR_COMISION_DEF
-            c = g["kgi"] * p
+            # v15.74.3 · de dónde sale el precio de esta fila
+            fuente = "estimado" if estimado else ((pc or {}).get("fuente") or "excel")
+            gas_pct = float((pc or {}).get("gastos") or 0.0) if fuente == "liquidacion" else 0.0
+
+            # Importe SIN gastos: es la base de la comisión y de los gastos, que
+            # el módulo muestra como % del precio de lista. No cambia nunca.
+            base_sg = g["kgi"] * p
+            com_fila = base_sg * com_pct
+            gas_fila = base_sg * gas_pct
+
+            if fuente == "liquidacion" and RR_COMPRA_POR_CABEZA and (pc or {}).get("precio_cab_cg"):
+                # Lo que efectivamente se pagó por estas cabezas. Es un monto CON
+                # comisión y gastos adentro, así que la parte "compra" del costo
+                # es el resto: si no, comisión y gastos se contarían dos veces.
+                c_all = g["cab"] * pc["precio_cab_cg"]
+                c = max(c_all - com_fila - gas_fila, 0.0)
+            else:
+                c = base_sg
+            c_all = c + com_fila + gas_fila
             kgp = (g["kgi"] + g["kge"]) / 2
             fcat = RR_FACTOR_VACA if str(g["cat"]).strip().lower() == "vaca" else 1.0
             mpct = (MORT_PCT.get(g["cat"], 0.0)) / 100
@@ -9501,11 +9670,13 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             sa = g["cab"] * PRECIOS[_mk(f"{fi.year:04d}-{fi.month:02d}")]["san"]
 
             compra += c
-            comision += c * com_pct
+            comision += com_fila
+            gastos += gas_fila
             ali += a
             est += s
             san += sa
-            mort += c * mpct
+            # mortandad: tasa del grupo sobre lo que costó la compra, todo incluido
+            mort += c_all * mpct
             kgi_mort += g["kgi"] * mpct
             cab += g["cab"]
             kgi += g["kgi"]
@@ -9549,15 +9720,31 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "dias": dtot,
                 "kg_ingreso": round(g["kgi"], 1), "kg_egreso": round(g["kge"], 1),
                 "precio_kg": round(p, 2), "estimado": estimado,
+                # v15.74.3 · "liquidacion" | "excel" | "estimado"
+                "fuente_precio": fuente,
+                "liq_id": (pc or {}).get("liq_id"),
+                "precio_kg_cg": (pc or {}).get("precio_kg_cg"),
+                "precio_cab_cg": (pc or {}).get("precio_cab_cg"),
+                "desbaste_pct": (pc or {}).get("desbaste_pct"),
                 "comision_pct": round(com_pct * 100, 2),
-                "costo_compra": round(c, 2), "kg_ms": round(ms, 1),
+                # v15.74.3 · la comisión como MONTO. Hasta ahora se podía
+                # recalcular con costo_compra x comision_pct, pero con las
+                # liquidaciones `costo_compra` ya no es la base de la comisión
+                # (la base es el importe s/gastos), así que el monto va explícito.
+                "comision": round(com_fila, 2),
+                "gastos_pct": round(gas_pct * 100, 2),
+                "costo_compra": round(c, 2),
+                # lo efectivamente pagado por la fila: compra + comisión + gastos
+                "costo_compra_cg": round(c_all, 2),
+                "gastos_compra": round(gas_fila, 2),
+                "kg_ms": round(ms, 1),
                 "pct_ms": round(ms / (kgp * dtot) * 100, 2) if dtot and kgp else None,
                 "acotado": lim,
                 "alimento": round(a, 2), "estructura": round(s, 2), "sanidad": round(sa, 2),
-                "mortandad": round(c * mpct, 2),
+                "mortandad": round(c_all * mpct, 2),
             })
 
-        costo = compra + comision + ali + est + san + mort
+        costo = compra + comision + gastos + ali + est + san + mort
         kg_prod = kge - kgi
 
         # Reposición: mismos kg de entrada y mismos kg MS a precio de hoy.
@@ -9582,6 +9769,9 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "comprador": next((f["comprador"] for f in filas_out if f["comprador"]), None),
             "costos": {
                 "compra": round(compra, 2), "comision": round(comision, 2),
+                # v15.74.3: rubro NUEVO. Es 0 en todo lo que no tenga liquidacion
+                # cargada, asi que los remitos de siempre dan el mismo total.
+                "gastos": round(gastos, 2),
                 "alimento": round(ali, 2), "estructura": round(est, 2),
                 "sanidad": round(san, 2), "mortandad": round(mort, 2),
                 "total": round(costo, 2),
@@ -9596,6 +9786,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "conversion_ms": round(ms_tot / kg_prod, 2) if kg_prod > 0 else None,
                 "costo_kg_producido": round((ali + est + san) / kg_prod, 2) if kg_prod > 0 else None,
                 "precio_prom_pagado": round(compra / kgi, 2) if kgi else None,
+                # v15.74.3: lo que realmente se pago por kg de entrada, con la
+                # comision y los gastos adentro. El de arriba queda como esta
+                # para no mover la tarjeta historica.
+                "precio_prom_pagado_cg": round((compra + comision + gastos) / kgi, 2) if kgi else None,
             },
             "reposicion": {
                 "precio_kg": round(rp, 2), "fuente_precio": rp_lbl,
