@@ -4731,6 +4731,23 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["compras_ingresos"] = {"ok": False, "error": str(e)}
 
+    # ── COMPRAS · LIQUIDACIONES (v15.74.1) ─────────────────────
+    # Une la base de liquidaciones con los archivos sueltos del fallback y
+    # publica compras_liquidaciones.json, que es lo que lee el sub-portal
+    # (módulo 12) y, desde la Parte D, el costo de compra del módulo 07.
+    separador("Compras · liquidaciones")
+    try:
+        _cl = generar_compras_liquidaciones(carpeta, log)
+        resumen["modulos"]["compras_liquidaciones"] = {
+            "ok":     _cl is not None,
+            "n":      _cl["meta"]["n_liquidaciones"] if _cl else 0,
+            "fuente": _cl["meta"]["fuente"] if _cl else None,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_compras_liquidaciones falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["compras_liquidaciones"] = {"ok": False, "error": str(e)}
+
     # ── %PV MENSUAL HISTÓRICO (v15.58) ─────────────────────────
     # La serie diaria de pct_pv (eficiencia_historico) solo cubre desde
     # 2026-04-30 y el módulo Resultado por Remito costea animales con hasta
@@ -7612,6 +7629,259 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
         json.dump(limpiar_nan(salida), f, ensure_ascii=False, indent=2, default=str)
     log.info(f"  ✓ Compras/ingresos: {len(tropas)} tropas · {len(lista)} grupos "
              f"({COMPRAS_ING_DIAS} d) · {n_excl} sub-grupos excluidos")
+    return salida
+
+
+# ════════════════════════════════════════════════════════════════
+# v15.74.1 · LIQUIDACIONES DE COMPRA
+# ════════════════════════════════════════════════════════════════
+# `liq_calcular` es el GEMELO EXACTO de liqCalcular() en js/compras-calc.js.
+# La cuenta vive en dos lenguajes porque la hace el sub-portal al cargar y la
+# tiene que poder rehacer el pipeline al reimportar. Si se toca una hay que
+# tocar la otra: las dos corren el mismo ejemplo de control (PEG.IFN.05/09/25
+# Ternera, 18 cab · 197,78 kg/cab · $3.900/kg · 3 % → $4.017 c/gastos).
+#
+# Todo SIN IVA, como el Excel que esto reemplaza.
+
+CL_DIRNAME  = "compras_liquidaciones"   # carpeta de fallback (sin base)
+CL_SB_PAGE  = 500
+
+
+def _liq_num(v):
+    if v is None or v == "":
+        return None
+    try:
+        return float(str(v).replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+
+
+def liq_calcular(op):
+    """Gemelo Python de liqCalcular(). Devuelve {'categorias': [...], 'total': {...}}
+    sin mutar `op`. Ver js/compras-calc.js para el detalle de cada fórmula."""
+    op = op or {}
+    cats = [dict(c) for c in (op.get("categorias") or [])]
+
+    com_modo = "monto" if op.get("comision_modo") == "monto" else "pct"
+    com_val  = _liq_num(op.get("comision_valor")) or 0.0
+    gastos   = _liq_num(op.get("gastos_monto")) or 0.0
+
+    kg_op, imp_op = 0.0, 0.0
+    for c in cats:
+        kg  = _liq_num(c.get("kg_liq"))
+        cab = _liq_num(c.get("cabezas_liq"))
+        val = _liq_num(c.get("precio_valor"))
+        c["kg_liq_cab"] = (kg / cab) if (kg is not None and cab) else None
+
+        if val is None or kg is None:
+            c["precio_kg"], c["importe"] = None, None
+        elif c.get("precio_modo") == "cab":
+            c["precio_kg"] = (val / c["kg_liq_cab"]) if c["kg_liq_cab"] else None
+            c["importe"]   = (c["precio_kg"] * kg) if c["precio_kg"] is not None else None
+        elif c.get("precio_modo") == "total":
+            c["precio_kg"] = (val / kg) if kg else None
+            c["importe"]   = val
+        else:
+            c["precio_kg"] = val
+            c["importe"]   = val * kg
+        if kg:
+            kg_op += kg
+        if c["importe"]:
+            imp_op += c["importe"]
+
+    com_op, gas_op = 0.0, 0.0
+    for c in cats:
+        kg = _liq_num(c.get("kg_liq")) or 0.0
+        c["comision_cat"] = ((c.get("importe") or 0.0) * com_val) if com_modo == "pct" \
+                            else ((com_val * kg / kg_op) if kg_op else 0.0)
+        c["gastos_cat"]   = (gastos * kg / kg_op) if kg_op else 0.0
+        c["importe_cg"]   = (c.get("importe") or 0.0) + c["comision_cat"] + c["gastos_cat"]
+        c["precio_kg_cg"] = (c["importe_cg"] / kg) if kg else None
+        cab = _liq_num(c.get("cabezas_liq"))
+        c["precio_cab_cg"] = (c["importe_cg"] / cab) if cab else None
+
+        kg_wc  = _liq_num(c.get("kg_wc"))
+        cab_wc = _liq_num(c.get("cabezas_wc"))
+        c["kg_wc_cab"] = (kg_wc / cab_wc) if (kg_wc is not None and cab_wc) else None
+        c["desbaste_pct"] = ((c["kg_liq_cab"] - c["kg_wc_cab"]) / c["kg_liq_cab"] * 100) \
+                            if (c["kg_liq_cab"] and c["kg_wc_cab"] is not None) else None
+
+        com_op += c["comision_cat"]
+        gas_op += c["gastos_cat"]
+
+    cab_op    = sum(_liq_num(c.get("cabezas_liq")) or 0 for c in cats)
+    cab_wc_op = sum(_liq_num(c.get("cabezas_wc")) or 0 for c in cats)
+    kg_wc_op  = sum(_liq_num(c.get("kg_wc")) or 0 for c in cats)
+    imp_cg_op = imp_op + com_op + gas_op
+
+    _dn = sum((_liq_num(c.get("kg_liq")) or 0) for c in cats if c.get("desbaste_pct") is not None)
+    _nu = sum(c["desbaste_pct"] * (_liq_num(c.get("kg_liq")) or 0)
+              for c in cats if c.get("desbaste_pct") is not None)
+
+    return {
+        "categorias": cats,
+        "total": {
+            "cabezas_liq": cab_op, "kg_liq": kg_op,
+            "cabezas_wc": cab_wc_op, "kg_wc": kg_wc_op,
+            "importe": imp_op, "comision": com_op, "gastos": gas_op,
+            "importe_cg": imp_cg_op,
+            "precio_kg":     (imp_op / kg_op) if kg_op else None,
+            "precio_kg_cg":  (imp_cg_op / kg_op) if kg_op else None,
+            "precio_cab_cg": (imp_cg_op / cab_op) if cab_op else None,
+            "recargo_pct":   ((imp_cg_op / imp_op - 1) * 100) if imp_op else None,
+            "desbaste_pct":  (_nu / _dn) if _dn else None,
+            "cabezas_dif":   cab_wc_op - cab_op,
+        },
+    }
+
+
+def liq_id(tropas_norm, fecha):
+    """Clave canónica: tropas ordenadas + fecha. Gemelo de liqId() en JS."""
+    t = "-".join(sorted([x for x in (tropas_norm or []) if x]))
+    return f"{t}_{fecha or ''}"
+
+
+def _cl_leer_supabase(log):
+    """Liquidaciones guardadas en Supabase. Mismo patrón que _rv_leer_supabase:
+    pagina, timeout corto, todo dentro de un try — nunca rompe el tick.
+    Devuelve (lista_de_ops, motivo)."""
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    key = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
+    if not url or not key:
+        return [], "sin SUPABASE_URL / SUPABASE_SERVICE_KEY"
+    ops, offset = [], 0
+    try:
+        import requests
+        hdr = {"apikey": key, "Authorization": f"Bearer {key}"}
+        while True:
+            r = requests.get(f"{url}/rest/v1/compras_liq",
+                             params={"select": "raw,estado,updated_at", "limit": CL_SB_PAGE,
+                                     "offset": offset, "order": "id"},
+                             headers=hdr, timeout=30)
+            r.raise_for_status()
+            lote = r.json() or []
+            for row in lote:
+                raw = row.get("raw")
+                if isinstance(raw, dict) and raw.get("id"):
+                    # el estado de la columna manda sobre el del snapshot: una
+                    # anulación se hace con un update de la columna
+                    raw = dict(raw)
+                    raw["estado"] = row.get("estado") or raw.get("estado")
+                    ops.append(raw)
+            if len(lote) < CL_SB_PAGE:
+                break
+            offset += CL_SB_PAGE
+        return ops, None
+    except Exception as e:
+        log.warning(f"  ⚠ Liquidaciones: Supabase no respondió ({e}); sigo con los archivos")
+        return [], str(e)
+
+
+def generar_compras_liquidaciones(carpeta_out, log=None):
+    """v15.74.1 · Consolida las liquidaciones de compra en
+    `compras_liquidaciones.json`, uniendo la base (service key) con los
+    archivos sueltos de `datos/compras_liquidaciones/` y deduplicando por `id`
+    (gana el `generado` más nuevo, venga de donde venga).
+
+    Recalcula los derivados con `liq_calcular` en vez de creerle a los que
+    trae el archivo: si alguna vez el sub-portal guardó con una versión vieja
+    de la fórmula, el JSON publicado sale con la actual.
+    """
+    if log is None:
+        log = logging.getLogger("compras_liq")
+
+    ops, motivo = _cl_leer_supabase(log)
+    n_sb = len(ops)
+
+    n_arch = 0
+    carpeta = Path(carpeta_out) / CL_DIRNAME
+    if carpeta.is_dir():
+        for p in sorted(carpeta.glob("*.json")):
+            try:
+                o = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(o, list):        # export "todo" del sub-portal
+                    for x in o:
+                        if isinstance(x, dict) and x.get("id"):
+                            ops.append(x); n_arch += 1
+                elif isinstance(o, dict) and o.get("id"):
+                    ops.append(o); n_arch += 1
+                else:
+                    log.warning(f"  ⚠ Liquidaciones: {p.name} sin id, se saltea")
+            except Exception as e:
+                log.warning(f"  ⚠ Liquidaciones: {p.name} ilegible ({e})")
+
+    # dedup por id — gana el generado mas nuevo
+    por_id = {}
+    for o in ops:
+        i = o.get("id")
+        if not i:
+            continue
+        prev = por_id.get(i)
+        if prev is None or str(o.get("generado") or "") >= str(prev.get("generado") or ""):
+            por_id[i] = o
+
+    activas, anuladas = [], 0
+    por_tropa_cat = {}
+    for i, o in sorted(por_id.items()):
+        if str(o.get("estado") or "").lower() == "anulada":
+            anuladas += 1
+            continue
+        calc = liq_calcular(o)
+        fila = {
+            "id": i,
+            "fecha": o.get("fecha"),
+            "consignataria": o.get("consignataria"),
+            "proveedor": o.get("proveedor"),
+            "nro_liquidacion": o.get("nro_liquidacion"),
+            "archivo": o.get("archivo"),
+            "comision_modo": o.get("comision_modo"),
+            "comision_valor": o.get("comision_valor"),
+            "gastos_monto": o.get("gastos_monto"),
+            "observaciones": o.get("observaciones"),
+            "estado": o.get("estado") or "cargada",
+            "generado": o.get("generado"),
+            "version_portal": o.get("version_portal"),
+            "categorias": calc["categorias"],
+            "total": calc["total"],
+        }
+        activas.append(fila)
+        for c in calc["categorias"]:
+            k = _norm_tropa(c.get("tropa_norm") or c.get("tropa"))
+            cat = c.get("categoria")
+            if not k or not cat:
+                continue
+            por_tropa_cat.setdefault(k, {})[cat] = {
+                "liq_id": i, "fecha": o.get("fecha"),
+                "cabezas_liq": c.get("cabezas_liq"), "kg_liq": c.get("kg_liq"),
+                "precio_kg": c.get("precio_kg"),
+                "precio_kg_cg": c.get("precio_kg_cg"),
+                "precio_cab_cg": c.get("precio_cab_cg"),
+                "comision_cat": c.get("comision_cat"), "gastos_cat": c.get("gastos_cat"),
+                "importe": c.get("importe"), "importe_cg": c.get("importe_cg"),
+                "desbaste_pct": c.get("desbaste_pct"),
+                "hotelero": c.get("hotelero"),
+            }
+
+    salida = {
+        "meta": {
+            "generado": datetime.now().isoformat(),
+            "fuente": ("supabase+archivos" if (n_sb and n_arch) else
+                       "supabase" if n_sb else "archivos"),
+            "motivo_sin_base": motivo,
+            "n_supabase": n_sb, "n_archivos": n_arch,
+            "n_liquidaciones": len(activas), "n_anuladas": anuladas,
+            "carpeta_fallback": str(carpeta),
+        },
+        "liquidaciones": activas,
+        # índice tropa_norm → categoría → lo liquidado. Es lo que consume
+        # precios_compra_real (Parte D) y el sub-portal para marcar el estado.
+        "por_tropa_cat": por_tropa_cat,
+    }
+    out_path = Path(carpeta_out) / "compras_liquidaciones.json"
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(limpiar_nan(salida), f, ensure_ascii=False, indent=2, default=str)
+    log.info(f"  ✓ Compras/liquidaciones: {len(activas)} activas · {anuladas} anuladas "
+             f"· fuente {salida['meta']['fuente']}")
     return salida
 
 
