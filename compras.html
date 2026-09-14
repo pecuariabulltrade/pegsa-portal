@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compras y Liquidaciones · PEGSA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  /* Mismos tokens que analisis_costos.html — el sub-portal tiene que parecer
+     parte del portal, no una pagina aparte. */
+  :root{
+    --bg:#faf8f4; --surface:#FFF; --surface-2:#f7f5f0;
+    --border:#e3e1da; --border-2:#d8d6ce;
+    --ink:#1a1612; --text-2:#4a453f; --mutedc:#8a827a;
+    --accent:#b8922a; --accent-bright:#d4a84b; --accent-soft:#faf6ea;
+    --verde:#27613d; --verde-soft:#eef5f0;
+    --ambar:#b8922a; --ambar-soft:#fdf6e3;
+    --rojo:#c0392b; --rojo-soft:#fbebe8;
+    --azul:#2d6a8a; --azul-soft:#eef4f7;
+    --navy:#0F1B64;
+    --serif:'Playfair Display',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--sans)}
+  header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);
+    padding:12px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  header h1{font-family:var(--serif);font-weight:700;font-size:20px;margin:0}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.3px;background:var(--accent-soft);color:var(--accent)}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{all:unset;font-family:var(--mono);font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--text-2);padding:5px 12px;border-radius:7px;cursor:pointer}
+  nav button:hover{color:var(--accent);background:var(--accent-soft)}
+  nav button.on{color:#fff;background:var(--accent)}
+  .sync{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--mutedc);display:flex;align-items:center;gap:6px}
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:var(--verde);display:inline-block}
+  .sync .dot.off{background:var(--mutedc)}
+  main{max-width:1400px;margin:22px auto;padding:0 20px 80px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:16px}
+  .card h2{font-family:var(--serif);font-weight:600;font-size:17px;margin:0 0 4px}
+  .muted{color:var(--mutedc);font-size:12.5px}
+  .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mutedc);margin-bottom:3px}
+  select,input[type=date],input[type=text],input[type=number],textarea{
+    height:32px;border:1px solid var(--border-2);border-radius:7px;background:var(--surface);
+    padding:0 8px;font:400 13px var(--sans);color:var(--ink);max-width:100%}
+  textarea{height:auto;padding:6px 8px;font-family:var(--sans)}
+  select:focus,input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent-bright)}
+  .filtros{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  .kpi .v{font-size:24px;font-weight:700;margin:2px 0 1px;font-family:var(--serif)}
+  .kpi .d{font-family:var(--mono);font-size:11.5px;color:var(--mutedc)}
+  .kpi.oscura{background:var(--ink);border-color:var(--ink)}
+  .kpi.oscura .lbl{color:rgba(255,255,255,.5)} .kpi.oscura .v{color:var(--accent-bright)}
+  .kpi.oscura .d{color:rgba(255,255,255,.45)}
+  .tblwrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--border);padding:6px 9px;text-align:left;white-space:nowrap}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--mutedc);font-weight:600;
+    position:sticky;top:0;background:var(--surface);z-index:1}
+  td{color:var(--text-2)}
+  .num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+  tr.tropa{cursor:pointer}
+  tr.tropa:hover td{background:var(--surface-2)}
+  tr.tropa.sel td{background:var(--accent-soft)}
+  tr.cat td{background:var(--surface-2);font-size:12px}
+  tr.cat td:first-child{padding-left:26px}
+  tfoot td{font-weight:600;color:var(--ink);border-top:2px solid var(--border-2);background:var(--surface-2)}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-family:var(--mono);font-size:10px;white-space:nowrap}
+  .tag.ok {background:var(--verde-soft);color:var(--verde)}
+  .tag.par{background:var(--ambar-soft);color:#7a5c12}
+  .tag.pen{background:var(--surface-2);color:var(--mutedc)}
+  .tag.anu{background:var(--rojo-soft);color:var(--rojo)}
+  .tag.exc{background:var(--azul-soft);color:var(--azul)}
+  .chip{display:inline-block;padding:3px 10px;border-radius:999px;font-family:var(--mono);font-size:11px;
+    background:var(--surface-2);border:1px solid var(--border);margin:0 6px 6px 0}
+  .chip b{color:var(--ink)}
+  button.btn{height:32px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;
+    padding:0 14px;font-family:var(--mono);font-size:11.5px;cursor:pointer}
+  button.btn:hover{filter:brightness(1.08)}
+  button.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+  button.btn.sec{background:var(--surface);color:var(--text-2);border-color:var(--border-2)}
+  button.btn.danger{background:var(--surface);color:var(--rojo);border-color:var(--rojo)}
+  .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:7px;overflow:hidden;height:28px}
+  .seg button{all:unset;padding:0 9px;display:inline-flex;align-items:center;font-family:var(--mono);
+    font-size:11px;cursor:pointer;color:var(--text-2)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .aviso{background:var(--ambar-soft);border:1px solid #e8d9ad;color:#7a5c12;border-radius:8px;
+    padding:8px 12px;font-size:12.5px;margin:0 0 14px}
+  .aviso.info{background:var(--azul-soft);border-color:#cfe0e8;color:var(--azul)}
+  .aviso.err{background:var(--rojo-soft);border-color:#e8c4bd;color:var(--rojo)}
+  .cell-warn{background:var(--ambar-soft)!important;color:#7a5c12!important}
+  .cell-bad{background:var(--rojo-soft)!important;color:var(--rojo)!important}
+  input.mini{height:27px;width:92px;font-family:var(--mono);font-size:12px;text-align:right;padding:0 6px}
+  select.mini{height:27px;font-family:var(--mono);font-size:11px;padding:0 4px}
+  #carga{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:12px}
+  #carga .sp{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:g 0.9s linear infinite}
+  @keyframes g{to{transform:rotate(360deg)}}
+  #toast{position:fixed;right:18px;bottom:18px;z-index:200;max-width:420px;display:flex;
+    flex-direction:column;gap:8px}
+  #toast .t{background:var(--ink);color:#fff;border-radius:8px;padding:10px 14px;font-size:12.5px;
+    box-shadow:0 6px 20px rgba(0,0,0,.18);line-height:1.45}
+  #toast .t.ok{background:var(--verde)} #toast .t.err{background:var(--rojo)}
+  .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+  @media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="carga"><div class="sp"></div><div class="muted">Leyendo ingresos y liquidaciones…</div></div>
+<div id="toast"></div>
+
+<header>
+  <a href="index.html" style="color:inherit;text-decoration:none;opacity:.6;font-size:13px;margin-right:4px" title="Volver al portal">&#8592;</a>
+  <h1>Compras y Liquidaciones</h1>
+  <span class="pill">módulo 12</span>
+  <nav>
+    <button class="on" data-tab="ingresos" onclick="tab('ingresos')">Ingresos</button>
+    <button data-tab="nueva" onclick="tab('nueva')">Nueva liquidación</button>
+    <button data-tab="liqs" onclick="tab('liqs')">Liquidaciones</button>
+    <button data-tab="resumen" onclick="tab('resumen')">Resumen</button>
+  </nav>
+  <div class="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">—</span></div>
+</header>
+
+<main>
+
+<!-- ══════════════ 1 · INGRESOS ══════════════ -->
+<section id="tab-ingresos">
+  <div class="card">
+    <div class="filtros">
+      <div><div class="lbl">Propietario</div><select id="f-prop" onchange="rIngresos()"></select></div>
+      <div><div class="lbl">Categoría</div><select id="f-cat" onchange="rIngresos()"></select></div>
+      <div><div class="lbl">Consignataria</div><select id="f-cons" onchange="rIngresos()"></select></div>
+      <div><div class="lbl">Mes</div><select id="f-mes" onchange="rIngresos()"></select></div>
+      <div><div class="lbl">Estado</div><select id="f-est" onchange="rIngresos()">
+        <option value="">todos</option><option value="pendiente">pendiente</option>
+        <option value="parcial">parcial</option><option value="liquidada">liquidada</option>
+      </select></div>
+      <div><div class="lbl">Buscar tropa</div><input type="text" id="f-q" placeholder="PEG.IFN…" oninput="rIngresos()" style="width:170px"></div>
+      <div style="flex:1"></div>
+      <div style="align-self:center;display:flex;gap:8px">
+        <button class="btn sec" onclick="selLimpiar()">Limpiar selección</button>
+        <button class="btn" id="btn-liquidar" onclick="irANueva()" disabled>Liquidar 0 tropas</button>
+      </div>
+    </div>
+    <div style="margin-top:12px" id="chips-ing"></div>
+  </div>
+  <div class="card">
+    <h2>Ingresos de WinCampo</h2>
+    <div class="muted" id="sub-ing">—</div>
+    <div class="tblwrap" style="margin-top:10px;max-height:66vh;overflow-y:auto">
+      <table id="t-ing"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 2 · NUEVA LIQUIDACIÓN ══════════════ -->
+<section id="tab-nueva" class="hide">
+  <div id="nueva-vacia" class="card">
+    <h2>Nueva liquidación</h2>
+    <div class="muted">Elegí las tropas en la pestaña <b>Ingresos</b> (click en la fila) y volvé acá
+      con el botón «Liquidar N tropas».</div>
+  </div>
+  <div id="nueva-form" class="hide">
+    <div class="card">
+      <h2 id="nueva-titulo">Nueva liquidación</h2>
+      <div class="muted" id="nueva-sub"></div>
+      <div class="filtros" style="margin-top:12px">
+        <div><div class="lbl">Fecha</div><input type="date" id="o-fecha" onchange="rNueva()"></div>
+        <div><div class="lbl">Consignataria</div><input type="text" id="o-cons" style="width:200px" oninput="rNueva()"></div>
+        <div><div class="lbl">Proveedor</div><input type="text" id="o-prov" style="width:200px" oninput="rNueva()"></div>
+        <div><div class="lbl">Nº liquidación</div><input type="text" id="o-nro" style="width:140px" oninput="rNueva()"></div>
+        <div><div class="lbl">Archivo</div><input type="text" id="o-arch" style="width:220px" oninput="rNueva()"></div>
+      </div>
+      <div class="filtros" style="margin-top:12px">
+        <div><div class="lbl">Comisión</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div class="seg">
+              <button id="cm-pct" class="on" onclick="setComModo('pct')">%</button>
+              <button id="cm-monto" onclick="setComModo('monto')">$</button>
+            </div>
+            <input type="number" step="any" id="o-com" class="mini" style="width:110px" oninput="rNueva()">
+          </div>
+        </div>
+        <div><div class="lbl">Gastos generales ($ de la operación)</div>
+          <input type="number" step="any" id="o-gas" class="mini" style="width:130px" oninput="rNueva()"></div>
+        <div style="flex:1"><div class="lbl">Observaciones</div>
+          <input type="text" id="o-obs" style="width:100%"></div>
+      </div>
+      <div id="nueva-avisos" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Tropas y categorías</h2>
+      <div class="muted">Los kg y las cabezas vienen precargados de WinCampo. Cambiá lo que
+        efectivamente se liquidó.</div>
+      <div class="tblwrap" style="margin-top:10px">
+        <table id="t-nueva"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn" id="btn-guardar" onclick="guardarOp()">Guardar liquidación</button>
+        <button class="btn sec" onclick="cancelarOp()">Cancelar</button>
+        <span class="muted" id="guardar-hint"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 3 · LIQUIDACIONES ══════════════ -->
+<section id="tab-liqs" class="hide">
+  <div class="card">
+    <div class="filtros">
+      <div><div class="lbl">Estado</div><select id="l-est" onchange="rLiqs()">
+        <option value="activas">activas</option><option value="">todas</option>
+        <option value="anulada">anuladas</option>
+      </select></div>
+      <div><div class="lbl">Buscar</div><input type="text" id="l-q" placeholder="tropa, nº, consignataria…"
+        oninput="rLiqs()" style="width:220px"></div>
+      <div style="flex:1"></div>
+      <div style="align-self:center;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sec" onclick="exportCSV()">Exportar CSV</button>
+        <button class="btn sec" onclick="exportJSON()">Exportar todo (JSON)</button>
+        <button class="btn sec" onclick="document.getElementById('imp-file').click()">Importar JSON</button>
+        <input type="file" id="imp-file" accept=".json" class="hide" onchange="importJSON(this)">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Liquidaciones cargadas</h2>
+    <div class="muted" id="sub-liqs">—</div>
+    <div class="tblwrap" style="margin-top:10px">
+      <table id="t-liqs"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 4 · RESUMEN ══════════════ -->
+<section id="tab-resumen" class="hide">
+  <div class="kpis" id="kpis-res"></div>
+  <div class="card">
+    <h2>$/kg con gastos por categoría, mes a mes</h2>
+    <div class="muted">Ponderado por kg liquidado. Sólo liquidaciones activas.</div>
+    <div style="position:relative;height:300px;margin-top:12px"><canvas id="ch-mes"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Por categoría</h2>
+      <div class="tblwrap"><table id="t-cat"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+    <div class="card"><h2>Por consignataria</h2>
+      <div class="tblwrap"><table id="t-cons"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Por mes</h2>
+      <div class="tblwrap"><table id="t-mes"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+    <div class="card"><h2>Por propietario</h2>
+      <div class="tblwrap"><table id="t-prop"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+  </div>
+  <div class="card">
+    <button class="btn" onclick="informePDF()">Informe PDF</button>
+    <span class="muted" style="margin-left:10px">Una página, para compartir.</span>
+  </div>
+</section>
+
+</main>
+
+<script src="js/config-supabase.js?v=15742"></script>
+<script src="js/compras-calc.js?v=15742"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   compras.html — v15.74.2 · Módulo 12 · Compras y Liquidaciones
+   ────────────────────────────────────────────────────────────
+   Lo que WinCampo dice que entró (compras_ingresos.json) contra lo que el
+   consignatario liquidó (cargado a mano acá). De ese cruce sale el costo de
+   compra real, el desbaste y — desde la Parte D — el $/kg del módulo 07.
+
+   Dos caminos de guardado, igual que el módulo 09 (v15.69 B / v15.71.1):
+     · con `window.PEGSA_SB` completo  → RPC guardar_liquidacion en Supabase,
+       y la base manda sobre el JSON publicado;
+     · sin base o si la base falla     → baja el archivo y avisa dónde
+       ponerlo para que el pipeline lo levante en el próximo tick.
+
+   La aritmética NO está acá: vive en js/compras-calc.js (liqCalcular), que
+   tiene un gemelo en Python para que el pipeline pueda rehacer la misma
+   cuenta. Esta página sólo arma la pantalla.
+   ════════════════════════════════════════════════════════════ */
+'use strict';
+
+var VERSION = 'v15.74.2';
+var ING  = null;             // compras_ingresos.json
+var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
+var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
+var SEL  = [];               // tropas_norm elegidas para liquidar
+var OP   = null;             // operación en edición
+var FUENTE = 'archivo';
+var CH_MES = null;
+
+/* ── formato es-AR, como el resto del portal ── */
+function N(n, d) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  d = d || 0;
+  return Number(n).toLocaleString('es-AR', {minimumFractionDigits: d, maximumFractionDigits: d});
+}
+function M(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return (n < 0 ? '−' : '') + '$ ' + N(Math.abs(n));
+}
+function P(n, d) { return (n === null || n === undefined || isNaN(n)) ? '—' : N(n, d === undefined ? 1 : d) + ' %'; }
+function fec(s) { return s ? String(s).split('-').reverse().join('/') : '—'; }
+function mesDe(s) { return s ? String(s).slice(0, 7) : ''; }
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function normTropa(s) {
+  // gemelo de _norm_tropa del pipeline: alfanumérico, mayúsculas, año a 2 dígitos
+  var k = String(s || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  return k.replace(/20(\d{2})$/, '$1');
+}
+function toast(msg, cls, ms) {
+  var d = document.createElement('div');
+  d.className = 't ' + (cls || '');
+  d.innerHTML = msg;
+  document.getElementById('toast').appendChild(d);
+  setTimeout(function () { d.remove(); }, ms || 7000);
+}
+
+/* ── pestañas ── */
+function tab(t) {
+  ['ingresos', 'nueva', 'liqs', 'resumen'].forEach(function (x) {
+    document.getElementById('tab-' + x).classList.toggle('hide', x !== t);
+    var b = document.querySelector('nav button[data-tab="' + x + '"]');
+    if (b) b.classList.toggle('on', x === t);
+  });
+  if (t === 'liqs') rLiqs();
+  if (t === 'resumen') rResumen();
+  if (t === 'nueva') rNueva();
+}
+
+/* ════════ CARGA ════════ */
+function sbOn() {
+  return !!(window.PEGSA_SB && window.PEGSA_SB.url && window.PEGSA_SB.anon);
+}
+
+async function sbLeer() {
+  /* Lee las liquidaciones de la base. Devuelve null si no hay base o falla —
+     el llamador se queda con el JSON publicado, que siempre está. */
+  if (!sbOn()) return null;
+  var url = window.PEGSA_SB.url.replace(/\/$/, ''), key = window.PEGSA_SB.anon;
+  var out = [], offset = 0, PAGE = 500;
+  try {
+    while (true) {
+      var r = await fetch(url + '/rest/v1/compras_liq?select=raw,estado&order=id&limit='
+                          + PAGE + '&offset=' + offset,
+                          {headers: {apikey: key, Authorization: 'Bearer ' + key}});
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var lote = await r.json();
+      lote.forEach(function (row) {
+        if (row && row.raw && row.raw.id) {
+          var o = row.raw;
+          o.estado = row.estado || o.estado;   // la columna manda sobre el snapshot
+          out.push(o);
+        }
+      });
+      if (lote.length < PAGE) break;
+      offset += PAGE;
+    }
+    return out;
+  } catch (e) {
+    toast('No pude leer la base (' + esc(e.message) + '). Sigo con el JSON publicado.', 'err');
+    return null;
+  }
+}
+
+async function cargar() {
+  try {
+    var r = await fetch('compras_ingresos.json');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    ING = await r.json();
+  } catch (e) {
+    document.getElementById('carga').innerHTML =
+      '<div class="aviso err" style="max-width:560px">No pude leer <b>compras_ingresos.json</b> ('
+      + esc(e.message) + ').<br>Lo genera el pipeline en cada tick. Si es la primera vez, '
+      + 'esperá al próximo tick del bot.</div>';
+    return;
+  }
+
+  var deArchivo = [];
+  try {
+    var r2 = await fetch('compras_liquidaciones.json');
+    if (r2.ok) {
+      var j = await r2.json();
+      deArchivo = j.liquidaciones || [];
+    }
+  } catch (e) { /* todavía no existe: se arranca sin liquidaciones */ }
+
+  var deBase = await sbLeer();
+  // La base manda cuando existe: es la que el usuario está editando en vivo.
+  LIQ = (deBase && deBase.length !== undefined) ? deBase : deArchivo;
+  FUENTE = (deBase !== null) ? 'supabase' : 'archivo';
+
+  reindexar();
+  document.getElementById('sync-dot').className = 'dot' + (FUENTE === 'supabase' ? '' : ' off');
+  document.getElementById('sync-txt').textContent =
+    FUENTE === 'supabase' ? 'base · ' + LIQ.length + ' liquidaciones'
+                          : 'sin base · ' + LIQ.length + ' del JSON';
+  initFiltros();
+  rIngresos();
+  document.getElementById('carga').style.display = 'none';
+}
+
+/* Índice tropa_norm → categoría → liquidación ACTIVA que la cubre. */
+function reindexar() {
+  IDX = {};
+  LIQ.forEach(function (o) {
+    if (String(o.estado || '').toLowerCase() === 'anulada') return;
+    (o.categorias || []).forEach(function (c) {
+      var k = c.tropa_norm || normTropa(c.tropa);
+      if (!k || !c.categoria) return;
+      if (!IDX[k]) IDX[k] = {};
+      IDX[k][c.categoria] = {liq_id: o.id, fecha: o.fecha, cat: c};
+    });
+  });
+}
+
+/* Categorías de una tropa según WinCampo. */
+function catsDe(k) {
+  return (ING.grupos || []).filter(function (g) { return g.tropa_norm === k; });
+}
+function estadoTropa(k) {
+  var cs = catsDe(k);
+  if (!cs.length) return 'pendiente';
+  var n = cs.filter(function (g) { return IDX[k] && IDX[k][g.categoria]; }).length;
+  return n === 0 ? 'pendiente' : (n === cs.length ? 'liquidada' : 'parcial');
+}
+
+/* ════════ 1 · INGRESOS ════════ */
+function initFiltros() {
+  var T = ING.tropas || {}, G = ING.grupos || [];
+  function llenar(id, vals, todos) {
+    var s = document.getElementById(id);
+    s.innerHTML = '<option value="">' + todos + '</option>'
+      + vals.map(function (v) { return '<option>' + esc(v) + '</option>'; }).join('');
+  }
+  llenar('f-prop', uniq(G.map(function (g) { return g.hotelero; })), 'todos');
+  llenar('f-cat',  uniq(G.map(function (g) { return g.categoria; })), 'todas');
+  llenar('f-cons', uniq(G.map(function (g) { return g.consignatario; })), 'todas');
+  llenar('f-mes',  uniq(G.map(function (g) { return mesDe(g.fecha_ingreso); })).reverse(), 'todos');
+}
+function uniq(a) {
+  var s = {}; a.forEach(function (x) { if (x) s[x] = 1; });
+  return Object.keys(s).sort();
+}
+
+function tropasFiltradas() {
+  var fp = document.getElementById('f-prop').value,
+      fc = document.getElementById('f-cat').value,
+      fs = document.getElementById('f-cons').value,
+      fm = document.getElementById('f-mes').value,
+      fe = document.getElementById('f-est').value,
+      q  = document.getElementById('f-q').value.trim().toUpperCase();
+  var out = [];
+  Object.keys(ING.tropas || {}).forEach(function (k) {
+    var t = ING.tropas[k], cs = catsDe(k);
+    if (fp && t.hotelero !== fp) return;
+    if (fs && t.consignatario !== fs) return;
+    if (fm && mesDe(t.fecha) !== fm) return;
+    if (fc && !cs.some(function (g) { return g.categoria === fc; })) return;
+    if (q && normTropa(t.tropa).indexOf(normTropa(q)) < 0
+          && String(t.tropa).toUpperCase().indexOf(q) < 0) return;
+    var est = estadoTropa(k);
+    if (fe && est !== est_norm(fe, est)) return;
+    out.push({k: k, t: t, cs: cs, est: est});
+  });
+  out.sort(function (a, b) { return String(b.t.fecha || '').localeCompare(String(a.t.fecha || '')); });
+  return out;
+}
+function est_norm(filtro, est) { return filtro === est ? est : '__no__'; }
+
+function rIngresos() {
+  var filas = tropasFiltradas();
+  var COLS = ['Fecha', 'Tropa', 'Propietario', 'Consignataria', 'Proveedor', 'Cab', 'Kg',
+              'Kg/cab', 'Estado', '$/kg c/gastos', 'Desbaste %'];
+  var h = '<tr>' + COLS.map(function (c, i) {
+    return '<th' + (i >= 5 ? ' class="num"' : '') + '>' + c + '</th>';
+  }).join('') + '</tr>';
+  document.querySelector('#t-ing thead').innerHTML = h;
+
+  var b = '', totCab = 0, totKg = 0, penCab = 0, penKg = 0;
+  filas.forEach(function (f) {
+    var k = f.k, t = f.t;
+    totCab += t.cabezas || 0; totKg += t.kg_ingreso || 0;
+    if (f.est !== 'liquidada') {
+      f.cs.forEach(function (g) {
+        if (!(IDX[k] && IDX[k][g.categoria])) { penCab += g.cabezas || 0; penKg += g.kg_ingreso || 0; }
+      });
+    }
+    var res = resumenLiqTropa(k);
+    var selo = SEL.indexOf(k) >= 0;
+    b += '<tr class="tropa' + (selo ? ' sel' : '') + '" onclick="selToggle(\'' + k + '\')">'
+      + '<td>' + fec(t.fecha) + '</td>'
+      + '<td><b>' + esc(t.tropa) + '</b></td>'
+      + '<td>' + esc(t.hotelero) + '</td>'
+      + '<td>' + esc(t.consignatario) + '</td>'
+      + '<td>' + esc(t.proveedor) + '</td>'
+      + '<td class="num">' + N(t.cabezas) + '</td>'
+      + '<td class="num">' + N(t.kg_ingreso) + '</td>'
+      + '<td class="num">' + N(t.kg_cab, 1) + '</td>'
+      + '<td>' + tagEstado(f.est) + '</td>'
+      + '<td class="num">' + (res.pkg == null ? '—' : M(res.pkg)) + '</td>'
+      + '<td class="num">' + (res.des == null ? '—' : P(res.des, 1)) + '</td>'
+      + '</tr>';
+    // categorías de la tropa
+    f.cs.forEach(function (g) {
+      var L = IDX[k] && IDX[k][g.categoria];
+      b += '<tr class="cat"><td colspan="2">' + esc(g.categoria) + '</td>'
+        + '<td colspan="3" class="muted">' + (L ? 'liq. ' + esc(L.liq_id) : '') + '</td>'
+        + '<td class="num">' + N(g.cabezas) + '</td>'
+        + '<td class="num">' + N(g.kg_ingreso) + '</td>'
+        + '<td class="num">' + N(g.kg_cab, 1) + '</td>'
+        + '<td>' + (L ? '<span class="tag ok">liquidada</span>' : '<span class="tag pen">pendiente</span>') + '</td>'
+        + '<td class="num">' + (L && L.cat.precio_kg_cg != null ? M(L.cat.precio_kg_cg) : '—') + '</td>'
+        + '<td class="num">' + (L && L.cat.desbaste_pct != null ? P(L.cat.desbaste_pct, 1) : '—') + '</td>'
+        + '</tr>';
+    });
+  });
+  document.querySelector('#t-ing tbody').innerHTML = b ||
+    '<tr><td colspan="11" class="muted" style="padding:20px">Ninguna tropa con esos filtros.</td></tr>';
+  document.querySelector('#t-ing tfoot').innerHTML =
+    '<tr><td colspan="5">TOTAL · ' + filas.length + ' tropas</td>'
+    + '<td class="num">' + N(totCab) + '</td><td class="num">' + N(totKg) + '</td>'
+    + '<td class="num">' + N(totCab ? totKg / totCab : null, 1) + '</td><td colspan="3"></td></tr>';
+
+  document.getElementById('sub-ing').textContent =
+    (ING.meta || {}).desde + ' a ' + (ING.meta || {}).hasta + ' · '
+    + (ING.meta || {}).n_tropas + ' tropas · ' + (ING.meta || {}).n_grupos + ' grupos · '
+    + 'destete y traslado excluidos';
+  document.getElementById('chips-ing').innerHTML =
+    '<span class="chip">pendiente de liquidar · <b>' + N(penCab) + ' cab</b></span>'
+    + '<span class="chip">pendiente de liquidar · <b>' + N(penKg) + ' kg</b></span>'
+    + '<span class="chip">en pantalla · <b>' + N(totCab) + ' cab</b> / <b>' + N(totKg) + ' kg</b></span>'
+    + '<span class="chip">seleccionadas · <b>' + SEL.length + '</b></span>';
+  var btn = document.getElementById('btn-liquidar');
+  btn.textContent = 'Liquidar ' + SEL.length + ' tropa' + (SEL.length === 1 ? '' : 's');
+  btn.disabled = SEL.length === 0;
+}
+
+function tagEstado(e) {
+  var c = e === 'liquidada' ? 'ok' : (e === 'parcial' ? 'par' : 'pen');
+  return '<span class="tag ' + c + '">' + e + '</span>';
+}
+
+/* $/kg c/gastos y desbaste ponderados de lo YA liquidado de una tropa. */
+function resumenLiqTropa(k) {
+  var num = 0, den = 0, dn = 0, dd = 0;
+  var m = IDX[k] || {};
+  Object.keys(m).forEach(function (cat) {
+    var c = m[cat].cat, kg = c.kg_liq || 0;
+    if (c.precio_kg_cg != null) { num += c.precio_kg_cg * kg; den += kg; }
+    if (c.desbaste_pct != null) { dn += c.desbaste_pct * kg; dd += kg; }
+  });
+  return {pkg: den ? num / den : null, des: dd ? dn / dd : null};
+}
+
+function selToggle(k) {
+  var i = SEL.indexOf(k);
+  if (i >= 0) SEL.splice(i, 1); else SEL.push(k);
+  rIngresos();
+}
+function selLimpiar() { SEL = []; rIngresos(); }
+
+function irANueva() {
+  if (!SEL.length) return;
+  nuevaOp(SEL.slice());
+  tab('nueva');
+}
+
+/* ════════ 2 · NUEVA LIQUIDACIÓN ════════ */
+function nuevaOp(tropas, existente) {
+  if (existente) {
+    OP = JSON.parse(JSON.stringify(existente));
+    OP.__editando = existente.id;
+  } else {
+    var cats = [];
+    tropas.forEach(function (k) {
+      catsDe(k).forEach(function (g) {
+        cats.push({
+          tropa: g.tropa, tropa_norm: g.tropa_norm, hotelero: g.hotelero,
+          categoria: g.categoria,
+          cabezas_wc: g.cabezas, kg_wc: g.kg_ingreso,
+          cabezas_liq: g.cabezas, kg_liq: g.kg_ingreso,   // prefill: lo de WinCampo
+          precio_modo: 'kg', precio_valor: null
+        });
+      });
+    });
+    var t0 = ING.tropas[tropas[0]] || {};
+    OP = {
+      fecha: t0.fecha || new Date().toISOString().slice(0, 10),
+      consignataria: t0.consignatario || '', proveedor: t0.proveedor || '',
+      nro_liquidacion: '', archivo: '',
+      comision_modo: 'pct', comision_valor: null, gastos_monto: null,
+      observaciones: '', estado: 'cargada', categorias: cats
+    };
+  }
+  document.getElementById('o-fecha').value = OP.fecha || '';
+  document.getElementById('o-cons').value  = OP.consignataria || '';
+  document.getElementById('o-prov').value  = OP.proveedor || '';
+  document.getElementById('o-nro').value   = OP.nro_liquidacion || '';
+  document.getElementById('o-arch').value  = OP.archivo || '';
+  document.getElementById('o-com').value   = OP.comision_valor == null ? ''
+    : (OP.comision_modo === 'pct' ? OP.comision_valor * 100 : OP.comision_valor);
+  document.getElementById('o-gas').value   = OP.gastos_monto == null ? '' : OP.gastos_monto;
+  document.getElementById('o-obs').value   = OP.observaciones || '';
+  setComModo(OP.comision_modo || 'pct', true);
+  rNueva();
+}
+function cancelarOp() { OP = null; SEL = []; rIngresos(); tab('ingresos'); }
+
+function setComModo(m, silencioso) {
+  if (OP) OP.comision_modo = m;
+  document.getElementById('cm-pct').classList.toggle('on', m === 'pct');
+  document.getElementById('cm-monto').classList.toggle('on', m === 'monto');
+  if (!silencioso) rNueva();
+}
+
+function leerForm() {
+  if (!OP) return;
+  OP.fecha           = document.getElementById('o-fecha').value || null;
+  OP.consignataria   = document.getElementById('o-cons').value.trim() || null;
+  OP.proveedor       = document.getElementById('o-prov').value.trim() || null;
+  OP.nro_liquidacion = document.getElementById('o-nro').value.trim() || null;
+  OP.archivo         = document.getElementById('o-arch').value.trim() || null;
+  OP.observaciones   = document.getElementById('o-obs').value.trim() || null;
+  var cv = parseFloat(document.getElementById('o-com').value);
+  // el % se escribe como 3, se guarda como 0,03 — la fórmula trabaja con fracción
+  OP.comision_valor = isNaN(cv) ? null : (OP.comision_modo === 'pct' ? cv / 100 : cv);
+  var gv = parseFloat(document.getElementById('o-gas').value);
+  OP.gastos_monto = isNaN(gv) ? null : gv;
+}
+
+function catInput(i, campo, v) {
+  if (!OP) return;
+  var c = OP.categorias[i];
+  if (campo === 'precio_modo') { c.precio_modo = v; }
+  else {
+    var n = parseFloat(String(v).replace(',', '.'));
+    c[campo] = isNaN(n) ? null : n;
+  }
+  rNueva();
+}
+
+function rNueva() {
+  var vacia = document.getElementById('nueva-vacia'), form = document.getElementById('nueva-form');
+  if (!OP) { vacia.classList.remove('hide'); form.classList.add('hide'); return; }
+  vacia.classList.add('hide'); form.classList.remove('hide');
+  leerForm();
+  var R = liqCalcular(OP);
+
+  document.getElementById('nueva-titulo').textContent =
+    OP.__editando ? 'Editar liquidación' : 'Nueva liquidación';
+  var tropas = uniq(OP.categorias.map(function (c) { return c.tropa; }));
+  document.getElementById('nueva-sub').textContent =
+    tropas.length + ' tropa' + (tropas.length === 1 ? '' : 's') + ' · '
+    + OP.categorias.length + ' categorías · ' + tropas.join(' · ');
+
+  var COLS = ['Tropa', 'Cat', 'Cab WC', 'Kg WC', 'Kg/cab WC', 'Cab liq.', 'Kg liq.',
+              'Modo', 'Valor', '$/kg', 'Importe', 'Comisión', 'Gastos',
+              '$/kg c/g', '$/cab c/g', 'Desbaste %'];
+  document.querySelector('#t-nueva thead').innerHTML = '<tr>' + COLS.map(function (c, i) {
+    return '<th' + (i >= 2 ? ' class="num"' : '') + '>' + c + '</th>';
+  }).join('') + '</tr>';
+
+  var b = '', avisos = [];
+  R.categorias.forEach(function (c, i) {
+    var difCab = (c.cabezas_wc || 0) - (c.cabezas_liq || 0);
+    var clsCab = difCab !== 0 ? ' class="num cell-warn"' : ' class="num"';
+    var desFuera = c.desbaste_pct != null && Math.abs(c.desbaste_pct) > 15;
+    var clsDes = desFuera ? ' class="num cell-warn"' : ' class="num"';
+    if (difCab !== 0) {
+      avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: WinCampo dice '
+        + N(c.cabezas_wc) + ' cabezas y se liquidan ' + N(c.cabezas_liq)
+        + ' (dif. ' + (difCab > 0 ? '+' : '') + N(difCab) + ').');
+    }
+    if (desFuera) {
+      avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: desbaste '
+        + P(c.desbaste_pct, 1) + ', fuera de ±15 %.'
+        + (difCab !== 0 ? ' Ojo: con las cabezas distintas, el desbaste no es comparable.' : ''));
+    }
+    b += '<tr>'
+      + '<td>' + esc(c.tropa) + '</td><td>' + esc(c.categoria) + '</td>'
+      + '<td class="num">' + N(c.cabezas_wc) + '</td>'
+      + '<td class="num">' + N(c.kg_wc) + '</td>'
+      + '<td class="num">' + N(c.kg_wc_cab, 1) + '</td>'
+      + '<td' + clsCab + '><input class="mini" style="width:66px" type="number" step="1" value="'
+        + (c.cabezas_liq == null ? '' : c.cabezas_liq) + '" oninput="catInput(' + i + ',\'cabezas_liq\',this.value)"></td>'
+      + '<td class="num"><input class="mini" type="number" step="any" value="'
+        + (c.kg_liq == null ? '' : c.kg_liq) + '" oninput="catInput(' + i + ',\'kg_liq\',this.value)"></td>'
+      + '<td class="num"><select class="mini" onchange="catInput(' + i + ',\'precio_modo\',this.value)">'
+        + ['kg', 'cab', 'total'].map(function (m) {
+            return '<option value="' + m + '"' + (c.precio_modo === m ? ' selected' : '') + '>'
+              + (m === 'kg' ? '$/kg' : m === 'cab' ? '$/cab' : 'total') + '</option>';
+          }).join('') + '</select></td>'
+      + '<td class="num"><input class="mini" type="number" step="any" value="'
+        + (c.precio_valor == null ? '' : c.precio_valor) + '" oninput="catInput(' + i + ',\'precio_valor\',this.value)"></td>'
+      + '<td class="num">' + (c.precio_kg == null ? '—' : M(c.precio_kg)) + '</td>'
+      + '<td class="num">' + M(c.importe) + '</td>'
+      + '<td class="num">' + M(c.comision_cat) + '</td>'
+      + '<td class="num">' + M(c.gastos_cat) + '</td>'
+      + '<td class="num"><b>' + (c.precio_kg_cg == null ? '—' : M(c.precio_kg_cg)) + '</b></td>'
+      + '<td class="num">' + (c.precio_cab_cg == null ? '—' : M(c.precio_cab_cg)) + '</td>'
+      + '<td' + clsDes + '>' + (c.desbaste_pct == null ? '—' : P(c.desbaste_pct, 1)) + '</td>'
+      + '</tr>';
+  });
+  document.querySelector('#t-nueva tbody').innerHTML = b;
+  var T = R.total;
+  document.querySelector('#t-nueva tfoot').innerHTML =
+    '<tr><td colspan="2">TOTAL</td>'
+    + '<td class="num">' + N(T.cabezas_wc) + '</td><td class="num">' + N(T.kg_wc) + '</td><td></td>'
+    + '<td class="num">' + N(T.cabezas_liq) + '</td><td class="num">' + N(T.kg_liq) + '</td>'
+    + '<td colspan="2"></td>'
+    + '<td class="num">' + (T.precio_kg == null ? '—' : M(T.precio_kg)) + '</td>'
+    + '<td class="num">' + M(T.importe) + '</td>'
+    + '<td class="num">' + M(T.comision) + '</td>'
+    + '<td class="num">' + M(T.gastos) + '</td>'
+    + '<td class="num"><b>' + (T.precio_kg_cg == null ? '—' : M(T.precio_kg_cg)) + '</b></td>'
+    + '<td class="num">' + (T.precio_cab_cg == null ? '—' : M(T.precio_cab_cg)) + '</td>'
+    + '<td class="num">' + (T.desbaste_pct == null ? '—' : P(T.desbaste_pct, 1)) + '</td></tr>';
+
+  // ── validaciones que impiden guardar ──
+  var bloqueos = [];
+  var sinKg = R.categorias.filter(function (c) { return !c.kg_liq; });
+  if (sinKg.length) bloqueos.push(sinKg.length + ' fila(s) sin kg liquidados.');
+  var sinPrecio = R.categorias.filter(function (c) { return c.precio_valor == null; });
+  if (sinPrecio.length) bloqueos.push(sinPrecio.length + ' fila(s) sin precio.');
+  if (!OP.fecha) bloqueos.push('Falta la fecha.');
+
+  // una tropa+categoría no puede estar en dos liquidaciones activas
+  var choques = [];
+  R.categorias.forEach(function (c) {
+    var k = c.tropa_norm || normTropa(c.tropa);
+    var L = IDX[k] && IDX[k][c.categoria];
+    if (L && L.liq_id !== OP.__editando) {
+      choques.push(esc(c.tropa) + ' · ' + esc(c.categoria) + ' ya está en '
+        + '<a href="#" onclick="abrirLiq(\'' + esc(L.liq_id).replace(/'/g, "\\'")
+        + '\');return false">' + esc(L.liq_id) + '</a>');
+    }
+  });
+  if (choques.length) bloqueos.push('Ya liquidadas en otra operación: ' + choques.join(' · '));
+
+  var html = '';
+  if (bloqueos.length) html += '<div class="aviso err">' + bloqueos.join('<br>') + '</div>';
+  if (avisos.length)   html += '<div class="aviso">' + avisos.join('<br>') + '</div>';
+  if (!sbOn())         html += '<div class="aviso info">Sin base configurada: al guardar se '
+    + '<b>descarga</b> el archivo. Moverlo a <code>datos\\compras_liquidaciones\\</code> '
+    + 'para que el pipeline lo levante en el próximo tick.</div>';
+  document.getElementById('nueva-avisos').innerHTML = html;
+
+  document.getElementById('btn-guardar').disabled = bloqueos.length > 0;
+  document.getElementById('guardar-hint').textContent = bloqueos.length
+    ? 'Completá lo que falta para poder guardar.'
+    : (sbOn() ? 'Se guarda en la base.' : 'Se descarga el archivo.');
+}
+
+function opId() {
+  var tropas = uniq(OP.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
+  return liqId(tropas, OP.fecha);
+}
+
+async function guardarOp() {
+  if (!OP) return;
+  leerForm();
+  var R = liqCalcular(OP);
+  var snap = {
+    id: OP.__editando || opId(),
+    fecha: OP.fecha, consignataria: OP.consignataria, proveedor: OP.proveedor,
+    nro_liquidacion: OP.nro_liquidacion, archivo: OP.archivo,
+    comision_modo: OP.comision_modo, comision_valor: OP.comision_valor,
+    gastos_monto: OP.gastos_monto, observaciones: OP.observaciones,
+    estado: OP.estado || 'cargada',
+    generado: new Date().toISOString(), version_portal: VERSION,
+    categorias: R.categorias, total: R.total
+  };
+
+  var ok = false;
+  if (sbOn()) {
+    try {
+      var url = window.PEGSA_SB.url.replace(/\/$/, ''), key = window.PEGSA_SB.anon;
+      var r = await fetch(url + '/rest/v1/rpc/guardar_liquidacion', {
+        method: 'POST',
+        headers: {apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json'},
+        body: JSON.stringify({p: snap})
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 160));
+      ok = true;
+      toast('Guardada en la base (id <code>' + esc(snap.id) + '</code>).', 'ok');
+    } catch (e) {
+      toast('La base rechazó el guardado (' + esc(e.message) + '). Te bajo el archivo de respaldo.', 'err', 12000);
+      bajarJSON(snap, 'liquidacion_' + snap.id);
+    }
+  } else {
+    bajarJSON(snap, 'liquidacion_' + snap.id);
+    toast('Archivo descargado. Moverlo a <code>datos\\compras_liquidaciones\\</code> '
+        + 'y el pipeline lo levanta en el próximo tick.', '', 12000);
+    ok = true;
+  }
+
+  if (ok) {
+    // que se vea al toque, sin esperar el tick
+    LIQ = LIQ.filter(function (o) { return o.id !== snap.id; });
+    LIQ.push(snap);
+    reindexar();
+    OP = null; SEL = [];
+    rIngresos(); tab('liqs');
+  }
+}
+
+function bajarJSON(obj, nombre) {
+  var safe = String(nombre).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
+  var blob = new Blob([JSON.stringify(obj, null, 2)], {type: 'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = safe + '.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ════════ 3 · LIQUIDACIONES ════════ */
+function liqsFiltradas() {
+  var fe = document.getElementById('l-est').value;
+  var q = document.getElementById('l-q').value.trim().toUpperCase();
+  return LIQ.filter(function (o) {
+    var an = String(o.estado || '').toLowerCase() === 'anulada';
+    if (fe === 'activas' && an) return false;
+    if (fe === 'anulada' && !an) return false;
+    if (q) {
+      var txt = [o.id, o.nro_liquidacion, o.consignataria, o.archivo,
+                 (o.categorias || []).map(function (c) { return c.tropa; }).join(' ')]
+                .join(' ').toUpperCase();
+      if (txt.indexOf(q) < 0) return false;
+    }
+    return true;
+  }).sort(function (a, b) { return String(b.fecha || '').localeCompare(String(a.fecha || '')); });
+}
+
+function rLiqs() {
+  var L = liqsFiltradas();
+  var COLS = ['Fecha', 'Nº', 'Consignataria', 'Tropas', 'Cab', 'Kg liq.',
+              'Importe c/gastos', '$/kg c/g', 'Recargo', 'Desbaste', 'Estado', ''];
+  document.querySelector('#t-liqs thead').innerHTML = '<tr>' + COLS.map(function (c, i) {
+    return '<th' + (i >= 4 && i <= 9 ? ' class="num"' : '') + '>' + c + '</th>';
+  }).join('') + '</tr>';
+
+  var b = '', tCab = 0, tKg = 0, tImp = 0;
+  L.forEach(function (o) {
+    var T = (o.total && o.total.kg_liq != null) ? o.total : liqCalcular(o).total;
+    var an = String(o.estado || '').toLowerCase() === 'anulada';
+    if (!an) { tCab += T.cabezas_liq || 0; tKg += T.kg_liq || 0; tImp += T.importe_cg || 0; }
+    var tropas = uniq((o.categorias || []).map(function (c) { return c.tropa; }));
+    b += '<tr>'
+      + '<td>' + fec(o.fecha) + '</td>'
+      + '<td>' + esc(o.nro_liquidacion || '—') + '</td>'
+      + '<td>' + esc(o.consignataria || '—') + '</td>'
+      + '<td title="' + esc(tropas.join(' · ')) + '">' + esc(tropas.slice(0, 2).join(' · '))
+        + (tropas.length > 2 ? ' +' + (tropas.length - 2) : '') + '</td>'
+      + '<td class="num">' + N(T.cabezas_liq) + '</td>'
+      + '<td class="num">' + N(T.kg_liq) + '</td>'
+      + '<td class="num">' + M(T.importe_cg) + '</td>'
+      + '<td class="num">' + (T.precio_kg_cg == null ? '—' : M(T.precio_kg_cg)) + '</td>'
+      + '<td class="num">' + (T.recargo_pct == null ? '—' : P(T.recargo_pct, 2)) + '</td>'
+      + '<td class="num">' + (T.desbaste_pct == null ? '—' : P(T.desbaste_pct, 1)) + '</td>'
+      + '<td>' + (an ? '<span class="tag anu">anulada</span>'
+                     : '<span class="tag ' + (o.estado === 'importada_excel' ? 'exc' : 'ok') + '">'
+                       + esc(o.estado || 'cargada') + '</span>') + '</td>'
+      + '<td><button class="btn sec" style="height:24px;padding:0 9px" onclick="abrirLiq(\''
+        + esc(o.id).replace(/'/g, "\\'") + '\')">abrir</button>'
+      + (an ? '' : ' <button class="btn danger" style="height:24px;padding:0 9px" onclick="anularLiq(\''
+        + esc(o.id).replace(/'/g, "\\'") + '\')">anular</button>') + '</td>'
+      + '</tr>';
+  });
+  document.querySelector('#t-liqs tbody').innerHTML = b ||
+    '<tr><td colspan="12" class="muted" style="padding:20px">Todavía no hay liquidaciones cargadas.</td></tr>';
+  document.querySelector('#t-liqs tfoot').innerHTML =
+    '<tr><td colspan="4">TOTAL activas</td><td class="num">' + N(tCab) + '</td>'
+    + '<td class="num">' + N(tKg) + '</td><td class="num">' + M(tImp) + '</td>'
+    + '<td class="num">' + (tKg ? M(tImp / tKg) : '—') + '</td><td colspan="4"></td></tr>';
+  document.getElementById('sub-liqs').textContent =
+    L.length + ' en pantalla · fuente: ' + (FUENTE === 'supabase' ? 'base de datos' : 'JSON del pipeline');
+}
+
+function abrirLiq(id) {
+  var o = LIQ.filter(function (x) { return x.id === id; })[0];
+  if (!o) { toast('No encuentro esa liquidación.', 'err'); return; }
+  nuevaOp(null, o);
+  tab('nueva');
+}
+
+async function anularLiq(id) {
+  var o = LIQ.filter(function (x) { return x.id === id; })[0];
+  if (!o) return;
+  if (!confirm('¿Anular la liquidación ' + id + '?\n\nNo se borra: queda con estado «anulada» '
+             + 'y deja de contar para el costo de compra.')) return;
+  var snap = JSON.parse(JSON.stringify(o));
+  snap.estado = 'anulada';
+  snap.generado = new Date().toISOString();
+  snap.version_portal = VERSION;
+  if (sbOn()) {
+    try {
+      var url = window.PEGSA_SB.url.replace(/\/$/, ''), key = window.PEGSA_SB.anon;
+      var r = await fetch(url + '/rest/v1/rpc/guardar_liquidacion', {
+        method: 'POST',
+        headers: {apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json'},
+        body: JSON.stringify({p: snap})
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      toast('Anulada en la base.', 'ok');
+    } catch (e) {
+      toast('No pude anularla en la base (' + esc(e.message) + '). Te bajo el archivo.', 'err');
+      bajarJSON(snap, 'liquidacion_' + snap.id);
+    }
+  } else {
+    bajarJSON(snap, 'liquidacion_' + snap.id);
+    toast('Archivo de anulación descargado. Moverlo a <code>datos\\compras_liquidaciones\\</code>.', '', 12000);
+  }
+  LIQ = LIQ.filter(function (x) { return x.id !== id; });
+  LIQ.push(snap);
+  reindexar(); rLiqs(); rIngresos();
+}
+
+function exportJSON() {
+  bajarJSON(LIQ, 'compras_liquidaciones_export_' + new Date().toISOString().slice(0, 10));
+  toast('Exportadas ' + LIQ.length + ' liquidaciones.', 'ok');
+}
+
+function importJSON(inp) {
+  var f = inp.files && inp.files[0];
+  if (!f) return;
+  var fr = new FileReader();
+  fr.onload = function () {
+    try {
+      var j = JSON.parse(fr.result);
+      var arr = Array.isArray(j) ? j : (j.liquidaciones || [j]);
+      var n = 0;
+      arr.forEach(function (o) {
+        if (!o || !o.id) return;
+        LIQ = LIQ.filter(function (x) { return x.id !== o.id; });
+        LIQ.push(o); n++;
+      });
+      reindexar(); rLiqs(); rIngresos();
+      toast('Importadas ' + n + ' liquidaciones <b>en esta pantalla</b>. Para que queden, '
+          + (sbOn() ? 'abrilas y guardalas.' : 'poné los archivos en <code>datos\\compras_liquidaciones\\</code>.'),
+          'ok', 12000);
+    } catch (e) {
+      toast('JSON inválido: ' + esc(e.message), 'err');
+    }
+  };
+  fr.readAsText(f);
+  inp.value = '';
+}
+
+function exportCSV() {
+  var L = liqsFiltradas();
+  var cols = ['liq_id', 'fecha', 'consignataria', 'nro_liquidacion', 'estado', 'tropa', 'categoria',
+              'hotelero', 'cabezas_wc', 'kg_wc', 'cabezas_liq', 'kg_liq', 'precio_modo',
+              'precio_valor', 'precio_kg', 'importe', 'comision_cat', 'gastos_cat',
+              'importe_cg', 'precio_kg_cg', 'precio_cab_cg', 'desbaste_pct'];
+  var filas = [cols.join(';')];
+  L.forEach(function (o) {
+    var R = liqCalcular(o);
+    R.categorias.forEach(function (c) {
+      filas.push(cols.map(function (k) {
+        var v = ({liq_id: o.id, fecha: o.fecha, consignataria: o.consignataria,
+                  nro_liquidacion: o.nro_liquidacion, estado: o.estado})[k];
+        if (v === undefined) v = c[k];
+        if (v === null || v === undefined) return '';
+        // es-AR: coma decimal, y por eso el separador de columnas es ';'
+        return typeof v === 'number' ? String(v).replace('.', ',') : String(v).replace(/;/g, ',');
+      }).join(';'));
+    });
+  });
+  // BOM para que Excel en es-AR abra los acentos bien
+  var blob = new Blob(['﻿' + filas.join('\r\n')], {type: 'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'compras_liquidaciones_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ════════ 4 · RESUMEN ════════ */
+function filasActivas() {
+  var out = [];
+  LIQ.forEach(function (o) {
+    if (String(o.estado || '').toLowerCase() === 'anulada') return;
+    var R = liqCalcular(o);
+    R.categorias.forEach(function (c) {
+      out.push({o: o, c: c, mes: mesDe(o.fecha)});
+    });
+  });
+  return out;
+}
+
+function agrupar(filas, key) {
+  var m = {};
+  filas.forEach(function (f) {
+    var k = key(f) || '—';
+    var g = m[k] || (m[k] = {k: k, cab: 0, kg: 0, imp: 0, impcg: 0, dn: 0, dd: 0});
+    g.cab += f.c.cabezas_liq || 0;
+    g.kg  += f.c.kg_liq || 0;
+    g.imp += f.c.importe || 0;
+    g.impcg += f.c.importe_cg || 0;
+    if (f.c.desbaste_pct != null) { g.dn += f.c.desbaste_pct * (f.c.kg_liq || 0); g.dd += f.c.kg_liq || 0; }
+  });
+  return Object.keys(m).sort().map(function (k) {
+    var g = m[k];
+    g.pkg   = g.kg ? g.imp / g.kg : null;
+    g.pkgcg = g.kg ? g.impcg / g.kg : null;
+    g.rec   = g.imp ? (g.impcg / g.imp - 1) * 100 : null;
+    g.des   = g.dd ? g.dn / g.dd : null;
+    return g;
+  });
+}
+
+function tablaRes(id, titulo, grupos) {
+  var COLS = [titulo, 'Cab', 'Kg liq.', 'Importe c/g', '$/kg s/g', '$/kg c/g', 'Com+gastos', 'Desbaste'];
+  document.querySelector('#' + id + ' thead').innerHTML = '<tr>' + COLS.map(function (c, i) {
+    return '<th' + (i ? ' class="num"' : '') + '>' + c + '</th>';
+  }).join('') + '</tr>';
+  var b = '', T = {cab: 0, kg: 0, imp: 0, impcg: 0, dn: 0, dd: 0};
+  grupos.forEach(function (g) {
+    T.cab += g.cab; T.kg += g.kg; T.imp += g.imp; T.impcg += g.impcg; T.dn += g.dn; T.dd += g.dd;
+    b += '<tr><td>' + esc(g.k) + '</td>'
+      + '<td class="num">' + N(g.cab) + '</td>'
+      + '<td class="num">' + N(g.kg) + '</td>'
+      + '<td class="num">' + M(g.impcg) + '</td>'
+      + '<td class="num">' + (g.pkg == null ? '—' : M(g.pkg)) + '</td>'
+      + '<td class="num"><b>' + (g.pkgcg == null ? '—' : M(g.pkgcg)) + '</b></td>'
+      + '<td class="num">' + (g.rec == null ? '—' : P(g.rec, 2)) + '</td>'
+      + '<td class="num">' + (g.des == null ? '—' : P(g.des, 1)) + '</td></tr>';
+  });
+  document.querySelector('#' + id + ' tbody').innerHTML = b ||
+    '<tr><td colspan="8" class="muted" style="padding:16px">Sin liquidaciones.</td></tr>';
+  document.querySelector('#' + id + ' tfoot').innerHTML =
+    '<tr><td>TOTAL</td><td class="num">' + N(T.cab) + '</td><td class="num">' + N(T.kg) + '</td>'
+    + '<td class="num">' + M(T.impcg) + '</td>'
+    + '<td class="num">' + (T.kg ? M(T.imp / T.kg) : '—') + '</td>'
+    + '<td class="num"><b>' + (T.kg ? M(T.impcg / T.kg) : '—') + '</b></td>'
+    + '<td class="num">' + (T.imp ? P((T.impcg / T.imp - 1) * 100, 2) : '—') + '</td>'
+    + '<td class="num">' + (T.dd ? P(T.dn / T.dd, 1) : '—') + '</td></tr>';
+}
+
+var CAT_COLOR = {Vaca: '#1a1612', Vaquillona: '#b8922a', Novillo: '#2d6a8a',
+                 Novillito: '#d4a84b', Ternero: '#27613d', Ternera: '#8a827a', Toro: '#c0392b'};
+
+function rResumen() {
+  var F = filasActivas();
+  var T = agrupar(F, function () { return 'todo'; })[0]
+       || {cab: 0, kg: 0, imp: 0, impcg: 0, pkg: null, pkgcg: null, rec: null, des: null};
+  document.getElementById('kpis-res').innerHTML =
+    '<div class="kpi"><div class="lbl">Cabezas liquidadas</div><div class="v">' + N(T.cab) + '</div>'
+      + '<div class="d">' + LIQ.filter(function (o) { return String(o.estado || '').toLowerCase() !== 'anulada'; }).length
+      + ' liquidaciones</div></div>'
+    + '<div class="kpi"><div class="lbl">Kg liquidados</div><div class="v">' + N(T.kg) + '</div>'
+      + '<div class="d">' + N(T.cab ? T.kg / T.cab : null, 1) + ' kg/cab</div></div>'
+    + '<div class="kpi"><div class="lbl">Importe con gastos</div><div class="v">' + M(T.impcg) + '</div>'
+      + '<div class="d">s/gastos ' + M(T.imp) + '</div></div>'
+    + '<div class="kpi"><div class="lbl">Comisión + gastos</div><div class="v">'
+      + (T.rec == null ? '—' : P(T.rec, 2)) + '</div><div class="d">sobre el importe</div></div>'
+    + '<div class="kpi oscura"><div class="lbl">$/kg con gastos</div><div class="v">'
+      + (T.pkgcg == null ? '—' : M(T.pkgcg)) + '</div>'
+      + '<div class="d">desbaste ponderado ' + (T.des == null ? '—' : P(T.des, 1)) + '</div></div>';
+
+  tablaRes('t-cat',  'Categoría',     agrupar(F, function (f) { return f.c.categoria; }));
+  tablaRes('t-cons', 'Consignataria', agrupar(F, function (f) { return f.o.consignataria; }));
+  tablaRes('t-mes',  'Mes',           agrupar(F, function (f) { return f.mes; }));
+  tablaRes('t-prop', 'Propietario',   agrupar(F, function (f) { return f.c.hotelero; }));
+  graficoMes(F);
+}
+
+function graficoMes(F) {
+  var cv = document.getElementById('ch-mes');
+  if (!cv || typeof Chart === 'undefined') return;
+  try { if (CH_MES) CH_MES.destroy(); } catch (e) {}
+  CH_MES = null;
+  var meses = uniq(F.map(function (f) { return f.mes; }));
+  var cats  = uniq(F.map(function (f) { return f.c.categoria; }));
+  if (!meses.length) return;
+  var ds = cats.map(function (cat, i) {
+    return {
+      label: cat,
+      backgroundColor: CAT_COLOR[cat] || ['#b9b4ac', '#0F1B64', '#7a5c14'][i % 3],
+      // ponderado por kg, no promedio simple: una compra de 5 cabezas no puede
+      // pesar lo mismo que una de 200
+      data: meses.map(function (m) {
+        var n = 0, d = 0;
+        F.forEach(function (f) {
+          if (f.mes !== m || f.c.categoria !== cat) return;
+          if (f.c.precio_kg_cg == null) return;
+          n += f.c.precio_kg_cg * (f.c.kg_liq || 0); d += f.c.kg_liq || 0;
+        });
+        return d ? Math.round(n / d) : null;
+      })
+    };
+  });
+  CH_MES = new Chart(cv.getContext('2d'), {
+    type: 'bar',
+    data: {labels: meses, datasets: ds},
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      scales: {
+        y: {beginAtZero: false, ticks: {callback: function (v) { return '$ ' + N(v); },
+            font: {family: 'JetBrains Mono', size: 11}}},
+        x: {ticks: {font: {family: 'JetBrains Mono', size: 11}}}
+      },
+      plugins: {
+        legend: {position: 'bottom', labels: {font: {family: 'JetBrains Mono', size: 11}, boxWidth: 12}},
+        tooltip: {callbacks: {label: function (c) {
+          return c.dataset.label + ': ' + (c.parsed.y == null ? '—' : M(c.parsed.y)) + '/kg c/gastos';
+        }}}
+      }
+    }
+  });
+}
+
+/* ════════ INFORME PDF ════════ */
+function informePDF() {
+  var F = filasActivas();
+  var T = agrupar(F, function () { return 'todo'; })[0];
+  if (!T) { toast('No hay liquidaciones para informar.', 'err'); return; }
+  var img = '';
+  try { var cv = document.getElementById('ch-mes'); if (cv && cv.width) img = cv.toDataURL('image/png'); } catch (e) {}
+  var ahora = new Date();
+  var fh = ('0' + ahora.getDate()).slice(-2) + '/' + ('0' + (ahora.getMonth() + 1)).slice(-2)
+         + '/' + ahora.getFullYear() + ' ' + ('0' + ahora.getHours()).slice(-2) + ':'
+         + ('0' + ahora.getMinutes()).slice(-2);
+
+  function tabla(titulo, grupos) {
+    return '<div class="sec">' + titulo + '</div><table class="dt"><thead><tr>'
+      + ['', 'Cab', 'Kg liq.', 'Importe c/g', '$/kg s/g', '$/kg c/g', 'Com+gastos', 'Desbaste']
+        .map(function (c, i) { return '<th style="text-align:' + (i ? 'right' : 'left') + '">' + c + '</th>'; }).join('')
+      + '</tr></thead><tbody>'
+      + grupos.map(function (g) {
+          return '<tr><td style="text-align:left">' + esc(g.k) + '</td>'
+            + '<td>' + N(g.cab) + '</td><td>' + N(g.kg) + '</td><td>' + M(g.impcg) + '</td>'
+            + '<td>' + (g.pkg == null ? '—' : M(g.pkg)) + '</td>'
+            + '<td><b>' + (g.pkgcg == null ? '—' : M(g.pkgcg)) + '</b></td>'
+            + '<td>' + (g.rec == null ? '—' : P(g.rec, 2)) + '</td>'
+            + '<td>' + (g.des == null ? '—' : P(g.des, 1)) + '</td></tr>';
+        }).join('')
+      + '</tbody></table>';
+  }
+
+  var h = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    + '<title>Compras y Liquidaciones · PEGSA</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">'
+    + '<style>@page{size:A4 portrait;margin:12mm}'
+    + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{margin:0;font-family:"DM Mono",monospace;color:#1a1612;font-size:10px;font-variant-numeric:tabular-nums}'
+    + '.t{font-family:"Playfair Display",serif;font-weight:700}'
+    + '.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1612;padding-bottom:8px}'
+    + '.n{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#8a827a}'
+    + '.sec{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8a827a;margin:12px 0 5px;border-bottom:1px solid #e3e1da;padding-bottom:3px}'
+    + '.k{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}'
+    + '.kc{border:1px solid #e3e1da;border-radius:2px;padding:7px 9px}'
+    + '.kc .l{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#8a827a}'
+    + '.kc .v{font-family:"Playfair Display",serif;font-weight:700;font-size:17px;line-height:1.25}'
+    + '.kc .u{font-size:8.5px;color:#8a827a}'
+    + '.big{background:#1a1612;border-color:#1a1612}.big .l{color:rgba(255,255,255,.5)}'
+    + '.big .v{color:#d4a84b}.big .u{color:rgba(255,255,255,.45)}'
+    + '.dt{width:100%;border-collapse:collapse;font-size:9px}'
+    + '.dt th{font-size:7.5px;letter-spacing:.06em;text-transform:uppercase;color:#8a827a;padding:3px 4px;border-bottom:1px solid #1a1612}'
+    + '.dt td{padding:3px 4px;border-bottom:1px solid #f0eee8;text-align:right;white-space:nowrap}'
+    + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8px;color:#8a827a;line-height:1.55}'
+    + '</style></head><body>';
+
+  h += '<div class="hd"><div><div class="n">PEGSA &amp; Bulltrade · Compras y Liquidaciones</div>'
+    + '<div class="t" style="font-size:24px;line-height:1.1">Resumen de compras</div>'
+    + '<div style="font-size:9.5px;color:#6b6560;margin-top:3px">'
+    + LIQ.filter(function (o) { return String(o.estado || '').toLowerCase() !== 'anulada'; }).length
+    + ' liquidaciones · ' + N(T.cab) + ' cabezas · ' + N(T.kg) + ' kg · sin IVA</div></div>'
+    + '<div style="text-align:right"><div class="n">Importe con gastos</div>'
+    + '<div class="t" style="font-size:20px">' + M(T.impcg) + '</div>'
+    + '<div style="font-size:9px;color:#8a827a">' + (T.pkgcg == null ? '—' : M(T.pkgcg)) + ' / kg</div></div></div>';
+
+  h += '<div class="sec">Totales</div><div class="k">'
+    + '<div class="kc"><div class="l">Cabezas</div><div class="v">' + N(T.cab) + '</div><div class="u">liquidadas</div></div>'
+    + '<div class="kc"><div class="l">Kg liquidados</div><div class="v">' + N(T.kg) + '</div>'
+      + '<div class="u">' + N(T.cab ? T.kg / T.cab : null, 1) + ' kg/cab</div></div>'
+    + '<div class="kc"><div class="l">Importe s/gastos</div><div class="v" style="font-size:14px">' + M(T.imp) + '</div>'
+      + '<div class="u">' + (T.pkg == null ? '—' : M(T.pkg)) + ' /kg</div></div>'
+    + '<div class="kc"><div class="l">Comisión + gastos</div><div class="v">' + (T.rec == null ? '—' : P(T.rec, 2)) + '</div>'
+      + '<div class="u">sobre el importe</div></div>'
+    + '<div class="kc big"><div class="l">$/kg con gastos</div><div class="v">'
+      + (T.pkgcg == null ? '—' : M(T.pkgcg)) + '</div>'
+      + '<div class="u">desbaste ' + (T.des == null ? '—' : P(T.des, 1)) + '</div></div>'
+    + '</div>';
+
+  if (img) {
+    h += '<div class="sec">$/kg con gastos por categoría, mes a mes</div>'
+      + '<img src="' + img + '" style="width:100%;max-height:150px;object-fit:contain">';
+  }
+  h += tabla('Por categoría', agrupar(F, function (f) { return f.c.categoria; }));
+  h += tabla('Por consignataria', agrupar(F, function (f) { return f.o.consignataria; }));
+  h += tabla('Por mes', agrupar(F, function (f) { return f.mes; }));
+
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA ' + VERSION
+    + ' · Todos los importes SIN IVA · Los $/kg son ponderados por kg liquidado, no promedios simples.'
+    + '<br>El desbaste compara el kg liquidado contra el kg de balanza del camión de WinCampo; '
+    + 'sólo es comparable cuando las cabezas de las dos fuentes coinciden.'
+    + '</div></body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { toast('El navegador bloqueó la ventana. Permití las ventanas emergentes.', 'err'); return; }
+  win.document.open(); win.document.write(h); win.document.close();
+  win.onload = function () { setTimeout(function () { win.focus(); win.print(); }, 550); };
+}
+
+cargar();
+</script>
+</body>
+</html>

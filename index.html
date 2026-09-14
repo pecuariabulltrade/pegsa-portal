@@ -89,6 +89,13 @@
     <a class="sb-item" data-target="acumulados" onclick="sbNavigate('acumulados')">
       <span class="sb-num">11</span><span class="sb-text">Resultados Acumulados</span>
     </a>
+    <!-- v15.74.2: sub-portal de Compras y Liquidaciones, pagina propia como
+         analisis_costos.html. Misma leccion que v15.61.1 y v15.71.3: sbInit()
+         esconde todo .sb-item cuyo data-target no este en user.modules, asi
+         que 'compras' TIENE que figurar en gerencia y admin de core-home.js. -->
+    <a class="sb-item" data-target="compras" href="compras.html">
+      <span class="sb-num">12</span><span class="sb-text">Compras y Liquidaciones</span>
+    </a>
   </div>
 
   <div class="sb-user">
