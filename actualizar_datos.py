@@ -4694,6 +4694,26 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["precios_inferencia"] = {"ok": False, "error": str(e)}
 
+    # ⚠ v15.74.4 · Va ANTES de "Compras reales": ese paso hace el merge leyendo
+    # compras_liquidaciones.json de DISCO, asi que si se generara despues, cada
+    # tick costearia con las liquidaciones del tick anterior.
+    # ── COMPRAS · LIQUIDACIONES (v15.74.1) ─────────────────────
+    # Une la base de liquidaciones con los archivos sueltos del fallback y
+    # publica compras_liquidaciones.json, que es lo que lee el sub-portal
+    # (módulo 12) y, desde la Parte D, el costo de compra del módulo 07.
+    separador("Compras · liquidaciones")
+    try:
+        _cl = generar_compras_liquidaciones(carpeta, log)
+        resumen["modulos"]["compras_liquidaciones"] = {
+            "ok":     _cl is not None,
+            "n":      _cl["meta"]["n_liquidaciones"] if _cl else 0,
+            "fuente": _cl["meta"]["fuente"] if _cl else None,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_compras_liquidaciones falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["compras_liquidaciones"] = {"ok": False, "error": str(e)}
+
     # ── COMPRAS REALES (v15.57) ────────────────────────────────
     # Lee el Excel de compras del OneDrive compartido y vuelca
     # precios_compra_real.json — el precio REAL pagado por categoría, que las
@@ -4730,23 +4750,6 @@ def main():
         log.warning(f"  ⚠ generar_compras_ingresos falló: {e}")
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["compras_ingresos"] = {"ok": False, "error": str(e)}
-
-    # ── COMPRAS · LIQUIDACIONES (v15.74.1) ─────────────────────
-    # Une la base de liquidaciones con los archivos sueltos del fallback y
-    # publica compras_liquidaciones.json, que es lo que lee el sub-portal
-    # (módulo 12) y, desde la Parte D, el costo de compra del módulo 07.
-    separador("Compras · liquidaciones")
-    try:
-        _cl = generar_compras_liquidaciones(carpeta, log)
-        resumen["modulos"]["compras_liquidaciones"] = {
-            "ok":     _cl is not None,
-            "n":      _cl["meta"]["n_liquidaciones"] if _cl else 0,
-            "fuente": _cl["meta"]["fuente"] if _cl else None,
-        }
-    except Exception as e:
-        log.warning(f"  ⚠ generar_compras_liquidaciones falló: {e}")
-        import traceback; log.warning(traceback.format_exc())
-        resumen["modulos"]["compras_liquidaciones"] = {"ok": False, "error": str(e)}
 
     # ── %PV MENSUAL HISTÓRICO (v15.58) ─────────────────────────
     # La serie diaria de pct_pv (eficiencia_historico) solo cubre desde
@@ -7464,6 +7467,7 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
 
     hasta = date.today()
     desde = hasta - timedelta(days=COMPRAS_ING_DIAS)
+    pedido_desde = desde.isoformat()
 
     if regs_ing is None:
         try:
@@ -7602,12 +7606,24 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
         lista.append(g)
     lista.sort(key=lambda g: (g["fecha_ingreso"] or "", g["tropa_norm"], g["categoria"]))
 
+    # ⚠ v15.74.4 · El rango NO es siempre el que pidió esta función. Cuando el
+    # pipeline le pasa los `regs_ing` del módulo 6, esos vienen de la ventana de
+    # egresos, que se estira hasta el 1-ene del año base de ADP (hoy, 2024-01):
+    # son ~990 días, no 730. Declarar 730 dejaba un meta que mentía sobre sus
+    # propios datos — el sub-portal mostraba "desde 2024-09" con tropas de enero
+    # de 2024 en la tabla. Se reporta lo que realmente hay.
+    _fechas = [g["fecha_ingreso"] for g in lista if g.get("fecha_ingreso")]
+    _desde_real = min(_fechas) if _fechas else desde.isoformat()
+    _hasta_real = max(_fechas) if _fechas else hasta.isoformat()
+
     salida = {
         "meta": {
             "generado":  datetime.now().isoformat(),
-            "desde":     desde.isoformat(),
-            "hasta":     hasta.isoformat(),
-            "dias":      COMPRAS_ING_DIAS,
+            "desde":     _desde_real,
+            "hasta":     _hasta_real,
+            "dias":      (hasta - date.fromisoformat(_desde_real)).days if _fechas else COMPRAS_ING_DIAS,
+            "ventana_pedida_dias":  COMPRAS_ING_DIAS,
+            "ventana_pedida_desde": pedido_desde,
             "n_tropas":  len(tropas),
             "n_grupos":  len(lista),
             "excluidas": n_excl,
@@ -7628,7 +7644,7 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(limpiar_nan(salida), f, ensure_ascii=False, indent=2, default=str)
     log.info(f"  ✓ Compras/ingresos: {len(tropas)} tropas · {len(lista)} grupos "
-             f"({COMPRAS_ING_DIAS} d) · {n_excl} sub-grupos excluidos")
+             f"({_desde_real} a {_hasta_real}) · {n_excl} sub-grupos excluidos")
     return salida
 
 
