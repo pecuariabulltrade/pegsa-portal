@@ -4712,6 +4712,25 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["compras_reales"] = {"ok": False, "error": str(e)}
 
+    # ── COMPRAS · INGRESOS RESUMIDOS (v15.74) ──────────────────
+    # Base del sub-portal de Compras y Liquidaciones. Reusa los ingresos y las
+    # muertes que ya bajaron los módulos 6 y 7 — no le pega de nuevo a la API.
+    separador("Compras · ingresos resumidos")
+    try:
+        _ci = generar_compras_ingresos(
+            carpeta, log,
+            regs_ing=regs_ing if 'regs_ing' in locals() else None,
+            muertes_raw=muertes_raw if 'muertes_raw' in locals() else None)
+        resumen["modulos"]["compras_ingresos"] = {
+            "ok":       _ci is not None,
+            "tropas":   _ci["meta"]["n_tropas"] if _ci else 0,
+            "grupos":   _ci["meta"]["n_grupos"] if _ci else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_compras_ingresos falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["compras_ingresos"] = {"ok": False, "error": str(e)}
+
     # ── %PV MENSUAL HISTÓRICO (v15.58) ─────────────────────────
     # La serie diaria de pct_pv (eficiencia_historico) solo cubre desde
     # 2026-04-30 y el módulo Resultado por Remito costea animales con hasta
@@ -7383,6 +7402,217 @@ def procesar_precios_racion(carpeta_out, log=None):
         log.info(f"  ✓ Precios de ración: {len(out)} meses ({min(out)} → {_u}) · "
                  f"$/kg MS {_u} = {out[_u]['tc']/out[_u]['ms']:,.2f}")
     return out
+
+
+# ════════════════════════════════════════════════════════════════
+# v15.74 · COMPRAS · ingresos resumidos por tropa × categoría
+# ════════════════════════════════════════════════════════════════
+# Base del sub-portal "Compras y Liquidaciones" (compras.html): lo que WinCampo
+# dice que ENTRÓ al campo, agrupado como se liquida. Sobre esto el usuario carga
+# a mano la liquidación (kg y precio liquidados), y de ahí sale el costo de
+# compra real.
+#
+# ⚠ El kg que se guarda es `KgIngreso` = KILOS_CAMION_PARCIAL, el kg de BALANZA
+# DEL CAMIÓN al llegar. Es el único kg de ingreso que existe en la API y es
+# contra ese que se mide el desbaste (kg liquidado vs. kg que llegó). Si el
+# desbaste diera sistemáticamente ~0, no es que no haya desbaste: es que el
+# cargador está copiando el kg de la liquidación al camión, y eso es un tema de
+# carga, no de cálculo.
+
+COMPRAS_ING_DIAS = 730          # mismo rango que fetch_ingresos, sin cap
+
+
+def _ci_cat(c):
+    """Sigla de la API ('VA') → nombre largo ('Vaca'). Reusa el mapa del módulo
+    Resultado por Remito para no tener dos tablas que se puedan desincronizar."""
+    return _rr_cat(c)
+
+
+def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=None):
+    """v15.74 · Vuelca `compras_ingresos.json`: los ingresos de WinCampo de los
+    últimos 730 días agrupados por tropa × categoría, con el estado de cada
+    tropa contra el stock y las ventas de hoy.
+
+    regs_ing   — los sub-grupos que ya bajó el módulo 6 (camión × categoría).
+                 Si viene None se pide de nuevo a la API.
+    muertes_raw— las muertes que ya bajó el módulo 7. Si viene None, el campo
+                 `muertas` de cada tropa queda en null (no en 0: no es lo mismo
+                 "cero muertes" que "no lo sé").
+
+    Nunca levanta: devuelve None y loguea si algo falla.
+    """
+    if log is None:
+        log = logging.getLogger("compras_ing")
+    from datetime import date, timedelta
+
+    hasta = date.today()
+    desde = hasta - timedelta(days=COMPRAS_ING_DIAS)
+
+    if regs_ing is None:
+        try:
+            import wincampo_source
+            _cli = wincampo_source.WinCampoAPI()
+            regs_ing = _cli.fetch_ingresos(fecha_desde=desde.isoformat(),
+                                           fecha_hasta=hasta.isoformat())
+            log.info(f"  + compras/ingresos: {len(regs_ing):,} sub-grupos pedidos a la API")
+        except Exception as e:
+            log.warning(f"  ⚠ compras/ingresos: no pude traer los ingresos: {e}")
+            return None
+
+    grupos = {}          # (tropa_norm, hotelero, cat) → acumulador
+    tropas = {}          # tropa_norm → acumulador de la tropa
+    n_excl = 0
+    siglas_raras = {}    # sigla de categoría fuera de RR_CAT_CODE → cuántas veces
+
+    for r in (regs_ing or []):
+        # Mismo filtro que procesar_movimientos: destete y traslado no son compras.
+        cons = str(r.get("Consignatario") or "").strip()
+        if cons.lower() in CONSIGNATARIA_EXCLUIR:
+            n_excl += 1
+            continue
+        tropa = str(r.get("NRO_TROPA") or "").strip()
+        k_tropa = _norm_tropa(tropa)
+        if not k_tropa:
+            n_excl += 1
+            continue
+        cat_sigla = str(r.get("categoria") or "").strip().upper()
+        cat = _ci_cat(cat_sigla)
+        if cat_sigla and cat_sigla not in RR_CAT_CODE:
+            # Se agrupa igual (no se descarta ninguna cabeza) pero queda dicho:
+            # el fixture de 730 d trae un 'VC' suelto.
+            siglas_raras[cat_sigla] = siglas_raras.get(cat_sigla, 0) + 1
+        # `hotelero` ya viene consolidado por wincampo_source (PEGSA absorbe
+        # sus razones sociales en el fetch), asi que se usa tal cual.
+        hot = str(r.get("hotelero") or "").strip()
+        cab = int(to_num(r.get("Cantidad", 0)) or 0)
+        kg  = float(to_num(r.get("KgIngreso", 0)) or 0.0)
+        fec = str(r.get("FechaIngreso") or "")[:10] or None
+
+        gk = (k_tropa, hot, cat)
+        g = grupos.setdefault(gk, {
+            "tropa": tropa, "tropa_norm": k_tropa, "hotelero": hot,
+            "categoria": cat, "categoria_sigla": cat_sigla,
+            "cabezas": 0, "kg_ingreso": 0.0, "fecha_ingreso": fec, "camiones": 0,
+            "consignatario": cons or None, "proveedor": str(r.get("Proveedor") or "").strip() or None,
+            "origen": str(r.get("ORIGEN") or "").strip() or None,
+            "localidad": str(r.get("LOCALIDAD") or "").strip() or None,
+            "destino_compra": str(r.get("DESTINO_COMPRA") or "").strip() or None,
+        })
+        g["cabezas"]    += cab
+        g["kg_ingreso"] += kg
+        g["camiones"]   += 1
+        if fec and (g["fecha_ingreso"] is None or fec < g["fecha_ingreso"]):
+            g["fecha_ingreso"] = fec
+
+        t = tropas.setdefault(k_tropa, {
+            "tropa": tropa, "hotelero": hot, "fecha": fec,
+            "consignatario": cons or None, "proveedor": g["proveedor"],
+            "cabezas": 0, "kg_ingreso": 0.0, "categorias": [],
+        })
+        t["cabezas"]    += cab
+        t["kg_ingreso"] += kg
+        if fec and (t["fecha"] is None or fec < t["fecha"]):
+            t["fecha"] = fec
+
+    # ── Estado de cada tropa contra el stock y las ventas de HOY ──
+    # Los dos JSON se leen de DISCO (no de memoria): así esto funciona igual si
+    # algún módulo intermedio falló en este tick.
+    en_stock, vendidas, vend_imp, muertas = {}, {}, {}, {}
+    rr_desde = None
+    try:
+        _cands = sorted(Path(carpeta_out).glob("stock_detalle_*.json"))
+        if _cands:
+            _st = json.loads(_cands[-1].read_text(encoding="utf-8"))
+            for d in (_st.get("detalle") or []):
+                _k = _norm_tropa(d.get("NRO_TROPA"))
+                if _k:
+                    en_stock[_k] = en_stock.get(_k, 0) + int(to_num(d.get("CANTIDAD", 1)) or 1)
+    except Exception as e:
+        log.warning(f"  ⚠ compras/ingresos: no pude leer stock_detalle ({e}); en_stock queda en null")
+        en_stock = None
+    try:
+        _rrp = Path(carpeta_out) / "resultado_remitos.json"
+        if _rrp.exists():
+            _rr = json.loads(_rrp.read_text(encoding="utf-8"))
+            rr_desde = (_rr.get("meta") or {}).get("desde")
+            for _rem in (_rr.get("remitos") or {}).values():
+                for f in (_rem.get("filas") or []):
+                    _k = _norm_tropa(f.get("tropa"))
+                    if not _k:
+                        continue
+                    # ⚠ Las filas `imputado` son los animales SIN CARAVANA: el
+                    # pipeline les puso la tropa mayoritaria del remito porque no
+                    # se pudo leer la suya. Esa tropa es una suposición, no un
+                    # hecho, y sumarlas acá inflaba 12 tropas por encima de las
+                    # cabezas que realmente ingresaron. Van aparte.
+                    if f.get("imputado"):
+                        vend_imp[_k] = vend_imp.get(_k, 0) + int(f.get("cabezas") or 0)
+                    else:
+                        vendidas[_k] = vendidas.get(_k, 0) + int(f.get("cabezas") or 0)
+    except Exception as e:
+        log.warning(f"  ⚠ compras/ingresos: no pude leer resultado_remitos ({e}); vendidas queda en null")
+        vendidas, vend_imp = None, None
+    if muertes_raw is not None:
+        try:
+            for m in muertes_raw:
+                _k = _norm_tropa(m.get("NRO_TROPA") or m.get("TROPA"))
+                if _k:
+                    muertas[_k] = muertas.get(_k, 0) + int(to_num(m.get("CANTIDAD", 1)) or 1)
+        except Exception as e:
+            log.warning(f"  ⚠ compras/ingresos: muertes ilegibles ({e})")
+            muertas = None
+    else:
+        muertas = None
+
+    for k, t in tropas.items():
+        t["cabezas"]    = int(t["cabezas"])
+        t["kg_ingreso"] = round(t["kg_ingreso"], 1)
+        t["kg_cab"]     = round(t["kg_ingreso"] / t["cabezas"], 1) if t["cabezas"] else None
+        t["categorias"] = sorted({g["categoria"] for g in grupos.values()
+                                  if g["tropa_norm"] == k})
+        t["en_stock"]   = (en_stock.get(k, 0) if en_stock is not None else None)
+        t["vendidas"]   = (vendidas.get(k, 0) if vendidas is not None else None)
+        # Cabezas vendidas que el módulo 09 le atribuyó a esta tropa por
+        # imputación (sin caravana leída). Se muestran, no se suman.
+        t["vendidas_imputadas"] = (vend_imp.get(k, 0) if vend_imp is not None else None)
+        t["muertas"]    = (muertas.get(k, 0) if muertas is not None else None)
+
+    lista = []
+    for g in grupos.values():
+        g["cabezas"]    = int(g["cabezas"])
+        g["kg_ingreso"] = round(g["kg_ingreso"], 1)
+        g["kg_cab"]     = round(g["kg_ingreso"] / g["cabezas"], 1) if g["cabezas"] else None
+        lista.append(g)
+    lista.sort(key=lambda g: (g["fecha_ingreso"] or "", g["tropa_norm"], g["categoria"]))
+
+    salida = {
+        "meta": {
+            "generado":  datetime.now().isoformat(),
+            "desde":     desde.isoformat(),
+            "hasta":     hasta.isoformat(),
+            "dias":      COMPRAS_ING_DIAS,
+            "n_tropas":  len(tropas),
+            "n_grupos":  len(lista),
+            "excluidas": n_excl,
+            "excluidas_por": sorted(CONSIGNATARIA_EXCLUIR),
+            # `vendidas` sólo ve las ventas que el módulo 09 tiene cargadas, que
+            # arrancan en esta fecha: una tropa vendida antes figura en 0.
+            "vendidas_desde": rr_desde,
+        },
+        "tropas": dict(sorted(tropas.items())),
+        "grupos": lista,
+    }
+
+    if siglas_raras:
+        salida["meta"]["categorias_desconocidas"] = siglas_raras
+        log.warning(f"  ⚠ compras/ingresos: siglas de categoría fuera de tabla: {siglas_raras}")
+
+    out_path = Path(carpeta_out) / "compras_ingresos.json"
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(limpiar_nan(salida), f, ensure_ascii=False, indent=2, default=str)
+    log.info(f"  ✓ Compras/ingresos: {len(tropas)} tropas · {len(lista)} grupos "
+             f"({COMPRAS_ING_DIAS} d) · {n_excl} sub-grupos excluidos")
+    return salida
 
 
 def procesar_compras_reales(carpeta_out, log=None):
