@@ -1,25 +1,31 @@
 {
   "propietario": "EL SAGUAIPE SAS",
   "kpis": {
-    "total_cabezas": 169,
-    "total_kg_estimado_hoy": 64220,
-    "total_ton_estimado_hoy": 64.22,
-    "kg_promedio_estimado": 380.0,
-    "dias_promedio_feedlot": 51.9,
+    "total_cabezas": 215,
+    "total_kg_estimado_hoy": 79404,
+    "total_ton_estimado_hoy": 79.4,
+    "kg_promedio_estimado": 369.3,
+    "dias_promedio_feedlot": 42.0,
     "total_establecimientos": 2,
     "total_propietarios": 1,
     "por_categoria": {
       "VA": {
-        "cabezas": 116.0,
-        "kg_estimado": 44080,
-        "ton_estimado": 44.08,
+        "cabezas": 154.0,
+        "kg_estimado": 58520,
+        "ton_estimado": 58.52,
         "kg_promedio": 380.0
       },
       "TM": {
-        "cabezas": 45.0,
-        "kg_estimado": 17100,
-        "ton_estimado": 17.1,
-        "kg_promedio": 380.0
+        "cabezas": 49.0,
+        "kg_estimado": 17472,
+        "ton_estimado": 17.47,
+        "kg_promedio": 356.6
+      },
+      "TH": {
+        "cabezas": 4.0,
+        "kg_estimado": 372,
+        "ton_estimado": 0.37,
+        "kg_promedio": 93.0
       },
       "VQ": {
         "cabezas": 8.0,
@@ -30,18 +36,18 @@
     },
     "por_propietario": {
       "EL SAGUAIPE SAS": {
-        "cabezas": 169.0,
-        "kg_estimado": 64220,
-        "ton_estimado": 64.22,
-        "kg_promedio": 380.0
+        "cabezas": 215.0,
+        "kg_estimado": 79404,
+        "ton_estimado": 79.4,
+        "kg_promedio": 369.3
       }
     },
     "por_establecimiento": {
       "San Antonio": {
-        "cabezas": 124.0,
-        "kg_estimado": 47120,
-        "ton_estimado": 47.12,
-        "kg_promedio": 380.0
+        "cabezas": 170.0,
+        "kg_estimado": 62304,
+        "ton_estimado": 62.3,
+        "kg_promedio": 366.5
       },
       "El Durazno": {
         "cabezas": 45.0,
@@ -52,30 +58,42 @@
     },
     "por_clasificacion": {
       "Vaca": {
-        "cabezas": 116.0,
-        "kg_estimado": 44080,
-        "ton_estimado": 44.08,
+        "cabezas": 154.0,
+        "kg_estimado": 58520,
+        "ton_estimado": 58.52,
         "kg_promedio": 380.0
       },
       "Macho": {
-        "cabezas": 45.0,
-        "kg_estimado": 17100,
-        "ton_estimado": 17.1,
-        "kg_promedio": 380.0
+        "cabezas": 49.0,
+        "kg_estimado": 17472,
+        "ton_estimado": 17.47,
+        "kg_promedio": 356.6
       },
       "Hembra": {
-        "cabezas": 8.0,
-        "kg_estimado": 3040,
-        "ton_estimado": 3.04,
-        "kg_promedio": 380.0
+        "cabezas": 12.0,
+        "kg_estimado": 3412,
+        "ton_estimado": 3.41,
+        "kg_promedio": 284.3
       }
     },
     "por_categoria_final": {
       "vaca": {
-        "cabezas": 116.0,
-        "kg_estimado": 44080,
-        "ton_estimado": 44.08,
+        "cabezas": 154.0,
+        "kg_estimado": 58520,
+        "ton_estimado": 58.52,
         "kg_promedio": 380.0
+      },
+      "ternero": {
+        "cabezas": 4.0,
+        "kg_estimado": 372,
+        "ton_estimado": 0.37,
+        "kg_promedio": 93.0
+      },
+      "ternera": {
+        "cabezas": 4.0,
+        "kg_estimado": 372,
+        "ton_estimado": 0.37,
+        "kg_promedio": 93.0
       },
       "novillo": {
         "cabezas": 45.0,
@@ -93,10 +111,22 @@
     "por_establecimiento_categoria": {
       "San Antonio": {
         "vaca": {
-          "cabezas": 116.0,
-          "kg_estimado": 44080.0,
-          "ton_estimado": 44.08,
+          "cabezas": 154.0,
+          "kg_estimado": 58520.0,
+          "ton_estimado": 58.52,
           "kg_promedio": 380.0
+        },
+        "ternero": {
+          "cabezas": 4.0,
+          "kg_estimado": 372.0,
+          "ton_estimado": 0.37,
+          "kg_promedio": 93.0
+        },
+        "ternera": {
+          "cabezas": 4.0,
+          "kg_estimado": 372.0,
+          "ton_estimado": 0.37,
+          "kg_promedio": 93.0
         },
         "vaquillona": {
           "cabezas": 8.0,
@@ -118,18 +148,54 @@
       "vaca": {
         "por_establecimiento": {
           "San Antonio": {
-            "cabezas": 116.0,
-            "kg_estimado": 44080.0,
-            "ton_estimado": 44.08,
+            "cabezas": 154.0,
+            "kg_estimado": 58520.0,
+            "ton_estimado": 58.52,
             "kg_promedio": 380.0
           }
         },
         "por_propietario": {
           "EL SAGUAIPE SAS": {
-            "cabezas": 116.0,
-            "kg_estimado": 44080.0,
-            "ton_estimado": 44.08,
+            "cabezas": 154.0,
+            "kg_estimado": 58520.0,
+            "ton_estimado": 58.52,
             "kg_promedio": 380.0
+          }
+        }
+      },
+      "ternero": {
+        "por_establecimiento": {
+          "San Antonio": {
+            "cabezas": 4.0,
+            "kg_estimado": 372.0,
+            "ton_estimado": 0.37,
+            "kg_promedio": 93.0
+          }
+        },
+        "por_propietario": {
+          "EL SAGUAIPE SAS": {
+            "cabezas": 4.0,
+            "kg_estimado": 372.0,
+            "ton_estimado": 0.37,
+            "kg_promedio": 93.0
+          }
+        }
+      },
+      "ternera": {
+        "por_establecimiento": {
+          "San Antonio": {
+            "cabezas": 4.0,
+            "kg_estimado": 372.0,
+            "ton_estimado": 0.37,
+            "kg_promedio": 93.0
+          }
+        },
+        "por_propietario": {
+          "EL SAGUAIPE SAS": {
+            "cabezas": 4.0,
+            "kg_estimado": 372.0,
+            "ton_estimado": 0.37,
+            "kg_promedio": 93.0
           }
         }
       },

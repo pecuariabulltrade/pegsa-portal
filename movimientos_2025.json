@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-15T18:03:39.037291",
+    "generado": "2026-09-15T19:03:39.420373",
     "periodo": "2025",
     "mes_actual": "2026-09",
     "nombre_mes": "Septiembre 2026",
@@ -13,18 +13,18 @@
   },
   "anio": {
     "resumen": {
-      "cabezas_ingresadas": 16178,
-      "kg_ingresado": 5521249.6,
+      "cabezas_ingresadas": 16224,
+      "kg_ingresado": 5536903.6,
       "kg_promedio_ingreso": 341.3,
       "cabezas_egresadas": 17501,
       "kg_egresado": 9426753.4,
       "kg_promedio_egreso": 538.6,
-      "saldo_cabezas": -1323,
-      "saldo_kg": -3905503.8
+      "saldo_cabezas": -1277,
+      "saldo_kg": -3889849.8
     },
     "ingresos": {
-      "total_cabezas": 16178,
-      "total_kg": 5521249.6,
+      "total_cabezas": 16224,
+      "total_kg": 5536903.6,
       "kg_promedio": 341.3,
       "por_propietario": {
         "PEGSA": {
@@ -38,9 +38,9 @@
           "kg_promedio": 419.4
         },
         "EL SAGUAIPE SAS": {
-          "cabezas": 219,
-          "kg": 81667.0,
-          "kg_promedio": 372.9
+          "cabezas": 265,
+          "kg": 97321.0,
+          "kg_promedio": 367.2
         },
         "LAS TAPERAS": {
           "cabezas": 953,
@@ -75,19 +75,19 @@
           "kg_promedio": 374.9
         },
         "TH": {
-          "cabezas": 1633,
-          "kg": 335591.3,
-          "kg_promedio": 205.5
+          "cabezas": 1637,
+          "kg": 335951.3,
+          "kg_promedio": 205.2
         },
         "TM": {
-          "cabezas": 3459,
-          "kg": 755806.4,
-          "kg_promedio": 218.5
+          "cabezas": 3463,
+          "kg": 756166.4,
+          "kg_promedio": 218.4
         },
         "VA": {
-          "cabezas": 6084,
-          "kg": 2770026.1,
-          "kg_promedio": 455.3
+          "cabezas": 6122,
+          "kg": 2784960.1,
+          "kg_promedio": 454.9
         },
         "VQ": {
           "cabezas": 1320,
@@ -120,6 +120,11 @@
           "cabezas": 1092,
           "kg": 325445.1,
           "kg_promedio": 298.0
+        },
+        "2026-09": {
+          "cabezas": 78,
+          "kg": 34454.0,
+          "kg_promedio": 441.7
         },
         "2025-09": {
           "cabezas": 1523,
@@ -155,11 +160,6 @@
           "cabezas": 899,
           "kg": 311599.0,
           "kg_promedio": 346.6
-        },
-        "2026-09": {
-          "cabezas": 32,
-          "kg": 18800.0,
-          "kg_promedio": 587.5
         },
         "2026-01": {
           "cabezas": 1184,
@@ -852,9 +852,24 @@
           "kg_promedio": 298.0
         },
         "2026-09": {
-          "cabezas": 32,
-          "kg": 18800.0,
+          "cabezas": 78,
+          "kg": 34454.0,
           "por_categoria": {
+            "TH": {
+              "cabezas": 4,
+              "kg": 360.0,
+              "kg_promedio": 90.0
+            },
+            "TM": {
+              "cabezas": 4,
+              "kg": 360.0,
+              "kg_promedio": 90.0
+            },
+            "VA": {
+              "cabezas": 38,
+              "kg": 14934.0,
+              "kg_promedio": 393.0
+            },
             "NV": {
               "cabezas": 32,
               "kg": 18800.0,
@@ -862,24 +877,29 @@
             }
           },
           "por_propietario": {
+            "EL SAGUAIPE SAS": {
+              "cabezas": 46,
+              "kg": 15654.0,
+              "kg_promedio": 340.3
+            },
             "LAS TAPERAS": {
               "cabezas": 32,
               "kg": 18800.0,
               "kg_promedio": 587.5
             }
           },
-          "kg_promedio": 587.5
+          "kg_promedio": 441.7
         }
       },
       "top10_origen": [
         {
           "nombre": "DARWASH SA",
-          "cabezas": 6595,
+          "cabezas": 6641,
           "por_categoria": {
-            "TM": 1877,
-            "VA": 1427,
+            "TM": 1881,
+            "VA": 1465,
             "NT": 1189,
-            "TH": 864,
+            "TH": 868,
             "NV": 785,
             "VQ": 446,
             "TO": 7
@@ -1988,6 +2008,33 @@
       "top10_destino": []
     },
     "ingresos_detalle_30d": [
+      {
+        "fecha": "2026-09-09",
+        "doc": "SAG.DAR.09/09/2026",
+        "cabezas": 46,
+        "kg_total": 15654.0,
+        "kg_prom": 340.3,
+        "lugar": "CAMPO",
+        "vendedor": "DARWASH SA",
+        "consignatario": "DARWASH SA",
+        "categorias_detalle": [
+          {
+            "categoria": "TH",
+            "cabezas": 4,
+            "kg_prom": 90.0
+          },
+          {
+            "categoria": "TM",
+            "cabezas": 4,
+            "kg_prom": 90.0
+          },
+          {
+            "categoria": "VA",
+            "cabezas": 38,
+            "kg_prom": 393.0
+          }
+        ]
+      },
       {
         "fecha": "2026-09-01",
         "doc": "LTA.HUI.01/09/2026",
