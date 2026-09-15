@@ -7757,6 +7757,122 @@ def liq_id(tropas_norm, fecha):
     return f"{t}_{fecha or ''}"
 
 
+# ── v15.74.5 · Semáforo por tropa ────────────────────────────────
+# Decisión de Nicolás (15/09/2026): el emparejamiento WinCampo ↔ liquidación es
+# ESTRICTO — misma categoría, mismas cabezas, y el kg/cab no puede diferir más
+# de un 8 %. Lo que no cierra queda "a revisar" y se acomoda en el sub-portal.
+# GEMELO EXACTO de liqSemaforo() en js/compras-calc.js; el test de paridad
+# (Scripts_Auxiliares\test_liq_calcular.py) corre los dos sobre los mismos casos.
+
+LIQ_TOL_KG_PCT = 8      # |kg liq/cab − kg wc/cab| ÷ kg liq/cab, en %
+LIQ_TOL_CAB    = 0      # cabezas: tienen que ser las mismas
+
+
+def liq_es_tercero(hotelero):
+    h = str(hotelero or "").upper()
+    return bool(h) and "PEGSA" not in h and "BULLTRADE" not in h
+
+
+def liq_semaforo(grupos_wc, lineas, opts=None):
+    """Devuelve {'estado': 'ok'|'revisar'|'sin_liquidar'|'terceros',
+    'motivos': {categoria: [...]}} para UNA tropa. Ver el JS para el detalle."""
+    opts = opts or {}
+    grupos_wc = grupos_wc or []
+    lineas = lineas or []
+    tol_kg  = opts.get("tol_kg_pct", LIQ_TOL_KG_PCT)
+    tol_cab = opts.get("tol_cab", LIQ_TOL_CAB)
+    motivos = {}
+
+    def add(cat, m):
+        motivos.setdefault(cat, []).append(m)
+
+    if not lineas:
+        return {"estado": "terceros" if liq_es_tercero(opts.get("hotelero")) else "sin_liquidar",
+                "motivos": {}}
+
+    por_cat = {}
+    for l in lineas:
+        cat = l.get("categoria") or "—"
+        a = por_cat.setdefault(cat, {"cab": 0.0, "kg": 0.0, "revisar": False})
+        a["cab"] += _liq_num(l.get("cabezas_liq")) or 0.0
+        a["kg"]  += _liq_num(l.get("kg_liq")) or 0.0
+        if str(l.get("estado_liq") or "").lower() == "revisar":
+            a["revisar"] = True
+
+    wc_cats = set()
+    if not grupos_wc:
+        add("*", "tropa_sin_ingreso")
+    for g in grupos_wc:
+        cat = g.get("categoria")
+        wc_cats.add(cat)
+        a = por_cat.get(cat)
+        if a is None:
+            add(cat, "sin_linea")
+            continue
+        cab_wc = _liq_num(g.get("cabezas")) or 0.0
+        if abs(a["cab"] - cab_wc) > tol_cab:
+            add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}")
+            continue    # con cabezas distintas el kg/cab no es comparable
+        kg_wc_cab  = ((_liq_num(g.get("kg_ingreso")) or 0.0) / cab_wc) if cab_wc else None
+        kg_liq_cab = (a["kg"] / a["cab"]) if a["cab"] else None
+        if kg_wc_cab and kg_liq_cab:
+            dif = abs(kg_liq_cab - kg_wc_cab) / kg_liq_cab * 100
+            if dif > tol_kg + 1e-9:
+                add(cat, f"kg_{dif:.1f}%")
+    for cat in sorted(por_cat):
+        if grupos_wc and cat not in wc_cats:
+            add(cat, "cat_sobrante")
+        if por_cat[cat]["revisar"]:
+            add(cat, "estado_revisar")
+    return {"estado": "revisar" if motivos else "ok", "motivos": motivos}
+
+
+def liq_motivos_txt(motivos):
+    return " · ".join(f"{cat}: {', '.join(ms)}" for cat, ms in (motivos or {}).items())
+
+
+def _cl_semaforo_todas(carpeta_out, activas, log):
+    """Semáforo de TODAS las tropas: las de compras_ingresos.json (leído de
+    disco — se genera después en el tick, así que es el del tick anterior; una
+    tropa nueva entra al semáforo publicado un tick más tarde, y el sub-portal
+    igual lo recalcula en vivo) más las que sólo nombra alguna liquidación.
+    Devuelve (semaforo, resumen)."""
+    tropas_wc, grupos_wc = {}, {}
+    try:
+        p = Path(carpeta_out) / "compras_ingresos.json"
+        if p.exists():
+            ing = json.loads(p.read_text(encoding="utf-8"))
+            tropas_wc = ing.get("tropas") or {}
+            for g in (ing.get("grupos") or []):
+                grupos_wc.setdefault(g.get("tropa_norm"), []).append(g)
+    except Exception as e:
+        log.warning(f"  ⚠ Liquidaciones: no pude leer compras_ingresos.json para el semáforo ({e})")
+
+    lineas, hot_liq = {}, {}
+    for o in activas:
+        for c in (o.get("categorias") or []):
+            k = _norm_tropa(c.get("tropa_norm") or c.get("tropa"))
+            if not k:
+                continue
+            lineas.setdefault(k, []).append({
+                "categoria": c.get("categoria"), "cabezas_liq": c.get("cabezas_liq"),
+                "kg_liq": c.get("kg_liq"), "estado_liq": o.get("estado"),
+            })
+            if c.get("hotelero"):
+                hot_liq.setdefault(k, c["hotelero"])
+
+    semaforo = {}
+    for k in sorted(set(tropas_wc) | set(lineas)):
+        hot = (tropas_wc.get(k) or {}).get("hotelero") or hot_liq.get(k)
+        semaforo[k] = liq_semaforo(grupos_wc.get(k), lineas.get(k), {"hotelero": hot})
+    resumen = {e: 0 for e in ("ok", "revisar", "sin_liquidar", "terceros")}
+    for s in semaforo.values():
+        resumen[s["estado"]] = resumen.get(s["estado"], 0) + 1
+    resumen["tol_kg_pct"] = LIQ_TOL_KG_PCT
+    resumen["tol_cab"] = LIQ_TOL_CAB
+    return semaforo, resumen
+
+
 def _cl_leer_supabase(log):
     """Liquidaciones guardadas en Supabase. Mismo patrón que _rv_leer_supabase:
     pagina, timeout corto, todo dentro de un try — nunca rompe el tick.
@@ -7860,6 +7976,10 @@ def generar_compras_liquidaciones(carpeta_out, log=None):
             "categorias": calc["categorias"],
             "total": calc["total"],
         }
+        # v15.74.5 · rastro de las correcciones hechas en el sub-portal
+        for _k in ("editado", "historial", "renombrada_de"):
+            if o.get(_k) is not None:
+                fila[_k] = o[_k]
         activas.append(fila)
         for c in calc["categorias"]:
             k = _norm_tropa(c.get("tropa_norm") or c.get("tropa"))
@@ -7878,6 +7998,9 @@ def generar_compras_liquidaciones(carpeta_out, log=None):
                 "hotelero": c.get("hotelero"),
             }
 
+    # v15.74.5 · semáforo estricto por tropa (categoría + cabezas + kg ±8 %)
+    semaforo, sem_resumen = _cl_semaforo_todas(carpeta_out, activas, log)
+
     salida = {
         "meta": {
             "generado": datetime.now().isoformat(),
@@ -7887,17 +8010,22 @@ def generar_compras_liquidaciones(carpeta_out, log=None):
             "n_supabase": n_sb, "n_archivos": n_arch,
             "n_liquidaciones": len(activas), "n_anuladas": anuladas,
             "carpeta_fallback": str(carpeta),
+            "semaforo": sem_resumen,
         },
         "liquidaciones": activas,
         # índice tropa_norm → categoría → lo liquidado. Es lo que consume
         # precios_compra_real (Parte D) y el sub-portal para marcar el estado.
         "por_tropa_cat": por_tropa_cat,
+        # tropa_norm → {estado, motivos}. El sub-portal lo recalcula en vivo.
+        "semaforo": semaforo,
     }
     out_path = Path(carpeta_out) / "compras_liquidaciones.json"
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(limpiar_nan(salida), f, ensure_ascii=False, indent=2, default=str)
     log.info(f"  ✓ Compras/liquidaciones: {len(activas)} activas · {anuladas} anuladas "
-             f"· fuente {salida['meta']['fuente']}")
+             f"· fuente {salida['meta']['fuente']} · semáforo {sem_resumen['ok']} ok / "
+             f"{sem_resumen['revisar']} a revisar / {sem_resumen['sin_liquidar']} sin liquidar / "
+             f"{sem_resumen['terceros']} terceros")
     return salida
 
 
@@ -7932,6 +8060,10 @@ def _pcr_merge_liquidaciones(salida, carpeta_out, log):
 
     por_tropa = salida.setdefault("por_tropa", {})
     n_liq = n_nuevas = 0
+    # v15.74.5 · el semáforo de la tropa viaja con el precio: el módulo 09 pinta
+    # la marca `liq.` con ese color. Es un AVISO, no un bloqueo — la fila se
+    # costea igual.
+    sem_todas = CL.get("semaforo") or {}
 
     for k, cats in ptc.items():
         t = por_tropa.get(k)
@@ -7941,6 +8073,7 @@ def _pcr_merge_liquidaciones(salida, carpeta_out, log):
                                 "comision": None, "filas": 0, "por_categoria": {}}
             n_nuevas += 1
         pc = t.setdefault("por_categoria", {})
+        sem_k = sem_todas.get(k) or {}
         for cat, L in cats.items():
             imp = L.get("importe") or 0.0
             # fracciones equivalentes sobre el importe s/gastos — es lo que el
@@ -7961,6 +8094,8 @@ def _pcr_merge_liquidaciones(salida, carpeta_out, log):
                                    if L.get("desbaste_pct") is not None else None),
                 "filas":          1, "multiprecio": False,
                 "fuente":         "liquidacion", "liq_id": L.get("liq_id"),
+                "liq_semaforo":   sem_k.get("estado"),
+                "liq_motivos":    liq_motivos_txt(sem_k.get("motivos")) or None,
             }
             n_liq += 1
 
@@ -9739,6 +9874,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 # v15.74.3 · "liquidacion" | "excel" | "estimado"
                 "fuente_precio": fuente,
                 "liq_id": (pc or {}).get("liq_id"),
+                # v15.74.5 · color de la marca `liq.` + link a compras.html#tropa=
+                "liq_semaforo": (pc or {}).get("liq_semaforo"),
+                "liq_motivos": (pc or {}).get("liq_motivos"),
+                "tropa_norm": _norm_tropa(g["tropa"]),
                 "precio_kg_cg": (pc or {}).get("precio_kg_cg"),
                 "precio_cab_cg": (pc or {}).get("precio_cab_cg"),
                 "desbaste_pct": (pc or {}).get("desbaste_pct"),

@@ -1,4 +1,4 @@
-/* compras-calc.js — v15.74.1 · La cuenta de una liquidación de compra
+/* compras-calc.js — v15.74.5 · La cuenta de una liquidación de compra + semáforo por tropa
    ────────────────────────────────────────────────────────────────
    UNA sola función hace toda la aritmética de una liquidación, y la misma
    cuenta existe en Python (`liq_calcular` en actualizar_datos.py) para poder
@@ -154,10 +154,106 @@
     return t + '_' + (fecha || '');
   }
 
+  /* ── v15.74.5 · Semáforo por tropa ──────────────────────────────
+     Decisión de Nicolás (15/09/2026): el emparejamiento WinCampo ↔ liquidación
+     es ESTRICTO. Tiene que coincidir la categoría, las cabezas, y el kg por
+     cabeza no puede diferir más de un 8 %. Lo que no cierra queda "a revisar"
+     y se acomoda en el sub-portal hasta que dé verde. Nada de emparejar por
+     total de cabezas.
+
+     Misma función en Python (`liq_semaforo` en actualizar_datos.py): el
+     pipeline publica el semáforo en compras_liquidaciones.json y el sub-portal
+     lo recalcula en vivo al editar. Si se toca una, se toca la otra.
+
+       gruposWc — [{categoria, cabezas, kg_ingreso}] de compras_ingresos.json
+                  para ESA tropa (lo que WinCampo dice que entró).
+       lineas   — [{categoria, cabezas_liq, kg_liq, estado_liq}] líneas de
+                  liquidaciones ACTIVAS con esa tropa_norm (todas, de todas
+                  las liquidaciones; si hay dos de la misma categoría se suman).
+       opts     — {hotelero, tol_kg_pct, tol_cab}
+
+     Devuelve {estado, motivos}:
+       'ok'           verde  · todo coincide
+       'revisar'      ámbar  · hay liquidación pero algo no cierra
+       'sin_liquidar' rojo   · ninguna línea (tropa de PEGSA/Bulltrade)
+       'terceros'     gris   · ninguna línea y el hotelero es un tercero: no es
+                              tarea de PEGSA, va aparte para no ensuciar el rojo
+     motivos = {categoria: ['sin_linea' | 'cat_sobrante' | 'cabezas_680≠580'
+                | 'kg_12.7%' | 'estado_revisar']}, y '*': ['tropa_sin_ingreso']
+     cuando la liquidación nombra una tropa que WinCampo no tiene.
+  */
+  var LIQ_TOL_KG_PCT = 8;   // |kg liq/cab − kg wc/cab| ÷ kg liq/cab, en %
+  var LIQ_TOL_CAB    = 0;   // cabezas: tienen que ser las mismas
+
+  function liqEsTercero(hotelero) {
+    var h = String(hotelero || '').toUpperCase();
+    return !!h && h.indexOf('PEGSA') < 0 && h.indexOf('BULLTRADE') < 0;
+  }
+
+  function liqSemaforo(gruposWc, lineas, opts) {
+    opts = opts || {};
+    gruposWc = gruposWc || []; lineas = lineas || [];
+    var tolKg  = opts.tol_kg_pct != null ? opts.tol_kg_pct : LIQ_TOL_KG_PCT;
+    var tolCab = opts.tol_cab != null ? opts.tol_cab : LIQ_TOL_CAB;
+    var motivos = {};
+    function add(cat, m) { (motivos[cat] = motivos[cat] || []).push(m); }
+
+    if (!lineas.length) {
+      return {estado: liqEsTercero(opts.hotelero) ? 'terceros' : 'sin_liquidar', motivos: {}};
+    }
+    // lo liquidado, sumado por categoría
+    var porCat = {};
+    lineas.forEach(function (l) {
+      var cat = l.categoria || '—';
+      var a = porCat[cat] || (porCat[cat] = {cab: 0, kg: 0, revisar: false});
+      a.cab += _num(l.cabezas_liq) || 0;
+      a.kg  += _num(l.kg_liq) || 0;
+      if (String(l.estado_liq || '').toLowerCase() === 'revisar') a.revisar = true;
+    });
+
+    var wcCats = {};
+    if (!gruposWc.length) add('*', 'tropa_sin_ingreso');
+    gruposWc.forEach(function (g) {
+      var cat = g.categoria; wcCats[cat] = 1;
+      var a = porCat[cat];
+      if (!a) { add(cat, 'sin_linea'); return; }
+      var cabWc = _num(g.cabezas) || 0;
+      if (Math.abs(a.cab - cabWc) > tolCab) {
+        add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc));
+        return;   // con cabezas distintas el kg/cab no es comparable
+      }
+      var kgWcCab  = cabWc ? (_num(g.kg_ingreso) || 0) / cabWc : null;
+      var kgLiqCab = a.cab ? a.kg / a.cab : null;
+      if (kgWcCab && kgLiqCab) {
+        var dif = Math.abs(kgLiqCab - kgWcCab) / kgLiqCab * 100;
+        if (dif > tolKg + 1e-9) add(cat, 'kg_' + dif.toFixed(1) + '%');
+      }
+    });
+    Object.keys(porCat).sort().forEach(function (cat) {
+      if (gruposWc.length && !wcCats[cat]) add(cat, 'cat_sobrante');
+      if (porCat[cat].revisar) add(cat, 'estado_revisar');
+    });
+    return {estado: Object.keys(motivos).length ? 'revisar' : 'ok', motivos: motivos};
+  }
+
+  /* Texto corto de los motivos, para tooltips: "Ternero: sin_linea · Novillito: cat_sobrante". */
+  function liqMotivosTxt(motivos) {
+    return Object.keys(motivos || {}).map(function (cat) {
+      return cat + ': ' + motivos[cat].join(', ');
+    }).join(' · ');
+  }
+
   root.liqCalcular = liqCalcular;
   root.liqId = liqId;
+  root.liqSemaforo = liqSemaforo;
+  root.liqEsTercero = liqEsTercero;
+  root.liqMotivosTxt = liqMotivosTxt;
+  root.LIQ_TOL_KG_PCT = LIQ_TOL_KG_PCT;
+  root.LIQ_TOL_CAB = LIQ_TOL_CAB;
   // también como módulo, para poder correr los tests en node sin un DOM
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { liqCalcular: liqCalcular, liqId: liqId };
+    module.exports = { liqCalcular: liqCalcular, liqId: liqId, liqSemaforo: liqSemaforo,
+                       liqEsTercero: liqEsTercero, liqMotivosTxt: liqMotivosTxt,
+                       LIQ_TOL_KG_PCT: LIQ_TOL_KG_PCT, LIQ_TOL_CAB: LIQ_TOL_CAB };
   }
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

@@ -1,4 +1,4 @@
-/* modulo-09-remitos.js — Resultado por Remito · v15.74.3 (2026-09-14)
+/* modulo-09-remitos.js — Resultado por Remito · v15.74.5 (2026-09-15)
    ────────────────────────────────────────────────────────────────
    Port al portal del prototipo standalone v2.5 validado por el usuario
    (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
@@ -38,6 +38,10 @@
    remito. Cada fila dice de dónde salió (`liq.` / `excel` / `est.`) y aparece
    el rubro `gastos` de compra, que hasta ahora no existía: es 0 en todo lo que
    no tenga liquidación, así que los remitos de siempre dan el mismo número.
+
+   v15.74.5 · La marca `liq.` toma el color del semáforo estricto del módulo
+   12 (categoría + cabezas + kg ±8 %): verde cierra, ámbar linkea a
+   compras.html#tropa=… para acomodarla. El costeo no cambia.
 */
 
 var _remData = null;
@@ -935,6 +939,10 @@ function remSnapshot(r) {
       // v15.74.3 · de dónde salió el precio, y lo efectivamente pagado
       fuente_precio: f.fuente_precio || (f.estimado ? 'estimado' : 'excel'),
       liq_id: f.liq_id || null,
+      // v15.74.5 · semáforo de la liquidación (módulo 12) al momento del informe
+      liq_semaforo: f.liq_semaforo || null,
+      liq_motivos: f.liq_motivos || null,
+      tropa_norm: f.tropa_norm || null,
       precio_kg_cg: f.precio_kg_cg != null ? f.precio_kg_cg : null,
       precio_cab_cg: f.precio_cab_cg != null ? f.precio_cab_cg : null,
       gastos_compra: f.gastos_compra || 0,
@@ -1428,10 +1436,21 @@ function _remTortaBloquePDF(r) {
 function remFuenteInfo(f) {
   var fu = f.fuente_precio || (f.estimado ? 'estimado' : 'excel');
   if (fu === 'liquidacion') {
-    return {lbl: 'liq.', color: '#27613d', bg: 'rgba(39,97,61,.12)',
-            det: 'Precio de la liquidación ' + (f.liq_id || '—') + '.'
-                 + (f.precio_kg_cg ? ' Con gastos: $ ' + _remN(f.precio_kg_cg) + '/kg.' : '')
-                 + (f.desbaste_pct != null ? ' Desbaste ' + _remN(f.desbaste_pct, 1) + ' %.' : '')};
+    // v15.74.5 · la marca toma el color del semáforo de la tropa (módulo 12):
+    // verde = liquidación que cierra con WinCampo; ámbar = a revisar. El kg es
+    // un aviso, no un bloqueo: la fila se costea igual.
+    var sem = f.liq_semaforo || 'ok';
+    var det = 'Precio de la liquidación ' + (f.liq_id || '—') + '.'
+            + (f.precio_kg_cg ? ' Con gastos: $ ' + _remN(f.precio_kg_cg) + '/kg.' : '')
+            + (f.desbaste_pct != null ? ' Desbaste ' + _remN(f.desbaste_pct, 1) + ' %.' : '');
+    if (sem === 'revisar' || sem === 'sin_liquidar') {
+      return {lbl: 'liq.', color: sem === 'revisar' ? '#7a5c14' : '#c0392b',
+              bg: sem === 'revisar' ? 'rgba(184,146,42,.15)' : 'rgba(192,57,43,.12)',
+              link: 'compras.html#tropa=' + encodeURIComponent(f.tropa_norm || f.tropa || ''),
+              det: det + ' Liquidación a revisar en Compras'
+                   + (f.liq_motivos ? ' (' + f.liq_motivos + ')' : '') + ' — click para abrirla.'};
+    }
+    return {lbl: 'liq.', color: '#27613d', bg: 'rgba(39,97,61,.12)', det: det};
   }
   if (fu === 'estimado') {
     return {lbl: 'est.', color: '#7a5c14', bg: 'rgba(184,146,42,.15)',
@@ -1867,9 +1886,12 @@ function renderRemitos(soloResultado) {
   // v15.74.3 · chip chico con el origen del precio, al lado del $/kg
   var fuChip = function (f) {
     var I = remFuenteInfo(f);
-    return '<span title="' + I.det + '" style="display:inline-block;font-size:9px;letter-spacing:.06em;'
-      + 'text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-left:5px;cursor:help;'
-      + 'background:' + I.bg + ';color:' + I.color + '">' + I.lbl + '</span>';
+    // v15.74.5 · ámbar/rojo linkea al desplegable de la tropa en Compras
+    var tag = I.link ? 'a' : 'span';
+    return '<' + tag + (I.link ? ' href="' + I.link + '" target="_blank"' : '') + ' title="' + I.det
+      + '" style="display:inline-block;font-size:9px;letter-spacing:.06em;text-decoration:none;'
+      + 'text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-left:5px;cursor:' + (I.link ? 'pointer' : 'help') + ';'
+      + 'background:' + I.bg + ';color:' + I.color + '">' + I.lbl + (I.link ? ' ⚠' : '') + '</' + tag + '>';
   };
   var COLS_COSTO = ['Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'];
   var nIzq = esGrupo ? 3 : 2;   // remito · tropa · cat van alineadas a la izquierda
