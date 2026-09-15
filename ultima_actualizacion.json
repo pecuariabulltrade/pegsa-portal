@@ -1,5 +1,5 @@
 {
-  "generado": "2026-09-14T20:00:04.578836",
+  "generado": "2026-09-14T21:00:04.907029",
   "periodo": "2025",
   "modulos": {
     "stock_hacienda": {
@@ -49,7 +49,14 @@
       "ok": true,
       "cortes": 21,
       "ultimo_corte": "2026-09-05",
-      "saldo_disp": 151860930.61
+      "saldo_disp": 151860930.61,
+      "warnings": [
+        {
+          "archivo": "2026-09-14_financiero.xlsx",
+          "motivo": "oserror_13: [Errno 13] Permission denied: 'C:\\\\Users\\\\USER\\\\OneDrive - pecuaria el garabi sa\\\\PEGSA_Portal\\\\datos\\\\financiero\\\\2026-09-14_financiero.xlsx'"
+        }
+      ],
+      "warning_count": 1
     },
     "historico": {
       "ok": true,
@@ -85,6 +92,11 @@
       "fecha": "2026-09-03",
       "semanas": 6
     },
+    "compras_liquidaciones": {
+      "ok": true,
+      "n": 141,
+      "fuente": "archivos"
+    },
     "compras_reales": {
       "ok": true,
       "filas": 250,
@@ -96,11 +108,6 @@
       "tropas": 565,
       "grupos": 817
     },
-    "compras_liquidaciones": {
-      "ok": true,
-      "n": 0,
-      "fuente": "archivos"
-    },
     "pct_pv_mensual": {
       "ok": true,
       "meses": 22,
@@ -110,7 +117,7 @@
     "resultado_remitos": {
       "ok": true,
       "remitos": 88,
-      "cobertura": 80.2
+      "cobertura": 88.9
     },
     "fantasmas": {
       "ok": true,
