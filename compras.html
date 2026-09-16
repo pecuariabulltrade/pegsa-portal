@@ -249,7 +249,7 @@
     <div class="filtros">
       <div><div class="lbl">Estado</div><select id="l-est" onchange="rLiqs()">
         <option value="activas">activas</option><option value="">todas</option>
-        <option value="anulada">anuladas</option>
+        <option value="anulada">anuladas</option><option value="pendiente">pendientes de publicar</option>
       </select></div>
       <div><div class="lbl">Buscar</div><input type="text" id="l-q" placeholder="tropa, nº, consignataria…"
         oninput="rLiqs()" style="width:220px"></div>
@@ -303,7 +303,7 @@
 <script src="js/compras-calc.js?v=15749"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
-   compras.html — v15.74.9 · Módulo 12 · Compras y Liquidaciones
+   compras.html — v15.74.10 · Módulo 12 · Compras y Liquidaciones
    ────────────────────────────────────────────────────────────
    Lo que WinCampo dice que entró (compras_ingresos.json) contra lo que el
    consignatario liquidó (cargado a mano acá). De ese cruce sale el costo de
@@ -341,10 +341,15 @@
    precios ponderados), el semáforo compara la suma (`parcial_30/40` cuando
    no llega), Nueva liquidación precarga lo que FALTA y los ids del mismo día
    llevan sufijo _2, _3… Ya no bloquea "ya liquidadas en otra operación".
+
+   v15.74.10 · Sin base, lo guardado queda como "pendiente de publicar" en
+   localStorage (pegsa_compras_pendientes) y se mezcla encima del JSON del
+   servidor al cargar, hasta que el tick lo publique. Parche hasta configurar
+   Supabase.
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.9';
+var VERSION = 'v15.74.10';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -448,12 +453,13 @@ async function cargar() {
     return;
   }
 
-  var deArchivo = [];
+  var deArchivo = [], metaSrv = null;
   try {
     var r2 = await fetch('compras_liquidaciones.json');
     if (r2.ok) {
       var j = await r2.json();
       deArchivo = j.liquidaciones || [];
+      metaSrv = j.meta || null;
     }
   } catch (e) { /* todavía no existe: se arranca sin liquidaciones */ }
 
@@ -461,17 +467,103 @@ async function cargar() {
   // La base manda cuando existe: es la que el usuario está editando en vivo.
   LIQ = (deBase && deBase.length !== undefined) ? deBase : deArchivo;
   FUENTE = (deBase !== null) ? 'supabase' : 'archivo';
+  // v15.74.10 · sin base: lo que este navegador guardó y el tick todavía no
+  // publicó se mezcla encima del JSON del servidor
+  if (FUENTE === 'archivo') LIQ = pendMezclar(LIQ, (metaSrv || {}).generado);
 
   reindexar();
   document.getElementById('sync-dot').className = 'dot' + (FUENTE === 'supabase' ? '' : ' off');
-  document.getElementById('sync-txt').textContent =
-    FUENTE === 'supabase' ? 'base · ' + LIQ.length + ' liquidaciones'
-                          : 'sin base · ' + LIQ.length + ' del JSON';
+  actualizarSync();
   initFiltros();
   rIngresos();
   document.getElementById('carga').style.display = 'none';
   aplicarHash();
   window.addEventListener('hashchange', aplicarHash);
+}
+
+/* ════════ v15.74.10 · PENDIENTES DE PUBLICAR (sin base) ════════
+   Sin Supabase, guardar descarga el JSON y el pipeline recién lo publica en el
+   tick de la hora: al recargar la página, lo guardado desaparecía y la tropa
+   volvía a rojo hasta el tick (Nicolás, 16/09). Este navegador recuerda en
+   localStorage lo que guardó y lo mezcla encima del JSON del servidor hasta
+   verlo publicado. No viaja al pipeline ni a otros navegadores. */
+var PEND_KEY = 'pegsa_compras_pendientes';
+var PEND_VIEJO_MS = 2 * 60 * 60 * 1000;   // 2 ticks sin que el servidor lo tenga → avisar
+
+function pendLeer() {
+  try { return JSON.parse(localStorage.getItem(PEND_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function pendEscribir(p) {
+  try { localStorage.setItem(PEND_KEY, JSON.stringify(p)); } catch (e) {}
+}
+/* Guarda un snapshot como pendiente (sólo sin base). Sin las claves __. */
+function pendGuardar(snap) {
+  if (sbOn() || !snap || !snap.id) return;
+  var limpio = {}; Object.keys(snap).forEach(function (k) { if (k.indexOf('__') !== 0) limpio[k] = snap[k]; });
+  var p = pendLeer(); p[snap.id] = limpio; pendEscribir(p);
+  snap.__pendiente = true;
+}
+function pendBorrar(id) { var p = pendLeer(); delete p[id]; pendEscribir(p); }
+/* Mezcla los pendientes encima de lo que vino del servidor. Un pendiente se da
+   por publicado cuando el servidor ya tiene ese id con `generado` ≥ el suyo,
+   o — si el pendiente es una anulación — cuando el servidor (más nuevo que el
+   pendiente) ya no lo trae. Nunca se borra solo por otro motivo. */
+function pendMezclar(lista, generadoSrv) {
+  var p = pendLeer(), ids = Object.keys(p);
+  if (!ids.length) return lista;
+  var srv = {}; lista.forEach(function (o) { srv[o.id] = o; });
+  var out = lista.slice(), n = 0;
+  ids.forEach(function (id) {
+    var s = p[id], enSrv = srv[id];
+    var anulado = String(s.estado || '').toLowerCase() === 'anulada';
+    var publicado = enSrv ? String(enSrv.generado || '') >= String(s.generado || '')
+                          : (anulado && String(generadoSrv || '') >= String(s.generado || ''));
+    if (publicado) { pendBorrar(id); return; }
+    s.__pendiente = true;
+    out = out.filter(function (o) { return o.id !== id; });
+    out.push(s); n++;
+  });
+  return out;
+}
+function pendLista() { return LIQ.filter(function (o) { return o.__pendiente; }); }
+function pendViejo(o) {
+  var t = Date.parse(o.generado || ''); return !isNaN(t) && (Date.now() - t) > PEND_VIEJO_MS;
+}
+/* chip para una liquidación pendiente (desplegable de Ingresos y pestaña Liquidaciones) */
+function pendChip(o, conBotones) {
+  if (!o.__pendiente) return '';
+  var id = q1(o.id);
+  if (pendViejo(o)) {
+    return ' <span class="tag anu" title="Se guardó hace más de 2 horas y el portal todavía no lo publicó: '
+      + 'probablemente el archivo no está en datos\\compras_liquidaciones\\">el tick no lo tomó: ¿moviste el archivo a datos\\compras_liquidaciones\\?</span>'
+      + (conBotones ? ' <button class="btn sec mini" onclick="pendReDescargar(\'' + id + '\');event.stopPropagation()">volver a descargar</button>'
+        + ' <button class="btn danger mini" onclick="pendDescartar(\'' + id + '\');event.stopPropagation()">descartar</button>' : '');
+  }
+  return ' <span class="tag par" title="Está en tu navegador y en datos\\compras_liquidaciones\\ si moviste el archivo; '
+    + 'el portal lo publica en el próximo tick (:04)">pendiente de publicar · tick :04</span>';
+}
+function pendReDescargar(id) {
+  var p = pendLeer(); if (!p[id]) return;
+  bajarJSON(p[id], 'liquidacion_' + id);
+  toast('Descargado de nuevo <code>liquidacion_' + esc(id) + '.json</code>. Moverlo a <code>datos\\compras_liquidaciones\\</code>.', '', 10000);
+}
+function pendDescartar(id) {
+  if (!confirm('¿Descartar el pendiente ' + id + '?\n\nSe borra sólo de este navegador. Si el archivo está en '
+             + 'datos\\compras_liquidaciones\\ el tick lo va a publicar igual.')) return;
+  pendBorrar(id);
+  location.reload();
+}
+function actualizarSync() {
+  var n = pendLista().length;
+  var el = document.getElementById('sync-txt');
+  el.innerHTML = (FUENTE === 'supabase' ? 'base · ' + LIQ.length + ' liquidaciones'
+                                        : 'sin base · ' + LIQ.length + ' del JSON')
+    + (n ? ' · <a href="#" onclick="verPendientes();return false" style="color:var(--ambar);font-weight:600" '
+         + 'title="Guardadas en este navegador; el tick de la hora las publica">' + n + ' pendiente' + (n === 1 ? '' : 's') + ' de publicar</a>' : '');
+}
+function verPendientes() {
+  document.getElementById('l-est').value = 'pendiente';
+  tab('liqs');
 }
 
 /* LIN: tropa_norm → TODAS las líneas activas de la tropa [{o, i, c}].
@@ -497,6 +589,7 @@ function reindexar() {
     Object.keys(porCat).forEach(function (cat) { IDX[k][cat] = agregarLineas(porCat[cat]); });
   });
   calcSemaforos();
+  if (typeof FUENTE !== 'undefined') actualizarSync();
 }
 function agregarLineas(xs) {
   xs = xs.slice().sort(function (a, b) {
@@ -864,7 +957,7 @@ function filaLiq(o, k, herr, nro, de) {
     + ' · ' + fec(o.fecha) + ' · ' + esc(o.consignataria || '—')
     + ' · aporta <b>' + aporteTxt(o, k) + '</b> · '
     + '<span class="tag ' + (rev ? 'par' : (o.estado === 'importada_excel' ? 'exc' : 'ok')) + '">'
-    + esc(o.estado || 'cargada') + '</span>'
+    + esc(o.estado || 'cargada') + '</span>' + pendChip(o, true)
     + (o.editado ? ' <span class="muted">editada ' + esc(String(o.editado).slice(0, 16).replace('T', ' ')) + '</span>' : '')
     + acc + '</td><td colspan="' + (NCOL - 5) + '"></td></tr>';
 }
@@ -1116,6 +1209,7 @@ async function persistir(o, accion, detalle) {
     // [nueva, vieja anulada] — el pipeline acepta listas (export "todo") y
     // Chrome no pide permiso para descargas múltiples.
     bajarJSON(viejo ? [o, viejo] : o, 'liquidacion_' + o.id);
+    pendGuardar(o); if (viejo) pendGuardar(viejo);   // v15.74.10
     toast('Descargado <code>liquidacion_' + esc(o.id) + '.json</code>'
         + (viejo ? ' (trae la nueva y la vieja <code>' + esc(idViejo) + '</code> anulada)' : '')
         + '. Moverlo a <code>datos\\compras_liquidaciones\\</code> reemplazando el anterior; el pipeline lo toma en el próximo tick.',
@@ -1156,6 +1250,7 @@ async function guardarSnap(snap) {
     }
   }
   bajarJSON(snap, 'liquidacion_' + snap.id);
+  pendGuardar(snap);   // v15.74.10 (sólo hace algo sin base)
   toast('Descargado <code>liquidacion_' + esc(snap.id) + '.json</code>' + (snap.estado === 'anulada' ? ' (anulada)' : '')
       + '. Moverlo a <code>datos\\compras_liquidaciones\\</code> reemplazando el anterior; el pipeline lo toma en el próximo tick.',
       '', 12000);
@@ -1585,8 +1680,10 @@ async function guardarOp() {
     }
   } else {
     bajarJSON(snap, 'liquidacion_' + snap.id);
+    pendGuardar(snap);   // v15.74.10 · este navegador lo recuerda hasta que el tick lo publique
     toast('Archivo descargado. Moverlo a <code>datos\\compras_liquidaciones\\</code> '
-        + 'y el pipeline lo levanta en el próximo tick.', '', 12000);
+        + 'y el pipeline lo levanta en el próximo tick. Hasta entonces queda como '
+        + '<b>pendiente de publicar</b> en este navegador.', '', 12000);
     ok = true;
   }
 
@@ -1602,7 +1699,9 @@ async function guardarOp() {
 
 function bajarJSON(obj, nombre) {
   var safe = String(nombre).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
-  var blob = new Blob([JSON.stringify(obj, null, 2)], {type: 'application/json'});
+  // las claves __ (estado de pantalla: __pendiente, __editando) no viajan al archivo
+  var txt = JSON.stringify(obj, function (k, v) { return String(k).indexOf('__') === 0 ? undefined : v; }, 2);
+  var blob = new Blob([txt], {type: 'application/json'});
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = safe + '.json';
   document.body.appendChild(a); a.click();
@@ -1617,6 +1716,7 @@ function liqsFiltradas() {
     var an = String(o.estado || '').toLowerCase() === 'anulada';
     if (fe === 'activas' && an) return false;
     if (fe === 'anulada' && !an) return false;
+    if (fe === 'pendiente' && !o.__pendiente) return false;   // v15.74.10
     if (q) {
       var txt = [o.id, o.nro_liquidacion, o.consignataria, o.archivo,
                  (o.categorias || []).map(function (c) { return c.tropa; }).join(' ')]
@@ -1672,7 +1772,7 @@ function rLiqs() {
       + '<td class="num">' + (T.desbaste_pct == null ? '—' : P(T.desbaste_pct, 1)) + '</td>'
       + '<td>' + (an ? '<span class="tag anu">anulada</span>'
                      : '<span class="tag ' + (o.estado === 'importada_excel' ? 'exc' : (o.estado === 'revisar' ? 'par' : 'ok')) + '">'
-                       + esc(o.estado || 'cargada') + '</span>') + '</td>'
+                       + esc(o.estado || 'cargada') + '</span>') + pendChip(o, true) + '</td>'
       + '<td>' + semL + '</td>'
       + '<td><button class="btn sec" style="height:24px;padding:0 9px" onclick="abrirLiq(\''
         + esc(o.id).replace(/'/g, "\\'") + '\')">abrir</button>'
@@ -1704,7 +1804,8 @@ async function anularLiq(id) {
   if (!o) return;
   if (!confirm('¿Anular la liquidación ' + id + '?\n\nNo se borra: queda con estado «anulada» '
              + 'y deja de contar para el costo de compra.')) return;
-  var snap = JSON.parse(JSON.stringify(o));
+  var snap = {}; Object.keys(o).forEach(function (k) { if (k.indexOf('__') !== 0) snap[k] = o[k]; });
+  snap = JSON.parse(JSON.stringify(snap));
   snap.estado = 'anulada';
   snap.generado = new Date().toISOString();
   snap.version_portal = VERSION;
@@ -1724,6 +1825,7 @@ async function anularLiq(id) {
     }
   } else {
     bajarJSON(snap, 'liquidacion_' + snap.id);
+    pendGuardar(snap);   // v15.74.10 · la anulación también queda pendiente hasta el tick
     toast('Archivo de anulación descargado. Moverlo a <code>datos\\compras_liquidaciones\\</code>.', '', 12000);
   }
   LIQ = LIQ.filter(function (x) { return x.id !== id; });
