@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-16T09:06:56.049020",
+    "generado": "2026-09-16T10:07:04.680177",
     "fuente": "archivos",
     "motivo_sin_base": "sin SUPABASE_URL / SUPABASE_SERVICE_KEY",
     "n_supabase": 0,
@@ -9,8 +9,8 @@
     "n_anuladas": 0,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 76,
-      "revisar": 82,
+      "ok": 96,
+      "revisar": 62,
       "sin_liquidar": 292,
       "terceros": 117,
       "tol_kg_pct": 8,
@@ -16070,7 +16070,7 @@
       "estado": "revisar",
       "motivos": {
         "Vaca": [
-          "kg_27.4%"
+          "kg_13.6%"
         ]
       },
       "avisos": []
@@ -16078,7 +16078,9 @@
     "ALOFER261124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "ANIDAR170225": {
       "estado": "terceros",
@@ -16108,7 +16110,9 @@
     "BAIDAR040526": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BAIDAR120825": {
       "estado": "terceros",
@@ -16138,7 +16142,9 @@
     "BAIDAR300125": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BILDAR170725": {
       "estado": "terceros",
@@ -16169,30 +16175,24 @@
       "estado": "revisar",
       "motivos": {
         "Toro": [
-          "kg_13.4%"
+          "kg_13.3%"
         ]
       },
       "avisos": []
     },
     "BULBYC121225": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternero": [
-          "sin_linea"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ],
-        "Vaquillona": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULCAL011024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULCAL031224": {
       "estado": "sin_liquidar",
@@ -16202,24 +16202,27 @@
     "BULCAL040225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULCAR181225": {
       "estado": "revisar",
       "motivos": {
-        "Vaca": [
-          "cabezas_20≠42"
-        ],
         "Novillito": [
-          "cat_sobrante"
+          "kg_9.8%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULCER240124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULCOL141124": {
       "estado": "sin_liquidar",
@@ -16232,8 +16235,12 @@
       "avisos": []
     },
     "BULCYG141125": {
-      "estado": "ok",
-      "motivos": {},
+      "estado": "revisar",
+      "motivos": {
+        "Vaca": [
+          "kg_16.6%"
+        ]
+      },
       "avisos": []
     },
     "BULDAR01724": {
@@ -16247,16 +16254,11 @@
       "avisos": []
     },
     "BULDAR041225": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternero": [
-          "cabezas_62≠87"
-        ],
-        "Ternera": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR050226": {
       "estado": "revisar",
@@ -16270,7 +16272,9 @@
     "BULDAR060525": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR100626": {
       "estado": "ok",
@@ -16280,17 +16284,23 @@
     "BULDAR111024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR120424": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR120724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR120925": {
       "estado": "ok",
@@ -16310,7 +16320,9 @@
     "BULDAR140325": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR150525": {
       "estado": "sin_liquidar",
@@ -16320,12 +16332,16 @@
     "BULDAR180624": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR190124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR200126": {
       "estado": "ok",
@@ -16335,7 +16351,9 @@
     "BULDAR201124": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR201224": {
       "estado": "sin_liquidar",
@@ -16355,17 +16373,13 @@
     "BULDAR211125": {
       "estado": "revisar",
       "motivos": {
-        "Vaca": [
-          "cabezas_58≠69"
-        ],
-        "Ternero": [
-          "cat_sobrante"
-        ],
         "Vaquillona": [
-          "cat_sobrante"
+          "kg_13.1%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR231224": {
       "estado": "sin_liquidar",
@@ -16383,8 +16397,12 @@
       "avisos": []
     },
     "BULDAR251125": {
-      "estado": "ok",
-      "motivos": {},
+      "estado": "revisar",
+      "motivos": {
+        "Ternero": [
+          "kg_8.6%"
+        ]
+      },
       "avisos": []
     },
     "BULDAR260425": {
@@ -16400,7 +16418,9 @@
     "BULDAR260724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULDAR310624": {
       "estado": "sin_liquidar",
@@ -16420,13 +16440,18 @@
     "BULENR110525": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULENR230626": {
       "estado": "revisar",
       "motivos": {
         "Vaca": [
-          "cabezas_33≠34"
+          "kg_17.6%"
+        ],
+        "*": [
+          "total_33≠34"
         ]
       },
       "avisos": []
@@ -16434,17 +16459,23 @@
     "BULENR261124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULERI060524": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULERI240924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULFAL011024": {
       "estado": "sin_liquidar",
@@ -16452,16 +16483,11 @@
       "avisos": []
     },
     "BULFAL021225": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillito": [
-          "cabezas_23≠52"
-        ],
-        "Vaca": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULFAL031225": {
       "estado": "ok",
@@ -16476,7 +16502,9 @@
     "BULFER091225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULFER280125": {
       "estado": "sin_liquidar",
@@ -16491,14 +16519,13 @@
     "BULFON141125": {
       "estado": "revisar",
       "motivos": {
-        "Vaca": [
-          "cabezas_23≠33"
-        ],
         "Toro": [
-          "cat_sobrante"
+          "kg_20.2%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULFOR250124": {
       "estado": "sin_liquidar",
@@ -16528,7 +16555,9 @@
     "BULGRI100525": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHJH010225": {
       "estado": "sin_liquidar",
@@ -16538,7 +16567,9 @@
     "BULHUI030225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI060824": {
       "estado": "sin_liquidar",
@@ -16546,19 +16577,27 @@
       "avisos": []
     },
     "BULHUI121225": {
-      "estado": "ok",
-      "motivos": {},
+      "estado": "revisar",
+      "motivos": {
+        "Vaca": [
+          "kg_9.0%"
+        ]
+      },
       "avisos": []
     },
     "BULHUI140624": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI151124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI160126": {
       "estado": "revisar",
@@ -16585,12 +16624,16 @@
     "BULHUI170524": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI181224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI190124": {
       "estado": "sin_liquidar",
@@ -16610,12 +16653,16 @@
     "BULHUI200924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI210125": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHUI210325": {
       "estado": "sin_liquidar",
@@ -16635,17 +16682,16 @@
     "BULHUI270526": {
       "estado": "revisar",
       "motivos": {
-        "Novillo": [
-          "sin_linea"
-        ],
-        "Ternera": [
-          "cabezas_22≠23"
-        ],
         "Novillito": [
-          "cat_sobrante"
+          "kg_12.3%"
+        ],
+        "*": [
+          "total_36≠37"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULHVG020126": {
       "estado": "ok",
@@ -16701,16 +16747,11 @@
       "avisos": []
     },
     "BULLVILL210526": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "sin_linea"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULMAN221124": {
       "estado": "sin_liquidar",
@@ -16723,16 +16764,11 @@
       "avisos": []
     },
     "BULMYA090126": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_27≠50"
-        ],
-        "Novillo": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULMYA150126": {
       "estado": "ok",
@@ -16797,7 +16833,9 @@
     "BULSIL230125": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULSRH150825": {
       "estado": "sin_liquidar",
@@ -16815,19 +16853,11 @@
       "avisos": []
     },
     "BULTAL130126": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_36≠46"
-        ],
-        "Novillo": [
-          "cat_sobrante"
-        ],
-        "Vaquillona": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTES021024": {
       "estado": "sin_liquidar",
@@ -16835,16 +16865,11 @@
       "avisos": []
     },
     "BULTES041225": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_26≠29"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTES050225": {
       "estado": "sin_liquidar",
@@ -16852,26 +16877,25 @@
       "avisos": []
     },
     "BULTLE050226": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "sin_linea"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTRA011024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTRA031024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTRA040225": {
       "estado": "sin_liquidar",
@@ -16886,12 +16910,16 @@
     "BULTRA091224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTRA101224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULTRA211124": {
       "estado": "sin_liquidar",
@@ -16901,29 +16929,13 @@
     "BULUTE060526": {
       "estado": "revisar",
       "motivos": {
-        "Novillito": [
-          "sin_linea"
-        ],
-        "Novillo": [
-          "cabezas_36≠18"
-        ],
         "Ternera": [
-          "cabezas_43≠63"
-        ],
-        "Ternero": [
-          "cabezas_34≠33"
-        ],
-        "Toro": [
-          "sin_linea"
-        ],
-        "Vaca": [
-          "cabezas_120≠112"
-        ],
-        "Vaquillona": [
-          "cabezas_20≠8"
+          "kg_17.9%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULVGS190925": {
       "estado": "ok",
@@ -16938,7 +16950,9 @@
     "BULVIG160724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "BULVIL170125": {
       "estado": "sin_liquidar",
@@ -17003,7 +17017,9 @@
     "DARHUI160525": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "DARHUI190626": {
       "estado": "ok",
@@ -17018,12 +17034,16 @@
     "DARLFO210525": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "DARMEN190624": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "DARMYA050625": {
       "estado": "terceros",
@@ -17053,7 +17073,9 @@
     "DARSVB040724": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "DARSVB120625": {
       "estado": "terceros",
@@ -17063,19 +17085,20 @@
     "DARSVB301224": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "DARUTE170626": {
       "estado": "revisar",
       "motivos": {
         "Vaca": [
-          "cabezas_5≠27"
-        ],
-        "Vaquillona": [
-          "cat_sobrante"
+          "kg_12.1%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "DARVIL040625": {
       "estado": "terceros",
@@ -17110,17 +17133,23 @@
     "LTADAR170225": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "LTADAR240125": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "LTADAR270225": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "LTAGAR220725": {
       "estado": "terceros",
@@ -17145,7 +17174,9 @@
     "LTPDAR091225": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "LTPLCT260626": {
       "estado": "ok",
@@ -17155,7 +17186,9 @@
     "LTPVIL190625": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PACDAR121225": {
       "estado": "terceros",
@@ -17175,7 +17208,9 @@
     "PECAME100225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PECDAR130326": {
       "estado": "ok",
@@ -17224,42 +17259,24 @@
       "estado": "revisar",
       "motivos": {
         "Toro": [
-          "kg_15.6%"
+          "kg_42.5%"
         ],
         "Vaca": [
-          "cabezas_55≠58"
-        ],
-        "Vaquillona": [
-          "cabezas_39≠36"
+          "kg_13.7%"
         ]
       },
       "avisos": []
     },
     "PECHUIN200326": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "cabezas_17≠14"
-        ],
-        "Toro": [
-          "sin_linea"
-        ],
-        "Vaca": [
-          "cabezas_136≠143"
-        ],
-        "Vaquillona": [
-          "cabezas_47≠40"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PECMAD240426": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "kg_8.7%"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": []
     },
     "PECMAR110326": {
@@ -17295,20 +17312,13 @@
     "PECVIL010426": {
       "estado": "revisar",
       "motivos": {
-        "Novillito": [
-          "sin_linea"
-        ],
-        "Vaca": [
-          "cabezas_79≠78"
-        ],
         "Novillo": [
-          "cat_sobrante"
-        ],
-        "Toro": [
-          "cat_sobrante"
+          "kg_23.2%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGADE240924": {
       "estado": "sin_liquidar",
@@ -17316,16 +17326,11 @@
       "avisos": []
     },
     "PEGADMAR150426": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillito": [
-          "sin_linea"
-        ],
-        "Novillo": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGAEA111025": {
       "estado": "ok",
@@ -17360,7 +17365,9 @@
     "PEGAGU040225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGALB050825": {
       "estado": "sin_liquidar",
@@ -17399,12 +17406,16 @@
     "PEGBRE091024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGBRE100724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGBRE110924": {
       "estado": "sin_liquidar",
@@ -17414,22 +17425,30 @@
     "PEGBRE140824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGBRE220524": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGBRE290524": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGCAL040624": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGCAL040724": {
       "estado": "sin_liquidar",
@@ -17439,7 +17458,9 @@
     "PEGCAL060824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGCAL080824": {
       "estado": "sin_liquidar",
@@ -17454,12 +17475,16 @@
     "PEGCAL170924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGCAL200824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGCAL290425": {
       "estado": "sin_liquidar",
@@ -17499,7 +17524,9 @@
     "PEGCOL101024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGCOL120924": {
       "estado": "sin_liquidar",
@@ -17524,19 +17551,16 @@
     "PEGDAR010724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR041225": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_4≠6"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR050826": {
       "estado": "revisar",
@@ -17551,7 +17575,9 @@
     "PEGDAR060323": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR060525": {
       "estado": "sin_liquidar",
@@ -17590,7 +17616,9 @@
     "PEGDAR090725": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR100425": {
       "estado": "sin_liquidar",
@@ -17598,16 +17626,11 @@
       "avisos": []
     },
     "PEGDAR110226": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaquillona": [
-          "sin_linea"
-        ],
-        "Ternera": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR111224": {
       "estado": "sin_liquidar",
@@ -17622,31 +17645,29 @@
     "PEGDAR120226": {
       "estado": "revisar",
       "motivos": {
-        "Novillito": [
-          "cabezas_266≠214"
-        ],
         "Novillo": [
-          "cabezas_3≠47"
+          "kg_9.1%"
         ],
         "Ternera": [
-          "cabezas_1≠3"
+          "kg_68.2%"
         ],
         "Ternero": [
-          "cabezas_9≠18"
-        ],
-        "Vaca": [
-          "cabezas_58≠57"
+          "kg_51.1%"
         ],
         "Vaquillona": [
-          "cat_sobrante"
+          "kg_16.2%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR120424": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR120925": {
       "estado": "revisar",
@@ -17665,55 +17686,48 @@
     "PEGDAR121224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR121225": {
       "estado": "revisar",
       "motivos": {
-        "Ternero": [
-          "sin_linea"
-        ],
-        "Novillito": [
-          "cat_sobrante"
+        "Toro": [
+          "kg_20.0%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR130825": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR140325": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR140625": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR141125": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "cabezas_122≠194"
-        ],
-        "Ternera": [
-          "sin_linea"
-        ],
-        "Toro": [
-          "sin_linea"
-        ],
-        "Vaquillona": [
-          "cabezas_164≠69"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR14325": {
       "estado": "sin_liquidar",
@@ -17733,12 +17747,16 @@
     "PEGDAR160224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR160724": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR160725": {
       "estado": "sin_liquidar",
@@ -17766,19 +17784,11 @@
       "avisos": []
     },
     "PEGDAR171225": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_144≠173"
-        ],
-        "Ternera": [
-          "cat_sobrante"
-        ],
-        "Ternero": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR180624": {
       "estado": "sin_liquidar",
@@ -17789,18 +17799,19 @@
       "estado": "revisar",
       "motivos": {
         "Novillito": [
-          "cabezas_680≠580"
-        ],
-        "Ternero": [
-          "sin_linea"
+          "kg_15.0%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR190124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR190225": {
       "estado": "sin_liquidar",
@@ -17810,12 +17821,16 @@
     "PEGDAR19624": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR200824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR201224": {
       "estado": "sin_liquidar",
@@ -17825,26 +17840,22 @@
     "PEGDAR220526": {
       "estado": "revisar",
       "motivos": {
-        "Ternera": [
-          "cabezas_12≠79"
+        "Novillito": [
+          "kg_75.9%"
         ],
-        "Ternero": [
-          "sin_linea"
+        "Ternera": [
+          "kg_32.6%"
         ],
         "Vaca": [
-          "kg_18.0%"
-        ],
-        "Novillo": [
-          "sin_linea"
-        ],
-        "Novillito": [
-          "cat_sobrante"
+          "kg_18.1%"
         ],
         "Vaquillona": [
-          "cat_sobrante"
+          "kg_16.8%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR220825": {
       "estado": "sin_liquidar",
@@ -17869,12 +17880,16 @@
     "PEGDAR251024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR260225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR260326": {
       "estado": "revisar",
@@ -17888,7 +17903,9 @@
     "PEGDAR260424": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR260626": {
       "estado": "ok",
@@ -17924,9 +17941,6 @@
         ],
         "Toro": [
           "kg_13.6%"
-        ],
-        "Vaca": [
-          "kg_37.3%"
         ]
       },
       "avisos": []
@@ -17934,44 +17948,35 @@
     "PEGDAR26724": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR280824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDAR300426": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternera": [
-          "cabezas_54≠37"
-        ],
-        "Ternero": [
-          "cabezas_81≠98"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": []
     },
     "PEGDAR310525": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDARW140526": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternero": [
-          "sin_linea"
-        ],
-        "Novillo": [
-          "cat_sobrante"
-        ],
-        "Vaca": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGDARW280526": {
       "estado": "ok",
@@ -18013,7 +18018,9 @@
     "PEGDRO070324": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGEDU041024": {
       "estado": "sin_liquidar",
@@ -18054,7 +18061,9 @@
     "PEGENR250225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGERI030626": {
       "estado": "revisar",
@@ -18072,24 +18081,17 @@
       "estado": "revisar",
       "motivos": {
         "Ternera": [
-          "kg_13.0%"
+          "kg_11.6%"
         ],
         "Ternero": [
-          "kg_14.7%"
+          "kg_14.6%"
         ]
       },
       "avisos": []
     },
     "PEGERI290526": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternera": [
-          "cabezas_36≠34"
-        ],
-        "Ternero": [
-          "cabezas_73≠75"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": []
     },
     "PEGFAL060824": {
@@ -18100,12 +18102,16 @@
     "PEGFAL081024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFAL100924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFAL150524": {
       "estado": "sin_liquidar",
@@ -18120,7 +18126,9 @@
     "PEGFAL230724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFAL240924": {
       "estado": "sin_liquidar",
@@ -18168,28 +18176,17 @@
       "estado": "revisar",
       "motivos": {
         "Ternera": [
-          "cabezas_50≠26"
-        ],
-        "Ternero": [
-          "cabezas_26≠50"
+          "kg_13.6%"
         ]
       },
       "avisos": []
     },
     "PEGFDW260226": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "sin_linea"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ],
-        "Ternero": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFDW260925": {
       "estado": "revisar",
@@ -18218,7 +18215,9 @@
     "PEGFER121124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFER170724": {
       "estado": "sin_liquidar",
@@ -18236,39 +18235,25 @@
       "avisos": []
     },
     "PEGFER240226": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_40≠59"
-        ],
-        "Novillito": [
-          "cat_sobrante"
-        ],
-        "Vaquillona": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFER251125": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillito": [
-          "cabezas_43≠52"
-        ],
-        "Ternera": [
-          "cat_sobrante"
-        ],
-        "Vaca": [
-          "cat_sobrante"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFER280824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGFER290524": {
       "estado": "sin_liquidar",
@@ -18325,7 +18310,9 @@
     "PEGGAM140224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGGAR100225": {
       "estado": "sin_liquidar",
@@ -18384,28 +18371,29 @@
     "PEGHUI101024": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI131225": {
       "estado": "revisar",
       "motivos": {
         "Novillo": [
-          "cabezas_93≠160"
-        ],
-        "Vaquillona": [
-          "cat_sobrante"
+          "kg_16.4%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI141125": {
       "estado": "revisar",
       "motivos": {
         "Novillo": [
-          "cabezas_121≠85"
+          "kg_27.5%"
         ],
         "Ternero": [
-          "cabezas_86≠122"
+          "kg_27.8%"
         ]
       },
       "avisos": []
@@ -18413,7 +18401,9 @@
     "PEGHUI160224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI160726": {
       "estado": "ok",
@@ -18423,13 +18413,15 @@
     "PEGHUI160824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI170426": {
       "estado": "revisar",
       "motivos": {
         "Toro": [
-          "kg_26.0%"
+          "kg_26.1%"
         ],
         "Vaca": [
           "kg_16.9%"
@@ -18445,7 +18437,9 @@
     "PEGHUI170824": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI180726": {
       "estado": "revisar",
@@ -18459,34 +18453,35 @@
     "PEGHUI190124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI190424": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI190625": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI190626": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "cabezas_29≠28"
-        ],
-        "Toro": [
-          "cabezas_5≠6"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": []
     },
     "PEGHUI190724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI190726": {
       "estado": "ok",
@@ -18511,7 +18506,9 @@
     "PEGHUI230324": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGHUI230425": {
       "estado": "sin_liquidar",
@@ -18530,7 +18527,9 @@
     "PEGJAC040324": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGJLD111025": {
       "estado": "ok",
@@ -18550,12 +18549,16 @@
     "PEGLAR020725": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGLAS190124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGLCOL010824": {
       "estado": "sin_liquidar",
@@ -18565,7 +18568,9 @@
     "PEGLEL030425": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGLIN190225": {
       "estado": "sin_liquidar",
@@ -18580,7 +18585,9 @@
     "PEGLRE080424": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGLSN080925": {
       "estado": "ok",
@@ -18610,7 +18617,9 @@
     "PEGMAR230124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGMAT280425": {
       "estado": "sin_liquidar",
@@ -18620,7 +18629,9 @@
     "PEGMIL160924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGMYA020725": {
       "estado": "sin_liquidar",
@@ -18695,7 +18706,9 @@
     "PEGOLI050225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGORE010425": {
       "estado": "sin_liquidar",
@@ -18720,7 +18733,9 @@
     "PEGPAL110325": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGPAS110325": {
       "estado": "sin_liquidar",
@@ -18755,7 +18770,9 @@
     "PEGROF120724": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGSAE290524": {
       "estado": "sin_liquidar",
@@ -18790,7 +18807,9 @@
     "PEGSFE170224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGSFE200226": {
       "estado": "ok",
@@ -18808,15 +18827,8 @@
       "avisos": []
     },
     "PEGSIF180925": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternera": [
-          "cabezas_60≠89"
-        ],
-        "Ternero": [
-          "cabezas_58≠29"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": []
     },
     "PEGSIL010525": {
@@ -18837,31 +18849,34 @@
     "PEGSPO080225": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGSRC260925": {
       "estado": "revisar",
       "motivos": {
-        "Ternero": [
-          "cabezas_28≠35"
-        ],
         "Ternera": [
-          "cat_sobrante"
+          "kg_29.5%"
+        ],
+        "Ternero": [
+          "kg_29.1%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGSRC2609255": {
       "estado": "revisar",
       "motivos": {
         "Ternero": [
-          "cabezas_46≠113"
-        ],
-        "Ternera": [
-          "cat_sobrante"
+          "kg_11.3%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGSRH101025": {
       "estado": "ok",
@@ -18905,12 +18920,16 @@
     "PEGTAL050624": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTAL121124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTAL150524": {
       "estado": "sin_liquidar",
@@ -18920,7 +18939,9 @@
     "PEGTAL200824": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTAL230824": {
       "estado": "sin_liquidar",
@@ -18930,17 +18951,23 @@
     "PEGTAP120924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTEJ131224": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTES080524": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTES170724": {
       "estado": "sin_liquidar",
@@ -18950,7 +18977,9 @@
     "PEGTES180924": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTES220524": {
       "estado": "sin_liquidar",
@@ -18975,12 +19004,16 @@
     "PEGTRA071124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTRA121124": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTRA190924": {
       "estado": "sin_liquidar",
@@ -18990,7 +19023,9 @@
     "PEGTRA200424": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGTRA201124": {
       "estado": "sin_liquidar",
@@ -19025,19 +19060,20 @@
     "PEGUSA270225": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGUTE060526": {
       "estado": "revisar",
       "motivos": {
         "Ternero": [
-          "cabezas_36≠47"
-        ],
-        "Novillo": [
-          "cat_sobrante"
+          "kg_20.7%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGUTE090326": {
       "estado": "ok",
@@ -19047,8 +19083,8 @@
     "PEGUTE180826": {
       "estado": "revisar",
       "motivos": {
-        "Vaca": [
-          "kg_8.7%",
+        "Vaquillona": [
+          "kg_19.3%",
           "estado_revisar"
         ],
         "Novillito": [
@@ -19060,7 +19096,7 @@
         "Ternero": [
           "estado_revisar"
         ],
-        "Vaquillona": [
+        "Vaca": [
           "estado_revisar"
         ]
       },
@@ -19074,11 +19110,8 @@
     "PEGUTE210726": {
       "estado": "revisar",
       "motivos": {
-        "Ternera": [
-          "cabezas_33≠32"
-        ],
         "Ternero": [
-          "cabezas_88≠89"
+          "kg_8.9%"
         ]
       },
       "avisos": []
@@ -19105,7 +19138,9 @@
     "PEGVIL140125": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGVIL170626": {
       "estado": "revisar",
@@ -19140,7 +19175,7 @@
       "estado": "revisar",
       "motivos": {
         "Ternera": [
-          "kg_8.8%"
+          "kg_8.9%"
         ]
       },
       "avisos": []
@@ -19162,28 +19197,20 @@
     "PEGVIL260425": {
       "estado": "sin_liquidar",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGVIL300426": {
       "estado": "revisar",
       "motivos": {
-        "Novillo": [
-          "sin_linea"
-        ],
-        "Toro": [
-          "sin_linea"
-        ],
-        "Vaca": [
-          "cabezas_40≠83"
-        ],
         "Vaquillona": [
-          "cabezas_47≠5"
-        ],
-        "Novillito": [
-          "cat_sobrante"
+          "kg_24.5%"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "PEGZAM091224": {
       "estado": "terceros",
@@ -19219,15 +19246,15 @@
       "estado": "revisar",
       "motivos": {
         "Vaca": [
-          "cabezas_79≠87",
           "estado_revisar"
         ],
         "Vaquillona": [
-          "cat_sobrante",
           "estado_revisar"
         ]
       },
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPDAR020924": {
       "estado": "terceros",
@@ -19247,7 +19274,9 @@
     "TAPDAR111125": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPDAR111225": {
       "estado": "terceros",
@@ -19272,12 +19301,16 @@
     "TAPDAR160426": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPDAR201224": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPDAR211124": {
       "estado": "terceros",
@@ -19297,12 +19330,16 @@
     "TAPDAR260924": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPDAR310525": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPDOM151024": {
       "estado": "terceros",
@@ -19383,7 +19420,9 @@
     "TAPVIL140125": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "TAPVIL210325": {
       "estado": "terceros",
@@ -19493,7 +19532,9 @@
     "YULYUL131224": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "ZAMDAR010725": {
       "estado": "terceros",
@@ -19518,17 +19559,23 @@
     "ZAMDAR201224": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "ZAMDAR241024": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     },
     "ZAMVIL200325": {
       "estado": "terceros",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "remito_distinto"
+      ]
     }
   }
 }
