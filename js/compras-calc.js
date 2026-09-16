@@ -1,4 +1,4 @@
-/* compras-calc.js — v15.74.5 · La cuenta de una liquidación de compra + semáforo por tropa
+/* compras-calc.js — v15.74.7 · La cuenta de una liquidación de compra + semáforo por tropa
    ────────────────────────────────────────────────────────────────
    UNA sola función hace toda la aritmética de una liquidación, y la misma
    cuenta existe en Python (`liq_calcular` en actualizar_datos.py) para poder
@@ -190,16 +190,29 @@
     return !!h && h.indexOf('PEGSA') < 0 && h.indexOf('BULLTRADE') < 0;
   }
 
+  /* v15.74.7 · `gruposWc` son las categorías EFECTIVAS de la tropa: las reales
+     por caravana (stock + egresos por animal) cuando la cobertura llega al 90 %,
+     si no las del remito. opts trae además fuente_categorias, cab_remito,
+     cab_sin_caravana, cobertura_pct y remito_distinto. Con caravanas y animales
+     sin caravana, una línea vale con real ≤ liq ≤ real + sin_caravana y la suma
+     de la tropa tiene que dar el remito. `avisos` (remito_distinto,
+     cobertura_x%) son informativos: no bajan el semáforo. */
   function liqSemaforo(gruposWc, lineas, opts) {
     opts = opts || {};
     gruposWc = gruposWc || []; lineas = lineas || [];
     var tolKg  = opts.tol_kg_pct != null ? opts.tol_kg_pct : LIQ_TOL_KG_PCT;
     var tolCab = opts.tol_cab != null ? opts.tol_cab : LIQ_TOL_CAB;
-    var motivos = {};
+    var fuente = opts.fuente_categorias || 'remito';
+    var cabSc  = fuente === 'caravanas' ? (_num(opts.cab_sin_caravana) || 0) : 0;
+    var cabRem = _num(opts.cab_remito);
+    var motivos = {}, avisos = [];
     function add(cat, m) { (motivos[cat] = motivos[cat] || []).push(m); }
 
+    if (fuente === 'caravanas' && opts.remito_distinto) avisos.push('remito_distinto');
+    if (fuente === 'remito' && opts.cobertura_pct != null) avisos.push('cobertura_' + String(_num(opts.cobertura_pct)) + '%');
+
     if (!lineas.length) {
-      return {estado: liqEsTercero(opts.hotelero) ? 'terceros' : 'sin_liquidar', motivos: {}};
+      return {estado: liqEsTercero(opts.hotelero) ? 'terceros' : 'sin_liquidar', motivos: {}, avisos: avisos};
     }
     // lo liquidado, sumado por categoría
     var porCat = {};
@@ -218,22 +231,32 @@
       var a = porCat[cat];
       if (!a) { add(cat, 'sin_linea'); return; }
       var cabWc = _num(g.cabezas) || 0;
-      if (Math.abs(a.cab - cabWc) > tolCab) {
+      if (cabSc > 0) {
+        // animales sin caravana: pueden estar en cualquier categoría
+        var okCab = (cabWc - tolCab) <= a.cab && a.cab <= (cabWc + cabSc + tolCab);
+        if (!okCab) { add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc) + '(+' + String(cabSc) + ' sc)'); return; }
+      } else if (Math.abs(a.cab - cabWc) > tolCab) {
         add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc));
         return;   // con cabezas distintas el kg/cab no es comparable
       }
-      var kgWcCab  = cabWc ? (_num(g.kg_ingreso) || 0) / cabWc : null;
+      // kg/cab de la categoría: el real de los animales si viene (`kg_cab`),
+      // si no el promedio del grupo del remito
+      var kgWcCab  = _num(g.kg_cab) || (cabWc ? (_num(g.kg_ingreso) || 0) / cabWc : null);
       var kgLiqCab = a.cab ? a.kg / a.cab : null;
       if (kgWcCab && kgLiqCab) {
         var dif = Math.abs(kgLiqCab - kgWcCab) / kgLiqCab * 100;
         if (dif > tolKg + 1e-9) add(cat, 'kg_' + dif.toFixed(1) + '%');
       }
     });
+    if (cabSc > 0 && cabRem) {
+      var tot = 0; Object.keys(porCat).forEach(function (c) { tot += porCat[c].cab; });
+      if (Math.abs(tot - cabRem) > tolCab) add('*', 'total_' + String(tot) + '≠' + String(cabRem));
+    }
     Object.keys(porCat).sort().forEach(function (cat) {
       if (gruposWc.length && !wcCats[cat]) add(cat, 'cat_sobrante');
       if (porCat[cat].revisar) add(cat, 'estado_revisar');
     });
-    return {estado: Object.keys(motivos).length ? 'revisar' : 'ok', motivos: motivos};
+    return {estado: Object.keys(motivos).length ? 'revisar' : 'ok', motivos: motivos, avisos: avisos};
   }
 
   /* Texto corto de los motivos, para tooltips: "Ternero: sin_linea · Novillito: cat_sobrante". */

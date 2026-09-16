@@ -4866,7 +4866,11 @@ def main():
         _ci = generar_compras_ingresos(
             carpeta, log,
             regs_ing=regs_ing if 'regs_ing' in locals() else None,
-            muertes_raw=muertes_raw if 'muertes_raw' in locals() else None)
+            muertes_raw=muertes_raw if 'muertes_raw' in locals() else None,
+            # v15.74.7 · categorías reales por caravana: stock de hoy + egresos
+            # de todos los motivos (los dos ya están en memoria en este tick).
+            regs_stock=_regs_stock_hoy if ('_regs_stock_hoy' in locals() and _regs_stock_hoy) else None,
+            egresos=egresos_data if 'egresos_data' in locals() else None)
         resumen["modulos"]["compras_ingresos"] = {
             "ok":       _ci is not None,
             "tropas":   _ci["meta"]["n_tropas"] if _ci else 0,
@@ -7574,7 +7578,75 @@ def _ci_cat(c):
     return _rr_cat(c)
 
 
-def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=None):
+# ── v15.74.7 · Categorías y kg de ingreso POR CARAVANA ──────────
+# El remito de ingreso (lst_movimiento_hacienda, camión × CATEGORIA) declara una
+# categoría por camión que muchas veces no es la de los animales: BUL.FER.09/12/25
+# figura como 64 Vaca y las caravanas dicen 36 NT · 20 VA · 3 VQ (+5 sin
+# caravana). Hallazgo de Nicolás (16/09/2026), verificado por Cowork sobre 566
+# tropas: de 59 con cobertura ≥ 80 % por caravana, 14 tenían categorías
+# distintas a las del remito, y en 7 la liquidación coincidía con las caravanas.
+# Regla nueva: la categoría y el kg de ingreso salen de LOS ANIMALES — stock de
+# hoy + egresos de todos los motivos — cuando la cobertura llega al 90 %. El
+# remito queda como contexto y como fallback.
+COMPRAS_COB_MIN = 90     # % de cabezas con caravana para creerle a las caravanas
+
+
+def _ci_por_caravana(regs_stock, egresos, log):
+    """tropa_norm → {categoría larga: {cabezas, kg_ingreso, kg_n}} contando
+    animales del stock de hoy y de los egresos (venta, muerte, traslado).
+    Un animal no puede estar en los dos: si está, gana el stock. Corral 10000
+    (virtual) excluido. Devuelve None si no hay ninguna de las dos fuentes.
+
+    ⚠ La clave de deduplicación es (tropa, RFID), NO el RFID solo: WinCampo
+    reutiliza caravanas entre animales de distintos años (11.699 RFID aparecen
+    en más de un egreso; uno, diez veces). Deduplicar por RFID solo dejaba a
+    BUL.FER.09/12/25 con 23 animales de los 64 que tiene (11 en stock + 53
+    egresados). Dentro de una misma tropa el RFID sí identifica al animal (un
+    traslado y después la venta son dos egresos del mismo animal)."""
+    if regs_stock is None and egresos is None:
+        return None
+    acc, vistos = {}, set()
+
+    def _corral_n(v):
+        try:
+            return int(float(str(v or "").strip() or 0))
+        except ValueError:
+            return None
+
+    def _sumar(r, k_tropa_col, cat_col, kg_col):
+        if _corral_n(r.get("NRO_CORRAL")) == 10000:
+            return
+        k = _norm_tropa(r.get(k_tropa_col))
+        if not k:
+            return
+        rid = str(r.get("RFID") or "").strip()
+        if not rid:
+            car = str(r.get("NRO_CARAVANA") or "").strip()
+            rid = ("C:" + car) if car else ""
+        if rid:
+            clave = (k, rid)
+            if clave in vistos:
+                return
+            vistos.add(clave)
+        cat = _ci_cat(r.get(cat_col))
+        a = acc.setdefault(k, {}).setdefault(cat, {"cabezas": 0, "kg_ingreso": 0.0, "kg_n": 0})
+        a["cabezas"] += 1
+        kg = to_num(r.get(kg_col))
+        if kg:
+            a["kg_ingreso"] += float(kg)
+            a["kg_n"] += 1
+
+    for r in (regs_stock or []):
+        _sumar(r, "NRO_TROPA", "CATEGORIA", "KG_INGRESO")
+    for e in (egresos or []):
+        _sumar(e, "NRO_TROPA", "Categoria", "KgIngreso")
+    log.info(f"  + compras/ingresos: {len(vistos):,} animales con caravana en "
+             f"{len(acc)} tropas (stock {len(regs_stock or []):,} + egresos {len(egresos or []):,})")
+    return acc
+
+
+def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=None,
+                             regs_stock=None, egresos=None):
     """v15.74 · Vuelca `compras_ingresos.json`: los ingresos de WinCampo de los
     últimos 730 días agrupados por tropa × categoría, con el estado de cada
     tropa contra el stock y las ventas de hoy.
@@ -7584,6 +7656,10 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
     muertes_raw— las muertes que ya bajó el módulo 7. Si viene None, el campo
                  `muertas` de cada tropa queda en null (no en 0: no es lo mismo
                  "cero muertes" que "no lo sé").
+    regs_stock — v15.74.7 · el stock de hoy (por animal) y
+    egresos    — los egresos de todos los motivos (por animal). Con los dos se
+                 arman las categorías REALES de cada tropa; si vienen None, las
+                 categorías quedan las del remito (log ⚠).
 
     Nunca levanta: devuelve None y loguea si algo falla.
     """
@@ -7711,12 +7787,51 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
     else:
         muertas = None
 
+    # ── v15.74.7 · categorías reales (por caravana) vs. las del remito ──
+    por_car = _ci_por_caravana(regs_stock, egresos, log)
+    if por_car is None:
+        log.warning("  ⚠ compras/ingresos: sin stock ni egresos por animal — las categorías quedan las del remito")
+    n_car = n_rem = n_dist = 0
+
     for k, t in tropas.items():
         t["cabezas"]    = int(t["cabezas"])
         t["kg_ingreso"] = round(t["kg_ingreso"], 1)
         t["kg_cab"]     = round(t["kg_ingreso"] / t["cabezas"], 1) if t["cabezas"] else None
-        t["categorias"] = sorted({g["categoria"] for g in grupos.values()
-                                  if g["tropa_norm"] == k})
+        grupos_t = sorted([g for g in grupos.values() if g["tropa_norm"] == k],
+                          key=lambda g: g["categoria"])
+        # lo que dice el remito, siempre visible
+        t["categorias_remito"] = sorted({g["categoria"] for g in grupos_t})
+        t["remito"] = [{"categoria": g["categoria"], "cabezas": int(g["cabezas"]),
+                        "kg_ingreso": round(g["kg_ingreso"], 1),
+                        "kg_cab": round(g["kg_ingreso"] / g["cabezas"], 1) if g["cabezas"] else None}
+                       for g in grupos_t]
+        # lo que dicen los animales
+        reales = por_car.get(k) if por_car else None
+        t["categorias_real"] = []
+        if reales:
+            for cat in sorted(reales, key=lambda c: -reales[c]["cabezas"]):
+                a = reales[cat]
+                t["categorias_real"].append({
+                    "categoria": cat, "cabezas": a["cabezas"],
+                    "kg_ingreso": round(a["kg_ingreso"], 1),
+                    "kg_cab": round(a["kg_ingreso"] / a["kg_n"], 1) if a["kg_n"] else None,
+                })
+        t["cab_real"] = sum(c["cabezas"] for c in t["categorias_real"])
+        t["cobertura_pct"] = (round(t["cab_real"] / t["cabezas"] * 100, 1)
+                              if t["cabezas"] and por_car is not None else None)
+        t["cab_sin_caravana"] = max(t["cabezas"] - t["cab_real"], 0)
+        usa_car = bool(t["categorias_real"]) and (t["cobertura_pct"] or 0) >= COMPRAS_COB_MIN
+        t["fuente_categorias"] = "caravanas" if usa_car else "remito"
+        t["categorias"] = (sorted({c["categoria"] for c in t["categorias_real"]}) if usa_car
+                           else t["categorias_remito"])
+        t["remito_distinto"] = (usa_car and
+                                set(t["categorias"]) != set(t["categorias_remito"]))
+        if usa_car:
+            n_car += 1
+            if t["remito_distinto"]:
+                n_dist += 1
+        else:
+            n_rem += 1
         t["en_stock"]   = (en_stock.get(k, 0) if en_stock is not None else None)
         t["vendidas"]   = (vendidas.get(k, 0) if vendidas is not None else None)
         # Cabezas vendidas que el módulo 09 le atribuyó a esta tropa por
@@ -7724,13 +7839,36 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
         t["vendidas_imputadas"] = (vend_imp.get(k, 0) if vend_imp is not None else None)
         t["muertas"]    = (muertas.get(k, 0) if muertas is not None else None)
 
+    # `grupos` son los sub-grupos EFECTIVOS: los del remito, salvo en las tropas
+    # que se creen por caravana, donde se reemplazan por las categorías reales
+    # (con el contexto del remito: hotelero, fecha, consignatario, proveedor…).
     lista = []
-    for g in grupos.values():
-        g["cabezas"]    = int(g["cabezas"])
-        g["kg_ingreso"] = round(g["kg_ingreso"], 1)
-        g["kg_cab"]     = round(g["kg_ingreso"] / g["cabezas"], 1) if g["cabezas"] else None
-        lista.append(g)
+    for k, t in tropas.items():
+        grupos_t = [g for g in grupos.values() if g["tropa_norm"] == k]
+        if t["fuente_categorias"] == "caravanas":
+            g0 = grupos_t[0]
+            ctx = {kk: g0.get(kk) for kk in ("tropa", "tropa_norm", "hotelero", "fecha_ingreso",
+                                             "consignatario", "proveedor", "origen",
+                                             "localidad", "destino_compra")}
+            ctx["fecha_ingreso"] = t["fecha"]
+            ctx["camiones"] = sum(g["camiones"] for g in grupos_t)
+            for c in t["categorias_real"]:
+                g = dict(ctx)
+                g.update({"categoria": c["categoria"],
+                          "categoria_sigla": next((s for s, n in RR_CAT_CODE.items() if n == c["categoria"]), None),
+                          "cabezas": c["cabezas"], "kg_ingreso": c["kg_ingreso"], "kg_cab": c["kg_cab"],
+                          "fuente": "caravanas"})
+                lista.append(g)
+        else:
+            for g in grupos_t:
+                g["cabezas"]    = int(g["cabezas"])
+                g["kg_ingreso"] = round(g["kg_ingreso"], 1)
+                g["kg_cab"]     = round(g["kg_ingreso"] / g["cabezas"], 1) if g["cabezas"] else None
+                g["fuente"]     = "remito"
+                lista.append(g)
     lista.sort(key=lambda g: (g["fecha_ingreso"] or "", g["tropa_norm"], g["categoria"]))
+    log.info(f"  ✓ compras/ingresos: {n_car} tropas por caravana ({n_dist} con categorías ≠ remito) "
+             f"· {n_rem} por remito")
 
     # ⚠ v15.74.4 · El rango NO es siempre el que pidió esta función. Cuando el
     # pipeline le pasa los `regs_ing` del módulo 6, esos vienen de la ventana de
@@ -7757,6 +7895,9 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
             # `vendidas` sólo ve las ventas que el módulo 09 tiene cargadas, que
             # arrancan en esta fecha: una tropa vendida antes figura en 0.
             "vendidas_desde": rr_desde,
+            # v15.74.7 · de dónde salen las categorías de cada tropa
+            "categorias": {"caravanas": n_car, "remito": n_rem, "distintas_al_remito": n_dist,
+                           "cob_min": COMPRAS_COB_MIN, "sin_datos_caravana": por_car is None},
         },
         "tropas": dict(sorted(tropas.items())),
         "grupos": lista,
@@ -7901,20 +8042,36 @@ def liq_es_tercero(hotelero):
 
 def liq_semaforo(grupos_wc, lineas, opts=None):
     """Devuelve {'estado': 'ok'|'revisar'|'sin_liquidar'|'terceros',
-    'motivos': {categoria: [...]}} para UNA tropa. Ver el JS para el detalle."""
+    'motivos': {categoria: [...]}, 'avisos': [...]} para UNA tropa. Ver el JS
+    para el detalle.
+
+    v15.74.7 · `grupos_wc` son las categorías EFECTIVAS de la tropa (las reales
+    por caravana cuando la cobertura llega a COMPRAS_COB_MIN, si no las del
+    remito). opts trae `fuente_categorias`, `cab_remito`, `cab_sin_caravana`,
+    `cobertura_pct`, `remito_distinto`. Con caravanas y animales sin caravana,
+    una línea vale con real ≤ liq ≤ real + sin_caravana y la suma de la tropa
+    tiene que dar el remito. `avisos` son informativos: no bajan el semáforo."""
     opts = opts or {}
     grupos_wc = grupos_wc or []
     lineas = lineas or []
     tol_kg  = opts.get("tol_kg_pct", LIQ_TOL_KG_PCT)
     tol_cab = opts.get("tol_cab", LIQ_TOL_CAB)
-    motivos = {}
+    fuente  = opts.get("fuente_categorias") or "remito"
+    cab_sc  = float(opts.get("cab_sin_caravana") or 0) if fuente == "caravanas" else 0.0
+    cab_rem = _liq_num(opts.get("cab_remito"))
+    motivos, avisos = {}, []
 
     def add(cat, m):
         motivos.setdefault(cat, []).append(m)
 
+    if fuente == "caravanas" and opts.get("remito_distinto"):
+        avisos.append("remito_distinto")
+    if fuente == "remito" and opts.get("cobertura_pct") is not None:
+        avisos.append(f"cobertura_{float(opts['cobertura_pct']):g}%")
+
     if not lineas:
         return {"estado": "terceros" if liq_es_tercero(opts.get("hotelero")) else "sin_liquidar",
-                "motivos": {}}
+                "motivos": {}, "avisos": avisos}
 
     por_cat = {}
     for l in lineas:
@@ -7936,21 +8093,33 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
             add(cat, "sin_linea")
             continue
         cab_wc = _liq_num(g.get("cabezas")) or 0.0
-        if abs(a["cab"] - cab_wc) > tol_cab:
+        if cab_sc > 0:
+            # animales sin caravana: pueden estar en cualquier categoría
+            ok_cab = (cab_wc - tol_cab) <= a["cab"] <= (cab_wc + cab_sc + tol_cab)
+            if not ok_cab:
+                add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}(+{cab_sc:g} sc)")
+                continue
+        elif abs(a["cab"] - cab_wc) > tol_cab:
             add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}")
             continue    # con cabezas distintas el kg/cab no es comparable
-        kg_wc_cab  = ((_liq_num(g.get("kg_ingreso")) or 0.0) / cab_wc) if cab_wc else None
+        # kg/cab de la categoría: el real de los animales si viene (`kg_cab`),
+        # si no el promedio del grupo del remito
+        kg_wc_cab  = _liq_num(g.get("kg_cab")) or (((_liq_num(g.get("kg_ingreso")) or 0.0) / cab_wc) if cab_wc else None)
         kg_liq_cab = (a["kg"] / a["cab"]) if a["cab"] else None
         if kg_wc_cab and kg_liq_cab:
             dif = abs(kg_liq_cab - kg_wc_cab) / kg_liq_cab * 100
             if dif > tol_kg + 1e-9:
                 add(cat, f"kg_{dif:.1f}%")
+    if cab_sc > 0 and cab_rem:
+        tot = sum(a["cab"] for a in por_cat.values())
+        if abs(tot - cab_rem) > tol_cab:
+            add("*", f"total_{tot:g}≠{cab_rem:g}")
     for cat in sorted(por_cat):
         if grupos_wc and cat not in wc_cats:
             add(cat, "cat_sobrante")
         if por_cat[cat]["revisar"]:
             add(cat, "estado_revisar")
-    return {"estado": "revisar" if motivos else "ok", "motivos": motivos}
+    return {"estado": "revisar" if motivos else "ok", "motivos": motivos, "avisos": avisos}
 
 
 def liq_motivos_txt(motivos):
@@ -7989,8 +8158,17 @@ def _cl_semaforo_todas(carpeta_out, activas, log):
 
     semaforo = {}
     for k in sorted(set(tropas_wc) | set(lineas)):
-        hot = (tropas_wc.get(k) or {}).get("hotelero") or hot_liq.get(k)
-        semaforo[k] = liq_semaforo(grupos_wc.get(k), lineas.get(k), {"hotelero": hot})
+        t = tropas_wc.get(k) or {}
+        hot = t.get("hotelero") or hot_liq.get(k)
+        semaforo[k] = liq_semaforo(grupos_wc.get(k), lineas.get(k), {
+            "hotelero": hot,
+            # v15.74.7 · categorías por caravana
+            "fuente_categorias": t.get("fuente_categorias"),
+            "cab_remito": t.get("cabezas"),
+            "cab_sin_caravana": t.get("cab_sin_caravana"),
+            "cobertura_pct": t.get("cobertura_pct"),
+            "remito_distinto": t.get("remito_distinto"),
+        })
     resumen = {e: 0 for e in ("ok", "revisar", "sin_liquidar", "terceros")}
     for s in semaforo.values():
         resumen[s["estado"]] = resumen.get(s["estado"], 0) + 1

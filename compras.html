@@ -125,6 +125,7 @@
   tr.liqrow td{background:var(--accent-soft);font-size:12px}
   tr.liqrow td:first-child{padding-left:26px}
   tr.cat.sobra td{font-style:italic}
+  tr.cat.info td{background:var(--surface);font-size:11.5px;padding-left:26px;border-bottom:1px dashed var(--border)}
   tr.form td{background:#fdf6e3;padding:10px 12px 12px 26px}
   .inl{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
   .inl .lbl{margin-bottom:2px}
@@ -298,10 +299,10 @@
 </main>
 
 <script src="js/config-supabase.js?v=15742"></script>
-<script src="js/compras-calc.js?v=15745"></script>
+<script src="js/compras-calc.js?v=15747"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
-   compras.html — v15.74.5 · Módulo 12 · Compras y Liquidaciones
+   compras.html — v15.74.7 · Módulo 12 · Compras y Liquidaciones
    ────────────────────────────────────────────────────────────
    Lo que WinCampo dice que entró (compras_ingresos.json) contra lo que el
    consignatario liquidó (cargado a mano acá). De ese cruce sale el costo de
@@ -325,10 +326,18 @@
    recalcula el semáforo en el momento y persiste igual que guardar (base o
    archivo descargado). El costeo del módulo 07 no cambia: sigue exacto por
    tropa + categoría; el semáforo es un aviso, no un bloqueo.
+
+   v15.74.7 · Las categorías y el kg de ingreso de cada tropa salen de LOS
+   ANIMALES (stock + egresos por caravana) cuando la cobertura llega al 90 %;
+   el remito de ingreso queda visible como contexto (línea "Remito: …" en el
+   desplegable, chip "≠ remito", filtro rápido) y como fallback. Hallazgo de
+   Nicolás: BUL.FER.09/12/25 era "64 Vaca" en el remito y 40 NT · 20 VA ·
+   4 VQ en los animales. Nueva liquidación precarga las reales; "usar
+   categorías del remito" para el caso raro.
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.5';
+var VERSION = 'v15.74.7';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -491,7 +500,20 @@ function semDe(k) {
     return {categoria: x.c.categoria, cabezas_liq: x.c.cabezas_liq, kg_liq: x.c.kg_liq,
             estado_liq: x.o.estado};
   });
-  return liqSemaforo(catsDe(k), lineas, {hotelero: hot});
+  // v15.74.7 · las categorías efectivas (catsDe) ya son las reales por
+  // caravana cuando la cobertura alcanza; el semáforo recibe el contexto
+  return liqSemaforo(catsDe(k), lineas, {
+    hotelero: hot,
+    fuente_categorias: t ? t.fuente_categorias : null,
+    cab_remito: t ? t.cabezas : null,
+    cab_sin_caravana: t ? t.cab_sin_caravana : null,
+    cobertura_pct: t ? t.cobertura_pct : null,
+    remito_distinto: t ? t.remito_distinto : false
+  });
+}
+/* "40 Novillito · 20 Vaca · 4 Vaquillona" */
+function catsTxt(lista) {
+  return (lista || []).map(function (c) { return N(c.cabezas) + ' ' + esc(c.categoria); }).join(' · ') || '—';
 }
 function semDot(est, titulo) {
   return '<span class="sem ' + esc(est) + '" title="' + esc(titulo || SEM_LBL[est] || est) + '"></span>';
@@ -499,7 +521,8 @@ function semDot(est, titulo) {
 function semCelda(k) {
   var s = SEM[k] || {estado: 'sin_liquidar', motivos: {}};
   var txt = liqMotivosTxt(s.motivos);
-  return '<span class="semtxt" title="' + esc(txt || SEM_LBL[s.estado]) + '">'
+  var av = (s.avisos || []).length ? ' · ' + s.avisos.join(', ') : '';
+  return '<span class="semtxt" title="' + esc((txt || SEM_LBL[s.estado]) + av) + '">'
     + semDot(s.estado) + (SEM_LBL[s.estado] || s.estado) + '</span>';
 }
 /* Peor estado entre varias tropas (para una liquidación). */
@@ -591,6 +614,7 @@ function tropasFiltradas() {
     if (fe && est !== est_norm(fe, est)) return;
     var sem = (SEM[k] || {}).estado || 'sin_liquidar';
     if (fsem && sem !== fsem) return;
+    if (F_DIST && !t.remito_distinto) return;   // v15.74.7 · sólo categorías ≠ remito
     out.push({k: k, t: t, cs: cs, est: est, sem: sem});
   });
   // rojos y ámbar arriba, después verdes, terceros al final; dentro, fecha desc
@@ -606,6 +630,8 @@ function setSem(v) {
   s.value = (s.value === v) ? '' : v;
   rIngresos();
 }
+var F_DIST = false;   // v15.74.7 · filtro rápido "categorías ≠ remito"
+function setDist() { F_DIST = !F_DIST; rIngresos(); }
 function q1(s) { return esc(s).replace(/'/g, "\\'"); }
 
 var NCOL = 12;
@@ -632,7 +658,11 @@ function rIngresos() {
     var S = SEM[k] || {estado: 'sin_liquidar', motivos: {}};
     b += '<tr class="tropa' + (selo ? ' sel' : '') + '" data-k="' + esc(k) + '" onclick="selToggle(\'' + k + '\')">'
       + '<td>' + fec(t.fecha) + '</td>'
-      + '<td><b>' + esc(t.tropa) + '</b>' + (t.sinWc ? ' <span class="tag par">sin ingreso WC</span>' : '') + '</td>'
+      + '<td><b>' + esc(t.tropa) + '</b>' + (t.sinWc ? ' <span class="tag par">sin ingreso WC</span>' : '')
+      + (t.remito_distinto ? ' <span class="tag exc" title="Las categorías reales (por caravana) no son las del remito de ingreso">≠ remito</span>' : '')
+      + (t.fuente_categorias === 'remito' && t.cobertura_pct != null
+          ? ' <span class="tag pen" title="Cobertura por caravana ' + N(t.cobertura_pct, 0) + ' %: se usan las categorías del remito">remito · ' + N(t.cobertura_pct, 0) + ' %</span>' : '')
+      + '</td>'
       + '<td>' + esc(t.hotelero) + '</td>'
       + '<td>' + esc(t.consignatario) + '</td>'
       + '<td>' + esc(t.proveedor) + '</td>'
@@ -646,6 +676,18 @@ function rIngresos() {
       + '</tr>';
 
     var herr = conHerramientas(k);
+    // v15.74.7 · de dónde salen las categorías: lo que dicen los animales y lo
+    // que dice el remito, siempre las dos líneas cuando hay caravanas
+    if (t.categorias_real && t.categorias_real.length) {
+      var cob = t.cobertura_pct != null ? N(t.cobertura_pct, 0) + ' %' : '—';
+      var car = 'Por caravana: <b>' + catsTxt(t.categorias_real) + '</b> <span class="muted">(' + N(t.cab_real) + '/' + N(t.cabezas)
+        + (t.cab_sin_caravana ? ' · ' + N(t.cab_sin_caravana) + ' sin caravana' : ' · ' + cob) + ')</span>';
+      var rem = 'Remito: ' + (t.fuente_categorias === 'caravanas' ? catsTxt(t.remito) : '<b>' + catsTxt(t.remito) + '</b>');
+      var nota = t.fuente_categorias === 'caravanas'
+        ? (t.remito_distinto ? ' <span class="tag exc">≠ remito</span>' : ' <span class="tag ok">coincide</span>')
+        : ' <span class="tag pen">cobertura ' + cob + ' &lt; ' + (((ING.meta || {}).categorias || {}).cob_min || 90) + ' %: se usa el remito</span>';
+      b += '<tr class="cat info"><td colspan="' + NCOL + '"><span class="muted">' + car + ' · ' + rem + '</span>' + nota + '</td></tr>';
+    }
     // una fila por liquidación que toca la tropa, con las acciones de la liquidación
     uniq((LIN[k] || []).map(function (x) { return x.o.id; })).forEach(function (id) {
       var o = LIN[k].filter(function (x) { return x.o.id === id; })[0].o;
@@ -701,7 +743,9 @@ function rIngresos() {
   document.getElementById('sub-ing').textContent =
     (ING.meta || {}).desde + ' a ' + (ING.meta || {}).hasta + ' · '
     + (ING.meta || {}).n_tropas + ' tropas · ' + (ING.meta || {}).n_grupos + ' grupos · '
-    + 'destete y traslado excluidos · semáforo: categoría + cabezas + kg ±' + LIQ_TOL_KG_PCT + ' %';
+    + 'destete y traslado excluidos · semáforo: categoría + cabezas + kg ±' + LIQ_TOL_KG_PCT + ' %'
+    + (((ING.meta || {}).categorias || {}).caravanas != null
+        ? ' · categorías por caravana (cobertura ≥ ' + (ING.meta.categorias.cob_min || 90) + ' %)' : '');
 
   // chips del semáforo sobre TODAS las tropas (PEGSA/Bulltrade primero, terceros al final)
   var cnt = {ok: 0, revisar: 0, sin_liquidar: 0, terceros: 0};
@@ -711,9 +755,14 @@ function rIngresos() {
     return '<span class="chip click' + (fsem === e ? ' on' : '') + '" onclick="setSem(\'' + e + '\')">'
       + semDot(e) + '<b>' + N(cnt[e]) + '</b> ' + lbl + '</span>';
   };
+  var MC = (ING.meta || {}).categorias || {};
+  var nDist = Object.keys(ING.tropas || {}).filter(function (k) { return ING.tropas[k].remito_distinto; }).length;
   document.getElementById('chips-ing').innerHTML =
     chipSem('ok', 'verdes') + chipSem('revisar', 'a revisar') + chipSem('sin_liquidar', 'sin liquidar')
     + chipSem('terceros', 'terceros')
+    + '<span class="chip click' + (F_DIST ? ' on' : '') + '" onclick="setDist()" title="Tropas cuyas categorías reales (por caravana) no son las del remito de ingreso'
+      + (MC.caravanas != null ? ' · ' + N(MC.caravanas) + ' tropas por caravana, ' + N(MC.remito) + ' por remito' : '') + '"><b>'
+      + N(nDist) + '</b> categorías ≠ remito</span>'
     + '<span class="chip">pendiente de liquidar · <b>' + N(penCab) + ' cab</b> / <b>' + N(penKg) + ' kg</b></span>'
     + '<span class="chip">en pantalla · <b>' + N(totCab) + ' cab</b> / <b>' + N(totKg) + ' kg</b></span>'
     + '<span class="chip">seleccionadas · <b>' + SEL.length + '</b></span>';
@@ -1100,7 +1149,9 @@ function nuevaOp(tropas, existente) {
           categoria: g.categoria,
           cabezas_wc: g.cabezas, kg_wc: g.kg_ingreso,
           cabezas_liq: g.cabezas, kg_liq: g.kg_ingreso,   // prefill: lo de WinCampo
-          precio_modo: 'kg', precio_valor: null
+          precio_modo: 'kg', precio_valor: null,
+          // v15.74.7 · de dónde salió la categoría precargada (caravanas | remito)
+          categorias_de: g.fuente || 'remito'
         });
       });
     });
@@ -1149,6 +1200,31 @@ function leerForm() {
   OP.gastos_monto = isNaN(gv) ? null : gv;
 }
 
+/* v15.74.7 · en la operación en edición, reemplaza las líneas de una tropa
+   (precargadas con las categorías reales por caravana) por las del remito de
+   ingreso. Para el caso raro en que el consignatario liquidó como el remito. */
+function usarRemito(k) {
+  if (!OP) return;
+  var t = (ING.tropas || {})[k];
+  if (!t || !t.remito || !t.remito.length) { toast('Esa tropa no tiene remito para usar.', 'err'); return; }
+  var viejas = OP.categorias.filter(function (c) { return (c.tropa_norm || normTropa(c.tropa)) === k; });
+  var pos = OP.categorias.indexOf(viejas[0]);
+  var nuevas = t.remito.map(function (r) {
+    return {
+      tropa: t.tropa, tropa_norm: k, hotelero: t.hotelero, categoria: r.categoria,
+      cabezas_wc: r.cabezas, kg_wc: r.kg_ingreso,
+      cabezas_liq: r.cabezas, kg_liq: r.kg_ingreso,
+      precio_modo: (viejas[0] || {}).precio_modo || 'kg', precio_valor: null,
+      categorias_de: 'remito'
+    };
+  });
+  OP.categorias = OP.categorias.filter(function (c) { return (c.tropa_norm || normTropa(c.tropa)) !== k; });
+  if (pos < 0) pos = OP.categorias.length;
+  OP.categorias.splice.apply(OP.categorias, [pos, 0].concat(nuevas));
+  toast('<b>' + esc(t.tropa) + '</b>: líneas del remito (' + catsTxt(t.remito) + '). Volvé a cargar los precios.', '', 9000);
+  rNueva();
+}
+
 function catInput(i, campo, v) {
   if (!OP) return;
   var c = OP.categorias[i];
@@ -1182,14 +1258,25 @@ function rNueva() {
   }).join('') + '</tr>';
 
   var b = '', avisos = [];
+  // v15.74.7 · por tropa: cabezas sin caravana (pueden ir a cualquier categoría)
+  // y el total liquidado se valida contra el REMITO, no contra las caravanas
+  var scDe = {}, liqPorTropa = {};
+  R.categorias.forEach(function (c) {
+    var k = c.tropa_norm || normTropa(c.tropa), t = (ING.tropas || {})[k];
+    scDe[k] = (t && t.fuente_categorias === 'caravanas') ? (t.cab_sin_caravana || 0) : 0;
+    liqPorTropa[k] = (liqPorTropa[k] || 0) + (c.cabezas_liq || 0);
+  });
   R.categorias.forEach(function (c, i) {
+    var kT = c.tropa_norm || normTropa(c.tropa), sc = scDe[kT] || 0;
     var difCab = (c.cabezas_wc || 0) - (c.cabezas_liq || 0);
-    var clsCab = difCab !== 0 ? ' class="num cell-warn"' : ' class="num"';
+    // con animales sin caravana, liquidar entre lo real y lo real + sc es normal
+    var cabOk = sc > 0 ? (difCab <= 0 && -difCab <= sc) : difCab === 0;
+    var clsCab = !cabOk ? ' class="num cell-warn"' : ' class="num"';
     var desFuera = c.desbaste_pct != null && Math.abs(c.desbaste_pct) > 15;
     var clsDes = desFuera ? ' class="num cell-warn"' : ' class="num"';
-    if (difCab !== 0) {
+    if (!cabOk) {
       avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: WinCampo dice '
-        + N(c.cabezas_wc) + ' cabezas y se liquidan ' + N(c.cabezas_liq)
+        + N(c.cabezas_wc) + ' cabezas' + (sc ? ' (+' + N(sc) + ' sin caravana en la tropa)' : '') + ' y se liquidan ' + N(c.cabezas_liq)
         + ' (dif. ' + (difCab > 0 ? '+' : '') + N(difCab) + ').');
     }
     if (desFuera) {
@@ -1258,9 +1345,37 @@ function rNueva() {
   });
   if (choques.length) bloqueos.push('Ya liquidadas en otra operación: ' + choques.join(' · '));
 
+  // v15.74.7 · por tropa: sin caravana, total vs remito y "usar categorías del remito"
+  var tropasOp = uniq(R.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
+  var infoTropas = [];
+  tropasOp.forEach(function (k) {
+    var t = (ING.tropas || {})[k]; if (!t) return;
+    var partes = [];
+    if (t.fuente_categorias === 'caravanas') {
+      partes.push('categorías <b>por caravana</b> (' + N(t.cab_real) + '/' + N(t.cabezas) + ')'
+        + (t.remito_distinto ? ' · el remito decía ' + catsTxt(t.remito) : ''));
+      if (t.cab_sin_caravana > 0) {
+        partes.push('<b>' + N(t.cab_sin_caravana) + ' cabezas sin caravana</b> en WinCampo — sumalas a la categoría que corresponda');
+      }
+      if (liqPorTropa[k] !== t.cabezas) {
+        partes.push('se liquidan <b>' + N(liqPorTropa[k]) + '</b> de las <b>' + N(t.cabezas) + '</b> del remito');
+      }
+      var yaRemito = t.remito && t.remito.length && t.remito.every(function (r) {
+        return R.categorias.some(function (c) { return (c.tropa_norm || normTropa(c.tropa)) === k && c.categoria === r.categoria && c.cabezas_liq === r.cabezas; });
+      });
+      if (!yaRemito) {
+        partes.push('<button class="btn sec mini" onclick="usarRemito(\'' + q1(k) + '\')">usar categorías del remito</button>');
+      }
+    } else if (t.cobertura_pct != null) {
+      partes.push('categorías del <b>remito</b> (cobertura por caravana ' + N(t.cobertura_pct, 0) + ' %)');
+    }
+    if (partes.length) infoTropas.push('<b>' + esc(t.tropa) + '</b>: ' + partes.join(' · '));
+  });
+
   var html = '';
   if (bloqueos.length) html += '<div class="aviso err">' + bloqueos.join('<br>') + '</div>';
   if (avisos.length)   html += '<div class="aviso">' + avisos.join('<br>') + '</div>';
+  if (infoTropas.length) html += '<div class="aviso info">' + infoTropas.join('<br>') + '</div>';
   if (!sbOn())         html += '<div class="aviso info">Sin base configurada: al guardar se '
     + '<b>descarga</b> el archivo. Moverlo a <code>datos\\compras_liquidaciones\\</code> '
     + 'para que el pipeline lo levante en el próximo tick.</div>';
@@ -1484,6 +1599,7 @@ function importJSON(inp) {
 function exportCSV() {
   var L = liqsFiltradas();
   var cols = ['liq_id', 'fecha', 'consignataria', 'nro_liquidacion', 'estado', 'semaforo', 'motivos',
+              'fuente_categorias', 'cobertura_pct',
               'tropa', 'categoria', 'categoria_liq_original', 'tropa_original',
               'hotelero', 'cabezas_wc', 'kg_wc', 'cabezas_liq', 'kg_liq', 'precio_modo',
               'precio_valor', 'precio_kg', 'importe', 'comision_cat', 'gastos_cat',
@@ -1492,11 +1608,13 @@ function exportCSV() {
   L.forEach(function (o) {
     var R = liqCalcular(o);
     R.categorias.forEach(function (c) {
-      var S = SEM[c.tropa_norm || normTropa(c.tropa)] || {estado: '', motivos: {}};
+      var kT = c.tropa_norm || normTropa(c.tropa);
+      var S = SEM[kT] || {estado: '', motivos: {}}, T = (ING.tropas || {})[kT] || {};
       filas.push(cols.map(function (k) {
         var v = ({liq_id: o.id, fecha: o.fecha, consignataria: o.consignataria,
                   nro_liquidacion: o.nro_liquidacion, estado: o.estado,
-                  semaforo: S.estado, motivos: (S.motivos[c.categoria] || S.motivos['*'] || []).join(' ')})[k];
+                  semaforo: S.estado, motivos: (S.motivos[c.categoria] || S.motivos['*'] || []).join(' '),
+                  fuente_categorias: T.fuente_categorias || '', cobertura_pct: T.cobertura_pct})[k];
         if (v === undefined) v = c[k];
         if (v === null || v === undefined) return '';
         // es-AR: coma decimal, y por eso el separador de columnas es ';'
@@ -1750,11 +1868,14 @@ function informePDF() {
     + ' sin liquidar · ' + dotP('terceros') + N(cnt.terceros) + ' terceros</div>';
   if (pend.length) {
     h += '<table class="dt"><thead><tr><th style="text-align:left">Fecha</th><th style="text-align:left">Tropa</th>'
-      + '<th style="text-align:left">Propietario</th><th>Cab</th><th style="text-align:left">Semáforo</th>'
+      + '<th style="text-align:left">Propietario</th><th>Cab</th><th style="text-align:left">Categorías</th><th style="text-align:left">Semáforo</th>'
       + '<th style="text-align:left">Motivos</th></tr></thead><tbody>'
       + pend.slice(0, MAXP).map(function (p) {
+          var fu = p.t.fuente_categorias ? (p.t.fuente_categorias === 'caravanas' ? 'caravanas' : 'remito')
+                   + (p.t.cobertura_pct != null ? ' ' + N(p.t.cobertura_pct, 0) + ' %' : '') + (p.t.remito_distinto ? ' ≠' : '') : '—';
           return '<tr><td style="text-align:left">' + fec(p.t.fecha) + '</td><td style="text-align:left">' + esc(p.t.tropa || p.k) + '</td>'
             + '<td style="text-align:left">' + esc(p.t.hotelero || '—') + '</td><td>' + N(p.t.cabezas) + '</td>'
+            + '<td style="text-align:left">' + esc(fu) + '</td>'
             + '<td style="text-align:left">' + dotP(p.e) + SEM_LBL[p.e] + '</td>'
             + '<td style="text-align:left;white-space:normal">' + esc(p.m || '—') + '</td></tr>';
         }).join('')
