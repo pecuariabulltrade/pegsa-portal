@@ -3,6 +3,11 @@
    Datos: window.MOBILE_DATA (mobile-data.js, adaptador de window.PEGSA_DATA)
 
    v3 (2026-05-27): login + drill modals + navegación a módulos desktop
+   v15.75 (2026-09-16): el módulo 01 (Stock de Masa) deja de abrir la PC y
+   pasa a ser una pantalla propia de la app — vive en mobile-stock.jsx
+   (segundo script text/babel, mismo scope global: ahí NO se redeclara
+   nada de este archivo). App maneja `screen`, el historial (atrás del
+   celular) y reutiliza Modal como hoja inferior.
    --------------------------------------------------------------- */
 
 const { useState, useRef, useEffect, useMemo, useContext, createContext } = React;
@@ -606,12 +611,15 @@ function EstabDonut({ items }) {
 /* ============================================================
    Stock hero card (clickable → modal)
    ============================================================ */
-function StockHero() {
+function StockHero({ onOpenStock }) {
   const h = D.STOCK_HERO;
   const { fmt, fmtPct } = D;
   const modal = useModal();
 
+  // v15.75: si la pantalla nativa del módulo 01 está disponible, la card abre
+  // directamente su pestaña Stock; el modal de siempre queda como fallback.
   const open = () => {
+    if (onOpenStock) { onOpenStock("stock"); return; }
     modal.open({
       title: "Stock de hacienda",
       sub: h.sub,
@@ -1532,12 +1540,18 @@ function navigateToModule(portalId, tab) {
   window.location.href = "index.html" + qs;
 }
 
-function Modulos() {
+function Modulos({ onOpenStock }) {
+  // v15.75: el módulo 01 (Stock de Masa) tiene pantalla propia en la app;
+  // los demás siguen abriendo la versión de PC.
+  const abrir = (m) => {
+    if (m.portalId === "stock" && onOpenStock) onOpenStock("stock");
+    else navigateToModule(m.portalId);
+  };
   return (
     <div className="modulos">
       {D.MODULOS.map((m) => (
         <button key={m.n} className="mod"
-                onClick={() => navigateToModule(m.portalId)}>
+                onClick={() => abrir(m)}>
           <div className="mod-top">
             <span>{m.n}</span>
             <span className={"mod-led " + m.state} />
@@ -1592,6 +1606,49 @@ function App() {
   const [bottomTab, setBottomTab] = useState("panel");
   const [modalContent, setModalContent] = useState(null);
   const [, setTick] = useState(0);
+  // v15.75: pantallas de la app. 'panel' es lo de siempre; 'stock' es el
+  // módulo 01 nativo (mobile-stock.jsx). Se empuja una entrada al historial
+  // al abrir la pantalla y otra al abrir una hoja, así el botón atrás del
+  // celular cierra la hoja primero y después vuelve a la grilla Módulos.
+  const [screen, setScreen] = useState("panel");
+  const [stockTab, setStockTab] = useState("stock");
+  const screenPushed = useRef(false);
+  const sheetPushed = useRef(false);
+
+  useEffect(() => {
+    const onPop = () => {
+      if (sheetPushed.current) { sheetPushed.current = false; setModalContent(null); return; }
+      if (screenPushed.current) { screenPushed.current = false; setScreen("panel"); }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const tieneStockScreen = typeof StockScreen === "function";
+  const openStock = (tab) => {
+    if (!tieneStockScreen) { navigateToModule("stock"); return; }
+    setStockTab(tab || "stock");
+    setScreen("stock");
+    if (!screenPushed.current) {
+      try { history.pushState({ pegsaScreen: "stock" }, ""); screenPushed.current = true; } catch (e) {}
+    }
+    try { window.scrollTo(0, 0); } catch (e) {}
+  };
+  const volverAlPanel = () => {
+    if (screenPushed.current) { history.back(); }   // popstate → setScreen('panel')
+    else setScreen("panel");
+  };
+  // hoja inferior desde la pantalla Stock: mismo Modal, con entrada de historial
+  const openSheet = (content) => {
+    setModalContent(content);
+    if (!sheetPushed.current) {
+      try { history.pushState({ pegsaSheet: 1 }, ""); sheetPushed.current = true; } catch (e) {}
+    }
+  };
+  const closeModal = () => {
+    if (sheetPushed.current) { history.back(); }    // popstate → cierra
+    else setModalContent(null);
+  };
 
   useEffect(() => {
     const onReady = () => {
@@ -1629,8 +1686,31 @@ function App() {
 
   const modalApi = {
     open: (content) => setModalContent(content),
-    close: () => setModalContent(null)
+    close: closeModal
   };
+
+  // v15.75 · pantalla del módulo 01
+  if (screen === "stock" && tieneStockScreen) {
+    const onTab = (id) => {
+      setBottomTab(id);
+      volverAlPanel();
+      if (id === "modulos") {
+        setTimeout(() => {
+          const g = document.querySelector(".modulos");
+          if (g) g.scrollIntoView({ block: "start" });
+        }, 60);
+      }
+    };
+    return (
+      <ModalCtx.Provider value={modalApi}>
+        <div className="app sk-app">
+          <StockScreen onBack={volverAlPanel} initialTab={stockTab} openSheet={openSheet} />
+          <TabBar active="modulos" onChange={onTab} />
+          <Modal content={modalContent} onClose={closeModal} />
+        </div>
+      </ModalCtx.Provider>
+    );
+  }
 
   return (
     <ModalCtx.Provider value={modalApi}>
@@ -1644,7 +1724,7 @@ function App() {
           <div className="sec-head">
             <h2><span className="ico">🔔</span>Lo más importante</h2>
           </div>
-          <StockHero />
+          <StockHero onOpenStock={tieneStockScreen ? openStock : null} />
           <Cotizaciones />
 
           <hr className="sec-div" />
@@ -1705,14 +1785,14 @@ function App() {
             <h2><span className="ico">📂</span>Módulos</h2>
             <span className="sec-head-sub">{D.MODULOS.length} módulos · tocar para abrir</span>
           </div>
-          <Modulos />
+          <Modulos onOpenStock={tieneStockScreen ? openStock : null} />
 
           <Footer session={session} />
         </main>
 
         <TabBar active={bottomTab} onChange={setBottomTab} />
 
-        <Modal content={modalContent} onClose={() => setModalContent(null)} />
+        <Modal content={modalContent} onClose={closeModal} />
       </div>
     </ModalCtx.Provider>
   );
