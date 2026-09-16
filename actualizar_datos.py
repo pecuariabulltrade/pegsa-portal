@@ -8040,6 +8040,21 @@ def liq_es_tercero(hotelero):
     return bool(h) and "PEGSA" not in h and "BULLTRADE" not in h
 
 
+LIQ_ACEPT_TOL_KG = 0.1    # el kg/cab guardado en la aceptación vs el de la línea
+
+
+def liq_desbaste_vigente(acept, kg_liq, cab_liq):
+    """v15.74.11 · ¿La aceptación de desbaste de una línea sigue valiendo?
+    Gemelo de liqDesbasteVigente() en JS. Vale si existe y el kg/cab que se
+    aceptó es el kg/cab actual de la línea (±0,1 kg)."""
+    if not isinstance(acept, dict):
+        return False
+    kg_acept = _liq_num(acept.get("kg_liq_cab"))
+    if kg_acept is None or not cab_liq:
+        return False
+    return abs((kg_liq or 0.0) / cab_liq - kg_acept) <= LIQ_ACEPT_TOL_KG
+
+
 def liq_semaforo(grupos_wc, lineas, opts=None):
     """Devuelve {'estado': 'ok'|'revisar'|'sin_liquidar'|'terceros',
     'motivos': {categoria: [...]}, 'avisos': [...]} para UNA tropa. Ver el JS
@@ -8076,11 +8091,18 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
     por_cat = {}
     for l in lineas:
         cat = l.get("categoria") or "—"
-        a = por_cat.setdefault(cat, {"cab": 0.0, "kg": 0.0, "revisar": False})
-        a["cab"] += _liq_num(l.get("cabezas_liq")) or 0.0
-        a["kg"]  += _liq_num(l.get("kg_liq")) or 0.0
+        a = por_cat.setdefault(cat, {"cab": 0.0, "kg": 0.0, "revisar": False, "aceptado": True})
+        cab_l = _liq_num(l.get("cabezas_liq")) or 0.0
+        kg_l  = _liq_num(l.get("kg_liq")) or 0.0
+        a["cab"] += cab_l
+        a["kg"]  += kg_l
         if str(l.get("estado_liq") or "").lower() == "revisar":
             a["revisar"] = True
+        # v15.74.11 · "aceptar desbaste": vale sólo si TODAS las líneas de la
+        # categoría lo tienen y el kg/cab guardado en la aceptación sigue siendo
+        # el de la línea (±0,1 kg): si se editan los kg, la aceptación caduca sola
+        if not liq_desbaste_vigente(l.get("desbaste_aceptado"), kg_l, cab_l):
+            a["aceptado"] = False
 
     wc_cats = set()
     if not grupos_wc:
@@ -8113,7 +8135,10 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
         if kg_wc_cab and kg_liq_cab:
             dif = abs(kg_liq_cab - kg_wc_cab) / kg_liq_cab * 100
             if dif > tol_kg + 1e-9:
-                add(cat, f"kg_{dif:.1f}%")
+                if a["aceptado"]:
+                    avisos.append(f"desbaste_aceptado_{dif:.1f}%")   # informativo: no baja el color
+                else:
+                    add(cat, f"kg_{dif:.1f}%")
     if cab_sc > 0 and cab_rem:
         tot = sum(a["cab"] for a in por_cat.values())
         if tot < cab_rem - tol_cab:
@@ -8158,6 +8183,7 @@ def _cl_semaforo_todas(carpeta_out, activas, log):
             lineas.setdefault(k, []).append({
                 "categoria": c.get("categoria"), "cabezas_liq": c.get("cabezas_liq"),
                 "kg_liq": c.get("kg_liq"), "estado_liq": o.get("estado"),
+                "desbaste_aceptado": c.get("desbaste_aceptado"),   # v15.74.11
             })
             if c.get("hotelero"):
                 hot_liq.setdefault(k, c["hotelero"])

@@ -300,10 +300,10 @@
 </main>
 
 <script src="js/config-supabase.js?v=15742"></script>
-<script src="js/compras-calc.js?v=15749"></script>
+<script src="js/compras-calc.js?v=157411"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
-   compras.html — v15.74.10 · Módulo 12 · Compras y Liquidaciones
+   compras.html — v15.74.11 · Módulo 12 · Compras y Liquidaciones
    ────────────────────────────────────────────────────────────
    Lo que WinCampo dice que entró (compras_ingresos.json) contra lo que el
    consignatario liquidó (cargado a mano acá). De ese cruce sale el costo de
@@ -346,10 +346,15 @@
    localStorage (pegsa_compras_pendientes) y se mezcla encima del JSON del
    servidor al cargar, hasta que el tick lo publique. Parche hasta configurar
    Supabase.
+
+   v15.74.11 · "Aceptar desbaste": cuando el único motivo del ámbar es el kg
+   (categoría y cabezas cierran), Nicolás lo acepta por línea o por tropa;
+   queda `desbaste_aceptado` en la línea, el semáforo lo respeta mientras los
+   kg no cambien (caduca solo) y la tropa pasa a verde. No cambia el costeo.
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.10';
+var VERSION = 'v15.74.11';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -626,7 +631,7 @@ function semDe(k) {
   var hot = t ? t.hotelero : ((LIN[k] || [])[0] || {c: {}}).c.hotelero;
   var lineas = (LIN[k] || []).map(function (x) {
     return {categoria: x.c.categoria, cabezas_liq: x.c.cabezas_liq, kg_liq: x.c.kg_liq,
-            estado_liq: x.o.estado};
+            estado_liq: x.o.estado, desbaste_aceptado: x.c.desbaste_aceptado || null};   // v15.74.11
   });
   // v15.74.7 · las categorías efectivas (catsDe) ya son las reales por
   // caravana cuando la cobertura alcanza; el semáforo recibe el contexto
@@ -653,6 +658,21 @@ function semCelda(k) {
   return '<span class="semtxt" title="' + esc((txt || SEM_LBL[s.estado]) + av) + '">'
     + semDot(s.estado) + (SEM_LBL[s.estado] || s.estado) + '</span>';
 }
+/* v15.74.11 · ¿la tropa está ámbar SOLO por kg (desbaste)? Categoría y
+   cabezas cierran; lo único que no cierra es el kg/cab liquidado vs el de
+   ingreso por caravana. Ahí Nicolás puede "aceptar desbaste". */
+function esKgMotivo(m) { return String(m).indexOf('kg_') === 0; }
+function soloKg(k) {
+  var s = SEM[k]; if (!s || s.estado !== 'revisar') return false;
+  var ms = []; Object.keys(s.motivos).forEach(function (cat) { ms = ms.concat(s.motivos[cat]); });
+  return ms.length > 0 && ms.every(esKgMotivo);
+}
+function kgMotivoDe(k, cat) {
+  return (((SEM[k] || {}).motivos || {})[cat] || []).filter(esKgMotivo)[0] || null;
+}
+/* "kg_15.2%" → "15,2 %" */
+function kgPctTxt(m) { return m ? String(m).replace(/^kg_/, '').replace('.', ',').replace('%', ' %') : ''; }
+
 /* Peor estado entre varias tropas (para una liquidación). */
 function semPeor(ks) {
   var rank = {ok: 0, terceros: 0, revisar: 1, sin_liquidar: 2}, peor = 'ok';
@@ -737,6 +757,7 @@ function tropasFiltradas() {
       fe = document.getElementById('f-est').value,
       fsem = document.getElementById('f-sem').value,
       q  = document.getElementById('f-q').value.trim().toUpperCase();
+  if (F_KG && fsem !== 'revisar') F_KG = false;   // el chip "solo por kg" vive dentro de "a revisar"
   var out = [];
   var ks = Object.keys(ING.tropas || {});
   Object.keys(LIN).forEach(function (k) { if (!(ING.tropas || {})[k]) ks.push(k); });
@@ -754,6 +775,7 @@ function tropasFiltradas() {
     var sem = (SEM[k] || {}).estado || 'sin_liquidar';
     if (fsem && sem !== fsem) return;
     if (F_DIST && !t.remito_distinto) return;   // v15.74.7 · sólo categorías ≠ remito
+    if (F_KG && !soloKg(k)) return;             // v15.74.11 · sólo ámbar por kg (desbaste)
     out.push({k: k, t: t, cs: cs, est: est, sem: sem});
   });
   // rojos y ámbar arriba, después verdes, terceros al final; dentro, fecha desc
@@ -771,6 +793,12 @@ function setSem(v) {
 }
 var F_DIST = false;   // v15.74.7 · filtro rápido "categorías ≠ remito"
 function setDist() { F_DIST = !F_DIST; rIngresos(); }
+var F_KG = false;     // v15.74.11 · filtro rápido "a revisar sólo por kg"
+function setSoloKg() {
+  F_KG = !F_KG;
+  if (F_KG) document.getElementById('f-sem').value = 'revisar';
+  rIngresos();
+}
 function q1(s) { return esc(s).replace(/'/g, "\\'"); }
 
 var NCOL = 12;
@@ -808,7 +836,11 @@ function rIngresos() {
       + '<td class="num">' + N(t.cabezas) + '</td>'
       + '<td class="num">' + N(t.kg_ingreso) + '</td>'
       + '<td class="num">' + N(t.kg_cab, 1) + '</td>'
-      + '<td>' + semCelda(k) + '</td>'
+      + '<td>' + semCelda(k)
+      + (soloKg(k) && conHerramientas(k)
+          ? ' <button class="btn mini" title="Los únicos motivos son de kg (desbaste): aceptarlo en todas las categorías de la tropa" '
+            + 'onclick="accAceptarDesbasteTropa(\'' + q1(k) + '\');event.stopPropagation()">Aceptar desbaste de la tropa</button>' : '')
+      + '</td>'
       + '<td>' + tagEstado(f.est) + '</td>'
       + '<td class="num">' + (res.pkg == null ? '—' : M(res.pkg)) + '</td>'
       + '<td class="num">' + (res.des == null ? '—' : P(res.des, 1)) + '</td>'
@@ -899,8 +931,12 @@ function rIngresos() {
   };
   var MC = (ING.meta || {}).categorias || {};
   var nDist = Object.keys(ING.tropas || {}).filter(function (k) { return ING.tropas[k].remito_distinto; }).length;
+  var nKg = Object.keys(SEM).filter(soloKg).length;
   document.getElementById('chips-ing').innerHTML =
-    chipSem('ok', 'verdes') + chipSem('revisar', 'a revisar') + chipSem('sin_liquidar', 'sin liquidar')
+    chipSem('ok', 'verdes') + chipSem('revisar', 'a revisar')
+    + '<span class="chip click' + (F_KG ? ' on' : '') + '" onclick="setSoloKg()" title="A revisar cuyo único motivo es el kg (desbaste): '
+      + 'categoría y cabezas cierran. Se despachan una por una con «Aceptar desbaste de la tropa»"><b>' + N(nKg) + '</b> solo por kg</span>'
+    + chipSem('sin_liquidar', 'sin liquidar')
     + chipSem('terceros', 'terceros')
     + '<span class="chip click' + (F_DIST ? ' on' : '') + '" onclick="setDist()" title="Tropas cuyas categorías reales (por caravana) no son las del remito de ingreso'
       + (MC.caravanas != null ? ' · ' + N(MC.caravanas) + ' tropas por caravana, ' + N(MC.remito) + ' por remito' : '') + '"><b>'
@@ -974,9 +1010,21 @@ function lineaHtml(x, k, herr) {
         ? ' <span class="muted">(antes: ' + esc(c.tropa_original) + ')</span>' : '')
     + (c.partida_de ? ' <span class="muted" title="' + esc(c.partida_de) + '">(partida)</span>' : '')
     + (c.unida_de ? ' <span class="muted" title="' + esc(c.unida_de) + '">(unida)</span>' : '');
-  if (!herr) return '<div class="linea">' + txt + '</div>';
-  var cats = uniq(catsDe(k).map(function (g) { return g.categoria; }).concat([c.categoria]));
   var id = q1(x.o.id);
+  // v15.74.11 · desbaste aceptado (vigente) o botón para aceptarlo
+  var acept = c.desbaste_aceptado, vigente = liqDesbasteVigente(acept, c.kg_liq, c.cabezas_liq);
+  var kgMot = kgMotivoDe(k, c.categoria);
+  var desb = '';
+  if (vigente) {
+    desb = ' <span class="tag ok" style="opacity:.8" title="Decisión: el kg liquidado difiere del de ingreso y se acepta así · '
+      + esc(N(acept.kg_liq_cab, 1) + ' vs ' + N(acept.kg_wc_cab, 1) + ' kg/cab') + '">desbaste aceptado '
+      + N(acept.dif_pct, 1) + ' % · ' + esc(fec(acept.fecha)) + '</span>'
+      + (herr ? ' <button class="btn sec mini" onclick="accDeshacerDesbaste(\'' + id + '\',' + x.i + ');event.stopPropagation()">Deshacer</button>' : '');
+  } else if (acept && !vigente) {
+    desb = ' <span class="tag par" title="Se editaron los kg después de aceptar el desbaste: la aceptación caducó">aceptación caducada</span>';
+  }
+  if (!herr) return '<div class="linea">' + txt + desb + '</div>';
+  var cats = uniq(catsDe(k).map(function (g) { return g.categoria; }).concat([c.categoria]));
   var sel = '<select class="mini" title="Reasignar categoría" onchange="accReasignar(\'' + id + '\',' + x.i + ',this.value)">'
     + cats.map(function (cc) {
         return '<option' + (cc === c.categoria ? ' selected' : '') + '>' + esc(cc) + '</option>';
@@ -985,10 +1033,13 @@ function lineaHtml(x, k, herr) {
     return '<button class="btn sec mini" title="' + title + '" onclick="formAbrir(\'' + tipo + '\',\''
       + id + '\',' + x.i + ',\'' + q1(k) + '\')">' + lbl + '</button>';
   };
-  return '<div class="linea">' + txt + '<span class="tools" onclick="event.stopPropagation()">' + sel
+  return '<div class="linea">' + txt + desb + '<span class="tools" onclick="event.stopPropagation()">' + sel
     + b('partir', 'partir', 'Dividir esta línea en dos (N + M cabezas), cada mitad con su categoría')
     + (hermanas(x).length ? b('unir', 'unir', 'Unir con otra línea de la misma tropa en esta liquidación') : '')
     + b('tropa', 'tropa', 'Renombrar la tropa de esta línea')
+    + (kgMot && !vigente ? '<button class="btn mini" title="El kg liquidado difiere del de ingreso por caravana más del '
+        + LIQ_TOL_KG_PCT + ' %: aceptarlo así (desbaste real) y que la categoría deje de contar como a revisar" '
+        + 'onclick="accAceptarDesbaste(\'' + id + '\',' + x.i + ')">Aceptar desbaste ' + kgPctTxt(kgMot) + '</button>' : '')
     + '</span></div>';
 }
 /* Otras líneas de la misma tropa dentro de la misma liquidación (para "unir"). */
@@ -1175,6 +1226,53 @@ function accConfirmar(id) {
   var o = clonLiq(id); if (!o) return;
   o.estado = 'cargada';
   persistir(o, 'confirmar', 'revisar → cargada');
+}
+
+/* v15.74.11 · "Aceptar desbaste": decisión de Nicolás sobre una línea con
+   esos kg. Queda en la línea ({fecha, por, kg_liq_cab, kg_wc_cab, dif_pct}) y
+   en el historial; el semáforo la respeta mientras los kg no cambien. */
+function desbasteDe(c) {
+  var k = c.tropa_norm || normTropa(c.tropa);
+  var g = catsDe(k).filter(function (x) { return x.categoria === c.categoria; })[0];
+  var kgLiqCab = c.cabezas_liq ? (c.kg_liq || 0) / c.cabezas_liq : null;
+  var kgWcCab = g ? (g.kg_cab != null ? g.kg_cab : (g.cabezas ? (g.kg_ingreso || 0) / g.cabezas : null)) : null;
+  var dif = (kgLiqCab && kgWcCab) ? Math.abs(kgLiqCab - kgWcCab) / kgLiqCab * 100 : null;
+  return {fecha: new Date().toISOString().slice(0, 10), por: 'portal',
+          kg_liq_cab: kgLiqCab != null ? Math.round(kgLiqCab * 100) / 100 : null,
+          kg_wc_cab: kgWcCab != null ? Math.round(kgWcCab * 100) / 100 : null,
+          dif_pct: dif != null ? Math.round(dif * 10) / 10 : null};
+}
+function accAceptarDesbaste(id, i) {
+  var o = clonLiq(id); if (!o) return;
+  var c = o.categorias[i]; if (!c) return;
+  c.desbaste_aceptado = desbasteDe(c);
+  persistir(o, 'aceptar_desbaste', (c.tropa || '') + ' · ' + c.categoria + ' · ' + N(c.desbaste_aceptado.dif_pct, 1) + ' % ('
+    + N(c.desbaste_aceptado.kg_liq_cab, 1) + ' vs ' + N(c.desbaste_aceptado.kg_wc_cab, 1) + ' kg/cab)');
+}
+function accDeshacerDesbaste(id, i) {
+  var o = clonLiq(id); if (!o) return;
+  var c = o.categorias[i]; if (!c) return;
+  delete c.desbaste_aceptado;
+  persistir(o, 'deshacer_desbaste', (c.tropa || '') + ' · ' + c.categoria);
+}
+/* A nivel tropa: acepta el desbaste en TODAS las líneas de la tropa cuyas
+   categorías tienen motivo kg_x% (una liquidación por vez; si la tropa tiene
+   varias, cada una baja su archivo). No es masivo: es una decisión por tropa. */
+async function accAceptarDesbasteTropa(k) {
+  var S = SEM[k]; if (!S) return;
+  var cats = Object.keys(S.motivos).filter(function (cat) { return (S.motivos[cat] || []).some(esKgMotivo); });
+  if (!cats.length) return;
+  var ids = uniq((LIN[k] || []).filter(function (x) { return cats.indexOf(x.c.categoria) >= 0; }).map(function (x) { return x.o.id; }));
+  for (var n = 0; n < ids.length; n++) {
+    var o = clonLiq(ids[n]); if (!o) continue;
+    var det = [];
+    o.categorias.forEach(function (c) {
+      if ((c.tropa_norm || normTropa(c.tropa)) !== k || cats.indexOf(c.categoria) < 0) return;
+      c.desbaste_aceptado = desbasteDe(c);
+      det.push(c.categoria + ' ' + N(c.desbaste_aceptado.dif_pct, 1) + ' %');
+    });
+    await persistir(o, 'aceptar_desbaste_tropa', k + ' · ' + det.join(' · '));
+  }
 }
 
 /* Persistir una liquidación editada: recalcula con liqCalcular, deja rastro
@@ -1867,7 +1965,7 @@ function importJSON(inp) {
 function exportCSV() {
   var L = liqsFiltradas();
   var cols = ['liq_id', 'fecha', 'consignataria', 'nro_liquidacion', 'estado', 'semaforo', 'motivos',
-              'fuente_categorias', 'cobertura_pct', 'n_liq',
+              'fuente_categorias', 'cobertura_pct', 'n_liq', 'desbaste_aceptado', 'desbaste_aceptado_fecha',
               'tropa', 'categoria', 'categoria_liq_original', 'tropa_original',
               'hotelero', 'cabezas_wc', 'kg_wc', 'cabezas_liq', 'kg_liq', 'precio_modo',
               'precio_valor', 'precio_kg', 'importe', 'comision_cat', 'gastos_cat',
@@ -1883,7 +1981,9 @@ function exportCSV() {
                   nro_liquidacion: o.nro_liquidacion, estado: o.estado,
                   semaforo: S.estado, motivos: (S.motivos[c.categoria] || S.motivos['*'] || []).join(' '),
                   fuente_categorias: T.fuente_categorias || '', cobertura_pct: T.cobertura_pct,
-                  n_liq: (IDX[kT] && IDX[kT][c.categoria]) ? IDX[kT][c.categoria].n_liq : ''})[k];
+                  n_liq: (IDX[kT] && IDX[kT][c.categoria]) ? IDX[kT][c.categoria].n_liq : '',
+                  desbaste_aceptado: liqDesbasteVigente(c.desbaste_aceptado, c.kg_liq, c.cabezas_liq) ? 'sí' : 'no',
+                  desbaste_aceptado_fecha: (c.desbaste_aceptado || {}).fecha || ''})[k];
         if (v === undefined) v = c[k];
         if (v === null || v === undefined) return '';
         // es-AR: coma decimal, y por eso el separador de columnas es ';'
@@ -2123,6 +2223,12 @@ function informePDF() {
     if (e === 'revisar' || e === 'sin_liquidar') {
       var t = (ING.tropas || {})[k] || tropaSinWc(k) || {};
       pend.push({k: k, t: t, e: e, m: liqMotivosTxt(SEM[k].motivos)});
+    }
+    // v15.74.11 · verdes con desbaste aceptado: van con la nota
+    if (e === 'ok' && (SEM[k].avisos || []).some(function (a) { return String(a).indexOf('desbaste_aceptado') === 0; })) {
+      var t2 = (ING.tropas || {})[k] || tropaSinWc(k) || {};
+      pend.push({k: k, t: t2, e: e, m: 'desbaste aceptado · ' + SEM[k].avisos.filter(function (a) { return String(a).indexOf('desbaste_aceptado') === 0; })
+        .map(function (a) { return a.replace('desbaste_aceptado_', '').replace('.', ','); }).join(' · ')});
     }
   });
   pend.sort(function (a, b) { return String(b.t.fecha || '').localeCompare(String(a.t.fecha || '')); });

@@ -1,4 +1,4 @@
-/* compras-calc.js — v15.74.9 · La cuenta de una liquidación de compra + semáforo por tropa
+/* compras-calc.js — v15.74.11 · La cuenta de una liquidación de compra + semáforo por tropa
    ────────────────────────────────────────────────────────────────
    UNA sola función hace toda la aritmética de una liquidación, y la misma
    cuenta existe en Python (`liq_calcular` en actualizar_datos.py) para poder
@@ -184,6 +184,17 @@
   */
   var LIQ_TOL_KG_PCT = 8;   // |kg liq/cab − kg wc/cab| ÷ kg liq/cab, en %
   var LIQ_TOL_CAB    = 0;   // cabezas: tienen que ser las mismas
+  var LIQ_ACEPT_TOL_KG = 0.1;   // el kg/cab guardado en la aceptación vs el de la línea
+
+  /* v15.74.11 · ¿La aceptación de desbaste de una línea sigue valiendo? Vale
+     si existe y el kg/cab que se aceptó es el kg/cab actual de la línea
+     (±0,1 kg). Gemelo de liq_desbaste_vigente() en Python. */
+  function liqDesbasteVigente(acept, kgLiq, cabLiq) {
+    if (!acept || typeof acept !== 'object') return false;
+    var kgAcept = _num(acept.kg_liq_cab);
+    if (kgAcept == null || !cabLiq) return false;
+    return Math.abs((kgLiq || 0) / cabLiq - kgAcept) <= LIQ_ACEPT_TOL_KG;
+  }
 
   function liqEsTercero(hotelero) {
     var h = String(hotelero || '').toUpperCase();
@@ -218,10 +229,15 @@
     var porCat = {};
     lineas.forEach(function (l) {
       var cat = l.categoria || '—';
-      var a = porCat[cat] || (porCat[cat] = {cab: 0, kg: 0, revisar: false});
-      a.cab += _num(l.cabezas_liq) || 0;
-      a.kg  += _num(l.kg_liq) || 0;
+      var a = porCat[cat] || (porCat[cat] = {cab: 0, kg: 0, revisar: false, aceptado: true});
+      var cabL = _num(l.cabezas_liq) || 0, kgL = _num(l.kg_liq) || 0;
+      a.cab += cabL;
+      a.kg  += kgL;
       if (String(l.estado_liq || '').toLowerCase() === 'revisar') a.revisar = true;
+      // v15.74.11 · "aceptar desbaste": vale sólo si TODAS las líneas de la
+      // categoría lo tienen y el kg/cab aceptado sigue siendo el de la línea
+      // (±0,1 kg): si se editan los kg, la aceptación caduca sola
+      if (!liqDesbasteVigente(l.desbaste_aceptado, kgL, cabL)) a.aceptado = false;
     });
 
     var wcCats = {};
@@ -250,7 +266,10 @@
       var kgLiqCab = a.cab ? a.kg / a.cab : null;
       if (kgWcCab && kgLiqCab) {
         var dif = Math.abs(kgLiqCab - kgWcCab) / kgLiqCab * 100;
-        if (dif > tolKg + 1e-9) add(cat, 'kg_' + dif.toFixed(1) + '%');
+        if (dif > tolKg + 1e-9) {
+          if (a.aceptado) avisos.push('desbaste_aceptado_' + dif.toFixed(1) + '%');   // informativo: no baja el color
+          else add(cat, 'kg_' + dif.toFixed(1) + '%');
+        }
       }
     });
     if (cabSc > 0 && cabRem) {
@@ -275,6 +294,7 @@
   root.liqCalcular = liqCalcular;
   root.liqId = liqId;
   root.liqSemaforo = liqSemaforo;
+  root.liqDesbasteVigente = liqDesbasteVigente;
   root.liqEsTercero = liqEsTercero;
   root.liqMotivosTxt = liqMotivosTxt;
   root.LIQ_TOL_KG_PCT = LIQ_TOL_KG_PCT;
@@ -282,6 +302,7 @@
   // también como módulo, para poder correr los tests en node sin un DOM
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = { liqCalcular: liqCalcular, liqId: liqId, liqSemaforo: liqSemaforo,
+                       liqDesbasteVigente: liqDesbasteVigente,
                        liqEsTercero: liqEsTercero, liqMotivosTxt: liqMotivosTxt,
                        LIQ_TOL_KG_PCT: LIQ_TOL_KG_PCT, LIQ_TOL_CAB: LIQ_TOL_CAB };
   }
