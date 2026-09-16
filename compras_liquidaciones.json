@@ -1,16 +1,16 @@
 {
   "meta": {
-    "generado": "2026-09-16T18:07:21.532901",
+    "generado": "2026-09-16T19:07:13.360889",
     "fuente": "archivos",
     "motivo_sin_base": "sin SUPABASE_URL / SUPABASE_SERVICE_KEY",
     "n_supabase": 0,
     "n_archivos": 143,
-    "n_liquidaciones": 143,
-    "n_anuladas": 0,
+    "n_liquidaciones": 141,
+    "n_anuladas": 2,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
       "ok": 97,
-      "revisar": 63,
+      "revisar": 62,
       "sin_liquidar": 290,
       "terceros": 117,
       "tol_kg_pct": 8,
@@ -4111,160 +4111,6 @@
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": 0.0,
         "cabezas_dif": 0.0
-      }
-    },
-    {
-      "id": "PECDAR170426_2026-04-01",
-      "fecha": "2026-04-01",
-      "consignataria": "DARWASH SA",
-      "proveedor": "DARWASH SA",
-      "nro_liquidacion": "25-03-26  feria darwash (2)a.xlsx",
-      "archivo": "25-03-26  feria darwash (2)a.xlsx",
-      "comision_modo": "pct",
-      "comision_valor": 0.02,
-      "gastos_monto": 0,
-      "observaciones": "importado de Excel: comision y gastos juntos en un solo % · Categoría cruzada con la compra del 25-03-26 (los 68 novillitos figuran en ese excel).",
-      "estado": "importada_excel",
-      "generado": "2026-09-15T13:27:53.832144",
-      "version_portal": "v15.74.1",
-      "categorias": [
-        {
-          "tropa": "PECDAR17/04/2026",
-          "tropa_norm": "PECDAR170426",
-          "hotelero": "PEGSA",
-          "categoria": "Novillito",
-          "cabezas_wc": null,
-          "kg_wc": null,
-          "cabezas_liq": 68,
-          "kg_liq": 19355.0,
-          "precio_modo": "kg",
-          "precio_valor": 5013.174890209249,
-          "importe": 97030000.0,
-          "precio_kg": 5013.174890209249,
-          "comision_cat": 1940600.0,
-          "gastos_cat": 0.0,
-          "importe_cg": 98970600.0,
-          "precio_kg_cg": 5113.438388013433,
-          "precio_cab_cg": 1455450.0,
-          "desbaste_pct": null,
-          "kg_liq_cab": 284.63235294117646,
-          "kg_wc_cab": null
-        }
-      ],
-      "total": {
-        "cabezas_liq": 68.0,
-        "kg_liq": 19355.0,
-        "cabezas_wc": 0,
-        "kg_wc": 0,
-        "importe": 97030000.0,
-        "comision": 1940600.0,
-        "gastos": 0.0,
-        "importe_cg": 98970600.0,
-        "precio_kg": 5013.174890209249,
-        "precio_kg_cg": 5113.438388013433,
-        "precio_cab_cg": 1455450.0,
-        "recargo_pct": 2.0000000000000018,
-        "desbaste_pct": null,
-        "cabezas_dif": -68.0
-      }
-    },
-    {
-      "id": "PECDAR170426_2026-04-16",
-      "fecha": "2026-04-16",
-      "consignataria": "DARWASH SA",
-      "proveedor": "DARWASH SA",
-      "nro_liquidacion": "15-04-26  feria darwash (1).xlsx",
-      "archivo": "15-04-26  feria darwash (1).xlsx",
-      "comision_modo": "pct",
-      "comision_valor": 0.02,
-      "gastos_monto": 0,
-      "observaciones": "importado de Excel: comision y gastos juntos en un solo %",
-      "estado": "importada_excel",
-      "generado": "2026-09-15T13:27:53.832251",
-      "version_portal": "v15.74.1",
-      "categorias": [
-        {
-          "tropa": "PECDAR17/04/2026",
-          "tropa_norm": "PECDAR170426",
-          "hotelero": "PEGSA",
-          "categoria": "Ternero",
-          "cabezas_wc": null,
-          "kg_wc": null,
-          "cabezas_liq": 51,
-          "kg_liq": 10021.5,
-          "precio_modo": "kg",
-          "precio_valor": 5841.51217739004,
-          "importe": 58540714.28571428,
-          "precio_kg": 5841.51217739004,
-          "comision_cat": 1170814.2857142857,
-          "gastos_cat": 0.0,
-          "importe_cg": 59711528.57142857,
-          "precio_kg_cg": 5958.34242093784,
-          "precio_cab_cg": 1170814.2857142857,
-          "desbaste_pct": null,
-          "kg_liq_cab": 196.5,
-          "kg_wc_cab": null
-        },
-        {
-          "tropa": "PECDAR17/04/2026",
-          "tropa_norm": "PECDAR170426",
-          "hotelero": "PEGSA",
-          "categoria": "Vaca",
-          "cabezas_wc": null,
-          "kg_wc": null,
-          "cabezas_liq": 37,
-          "kg_liq": 17015.0,
-          "precio_modo": "kg",
-          "precio_valor": 3074.296209227152,
-          "importe": 52309149.999999985,
-          "precio_kg": 3074.296209227152,
-          "comision_cat": 1046182.9999999998,
-          "gastos_cat": 0.0,
-          "importe_cg": 53355332.999999985,
-          "precio_kg_cg": 3135.7821334116948,
-          "precio_cab_cg": 1442036.0270270265,
-          "desbaste_pct": null,
-          "kg_liq_cab": 459.86486486486484,
-          "kg_wc_cab": null
-        },
-        {
-          "tropa": "PECDAR17/04/2026",
-          "tropa_norm": "PECDAR170426",
-          "hotelero": "PEGSA",
-          "categoria": "Vaquillona",
-          "cabezas_wc": null,
-          "kg_wc": null,
-          "cabezas_liq": 75,
-          "kg_liq": 24310.0,
-          "precio_modo": "kg",
-          "precio_valor": 4465.359934183463,
-          "importe": 108552900.0,
-          "precio_kg": 4465.359934183463,
-          "comision_cat": 2171058.0,
-          "gastos_cat": 0.0,
-          "importe_cg": 110723958.0,
-          "precio_kg_cg": 4554.667132867133,
-          "precio_cab_cg": 1476319.44,
-          "desbaste_pct": null,
-          "kg_liq_cab": 324.1333333333333,
-          "kg_wc_cab": null
-        }
-      ],
-      "total": {
-        "cabezas_liq": 163.0,
-        "kg_liq": 51346.5,
-        "cabezas_wc": 0,
-        "kg_wc": 0,
-        "importe": 219402764.28571427,
-        "comision": 4388055.285714285,
-        "gastos": 0.0,
-        "importe_cg": 223790819.57142857,
-        "precio_kg": 4272.983831141641,
-        "precio_kg_cg": 4358.443507764474,
-        "precio_cab_cg": 1372949.8133216477,
-        "recargo_pct": 2.0000000000000018,
-        "desbaste_pct": null,
-        "cabezas_dif": -163.0
       }
     },
     {
@@ -13672,84 +13518,6 @@
         "hotelero": "PEGSA"
       }
     },
-    "PECDAR170426": {
-      "Novillito": {
-        "liq_id": "PECDAR170426_2026-04-01",
-        "fecha": "2026-04-01",
-        "liq_ids": [
-          "PECDAR170426_2026-04-01"
-        ],
-        "n_liq": 1,
-        "cabezas_liq": 68.0,
-        "kg_liq": 19355.0,
-        "precio_kg": 5013.174890209249,
-        "precio_kg_cg": 5113.438388013433,
-        "precio_cab_cg": 1455450.0,
-        "comision_cat": 1940600.0,
-        "gastos_cat": 0.0,
-        "importe": 97030000.0,
-        "importe_cg": 98970600.0,
-        "desbaste_pct": null,
-        "hotelero": "PEGSA"
-      },
-      "Ternero": {
-        "liq_id": "PECDAR170426_2026-04-16",
-        "fecha": "2026-04-16",
-        "liq_ids": [
-          "PECDAR170426_2026-04-16"
-        ],
-        "n_liq": 1,
-        "cabezas_liq": 51.0,
-        "kg_liq": 10021.5,
-        "precio_kg": 5841.51217739004,
-        "precio_kg_cg": 5958.34242093784,
-        "precio_cab_cg": 1170814.2857142857,
-        "comision_cat": 1170814.2857142857,
-        "gastos_cat": 0.0,
-        "importe": 58540714.28571428,
-        "importe_cg": 59711528.57142857,
-        "desbaste_pct": null,
-        "hotelero": "PEGSA"
-      },
-      "Vaca": {
-        "liq_id": "PECDAR170426_2026-04-16",
-        "fecha": "2026-04-16",
-        "liq_ids": [
-          "PECDAR170426_2026-04-16"
-        ],
-        "n_liq": 1,
-        "cabezas_liq": 37.0,
-        "kg_liq": 17015.0,
-        "precio_kg": 3074.296209227152,
-        "precio_kg_cg": 3135.7821334116948,
-        "precio_cab_cg": 1442036.0270270265,
-        "comision_cat": 1046182.9999999998,
-        "gastos_cat": 0.0,
-        "importe": 52309149.999999985,
-        "importe_cg": 53355332.999999985,
-        "desbaste_pct": null,
-        "hotelero": "PEGSA"
-      },
-      "Vaquillona": {
-        "liq_id": "PECDAR170426_2026-04-16",
-        "fecha": "2026-04-16",
-        "liq_ids": [
-          "PECDAR170426_2026-04-16"
-        ],
-        "n_liq": 1,
-        "cabezas_liq": 75.0,
-        "kg_liq": 24310.0,
-        "precio_kg": 4465.359934183463,
-        "precio_kg_cg": 4554.667132867133,
-        "precio_cab_cg": 1476319.44,
-        "comision_cat": 2171058.0,
-        "gastos_cat": 0.0,
-        "importe": 108552900.0,
-        "importe_cg": 110723958.0,
-        "desbaste_pct": null,
-        "hotelero": "PEGSA"
-      }
-    },
     "PECDAR250426": {
       "Novillito": {
         "liq_id": "PECDAR250426_2026-04-01",
@@ -18773,15 +18541,6 @@
     "PECDAR130326": {
       "estado": "ok",
       "motivos": {},
-      "avisos": []
-    },
-    "PECDAR170426": {
-      "estado": "revisar",
-      "motivos": {
-        "*": [
-          "tropa_sin_ingreso"
-        ]
-      },
       "avisos": []
     },
     "PECDAR250426": {
