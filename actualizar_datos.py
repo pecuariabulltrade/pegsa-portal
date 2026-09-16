@@ -627,6 +627,126 @@ def calcular_kpis(registros, columnas):
         "por_categoria_desglose":        por_cat_desglose,
     }
 
+
+# ═══════════════════════════════════════════════════════════
+#  v15.75 · STOCK MÓVIL · hojas de detalle de la app del celular
+# ═══════════════════════════════════════════════════════════
+# La pantalla "Stock de Masa" de mobile.html abre una hoja inferior por
+# establecimiento o por categoría con días de estadía, propietarios y corrales.
+# Eso no está en stock_kpis y stock_detalle (5 MB) no lo puede bajar un celular:
+# de ahí este JSON compacto (~30-40 KB), calculado sobre los MISMOS registros
+# en memoria que stock_kpis / stock_prop_* del mismo tick.
+#   kg   = KG_ESTIMADO_HOY (misma cuenta que stock_kpis)
+#   dias = promedio de DIAS_EN_FEEDLOT
+#   pegsa = hotelero PEGSA (Bulltrade ya viene consolidado en PEGSA por el fetch)
+# El corral 10000 (virtual) se excluye como en todo lo demás.
+
+STOCK_MOVIL_TOP_CORRALES = 8
+
+
+def generar_stock_movil(carpeta_out, registros, periodo, log=None):
+    if log is None:
+        log = logging.getLogger("stock_movil")
+    if not registros:
+        return None
+
+    def _corral_n(r):
+        try:
+            return int(float(str(r.get("NRO_CORRAL") or "").strip() or 0))
+        except ValueError:
+            return None
+
+    regs = [r for r in registros if _corral_n(r) != 10000]
+
+    def _cab(r):
+        return to_num(r.get("CANTIDAD", 1)) or 0
+
+    def _kg(r):
+        return float(r.get("KG_ESTIMADO_HOY") or r.get("KG_ESTIMADO") or 0) * _cab(r)
+
+    def _dias(r):
+        return float(r.get("DIAS_EN_FEEDLOT") or 0) * _cab(r)
+
+    def _cat_nombre(sigla):
+        return RR_CAT_CODE.get(str(sigla or "").strip().upper(), str(sigla or "Sin datos").strip())
+
+    def _acum():
+        return {"cab": 0.0, "kg": 0.0, "dias": 0.0, "corr": set()}
+
+    def _sumar(a, r):
+        a["cab"]  += _cab(r)
+        a["kg"]   += _kg(r)
+        a["dias"] += _dias(r)
+        c = _corral_n(r)
+        if c is not None:
+            a["corr"].add(c)
+
+    def _res(a, con_corrales=True):
+        cab = a["cab"]
+        d = {"cab": int(round(cab)), "kg": int(round(a["kg"])),
+             "kgcab": round(a["kg"] / cab, 1) if cab else None,
+             "dias": int(round(a["dias"] / cab)) if cab else None}
+        if con_corrales:
+            d["corrales"] = len(a["corr"])
+        return d
+
+    def _lista(grupos, con_corrales=True):
+        out = []
+        for n, a in grupos.items():
+            d = _res(a, con_corrales)
+            d = {"n": n, **d}
+            out.append(d)
+        out.sort(key=lambda x: -x["cab"])
+        return out
+
+    def _armar(rows):
+        """{est: {...}, catd: {...}} para un conjunto de registros."""
+        est, catd = {}, {}
+        for r in rows:
+            e   = str(r.get("NOMBRE_CORRAL") or "Sin asignar").strip()
+            cat = str(r.get("CATEGORIA") or "").strip().upper() or "SD"
+            prop = str(r.get("HOTELERO") or "Sin datos").strip()
+            corr = _corral_n(r)
+            E = est.setdefault(e, {"res": _acum(), "cat": {}, "prop": {}, "corr": {}})
+            _sumar(E["res"], r)
+            _sumar(E["cat"].setdefault(_cat_nombre(cat), _acum()), r)
+            _sumar(E["prop"].setdefault(prop, _acum()), r)
+            if corr is not None:
+                _sumar(E["corr"].setdefault(str(corr), _acum()), r)
+            C = catd.setdefault(cat, {"res": _acum(), "est": {}, "prop": {}})
+            _sumar(C["res"], r)
+            _sumar(C["est"].setdefault(e, _acum()), r)
+            _sumar(C["prop"].setdefault(prop, _acum()), r)
+        est_out = {}
+        for e, E in est.items():
+            corr = _lista(E["corr"], con_corrales=False)[:STOCK_MOVIL_TOP_CORRALES]
+            for c in corr:
+                c.pop("kg", None)          # el corral se lee en cab · kg/cab · días
+            est_out[e] = {"res": _res(E["res"]), "cat": _lista(E["cat"]),
+                          "prop": _lista(E["prop"]), "corr": corr}
+        catd_out = {}
+        for cat, C in catd.items():
+            catd_out[cat] = {"n": _cat_nombre(cat), "res": _res(C["res"]),
+                             "est": _lista(C["est"]), "prop": _lista(C["prop"])}
+        return est_out, catd_out
+
+    pegsa = [r for r in regs if str(r.get("HOTELERO") or "").strip().upper() == "PEGSA"]
+    est_p, catd_p = _armar(pegsa)
+    est_g, catd_g = _armar(regs)
+
+    salida = {
+        "meta": {"generado": datetime.now().isoformat(), "periodo": periodo,
+                 "registros": len(regs), "registros_pegsa": len(pegsa),
+                 "top_corrales": STOCK_MOVIL_TOP_CORRALES},
+        "est":  {"pegsa": est_p, "grupo": est_g},
+        "catd": {"pegsa": catd_p, "grupo": catd_g},
+    }
+    guardar(salida, carpeta_out, f"stock_movil_{periodo}.json")
+    log.info(f"  ✓ stock_movil: {len(est_g)} establecimientos · {len(catd_g)} categorías "
+             f"(PEGSA {len(est_p)} · {len(catd_p)})")
+    return salida
+
+
 # ═══════════════════════════════════════════════════════════
 #  MOVIMIENTOS PRODUCTIVOS (v_PB_Ingresos + v_PB_Egresos)
 # ═══════════════════════════════════════════════════════════
@@ -3624,6 +3744,12 @@ def main():
                 guardar({"propietario": prop, "kpis": kpis_prop},
                         carpeta, f"stock_prop_{nombre_archivo}_{periodo}.json")
             log.info(f"  ✓ {len(propietarios)} archivos stock_prop_*_{periodo}.json")
+
+        # ── 3b. v15.75 · JSON compacto para las hojas de detalle del celular ──
+        try:
+            generar_stock_movil(carpeta, regs, periodo, log)
+        except Exception as e:
+            log.warning(f"  ⚠ stock_movil falló: {type(e).__name__}: {e}")
 
         # ── 4. JSON por establecimiento (NOMBRE_CORRAL) ──
         col_est   = "NOMBRE_CORRAL"
