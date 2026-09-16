@@ -1,10 +1,10 @@
 {
   "meta": {
-    "generado": "2026-09-16T17:07:18.649669",
+    "generado": "2026-09-16T18:07:25.435269",
     "desde": "2026-07-01",
     "remitos": 88,
     "egresos_venta": 2808,
-    "cobertura_global_pct": 88.9,
+    "cobertura_global_pct": 92.1,
     "pv_min": 2.0,
     "pv_max": 3.0,
     "factor_vaca": 1.3,
@@ -5573,21 +5573,21 @@
           "dias": 106,
           "kg_ingreso": 3111.0,
           "kg_egreso": 3777.5,
-          "precio_kg": 5200.2,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 485334.73,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 311919.44,
           "gastos_pct": 0.0,
-          "costo_compra": 16177824.3,
-          "costo_compra_cg": 16663159.03,
+          "costo_compra": 9876230.56,
+          "costo_compra_cg": 10188150.0,
           "gastos_compra": 0.0,
           "kg_ms": 7365.0,
           "pct_ms": 2.02,
@@ -5595,7 +5595,7 @@
           "alimento": 2517223.44,
           "estructura": 274120.0,
           "sanidad": 53410.0,
-          "mortandad": 160299.59
+          "mortandad": 98010.0
         },
         {
           "origen": "confirmado",
@@ -5798,7 +5798,7 @@
           "dias": 160,
           "kg_ingreso": 683.0,
           "kg_egreso": 1131.0,
-          "precio_kg": 5200.2,
+          "precio_kg": 5173.47,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -5809,10 +5809,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 106552.11,
+          "comision": 106004.4,
           "gastos_pct": 0.0,
-          "costo_compra": 3551737.06,
-          "costo_compra_cg": 3658289.17,
+          "costo_compra": 3533480.09,
+          "costo_compra_cg": 3639484.49,
           "gastos_compra": 0.0,
           "kg_ms": 3023.7,
           "pct_ms": 2.08,
@@ -5820,7 +5820,7 @@
           "alimento": 1029032.83,
           "estructura": 110030.0,
           "sanidad": 15516.0,
-          "mortandad": 35192.74
+          "mortandad": 35011.84
         },
         {
           "origen": "confirmado",
@@ -6282,15 +6282,15 @@
       "fecha_egreso": "2026-07-16",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 100033198.61,
-        "comision": 2721547.22,
+        "compra": 93713347.9,
+        "comision": 2547584.22,
         "gastos": 0.0,
         "alimento": 27624157.85,
         "estructura": 3055185.0,
         "sanidad": 464072.0,
-        "mortandad": 988500.65,
-        "total": 134886661.34,
-        "por_kg_vendido": 4293.02
+        "mortandad": 926030.17,
+        "total": 128330377.14,
+        "por_kg_vendido": 4084.35
       },
       "indicadores": {
         "kg_prom_ingreso": 374.2,
@@ -6300,20 +6300,20 @@
         "pct_ms": 2.08,
         "conversion_ms": 9.01,
         "costo_kg_producido": 3472.07,
-        "precio_prom_pagado": 4455.76,
-        "precio_prom_pagado_cg": 4576.99
+        "precio_prom_pagado": 4174.26,
+        "precio_prom_pagado_cg": 4287.73
       },
       "reposicion": {
-        "precio_kg": 5200.2,
+        "precio_kg": 5173.47,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 116746105.22,
-        "comision": 3502383.16,
+        "compra": 116145995.81,
+        "comision": 3484379.87,
         "alimento": 28743233.86,
-        "mortandad": 1123097.53,
-        "total": 153634076.77,
-        "por_kg_vendido": 4889.69
+        "mortandad": 1117324.48,
+        "total": 153010191.03,
+        "por_kg_vendido": 4869.83
       },
       "verificacion": {
         "estado": "verificado",
@@ -6339,26 +6339,18 @@
         "pesadas_sin_eid_ventana": 63,
         "dias_datamars_prom": 190.0
       },
-      "cobertura_pct": 83.1,
+      "cobertura_pct": 97.0,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 7,
-          "kg_ingreso": 3111.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 5200.2
-        },
         {
           "tropa": "PEG.DES.06/02/26",
           "categoria": "Ternero",
           "cabezas": 2,
           "kg_ingreso": 683.0,
           "fecha_ingreso": "2026-02-06",
-          "estimado_a": 5200.2
+          "estimado_a": 5173.47
         }
       ],
-      "precio_estimado": 5200.2,
+      "precio_estimado": 5173.47,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -6482,18 +6474,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 81244.56,
           "gastos_pct": 0.0,
-          "costo_compra": 2019631.76,
-          "costo_compra_cg": 2100876.32,
+          "costo_compra": 2019631.64,
+          "costo_compra_cg": 2100876.2,
           "gastos_compra": 0.0,
           "kg_ms": 843.3,
           "pct_ms": 2.01,
@@ -6569,21 +6561,21 @@
           "dias": 106,
           "kg_ingreso": 438.0,
           "kg_egreso": 537.1,
-          "precio_kg": 4832.92,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 63504.61,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 43915.37,
           "gastos_pct": 0.0,
-          "costo_compra": 2116820.22,
-          "costo_compra_cg": 2180324.83,
+          "costo_compra": 1411534.63,
+          "costo_compra_cg": 1455450.0,
           "gastos_compra": 0.0,
           "kg_ms": 1042.6,
           "pct_ms": 2.02,
@@ -6591,7 +6583,7 @@
           "alimento": 356330.1,
           "estructura": 39160.0,
           "sanidad": 7630.0,
-          "mortandad": 20974.72
+          "mortandad": 14001.43
         },
         {
           "origen": "confirmado",
@@ -6704,7 +6696,7 @@
           "dias": 160,
           "kg_ingreso": 271.0,
           "kg_egreso": 418.4,
-          "precio_kg": 4832.92,
+          "precio_kg": 4845.68,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -6715,10 +6707,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 39291.66,
+          "comision": 39395.4,
           "gastos_pct": 0.0,
-          "costo_compra": 1309722.1,
-          "costo_compra_cg": 1349013.76,
+          "costo_compra": 1313180.15,
+          "costo_compra_cg": 1352575.56,
           "gastos_compra": 0.0,
           "kg_ms": 1150.2,
           "pct_ms": 2.09,
@@ -6726,7 +6718,7 @@
           "alimento": 391408.32,
           "estructura": 55015.0,
           "sanidad": 7758.0,
-          "mortandad": 12977.51
+          "mortandad": 13011.78
         },
         {
           "origen": "confirmado",
@@ -6794,7 +6786,7 @@
           "dias": 267,
           "kg_ingreso": 264.0,
           "kg_egreso": 506.0,
-          "precio_kg": 4832.92,
+          "precio_kg": 4845.68,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -6805,10 +6797,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 38276.75,
+          "comision": 38377.81,
           "gastos_pct": 0.0,
-          "costo_compra": 1275891.64,
-          "costo_compra_cg": 1314168.39,
+          "costo_compra": 1279260.37,
+          "costo_compra_cg": 1317638.18,
           "gastos_compra": 0.0,
           "kg_ms": 2289.3,
           "pct_ms": 2.23,
@@ -6816,7 +6808,7 @@
           "alimento": 800216.7,
           "estructura": 83766.0,
           "sanidad": 7758.0,
-          "mortandad": 12642.3
+          "mortandad": 12675.68
         },
         {
           "origen": "confirmado",
@@ -6884,7 +6876,7 @@
           "dias": 356,
           "kg_ingreso": 185.0,
           "kg_egreso": 556.6,
-          "precio_kg": 4832.92,
+          "precio_kg": 4845.68,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -6895,10 +6887,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 26822.72,
+          "comision": 26893.54,
           "gastos_pct": 0.0,
-          "costo_compra": 894090.73,
-          "costo_compra_cg": 920913.45,
+          "costo_compra": 896451.4,
+          "costo_compra_cg": 923344.94,
           "gastos_compra": 0.0,
           "kg_ms": 2955.3,
           "pct_ms": 2.24,
@@ -6906,7 +6898,7 @@
           "alimento": 1026821.43,
           "estructura": 102146.0,
           "sanidad": 7758.0,
-          "mortandad": 8859.19
+          "mortandad": 8882.58
         },
         {
           "origen": "confirmado",
@@ -6963,15 +6955,15 @@
       "fecha_egreso": "2026-07-16",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 31220723.66,
-        "comision": 752192.76,
+        "compra": 30524625.39,
+        "comision": 732879.14,
         "gastos": 0.0,
         "alimento": 10458009.57,
         "estructura": 1198845.0,
         "sanidad": 162534.0,
-        "mortandad": 307579.46,
-        "total": 44099884.44,
-        "por_kg_vendido": 4304.1
+        "mortandad": 300697.19,
+        "total": 43377590.3,
+        "por_kg_vendido": 4233.61
       },
       "indicadores": {
         "kg_prom_ingreso": 328.9,
@@ -6981,20 +6973,20 @@
         "pct_ms": 2.12,
         "conversion_ms": 9.11,
         "costo_kg_producido": 3539.79,
-        "precio_prom_pagado": 4520.16,
-        "precio_prom_pagado_cg": 4629.06
+        "precio_prom_pagado": 4419.38,
+        "precio_prom_pagado_cg": 4525.48
       },
       "reposicion": {
-        "precio_kg": 4832.92,
+        "precio_kg": 4845.68,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 33380998.32,
-        "comision": 1001429.95,
+        "compra": 33469134.01,
+        "comision": 1004074.02,
         "alimento": 10818839.43,
-        "mortandad": 321125.2,
-        "total": 46883771.9,
-        "por_kg_vendido": 4575.81
+        "mortandad": 321973.07,
+        "total": 46975399.53,
+        "por_kg_vendido": 4584.75
       },
       "verificacion": {
         "estado": "verificado",
@@ -7020,23 +7012,15 @@
         "pesadas_sin_eid_ventana": 63,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 83.2,
+      "cobertura_pct": 89.6,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 1,
-          "kg_ingreso": 438.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4832.92
-        },
         {
           "tropa": "PEG.DES.06/02/26",
           "categoria": "Ternero",
           "cabezas": 1,
           "kg_ingreso": 271.0,
           "fecha_ingreso": "2026-02-06",
-          "estimado_a": 4832.92
+          "estimado_a": 4845.68
         },
         {
           "tropa": "PEG.COL.22/10/25",
@@ -7044,7 +7028,7 @@
           "cabezas": 1,
           "kg_ingreso": 264.0,
           "fecha_ingreso": "2025-10-22",
-          "estimado_a": 4832.92
+          "estimado_a": 4845.68
         },
         {
           "tropa": "BUL.SFE.25/07/25",
@@ -7052,10 +7036,10 @@
           "cabezas": 1,
           "kg_ingreso": 185.0,
           "fecha_ingreso": "2025-07-25",
-          "estimado_a": 4832.92
+          "estimado_a": 4845.68
         }
       ],
-      "precio_estimado": 4832.92,
+      "precio_estimado": 4845.68,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -10455,18 +10439,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 38812.38,
           "gastos_pct": 0.0,
-          "costo_compra": 1011625.78,
-          "costo_compra_cg": 1050438.16,
+          "costo_compra": 1011625.72,
+          "costo_compra_cg": 1050438.1,
           "gastos_compra": 0.0,
           "kg_ms": 443.1,
           "pct_ms": 2.01,
@@ -10474,7 +10458,7 @@
           "alimento": 152453.06,
           "estructura": 24050.0,
           "sanidad": 7630.0,
-          "mortandad": 10105.22
+          "mortandad": 10105.21
         },
         {
           "origen": "confirmado",
@@ -11116,14 +11100,14 @@
       "fecha_egreso": "2026-07-21",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 59246857.16,
+        "compra": 59246857.1,
         "comision": 1543071.35,
         "gastos": 0.0,
         "alimento": 30969640.7,
         "estructura": 2998468.0,
         "sanidad": 386876.0,
         "mortandad": 825255.53,
-        "total": 95970168.74,
+        "total": 95970168.68,
         "por_kg_vendido": 3691.16
       },
       "indicadores": {
@@ -12930,21 +12914,21 @@
           "dias": 112,
           "kg_ingreso": 432.0,
           "kg_egreso": 526.2,
-          "precio_kg": 4038.55,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 446.36,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 52339.55,
+          "precio_kg_cg": 455.29,
+          "precio_cab_cg": 147573.73,
+          "desbaste_pct": 7.68,
+          "comision_pct": 2.0,
+          "comision": 3856.55,
           "gastos_pct": 0.0,
-          "costo_compra": 1744651.83,
-          "costo_compra_cg": 1796991.39,
+          "costo_compra": 143717.18,
+          "costo_compra_cg": 147573.73,
           "gastos_compra": 0.0,
           "kg_ms": 1081.9,
           "pct_ms": 2.02,
@@ -12952,7 +12936,7 @@
           "alimento": 370649.28,
           "estructura": 41860.0,
           "sanidad": 7630.0,
-          "mortandad": 14034.5
+          "mortandad": 1152.55
         },
         {
           "origen": "confirmado",
@@ -13110,7 +13094,7 @@
           "dias": 371,
           "kg_ingreso": 396.0,
           "kg_egreso": 1163.2,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13121,10 +13105,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 47977.93,
+          "comision": 46120.61,
           "gastos_pct": 0.0,
-          "costo_compra": 1599264.18,
-          "costo_compra_cg": 1647242.11,
+          "costo_compra": 1537353.8,
+          "costo_compra_cg": 1583474.41,
           "gastos_compra": 0.0,
           "kg_ms": 6478.8,
           "pct_ms": 2.24,
@@ -13132,7 +13116,7 @@
           "alimento": 2249837.01,
           "estructura": 213112.0,
           "sanidad": 15516.0,
-          "mortandad": 15846.47
+          "mortandad": 15233.02
         },
         {
           "origen": "confirmado",
@@ -13380,7 +13364,7 @@
           "dias": 272,
           "kg_ingreso": 274.0,
           "kg_egreso": 494.6,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13391,10 +13375,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 33196.85,
+          "comision": 31911.74,
           "gastos_pct": 0.0,
-          "costo_compra": 1106561.58,
-          "costo_compra_cg": 1139758.43,
+          "costo_compra": 1063724.6,
+          "costo_compra_cg": 1095636.34,
           "gastos_compra": 0.0,
           "kg_ms": 2324.0,
           "pct_ms": 2.22,
@@ -13402,7 +13386,7 @@
           "alimento": 813079.06,
           "estructura": 86206.0,
           "sanidad": 7758.0,
-          "mortandad": 8901.51
+          "mortandad": 8556.92
         },
         {
           "origen": "confirmado",
@@ -13425,7 +13409,7 @@
           "dias": 273,
           "kg_ingreso": 244.0,
           "kg_egreso": 528.2,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13436,10 +13420,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 29562.16,
+          "comision": 28417.75,
           "gastos_pct": 0.0,
-          "costo_compra": 985405.2,
-          "costo_compra_cg": 1014967.36,
+          "costo_compra": 947258.4,
+          "costo_compra_cg": 975676.15,
           "gastos_compra": 0.0,
           "kg_ms": 2334.0,
           "pct_ms": 2.21,
@@ -13447,7 +13431,7 @@
           "alimento": 815617.49,
           "estructura": 86466.0,
           "sanidad": 7758.0,
-          "mortandad": 7926.9
+          "mortandad": 7620.03
         },
         {
           "origen": "confirmado",
@@ -13470,7 +13454,7 @@
           "dias": 276,
           "kg_ingreso": 216.0,
           "kg_egreso": 508.4,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13481,10 +13465,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 26169.78,
+          "comision": 25156.7,
           "gastos_pct": 0.0,
-          "costo_compra": 872325.92,
-          "costo_compra_cg": 898495.69,
+          "costo_compra": 838556.62,
+          "costo_compra_cg": 863713.32,
           "gastos_compra": 0.0,
           "kg_ms": 2212.6,
           "pct_ms": 2.21,
@@ -13492,7 +13476,7 @@
           "alimento": 772857.48,
           "estructura": 87246.0,
           "sanidad": 7758.0,
-          "mortandad": 7017.25
+          "mortandad": 6745.6
         },
         {
           "origen": "confirmado",
@@ -13515,7 +13499,7 @@
           "dias": 427,
           "kg_ingreso": 215.0,
           "kg_egreso": 557.9,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13526,10 +13510,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 26048.62,
+          "comision": 25040.23,
           "gastos_pct": 0.0,
-          "costo_compra": 868287.37,
-          "costo_compra_cg": 894335.99,
+          "costo_compra": 834674.41,
+          "costo_compra_cg": 859714.64,
           "gastos_compra": 0.0,
           "kg_ms": 3745.0,
           "pct_ms": 2.27,
@@ -13537,7 +13521,7 @@
           "alimento": 1287345.98,
           "estructura": 117196.0,
           "sanidad": 7758.0,
-          "mortandad": 8603.51
+          "mortandad": 8270.45
         },
         {
           "origen": "confirmado",
@@ -13560,7 +13544,7 @@
           "dias": 334,
           "kg_ingreso": 196.0,
           "kg_egreso": 579.6,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13571,10 +13555,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 23746.65,
+          "comision": 22827.37,
           "gastos_pct": 0.0,
-          "costo_compra": 791555.0,
-          "costo_compra_cg": 815301.65,
+          "costo_compra": 760912.49,
+          "costo_compra_cg": 783739.86,
           "gastos_compra": 0.0,
           "kg_ms": 2887.8,
           "pct_ms": 2.23,
@@ -13582,7 +13566,7 @@
           "alimento": 1006657.65,
           "estructura": 99526.0,
           "sanidad": 7758.0,
-          "mortandad": 7843.2
+          "mortandad": 7539.58
         },
         {
           "origen": "confirmado",
@@ -13605,7 +13589,7 @@
           "dias": 433,
           "kg_ingreso": 164.0,
           "kg_egreso": 579.6,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13616,10 +13600,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 19869.65,
+          "comision": 19100.46,
           "gastos_pct": 0.0,
-          "costo_compra": 662321.53,
-          "costo_compra_cg": 682191.17,
+          "costo_compra": 636681.88,
+          "costo_compra_cg": 655782.33,
           "gastos_compra": 0.0,
           "kg_ms": 3641.6,
           "pct_ms": 2.26,
@@ -13627,7 +13611,7 @@
           "alimento": 1253008.11,
           "estructura": 118336.0,
           "sanidad": 7758.0,
-          "mortandad": 6562.68
+          "mortandad": 6308.63
         },
         {
           "origen": "confirmado",
@@ -13650,7 +13634,7 @@
           "dias": 467,
           "kg_ingreso": 161.0,
           "kg_egreso": 491.6,
-          "precio_kg": 4038.55,
+          "precio_kg": 3882.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -13661,10 +13645,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 19506.18,
+          "comision": 18751.06,
           "gastos_pct": 0.0,
-          "costo_compra": 650205.89,
-          "costo_compra_cg": 669712.07,
+          "costo_compra": 625035.26,
+          "costo_compra_cg": 643786.31,
           "gastos_compra": 0.0,
           "kg_ms": 3474.3,
           "pct_ms": 2.28,
@@ -13672,7 +13656,7 @@
           "alimento": 1188712.6,
           "estructura": 124796.0,
           "sanidad": 7758.0,
-          "mortandad": 5230.45
+          "mortandad": 5027.97
         }
       ],
       "cabezas": 32,
@@ -13684,15 +13668,15 @@
       "fecha_egreso": "2026-07-22",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 42799610.7,
-        "comision": 1170134.27,
+        "compra": 40906946.84,
+        "comision": 1112899.39,
         "gastos": 0.0,
         "alimento": 17579512.72,
         "estructura": 1811745.0,
         "sanidad": 246080.0,
-        "mortandad": 409150.57,
-        "total": 64016233.26,
-        "por_kg_vendido": 3708.93
+        "mortandad": 393638.85,
+        "total": 62050822.79,
+        "por_kg_vendido": 3595.06
       },
       "indicadores": {
         "kg_prom_ingreso": 368.5,
@@ -13702,20 +13686,20 @@
         "pct_ms": 2.22,
         "conversion_ms": 9.32,
         "costo_kg_producido": 3591.31,
-        "precio_prom_pagado": 3629.55,
-        "precio_prom_pagado_cg": 3728.78
+        "precio_prom_pagado": 3469.04,
+        "precio_prom_pagado_cg": 3563.42
       },
       "reposicion": {
-        "precio_kg": 4038.55,
+        "precio_kg": 3882.21,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 47622533.36,
-        "comision": 1428676.0,
+        "compra": 45778979.83,
+        "comision": 1373369.39,
         "alimento": 18110892.14,
-        "mortandad": 445616.43,
-        "total": 69665542.93,
-        "por_kg_vendido": 4036.24
+        "mortandad": 428365.82,
+        "total": 67749432.19,
+        "por_kg_vendido": 3925.22
       },
       "verificacion": {
         "estado": "verificado",
@@ -13741,23 +13725,15 @@
         "pesadas_sin_eid_ventana": 80,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 80.5,
+      "cobertura_pct": 84.2,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 432.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4038.55
-        },
         {
           "tropa": "PEG.DAR.16/07/25",
           "categoria": "Ternero",
           "cabezas": 2,
           "kg_ingreso": 396.0,
           "fecha_ingreso": "2025-07-16",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "PEG.COL.23/10/25",
@@ -13765,7 +13741,7 @@
           "cabezas": 1,
           "kg_ingreso": 274.0,
           "fecha_ingreso": "2025-10-23",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "PEG.COL.22/10/25",
@@ -13773,7 +13749,7 @@
           "cabezas": 1,
           "kg_ingreso": 244.0,
           "fecha_ingreso": "2025-10-22",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "PEG.DPE.19/10/2025",
@@ -13781,7 +13757,7 @@
           "cabezas": 1,
           "kg_ingreso": 216.0,
           "fecha_ingreso": "2025-10-19",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "BUL.DAR.21/05/25",
@@ -13789,7 +13765,7 @@
           "cabezas": 1,
           "kg_ingreso": 215.0,
           "fecha_ingreso": "2025-05-21",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "PEG.DAR.22/08/25",
@@ -13797,7 +13773,7 @@
           "cabezas": 1,
           "kg_ingreso": 196.0,
           "fecha_ingreso": "2025-08-22",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "BUL.DAR.15/05/25",
@@ -13805,7 +13781,7 @@
           "cabezas": 1,
           "kg_ingreso": 164.0,
           "fecha_ingreso": "2025-05-15",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         },
         {
           "tropa": "PEG.DES.11/04/25",
@@ -13813,10 +13789,10 @@
           "cabezas": 1,
           "kg_ingreso": 161.0,
           "fecha_ingreso": "2025-04-11",
-          "estimado_a": 4038.55
+          "estimado_a": 3882.21
         }
       ],
-      "precio_estimado": 4038.55,
+      "precio_estimado": 3882.21,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -14117,7 +14093,7 @@
           "dias": 362,
           "kg_ingreso": 460.0,
           "kg_egreso": 1641.2,
-          "precio_kg": 4009.58,
+          "precio_kg": 3842.6,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -14128,10 +14104,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 55332.15,
+          "comision": 53027.94,
           "gastos_pct": 0.0,
-          "costo_compra": 1844405.02,
-          "costo_compra_cg": 1899737.17,
+          "costo_compra": 1767597.87,
+          "costo_compra_cg": 1820625.81,
           "gastos_compra": 0.0,
           "kg_ms": 8476.0,
           "pct_ms": 2.23,
@@ -14139,7 +14115,7 @@
           "alimento": 2946691.68,
           "estructura": 314538.0,
           "sanidad": 23274.0,
-          "mortandad": 18275.47
+          "mortandad": 17514.42
         },
         {
           "origen": "confirmado",
@@ -14162,21 +14138,21 @@
           "dias": 112,
           "kg_ingreso": 413.0,
           "kg_egreso": 553.8,
-          "precio_kg": 4009.58,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 446.36,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 49678.65,
+          "precio_kg_cg": 455.29,
+          "precio_cab_cg": 147573.73,
+          "desbaste_pct": 7.68,
+          "comision_pct": 2.0,
+          "comision": 3686.93,
           "gastos_pct": 0.0,
-          "costo_compra": 1655954.94,
-          "costo_compra_cg": 1705633.59,
+          "costo_compra": 143886.8,
+          "costo_compra_cg": 147573.73,
           "gastos_compra": 0.0,
           "kg_ms": 1091.6,
           "pct_ms": 2.02,
@@ -14184,7 +14160,7 @@
           "alimento": 374035.56,
           "estructura": 41860.0,
           "sanidad": 7630.0,
-          "mortandad": 13321.0
+          "mortandad": 1152.55
         },
         {
           "origen": "confirmado",
@@ -14342,7 +14318,7 @@
           "dias": 350,
           "kg_ingreso": 335.0,
           "kg_egreso": 1121.8,
-          "precio_kg": 4009.58,
+          "precio_kg": 3842.6,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -14353,10 +14329,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 40296.24,
+          "comision": 38618.17,
           "gastos_pct": 0.0,
-          "costo_compra": 1343208.0,
-          "costo_compra_cg": 1383504.24,
+          "costo_compra": 1287272.36,
+          "costo_compra_cg": 1325890.53,
           "gastos_compra": 0.0,
           "kg_ms": 5674.0,
           "pct_ms": 2.23,
@@ -14364,7 +14340,7 @@
           "alimento": 1974839.83,
           "estructura": 205132.0,
           "sanidad": 15516.0,
-          "mortandad": 13309.31
+          "mortandad": 12755.07
         },
         {
           "origen": "confirmado",
@@ -14432,7 +14408,7 @@
           "dias": 274,
           "kg_ingreso": 283.0,
           "kg_egreso": 501.3,
-          "precio_kg": 4009.58,
+          "precio_kg": 3842.6,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -14443,10 +14419,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 34041.3,
+          "comision": 32623.71,
           "gastos_pct": 0.0,
-          "costo_compra": 1134710.04,
-          "costo_compra_cg": 1168751.34,
+          "costo_compra": 1087456.95,
+          "costo_compra_cg": 1120080.66,
           "gastos_compra": 0.0,
           "kg_ms": 2392.8,
           "pct_ms": 2.23,
@@ -14454,7 +14430,7 @@
           "alimento": 837270.15,
           "estructura": 86726.0,
           "sanidad": 7758.0,
-          "mortandad": 9127.95
+          "mortandad": 8747.83
         },
         {
           "origen": "confirmado",
@@ -14477,7 +14453,7 @@
           "dias": 272,
           "kg_ingreso": 271.0,
           "kg_egreso": 553.8,
-          "precio_kg": 4009.58,
+          "precio_kg": 3842.6,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -14488,10 +14464,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 32597.85,
+          "comision": 31240.37,
           "gastos_pct": 0.0,
-          "costo_compra": 1086595.13,
-          "costo_compra_cg": 1119192.98,
+          "costo_compra": 1041345.7,
+          "costo_compra_cg": 1072586.07,
           "gastos_compra": 0.0,
           "kg_ms": 2486.2,
           "pct_ms": 2.22,
@@ -14499,7 +14475,7 @@
           "alimento": 869097.45,
           "estructura": 86206.0,
           "sanidad": 7758.0,
-          "mortandad": 8740.9
+          "mortandad": 8376.9
         },
         {
           "origen": "confirmado",
@@ -14612,7 +14588,7 @@
           "dias": 427,
           "kg_ingreso": 198.5,
           "kg_egreso": 630.6,
-          "precio_kg": 4009.58,
+          "precio_kg": 3842.6,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -14623,10 +14599,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 23877.03,
+          "comision": 22882.71,
           "gastos_pct": 0.0,
-          "costo_compra": 795900.86,
-          "costo_compra_cg": 819777.89,
+          "costo_compra": 762756.91,
+          "costo_compra_cg": 785639.61,
           "gastos_compra": 0.0,
           "kg_ms": 4006.2,
           "pct_ms": 2.26,
@@ -14634,7 +14610,7 @@
           "alimento": 1378817.15,
           "estructura": 117196.0,
           "sanidad": 7758.0,
-          "mortandad": 7886.26
+          "mortandad": 7557.85
         }
       ],
       "cabezas": 32,
@@ -14646,15 +14622,15 @@
       "fecha_egreso": "2026-07-22",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 41419613.77,
-        "comision": 1174896.2,
+        "compra": 39649156.36,
+        "comision": 1121152.81,
         "gastos": 0.0,
         "alimento": 20936041.73,
         "estructura": 2147958.0,
         "sanidad": 247744.0,
-        "mortandad": 409211.5,
-        "total": 66335465.2,
-        "por_kg_vendido": 3747.77
+        "mortandad": 394655.23,
+        "total": 64496708.13,
+        "por_kg_vendido": 3643.88
       },
       "indicadores": {
         "kg_prom_ingreso": 323.8,
@@ -14664,20 +14640,20 @@
         "pct_ms": 2.2,
         "conversion_ms": 8.28,
         "costo_kg_producido": 3179.14,
-        "precio_prom_pagado": 3997.65,
-        "precio_prom_pagado_cg": 4111.04
+        "precio_prom_pagado": 3826.77,
+        "precio_prom_pagado_cg": 3934.98
       },
       "reposicion": {
-        "precio_kg": 4009.58,
+        "precio_kg": 3842.6,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 41543218.23,
-        "comision": 1246296.55,
+        "compra": 39813220.71,
+        "comision": 1194396.62,
         "alimento": 21596382.0,
-        "mortandad": 405495.63,
-        "total": 67187094.41,
-        "por_kg_vendido": 3795.88
+        "mortandad": 388609.45,
+        "total": 65388310.78,
+        "por_kg_vendido": 3694.25
       },
       "verificacion": {
         "estado": "verificado",
@@ -14703,7 +14679,7 @@
         "pesadas_sin_eid_ventana": 80,
         "dias_datamars_prom": 181.0
       },
-      "cobertura_pct": 81.1,
+      "cobertura_pct": 85.1,
       "tropas_sin_precio": [
         {
           "tropa": "BUL.SFE.25/07/25",
@@ -14711,15 +14687,7 @@
           "cabezas": 3,
           "kg_ingreso": 460.0,
           "fecha_ingreso": "2025-07-25",
-          "estimado_a": 4009.58
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 413.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4009.58
+          "estimado_a": 3842.6
         },
         {
           "tropa": "PEG.AGR.06/08/25",
@@ -14727,7 +14695,7 @@
           "cabezas": 2,
           "kg_ingreso": 335.0,
           "fecha_ingreso": "2025-08-06",
-          "estimado_a": 4009.58
+          "estimado_a": 3842.6
         },
         {
           "tropa": "PEG.COL21/10/25",
@@ -14735,7 +14703,7 @@
           "cabezas": 1,
           "kg_ingreso": 283.0,
           "fecha_ingreso": "2025-10-21",
-          "estimado_a": 4009.58
+          "estimado_a": 3842.6
         },
         {
           "tropa": "PEG.COL.23/10/25",
@@ -14743,7 +14711,7 @@
           "cabezas": 1,
           "kg_ingreso": 271.0,
           "fecha_ingreso": "2025-10-23",
-          "estimado_a": 4009.58
+          "estimado_a": 3842.6
         },
         {
           "tropa": "BUL.DAR.21/05/25",
@@ -14751,10 +14719,10 @@
           "cabezas": 1,
           "kg_ingreso": 198.5,
           "fecha_ingreso": "2025-05-21",
-          "estimado_a": 4009.58
+          "estimado_a": 3842.6
         }
       ],
-      "precio_estimado": 4009.58,
+      "precio_estimado": 3842.6,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -15280,21 +15248,21 @@
           "dias": 113,
           "kg_ingreso": 518.0,
           "kg_egreso": 644.3,
-          "precio_kg": 3030.52,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 47094.26,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 31849.75,
           "gastos_pct": 0.0,
-          "costo_compra": 1569808.62,
-          "costo_compra_cg": 1616902.88,
+          "costo_compra": 1410186.27,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1721.2,
           "pct_ms": 2.62,
@@ -15302,7 +15270,7 @@
           "alimento": 589899.29,
           "estructura": 42310.0,
           "sanidad": 7630.0,
-          "mortandad": 28506.0
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -15629,15 +15597,15 @@
       "fecha_egreso": "2026-07-23",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 42787398.53,
-        "comision": 1140009.34,
+        "compra": 42627776.19,
+        "comision": 1124764.83,
         "gastos": 0.0,
         "alimento": 19873078.82,
         "estructura": 1348663.0,
         "sanidad": 230686.0,
-        "mortandad": 774440.2,
-        "total": 66154275.9,
-        "por_kg_vendido": 3470.84
+        "mortandad": 771357.3,
+        "total": 65976326.14,
+        "por_kg_vendido": 3461.51
       },
       "indicadores": {
         "kg_prom_ingreso": 510.4,
@@ -15647,8 +15615,8 @@
         "pct_ms": 2.71,
         "conversion_ms": 15.43,
         "costo_kg_producido": 5725.03,
-        "precio_prom_pagado": 2794.21,
-        "precio_prom_pagado_cg": 2868.66
+        "precio_prom_pagado": 2783.79,
+        "precio_prom_pagado_cg": 2857.24
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -15681,18 +15649,9 @@
         "pesadas_sin_eid_ventana": 76,
         "dias_datamars_prom": 103.2
       },
-      "cobertura_pct": 96.6,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 518.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3030.52
-        }
-      ],
-      "precio_estimado": 3030.52,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3032.0,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -16218,21 +16177,21 @@
           "dias": 113,
           "kg_ingreso": 508.0,
           "kg_egreso": 619.1,
-          "precio_kg": 2894.49,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 44112.1,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 31234.89,
           "gastos_pct": 0.0,
-          "costo_compra": 1470403.35,
-          "costo_compra_cg": 1514515.45,
+          "costo_compra": 1410801.13,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1669.1,
           "pct_ms": 2.62,
@@ -16240,7 +16199,7 @@
           "alimento": 572020.64,
           "estructura": 42310.0,
           "sanidad": 7630.0,
-          "mortandad": 26700.91
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -16612,15 +16571,15 @@
       "fecha_egreso": "2026-07-23",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 40052353.8,
-        "comision": 1182359.56,
+        "compra": 39992751.58,
+        "comision": 1169482.35,
         "gastos": 0.0,
         "alimento": 19621630.8,
         "estructura": 1349878.0,
         "sanidad": 230562.0,
-        "mortandad": 726968.0,
-        "total": 63163752.16,
-        "por_kg_vendido": 3259.23
+        "mortandad": 725690.18,
+        "total": 63089994.92,
+        "por_kg_vendido": 3255.42
       },
       "indicadores": {
         "kg_prom_ingreso": 508.4,
@@ -16630,8 +16589,8 @@
         "pct_ms": 2.68,
         "conversion_ms": 13.87,
         "costo_kg_producido": 5135.81,
-        "precio_prom_pagado": 2626.09,
-        "precio_prom_pagado_cg": 2703.61
+        "precio_prom_pagado": 2622.18,
+        "precio_prom_pagado_cg": 2698.86
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -16664,18 +16623,9 @@
         "pesadas_sin_eid_ventana": 76,
         "dias_datamars_prom": 126.2
       },
-      "cobertura_pct": 96.7,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 508.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 2894.49
-        }
-      ],
-      "precio_estimado": 2894.49,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 2900.48,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -17516,21 +17466,21 @@
           "dias": 113,
           "kg_ingreso": 444.0,
           "kg_egreso": 635.4,
-          "precio_kg": 3009.39,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 40085.03,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 27299.78,
           "gastos_pct": 0.0,
-          "costo_compra": 1336167.62,
-          "costo_compra_cg": 1376252.65,
+          "costo_compra": 1414736.24,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1598.3,
           "pct_ms": 2.62,
@@ -17538,7 +17488,7 @@
           "alimento": 547953.01,
           "estructura": 42310.0,
           "sanidad": 7630.0,
-          "mortandad": 24263.33
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -17730,15 +17680,15 @@
       "fecha_egreso": "2026-07-23",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 43544671.35,
-        "comision": 1268946.4,
+        "compra": 43623239.97,
+        "comision": 1256161.16,
         "gastos": 0.0,
         "alimento": 20586499.47,
         "estructura": 1491466.0,
         "sanidad": 238576.0,
-        "mortandad": 790064.08,
-        "total": 67920223.31,
-        "por_kg_vendido": 3859.1
+        "mortandad": 791223.84,
+        "total": 67987166.44,
+        "por_kg_vendido": 3862.91
       },
       "indicadores": {
         "kg_prom_ingreso": 501.1,
@@ -17748,8 +17698,8 @@
         "pct_ms": 2.74,
         "conversion_ms": 28.89,
         "costo_kg_producido": 10794.39,
-        "precio_prom_pagado": 2803.44,
-        "precio_prom_pagado_cg": 2885.14
+        "precio_prom_pagado": 2808.5,
+        "precio_prom_pagado_cg": 2889.37
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -17787,18 +17737,9 @@
         "pesadas_sin_eid_ventana": 76,
         "dias_datamars_prom": 144.0
       },
-      "cobertura_pct": 97.1,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 444.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3009.39
-        }
-      ],
-      "precio_estimado": 3009.39,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3011.24,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -18234,7 +18175,7 @@
           "dias": 352,
           "kg_ingreso": 412.0,
           "kg_egreso": 616.4,
-          "precio_kg": 3993.46,
+          "precio_kg": 3893.84,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -18245,10 +18186,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 49359.21,
+          "comision": 48127.9,
           "gastos_pct": 0.0,
-          "costo_compra": 1645307.13,
-          "costo_compra_cg": 1694666.34,
+          "costo_compra": 1604263.27,
+          "costo_compra_cg": 1652391.16,
           "gastos_compra": 0.0,
           "kg_ms": 4068.2,
           "pct_ms": 2.25,
@@ -18256,7 +18197,7 @@
           "alimento": 1418365.71,
           "estructura": 104766.0,
           "sanidad": 7758.0,
-          "mortandad": 13235.34
+          "mortandad": 12905.17
         },
         {
           "origen": "confirmado",
@@ -18369,21 +18310,21 @@
           "dias": 119,
           "kg_ingreso": 368.0,
           "kg_egreso": 488.5,
-          "precio_kg": 3993.46,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 446.36,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 44087.84,
+          "precio_kg_cg": 455.29,
+          "precio_cab_cg": 147573.73,
+          "desbaste_pct": 7.68,
+          "comision_pct": 2.0,
+          "comision": 3285.21,
           "gastos_pct": 0.0,
-          "costo_compra": 1469594.71,
-          "costo_compra_cg": 1513682.56,
+          "costo_compra": 144288.52,
+          "costo_compra_cg": 147573.73,
           "gastos_compra": 0.0,
           "kg_ms": 1026.9,
           "pct_ms": 2.02,
@@ -18391,7 +18332,7 @@
           "alimento": 352745.31,
           "estructura": 45010.0,
           "sanidad": 7630.0,
-          "mortandad": 11821.86
+          "mortandad": 1152.55
         },
         {
           "origen": "confirmado",
@@ -18459,7 +18400,7 @@
           "dias": 299,
           "kg_ingreso": 257.0,
           "kg_egreso": 439.9,
-          "precio_kg": 3993.46,
+          "precio_kg": 3893.84,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -18470,10 +18411,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 30789.61,
+          "comision": 30021.53,
           "gastos_pct": 0.0,
-          "costo_compra": 1026320.22,
-          "costo_compra_cg": 1057109.83,
+          "costo_compra": 1000717.62,
+          "costo_compra_cg": 1030739.15,
           "gastos_compra": 0.0,
           "kg_ms": 2337.1,
           "pct_ms": 2.24,
@@ -18481,7 +18422,7 @@
           "alimento": 818480.26,
           "estructura": 94556.0,
           "sanidad": 7758.0,
-          "mortandad": 8256.03
+          "mortandad": 8050.07
         },
         {
           "origen": "confirmado",
@@ -18504,7 +18445,7 @@
           "dias": 280,
           "kg_ingreso": 252.0,
           "kg_egreso": 511.4,
-          "precio_kg": 3993.46,
+          "precio_kg": 3893.84,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -18515,10 +18456,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 30190.59,
+          "comision": 29437.45,
           "gastos_pct": 0.0,
-          "costo_compra": 1006352.9,
-          "costo_compra_cg": 1036543.49,
+          "costo_compra": 981248.4,
+          "costo_compra_cg": 1010685.86,
           "gastos_compra": 0.0,
           "kg_ms": 2363.5,
           "pct_ms": 2.21,
@@ -18526,7 +18467,7 @@
           "alimento": 826744.93,
           "estructura": 89616.0,
           "sanidad": 7758.0,
-          "mortandad": 8095.4
+          "mortandad": 7893.46
         }
       ],
       "cabezas": 35,
@@ -18538,15 +18479,15 @@
       "fecha_egreso": "2026-07-29",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 49230968.02,
-        "comision": 1548496.84,
+        "compra": 47813910.87,
+        "comision": 1504941.68,
         "gastos": 0.0,
         "alimento": 14891150.56,
         "estructura": 1676684.0,
         "sanidad": 269098.0,
-        "mortandad": 424428.05,
-        "total": 68040825.47,
-        "por_kg_vendido": 3835.44
+        "mortandad": 413020.67,
+        "total": 66568805.77,
+        "por_kg_vendido": 3752.47
       },
       "indicadores": {
         "kg_prom_ingreso": 400.7,
@@ -18556,20 +18497,20 @@
         "pct_ms": 2.11,
         "conversion_ms": 11.63,
         "costo_kg_producido": 4530.92,
-        "precio_prom_pagado": 3510.48,
-        "precio_prom_pagado_cg": 3620.9
+        "precio_prom_pagado": 3409.43,
+        "precio_prom_pagado_cg": 3516.75
       },
       "reposicion": {
-        "precio_kg": 3993.46,
+        "precio_kg": 3893.84,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 56004337.69,
-        "comision": 1680130.13,
+        "compra": 54607252.5,
+        "comision": 1638217.57,
         "alimento": 15367456.2,
-        "mortandad": 471197.91,
-        "total": 75468903.94,
-        "por_kg_vendido": 4254.16
+        "mortandad": 459443.4,
+        "total": 74018151.68,
+        "por_kg_vendido": 4172.39
       },
       "verificacion": {
         "estado": "verificado",
@@ -18595,7 +18536,7 @@
         "pesadas_sin_eid_ventana": 75,
         "dias_datamars_prom": 173.5
       },
-      "cobertura_pct": 90.8,
+      "cobertura_pct": 93.4,
       "tropas_sin_precio": [
         {
           "tropa": "PEG.DPE.11/08/25",
@@ -18603,15 +18544,7 @@
           "cabezas": 1,
           "kg_ingreso": 412.0,
           "fecha_ingreso": "2025-08-11",
-          "estimado_a": 3993.46
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 368.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3993.46
+          "estimado_a": 3893.84
         },
         {
           "tropa": "PEG.PDP.03/10/25",
@@ -18619,7 +18552,7 @@
           "cabezas": 1,
           "kg_ingreso": 257.0,
           "fecha_ingreso": "2025-10-03",
-          "estimado_a": 3993.46
+          "estimado_a": 3893.84
         },
         {
           "tropa": "PEG.COL.22/10/25",
@@ -18627,10 +18560,10 @@
           "cabezas": 1,
           "kg_ingreso": 252.0,
           "fecha_ingreso": "2025-10-22",
-          "estimado_a": 3993.46
+          "estimado_a": 3893.84
         }
       ],
-      "precio_estimado": 3993.46,
+      "precio_estimado": 3893.84,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -19111,21 +19044,21 @@
           "dias": 119,
           "kg_ingreso": 381.0,
           "kg_egreso": 489.4,
-          "precio_kg": 3425.85,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 446.36,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 39157.48,
+          "precio_kg_cg": 455.29,
+          "precio_cab_cg": 147573.73,
+          "desbaste_pct": 7.68,
+          "comision_pct": 2.0,
+          "comision": 3401.26,
           "gastos_pct": 0.0,
-          "costo_compra": 1305249.33,
-          "costo_compra_cg": 1344406.81,
+          "costo_compra": 144172.47,
+          "costo_compra_cg": 147573.73,
           "gastos_compra": 0.0,
           "kg_ms": 1043.6,
           "pct_ms": 2.02,
@@ -19133,7 +19066,7 @@
           "alimento": 358427.68,
           "estructura": 45010.0,
           "sanidad": 7630.0,
-          "mortandad": 10499.82
+          "mortandad": 1152.55
         },
         {
           "origen": "confirmado",
@@ -19381,7 +19314,7 @@
           "dias": 284,
           "kg_ingreso": 240.0,
           "kg_egreso": 436.8,
-          "precio_kg": 3425.85,
+          "precio_kg": 3347.71,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -19392,10 +19325,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 24666.13,
+          "comision": 24103.53,
           "gastos_pct": 0.0,
-          "costo_compra": 822204.3,
-          "costo_compra_cg": 846870.43,
+          "costo_compra": 803450.97,
+          "costo_compra_cg": 827554.5,
           "gastos_compra": 0.0,
           "kg_ms": 2135.8,
           "pct_ms": 2.22,
@@ -19403,7 +19336,7 @@
           "alimento": 747626.4,
           "estructura": 90656.0,
           "sanidad": 7758.0,
-          "mortandad": 6614.06
+          "mortandad": 6463.2
         }
       ],
       "cabezas": 34,
@@ -19415,15 +19348,15 @@
       "fecha_egreso": "2026-07-29",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 49361121.3,
-        "comision": 1316256.58,
+        "compra": 48181291.1,
+        "comision": 1279937.77,
         "gastos": 0.0,
         "alimento": 15964137.85,
         "estructura": 1502538.0,
         "sanidad": 260956.0,
-        "mortandad": 717652.95,
-        "total": 69122662.68,
-        "por_kg_vendido": 3563.02
+        "mortandad": 708154.83,
+        "total": 67897015.54,
+        "por_kg_vendido": 3499.84
       },
       "indicadores": {
         "kg_prom_ingreso": 434.3,
@@ -19433,20 +19366,20 @@
         "pct_ms": 2.41,
         "conversion_ms": 10.03,
         "costo_kg_producido": 3827.03,
-        "precio_prom_pagado": 3342.48,
-        "precio_prom_pagado_cg": 3431.61
+        "precio_prom_pagado": 3262.59,
+        "precio_prom_pagado_cg": 3349.26
       },
       "reposicion": {
-        "precio_kg": 3425.85,
+        "precio_kg": 3347.71,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 50592286.33,
-        "comision": 1517768.59,
+        "compra": 49438346.82,
+        "comision": 1483150.4,
         "alimento": 16522207.57,
-        "mortandad": 738467.85,
-        "total": 71134224.33,
-        "por_kg_vendido": 3666.71
+        "mortandad": 721624.42,
+        "total": 69928823.22,
+        "por_kg_vendido": 3604.57
       },
       "verificacion": {
         "estado": "verificado",
@@ -19472,26 +19405,18 @@
         "pesadas_sin_eid_ventana": 75,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 95.8,
+      "cobertura_pct": 98.4,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 381.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3425.85
-        },
         {
           "tropa": "PEG..PDP.18/10/25",
           "categoria": "Ternera",
           "cabezas": 1,
           "kg_ingreso": 240.0,
           "fecha_ingreso": "2025-10-18",
-          "estimado_a": 3425.85
+          "estimado_a": 3347.71
         }
       ],
-      "precio_estimado": 3425.85,
+      "precio_estimado": 3347.71,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -19522,21 +19447,21 @@
           "dias": 120,
           "kg_ingreso": 2730.0,
           "kg_egreso": 3205.4,
-          "precio_kg": 2951.74,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 241747.44,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 167856.78,
           "gastos_pct": 0.0,
-          "costo_compra": 8058247.85,
-          "costo_compra_cg": 8299995.29,
+          "costo_compra": 7042323.32,
+          "costo_compra_cg": 7210180.1,
           "gastos_compra": 0.0,
           "kg_ms": 9329.5,
           "pct_ms": 2.62,
@@ -19544,7 +19469,7 @@
           "alimento": 3204376.96,
           "estructura": 227300.0,
           "sanidad": 38150.0,
-          "mortandad": 146328.92
+          "mortandad": 127115.48
         },
         {
           "origen": "confirmado",
@@ -19612,21 +19537,21 @@
           "dias": 120,
           "kg_ingreso": 1638.0,
           "kg_egreso": 1959.0,
-          "precio_kg": 2951.74,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 145048.46,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 100714.07,
           "gastos_pct": 0.0,
-          "costo_compra": 4834948.71,
-          "costo_compra_cg": 4979997.17,
+          "costo_compra": 4225393.99,
+          "costo_compra_cg": 4326108.06,
           "gastos_compra": 0.0,
           "kg_ms": 5653.8,
           "pct_ms": 2.62,
@@ -19634,7 +19559,7 @@
           "alimento": 1941999.71,
           "estructura": 136380.0,
           "sanidad": 22890.0,
-          "mortandad": 87797.35
+          "mortandad": 76269.29
         },
         {
           "origen": "confirmado",
@@ -20321,15 +20246,15 @@
       "fecha_egreso": "2026-07-30",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 41594932.8,
-        "comision": 1318849.44,
+        "compra": 39969453.55,
+        "comision": 1200624.39,
         "gastos": 0.0,
         "alimento": 18889680.25,
         "estructura": 1298675.0,
         "sanidad": 222288.0,
-        "mortandad": 756569.98,
-        "total": 64080995.47,
-        "por_kg_vendido": 3372.69
+        "mortandad": 725828.47,
+        "total": 62306549.67,
+        "por_kg_vendido": 3279.3
       },
       "indicadores": {
         "kg_prom_ingreso": 535.6,
@@ -20339,8 +20264,8 @@
         "pct_ms": 2.67,
         "conversion_ms": 15.86,
         "costo_kg_producido": 5887.75,
-        "precio_prom_pagado": 2677.78,
-        "precio_prom_pagado_cg": 2762.69
+        "precio_prom_pagado": 2573.14,
+        "precio_prom_pagado_cg": 2650.43
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -20371,33 +20296,16 @@
         "tropa_imputada": "PECDAR25/04/2026",
         "imputado": {
           "kg_ingreso_cab": 546.0,
-          "precio_kg": null,
+          "precio_kg": 3074.3,
           "fecha_ingreso": "2026-04-01",
           "dias": 120
         },
         "pesadas_sin_eid_ventana": 74,
         "dias_datamars_prom": 59.0
       },
-      "cobertura_pct": 71.9,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 5,
-          "kg_ingreso": 2730.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 2951.74
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 3,
-          "kg_ingreso": 1638.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 2951.74
-        }
-      ],
-      "precio_estimado": 2951.74,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 2986.2,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -23224,21 +23132,21 @@
           "dias": 130,
           "kg_ingreso": 1438.0,
           "kg_egreso": 1829.1,
-          "precio_kg": 3049.75,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 131566.16,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 88416.87,
           "gastos_pct": 0.0,
-          "costo_compra": 4385538.56,
-          "costo_compra_cg": 4517104.71,
+          "costo_compra": 4237691.19,
+          "costo_compra_cg": 4326108.06,
           "gastos_compra": 0.0,
           "kg_ms": 5572.6,
           "pct_ms": 2.62,
@@ -23246,7 +23154,7 @@
           "alimento": 1920223.47,
           "estructura": 149880.0,
           "sanidad": 22890.0,
-          "mortandad": 79636.56
+          "mortandad": 76269.29
         },
         {
           "origen": "imputado",
@@ -23269,21 +23177,21 @@
           "dias": 130,
           "kg_ingreso": 1438.0,
           "kg_egreso": 1963.6,
-          "precio_kg": 3049.75,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 131566.16,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 88416.87,
           "gastos_pct": 0.0,
-          "costo_compra": 4385538.56,
-          "costo_compra_cg": 4517104.71,
+          "costo_compra": 4237691.19,
+          "costo_compra_cg": 4326108.06,
           "gastos_compra": 0.0,
           "kg_ms": 5802.0,
           "pct_ms": 2.62,
@@ -23291,7 +23199,7 @@
           "alimento": 1999839.56,
           "estructura": 149880.0,
           "sanidad": 22890.0,
-          "mortandad": 79636.56
+          "mortandad": 76269.29
         },
         {
           "origen": "confirmado",
@@ -24113,15 +24021,15 @@
       "fecha_egreso": "2026-08-09",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 45980869.31,
-        "comision": 1215918.22,
+        "compra": 45685174.59,
+        "comision": 1129619.64,
         "gastos": 0.0,
         "alimento": 23005657.56,
         "estructura": 1663120.0,
         "sanidad": 245820.0,
-        "mortandad": 832079.36,
-        "total": 72943464.46,
-        "por_kg_vendido": 3650.82
+        "mortandad": 825344.82,
+        "total": 72554736.62,
+        "por_kg_vendido": 3631.37
       },
       "indicadores": {
         "kg_prom_ingreso": 505.0,
@@ -24131,8 +24039,8 @@
         "pct_ms": 2.69,
         "conversion_ms": 17.47,
         "costo_kg_producido": 6523.55,
-        "precio_prom_pagado": 2845.21,
-        "precio_prom_pagado_cg": 2920.45
+        "precio_prom_pagado": 2826.91,
+        "precio_prom_pagado_cg": 2896.81
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -24163,33 +24071,16 @@
         "tropa_imputada": "PECDAR25/04/2026",
         "imputado": {
           "kg_ingreso_cab": 479.3,
-          "precio_kg": null,
+          "precio_kg": 3074.3,
           "fecha_ingreso": "2026-04-01",
           "dias": 130
         },
         "pesadas_sin_eid_ventana": 56,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 82.2,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 3,
-          "kg_ingreso": 1438.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3049.75
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 3,
-          "kg_ingreso": 1438.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3049.75
-        }
-      ],
-      "precio_estimado": 3049.75,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3054.12,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -24909,21 +24800,21 @@
           "dias": 131,
           "kg_ingreso": 520.0,
           "kg_egreso": 633.5,
-          "precio_kg": 3054.65,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 47652.49,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 31972.72,
           "gastos_pct": 0.0,
-          "costo_compra": 1588416.5,
-          "costo_compra_cg": 1636068.99,
+          "costo_compra": 1410063.3,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1983.2,
           "pct_ms": 2.62,
@@ -24931,7 +24822,7 @@
           "alimento": 683434.74,
           "estructura": 50410.0,
           "sanidad": 7630.0,
-          "mortandad": 28843.9
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -25348,15 +25239,15 @@
       "fecha_egreso": "2026-08-10",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 44378938.15,
-        "comision": 1193708.5,
+        "compra": 44200584.95,
+        "comision": 1178028.72,
         "gastos": 0.0,
         "alimento": 18699195.12,
         "estructura": 1349861.0,
         "sanidad": 229526.0,
-        "mortandad": 803445.76,
-        "total": 66654674.52,
-        "por_kg_vendido": 3545.46
+        "mortandad": 800024.96,
+        "total": 66457220.74,
+        "por_kg_vendido": 3534.95
       },
       "indicadores": {
         "kg_prom_ingreso": 513.5,
@@ -25366,8 +25257,8 @@
         "pct_ms": 2.7,
         "conversion_ms": 15.94,
         "costo_kg_producido": 5974.45,
-        "precio_prom_pagado": 2880.66,
-        "precio_prom_pagado_cg": 2958.15
+        "precio_prom_pagado": 2869.09,
+        "precio_prom_pagado_cg": 2945.55
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -25405,18 +25296,9 @@
         "pesadas_sin_eid_ventana": 57,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 96.6,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 520.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3054.65
-        }
-      ],
-      "precio_estimado": 3054.65,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3055.31,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -25627,21 +25509,21 @@
           "dias": 131,
           "kg_ingreso": 1038.0,
           "kg_egreso": 1218.1,
-          "precio_kg": 3048.34,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 94925.36,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 63822.47,
           "gastos_pct": 0.0,
-          "costo_compra": 3164178.71,
-          "costo_compra_cg": 3259104.07,
+          "costo_compra": 2820249.57,
+          "costo_compra_cg": 2884072.04,
           "gastos_compra": 0.0,
           "kg_ms": 3878.6,
           "pct_ms": 2.62,
@@ -25649,7 +25531,7 @@
           "alimento": 1336430.9,
           "estructura": 100820.0,
           "sanidad": 15260.0,
-          "mortandad": 57458.0
+          "mortandad": 50846.19
         },
         {
           "origen": "confirmado",
@@ -26246,15 +26128,15 @@
       "fecha_egreso": "2026-08-10",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 43365711.87,
-        "comision": 1051315.98,
+        "compra": 43021782.73,
+        "comision": 1020213.09,
         "gastos": 0.0,
         "alimento": 16786079.71,
         "estructura": 1238915.0,
         "sanidad": 229398.0,
-        "mortandad": 783072.2,
-        "total": 63454492.76,
-        "por_kg_vendido": 3329.2
+        "mortandad": 776460.39,
+        "total": 63072848.92,
+        "por_kg_vendido": 3309.17
       },
       "indicadores": {
         "kg_prom_ingreso": 512.0,
@@ -26264,8 +26146,8 @@
         "pct_ms": 2.67,
         "conversion_ms": 13.15,
         "costo_kg_producido": 4934.85,
-        "precio_prom_pagado": 2823.12,
-        "precio_prom_pagado_cg": 2891.56
+        "precio_prom_pagado": 2800.73,
+        "precio_prom_pagado_cg": 2867.14
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -26303,18 +26185,9 @@
         "pesadas_sin_eid_ventana": 57,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 93.2,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 2,
-          "kg_ingreso": 1038.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3048.34
-        }
-      ],
-      "precio_estimado": 3048.34,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3050.1,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -27070,21 +26943,21 @@
           "dias": 132,
           "kg_ingreso": 514.0,
           "kg_egreso": 615.9,
-          "precio_kg": 2971.64,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 45822.64,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 31603.8,
           "gastos_pct": 0.0,
-          "costo_compra": 1527421.47,
-          "costo_compra_cg": 1573244.11,
+          "costo_compra": 1410432.22,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1957.7,
           "pct_ms": 2.63,
@@ -27092,7 +26965,7 @@
           "alimento": 674799.95,
           "estructura": 50860.0,
           "sanidad": 7630.0,
-          "mortandad": 27736.29
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -27554,15 +27427,15 @@
       "fecha_egreso": "2026-08-11",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 42841860.29,
-        "comision": 1198330.49,
+        "compra": 42724871.04,
+        "comision": 1184111.65,
         "gastos": 0.0,
         "alimento": 23749086.71,
         "estructura": 1718606.0,
         "sanidad": 231586.0,
-        "mortandad": 776428.56,
-        "total": 70515898.06,
-        "por_kg_vendido": 3758.85
+        "mortandad": 774115.36,
+        "total": 70382376.76,
+        "por_kg_vendido": 3751.73
       },
       "indicadores": {
         "kg_prom_ingreso": 486.2,
@@ -27572,8 +27445,8 @@
         "pct_ms": 2.69,
         "conversion_ms": 16.51,
         "costo_kg_producido": 6155.27,
-        "precio_prom_pagado": 2937.43,
-        "precio_prom_pagado_cg": 3019.6
+        "precio_prom_pagado": 2929.41,
+        "precio_prom_pagado_cg": 3010.6
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -27611,18 +27484,9 @@
         "pesadas_sin_eid_ventana": 57,
         "dias_datamars_prom": 24.0
       },
-      "cobertura_pct": 96.5,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 514.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 2971.64
-        }
-      ],
-      "precio_estimado": 2971.64,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 2975.26,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -30037,21 +29901,21 @@
           "dias": 138,
           "kg_ingreso": 427.0,
           "kg_egreso": 560.0,
-          "precio_kg": 3290.8,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 42155.12,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 26254.52,
           "gastos_pct": 0.0,
-          "costo_compra": 1405170.58,
-          "costo_compra_cg": 1447325.7,
+          "costo_compra": 1415781.5,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1790.1,
           "pct_ms": 2.63,
@@ -30059,7 +29923,7 @@
           "alimento": 618189.4,
           "estructura": 53560.0,
           "sanidad": 7630.0,
-          "mortandad": 25516.35
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -30161,15 +30025,15 @@
       "fecha_egreso": "2026-08-17",
       "comprador": "TRASLADO A FERIA",
       "costos": {
-        "compra": 11745027.79,
-        "comision": 273422.47,
+        "compra": 11755638.71,
+        "comision": 257521.87,
         "gastos": 0.0,
         "alimento": 5523873.25,
         "estructura": 472760.0,
         "sanidad": 61808.0,
-        "mortandad": 197665.94,
-        "total": 18274557.45,
-        "por_kg_vendido": 4158.03
+        "mortandad": 197572.69,
+        "total": 18269174.51,
+        "por_kg_vendido": 4156.81
       },
       "indicadores": {
         "kg_prom_ingreso": 434.2,
@@ -30179,20 +30043,20 @@
         "pct_ms": 2.6,
         "conversion_ms": 17.46,
         "costo_kg_producido": 6578.11,
-        "precio_prom_pagado": 3380.84,
-        "precio_prom_pagado_cg": 3459.54
+        "precio_prom_pagado": 3383.89,
+        "precio_prom_pagado_cg": 3458.02
       },
       "reposicion": {
-        "precio_kg": 3290.8,
+        "precio_kg": 3264.19,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 11432230.93,
-        "comision": 342966.93,
+        "compra": 11339786.45,
+        "comision": 340193.59,
         "alimento": 5716453.98,
-        "mortandad": 192404.91,
-        "total": 18218624.75,
-        "por_kg_vendido": 4145.31
+        "mortandad": 190849.06,
+        "total": 18121851.09,
+        "por_kg_vendido": 4123.29
       },
       "verificacion": {
         "estado": "verificado",
@@ -30218,18 +30082,9 @@
         "pesadas_sin_eid_ventana": 46,
         "dias_datamars_prom": 151.3
       },
-      "cobertura_pct": 87.7,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 427.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3290.8
-        }
-      ],
-      "precio_estimado": 3290.8,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3264.19,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -30440,21 +30295,21 @@
           "dias": 139,
           "kg_ingreso": 914.0,
           "kg_egreso": 1202.6,
-          "precio_kg": 3034.21,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 83197.98,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 56198.2,
           "gastos_pct": 0.0,
-          "costo_compra": 2773265.93,
-          "costo_compra_cg": 2856463.91,
+          "costo_compra": 2827873.84,
+          "costo_compra_cg": 2884072.04,
           "gastos_compra": 0.0,
           "kg_ms": 3867.3,
           "pct_ms": 2.63,
@@ -30462,7 +30317,7 @@
           "alimento": 1335874.57,
           "estructura": 108020.0,
           "sanidad": 15260.0,
-          "mortandad": 50359.46
+          "mortandad": 50846.19
         },
         {
           "origen": "confirmado",
@@ -31149,15 +31004,15 @@
       "fecha_egreso": "2026-08-18",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 44445503.32,
-        "comision": 1068456.6,
+        "compra": 44500111.22,
+        "comision": 1041456.83,
         "gastos": 0.0,
         "alimento": 23519996.03,
         "estructura": 1772209.0,
         "sanidad": 238186.0,
-        "mortandad": 802411.11,
-        "total": 71846762.06,
-        "por_kg_vendido": 3896.25
+        "mortandad": 802897.84,
+        "total": 71874856.92,
+        "por_kg_vendido": 3897.77
       },
       "indicadores": {
         "kg_prom_ingreso": 464.1,
@@ -31167,8 +31022,8 @@
         "pct_ms": 2.71,
         "conversion_ms": 16.75,
         "costo_kg_producido": 6297.49,
-        "precio_prom_pagado": 3089.51,
-        "precio_prom_pagado_cg": 3163.78
+        "precio_prom_pagado": 3093.31,
+        "precio_prom_pagado_cg": 3165.7
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -31201,18 +31056,9 @@
         "pesadas_sin_eid_ventana": 44,
         "dias_datamars_prom": 157.4
       },
-      "cobertura_pct": 93.6,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 2,
-          "kg_ingreso": 914.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3034.21
-        }
-      ],
-      "precio_estimado": 3034.21,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3036.76,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -32222,21 +32068,21 @@
           "dias": 141,
           "kg_ingreso": 1032.0,
           "kg_egreso": 1209.7,
-          "precio_kg": 3096.6,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 95870.72,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 63453.55,
           "gastos_pct": 0.0,
-          "costo_compra": 3195690.56,
-          "costo_compra_cg": 3291561.28,
+          "costo_compra": 2820618.49,
+          "costo_compra_cg": 2884072.04,
           "gastos_compra": 0.0,
           "kg_ms": 4156.0,
           "pct_ms": 2.63,
@@ -32244,7 +32090,7 @@
           "alimento": 1435519.12,
           "estructura": 109820.0,
           "sanidad": 15260.0,
-          "mortandad": 58030.23
+          "mortandad": 50846.19
         },
         {
           "origen": "confirmado",
@@ -32402,7 +32248,7 @@
           "dias": 52,
           "kg_ingreso": 568.0,
           "kg_egreso": 694.9,
-          "precio_kg": 3096.6,
+          "precio_kg": 3095.01,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -32413,10 +32259,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 52766.05,
+          "comision": 52738.97,
           "gastos_pct": 0.0,
-          "costo_compra": 1758868.45,
-          "costo_compra_cg": 1811634.5,
+          "costo_compra": 1757965.76,
+          "costo_compra_cg": 1810704.73,
           "gastos_compra": 0.0,
           "kg_ms": 865.3,
           "pct_ms": 2.64,
@@ -32424,7 +32270,7 @@
           "alimento": 307129.13,
           "estructura": 23400.0,
           "sanidad": 7630.0,
-          "mortandad": 31939.12
+          "mortandad": 31922.72
         },
         {
           "origen": "confirmado",
@@ -32796,15 +32642,15 @@
       "fecha_egreso": "2026-08-20",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 43864146.96,
-        "comision": 1210523.46,
+        "compra": 43488172.2,
+        "comision": 1178079.21,
         "gastos": 0.0,
         "alimento": 21436086.22,
         "estructura": 1622332.0,
         "sanidad": 230308.0,
-        "mortandad": 781047.11,
-        "total": 69144443.74,
-        "por_kg_vendido": 3705.5
+        "mortandad": 773846.68,
+        "total": 68728824.31,
+        "por_kg_vendido": 3683.22
       },
       "indicadores": {
         "kg_prom_ingreso": 501.6,
@@ -32814,20 +32660,20 @@
         "pct_ms": 2.66,
         "conversion_ms": 17.17,
         "costo_kg_producido": 6448.41,
-        "precio_prom_pagado": 2914.87,
-        "precio_prom_pagado_cg": 2995.31
+        "precio_prom_pagado": 2889.88,
+        "precio_prom_pagado_cg": 2968.17
       },
       "reposicion": {
-        "precio_kg": 3096.6,
+        "precio_kg": 3095.01,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 46598945.74,
-        "comision": 1397968.37,
+        "compra": 46575030.09,
+        "comision": 1397250.9,
         "alimento": 22046372.61,
-        "mortandad": 804206.51,
-        "total": 72700133.24,
-        "por_kg_vendido": 3896.05
+        "mortandad": 803793.77,
+        "total": 72675087.38,
+        "por_kg_vendido": 3894.71
       },
       "verificacion": {
         "estado": "verificado",
@@ -32853,26 +32699,18 @@
         "pesadas_sin_eid_ventana": 49,
         "dias_datamars_prom": 161.0
       },
-      "cobertura_pct": 89.4,
+      "cobertura_pct": 96.2,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 2,
-          "kg_ingreso": 1032.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3096.6
-        },
         {
           "tropa": "PEG.DES.29/06/26",
           "categoria": "Vaca",
           "cabezas": 1,
           "kg_ingreso": 568.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3096.6
+          "estimado_a": 3095.01
         }
       ],
-      "precio_estimado": 3096.6,
+      "precio_estimado": 3095.01,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -35919,21 +35757,21 @@
           "dias": 146,
           "kg_ingreso": 392.0,
           "kg_egreso": 538.0,
-          "precio_kg": 3125.01,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 446.36,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 36750.16,
+          "precio_kg_cg": 455.29,
+          "precio_cab_cg": 147573.73,
+          "desbaste_pct": 7.68,
+          "comision_pct": 2.0,
+          "comision": 3499.46,
           "gastos_pct": 0.0,
-          "costo_compra": 1225005.33,
-          "costo_compra_cg": 1261755.49,
+          "costo_compra": 144074.27,
+          "costo_compra_cg": 147573.73,
           "gastos_compra": 0.0,
           "kg_ms": 1374.8,
           "pct_ms": 2.03,
@@ -35941,7 +35779,7 @@
           "alimento": 475723.52,
           "estructura": 57160.0,
           "sanidad": 7630.0,
-          "mortandad": 9854.31
+          "mortandad": 1152.55
         },
         {
           "origen": "confirmado",
@@ -36009,21 +35847,21 @@
           "dias": 146,
           "kg_ingreso": 358.0,
           "kg_egreso": 522.0,
-          "precio_kg": 3125.01,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 33562.65,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 22011.99,
           "gastos_pct": 0.0,
-          "costo_compra": 1118754.87,
-          "costo_compra_cg": 1152317.52,
+          "costo_compra": 1420024.03,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1691.2,
           "pct_ms": 2.63,
@@ -36031,7 +35869,7 @@
           "alimento": 585396.62,
           "estructura": 57160.0,
           "sanidad": 7630.0,
-          "mortandad": 20315.36
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -36189,7 +36027,7 @@
           "dias": 200,
           "kg_ingreso": 264.0,
           "kg_egreso": 620.0,
-          "precio_kg": 3125.01,
+          "precio_kg": 3048.83,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -36200,10 +36038,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 24750.11,
+          "comision": 24146.75,
           "gastos_pct": 0.0,
-          "costo_compra": 825003.59,
-          "costo_compra_cg": 849753.7,
+          "costo_compra": 804891.65,
+          "costo_compra_cg": 829038.4,
           "gastos_compra": 0.0,
           "kg_ms": 1828.4,
           "pct_ms": 2.07,
@@ -36211,7 +36049,7 @@
           "alimento": 629639.28,
           "estructura": 73015.0,
           "sanidad": 7758.0,
-          "mortandad": 6636.58
+          "mortandad": 6474.79
         }
       ],
       "cabezas": 35,
@@ -36223,15 +36061,15 @@
       "fecha_egreso": "2026-08-25",
       "comprador": "TRASLADO A FERIA",
       "costos": {
-        "compra": 47421567.48,
-        "comision": 1067426.39,
+        "compra": 46621793.64,
+        "comision": 1022021.68,
         "gastos": 0.0,
         "alimento": 22936880.05,
         "estructura": 2037667.0,
         "sanidad": 268970.0,
-        "mortandad": 792438.79,
-        "total": 74524949.72,
-        "por_kg_vendido": 3688.99
+        "mortandad": 788682.98,
+        "total": 73676015.35,
+        "por_kg_vendido": 3646.97
       },
       "indicadores": {
         "kg_prom_ingreso": 408.2,
@@ -36241,20 +36079,20 @@
         "pct_ms": 2.56,
         "conversion_ms": 11.19,
         "costo_kg_producido": 4266.7,
-        "precio_prom_pagado": 3319.54,
-        "precio_prom_pagado_cg": 3394.26
+        "precio_prom_pagado": 3263.55,
+        "precio_prom_pagado_cg": 3335.09
       },
       "reposicion": {
-        "precio_kg": 3125.01,
+        "precio_kg": 3048.83,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 44642694.31,
-        "comision": 1339280.83,
+        "compra": 43554394.7,
+        "comision": 1306631.84,
         "alimento": 23548195.83,
-        "mortandad": 737797.05,
-        "total": 72574605.02,
-        "por_kg_vendido": 3592.45
+        "mortandad": 719811.03,
+        "total": 71435670.39,
+        "por_kg_vendido": 3536.07
       },
       "verificacion": {
         "estado": "verificado",
@@ -36280,34 +36118,18 @@
         "pesadas_sin_eid_ventana": 60,
         "dias_datamars_prom": 146.0
       },
-      "cobertura_pct": 92.9,
+      "cobertura_pct": 98.2,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 392.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3125.01
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 358.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3125.01
-        },
         {
           "tropa": "PEG.DES.06/02/26",
           "categoria": "Ternera",
           "cabezas": 1,
           "kg_ingreso": 264.0,
           "fecha_ingreso": "2026-02-06",
-          "estimado_a": 3125.01
+          "estimado_a": 3048.83
         }
       ],
-      "precio_estimado": 3125.01,
+      "precio_estimado": 3048.83,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -36566,18 +36388,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 51079.5,
           "gastos_pct": 0.0,
-          "costo_compra": 999358.66,
-          "costo_compra_cg": 1050438.16,
+          "costo_compra": 999358.6,
+          "costo_compra_cg": 1050438.1,
           "gastos_compra": 0.0,
           "kg_ms": 1119.1,
           "pct_ms": 2.02,
@@ -36585,7 +36407,7 @@
           "alimento": 390849.54,
           "estructura": 40250.0,
           "sanidad": 7630.0,
-          "mortandad": 10105.22
+          "mortandad": 10105.21
         },
         {
           "origen": "confirmado",
@@ -36957,14 +36779,14 @@
       "fecha_egreso": "2026-08-26",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 45609284.96,
+        "compra": 45609284.9,
         "comision": 1232172.49,
         "gastos": 0.0,
         "alimento": 16926667.85,
         "estructura": 1626780.0,
         "sanidad": 214792.0,
         "mortandad": 450614.82,
-        "total": 66060312.12,
+        "total": 66060312.06,
         "por_kg_vendido": 3394.67
       },
       "indicadores": {
@@ -37379,21 +37201,21 @@
           "dias": 147,
           "kg_ingreso": 471.0,
           "kg_egreso": 669.8,
-          "precio_kg": 4422.8,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 62494.23,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 47224.06,
           "gastos_pct": 0.0,
-          "costo_compra": 2083141.03,
-          "costo_compra_cg": 2145635.26,
+          "costo_compra": 1408225.94,
+          "costo_compra_cg": 1455450.0,
           "gastos_compra": 0.0,
           "kg_ms": 1698.4,
           "pct_ms": 2.03,
@@ -37401,7 +37223,7 @@
           "alimento": 587921.55,
           "estructura": 57610.0,
           "sanidad": 7630.0,
-          "mortandad": 20641.01
+          "mortandad": 14001.43
         },
         {
           "origen": "confirmado",
@@ -37503,15 +37325,15 @@
       "fecha_egreso": "2026-08-26",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 46873400.69,
-        "comision": 1340367.6,
+        "compra": 46198485.6,
+        "comision": 1325097.43,
         "gastos": 0.0,
         "alimento": 17739901.97,
         "estructura": 1676280.0,
         "sanidad": 215304.0,
-        "mortandad": 463816.45,
-        "total": 68309070.71,
-        "por_kg_vendido": 3539.33
+        "mortandad": 457176.87,
+        "total": 67612245.87,
+        "por_kg_vendido": 3503.23
       },
       "indicadores": {
         "kg_prom_ingreso": 470.2,
@@ -37521,20 +37343,20 @@
         "pct_ms": 2.07,
         "conversion_ms": 8.35,
         "costo_kg_producido": 3200.84,
-        "precio_prom_pagado": 3559.97,
-        "precio_prom_pagado_cg": 3661.77
+        "precio_prom_pagado": 3508.72,
+        "precio_prom_pagado_cg": 3609.35
       },
       "reposicion": {
-        "precio_kg": 4422.8,
+        "precio_kg": 4443.92,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 58234096.79,
-        "comision": 1747022.9,
+        "compra": 58512158.84,
+        "comision": 1755364.77,
         "alimento": 18209960.7,
-        "mortandad": 560212.01,
-        "total": 80642876.41,
-        "por_kg_vendido": 4178.39
+        "mortandad": 562886.97,
+        "total": 80931955.27,
+        "por_kg_vendido": 4193.37
       },
       "verificacion": {
         "estado": "verificado",
@@ -37560,18 +37382,9 @@
         "pesadas_sin_eid_ventana": 74,
         "dias_datamars_prom": 167.9
       },
-      "cobertura_pct": 96.4,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 1,
-          "kg_ingreso": 471.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4422.8
-        }
-      ],
-      "precio_estimado": 4422.8,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 4443.92,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -39155,21 +38968,21 @@
           "dias": 148,
           "kg_ingreso": 4502.5,
           "kg_egreso": 6527.0,
-          "precio_kg": 4765.45,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 643693.3,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 451435.96,
           "gastos_pct": 0.0,
-          "costo_compra": 21456443.45,
-          "costo_compra_cg": 22100136.75,
+          "costo_compra": 14103064.04,
+          "costo_compra_cg": 14554500.0,
           "gastos_compra": 0.0,
           "kg_ms": 16534.6,
           "pct_ms": 2.03,
@@ -39177,7 +38990,7 @@
           "alimento": 5725465.71,
           "estructura": 580600.0,
           "sanidad": 76300.0,
-          "mortandad": 212603.32
+          "mortandad": 140014.29
         },
         {
           "origen": "confirmado",
@@ -39200,21 +39013,21 @@
           "dias": 148,
           "kg_ingreso": 1801.0,
           "kg_egreso": 2587.1,
-          "precio_kg": 4765.45,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 257477.32,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 180574.38,
           "gastos_pct": 0.0,
-          "costo_compra": 8582577.38,
-          "costo_compra_cg": 8840054.7,
+          "costo_compra": 5641225.62,
+          "costo_compra_cg": 5821800.0,
           "gastos_compra": 0.0,
           "kg_ms": 6578.2,
           "pct_ms": 2.03,
@@ -39222,7 +39035,7 @@
           "alimento": 2277752.44,
           "estructura": 232240.0,
           "sanidad": 30520.0,
-          "mortandad": 85041.33
+          "mortandad": 56005.72
         },
         {
           "origen": "confirmado",
@@ -39650,7 +39463,7 @@
           "dias": 202,
           "kg_ingreso": 328.0,
           "kg_egreso": 627.2,
-          "precio_kg": 4765.45,
+          "precio_kg": 4893.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -39661,10 +39474,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 46892.04,
+          "comision": 48149.21,
           "gastos_pct": 0.0,
-          "costo_compra": 1563067.95,
-          "costo_compra_cg": 1609959.99,
+          "costo_compra": 1604973.59,
+          "costo_compra_cg": 1653122.8,
           "gastos_compra": 0.0,
           "kg_ms": 1999.4,
           "pct_ms": 2.07,
@@ -39672,7 +39485,7 @@
           "alimento": 688265.62,
           "estructura": 73915.0,
           "sanidad": 7758.0,
-          "mortandad": 15487.82
+          "mortandad": 15903.04
         },
         {
           "origen": "confirmado",
@@ -39695,7 +39508,7 @@
           "dias": 309,
           "kg_ingreso": 262.0,
           "kg_egreso": 663.4,
-          "precio_kg": 4765.45,
+          "precio_kg": 4893.21,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -39706,10 +39519,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 37456.45,
+          "comision": 38460.65,
           "gastos_pct": 0.0,
-          "costo_compra": 1248548.18,
-          "costo_compra_cg": 1286004.63,
+          "costo_compra": 1282021.59,
+          "costo_compra_cg": 1320482.24,
           "gastos_compra": 0.0,
           "kg_ms": 3122.7,
           "pct_ms": 2.18,
@@ -39717,7 +39530,7 @@
           "alimento": 1093647.86,
           "estructura": 102666.0,
           "sanidad": 7758.0,
-          "mortandad": 12371.36
+          "mortandad": 12703.04
         },
         {
           "origen": "confirmado",
@@ -39774,15 +39587,15 @@
       "fecha_egreso": "2026-08-27",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 55748240.95,
-        "comision": 1652187.17,
+        "compra": 45528888.84,
+        "comision": 1385288.26,
         "gastos": 0.0,
         "alimento": 17863267.75,
         "estructura": 1753359.0,
         "sanidad": 222418.0,
-        "mortandad": 552192.12,
-        "total": 77791664.99,
-        "por_kg_vendido": 4098.75
+        "mortandad": 451314.38,
+        "total": 67204536.23,
+        "por_kg_vendido": 3540.93
       },
       "indicadores": {
         "kg_prom_ingreso": 441.8,
@@ -39792,20 +39605,20 @@
         "pct_ms": 2.06,
         "conversion_ms": 8.37,
         "costo_kg_producido": 3216.78,
-        "precio_prom_pagado": 4351.25,
-        "precio_prom_pagado_cg": 4480.21
+        "precio_prom_pagado": 3553.61,
+        "precio_prom_pagado_cg": 3661.74
       },
       "reposicion": {
-        "precio_kg": 4765.45,
+        "precio_kg": 4893.21,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 61054959.12,
-        "comision": 1831648.77,
+        "compra": 62691834.44,
+        "comision": 1880755.03,
         "alimento": 18347764.07,
-        "mortandad": 587348.71,
-        "total": 83797497.68,
-        "por_kg_vendido": 4415.19
+        "mortandad": 603095.45,
+        "total": 85499226.0,
+        "por_kg_vendido": 4504.85
       },
       "verificacion": {
         "estado": "verificado",
@@ -39824,38 +39637,22 @@
         "tropa_imputada": "PECDAR25/04/2026",
         "imputado": {
           "kg_ingreso_cab": 450.2,
-          "precio_kg": null,
+          "precio_kg": 5013.17,
           "fecha_ingreso": "2026-04-01",
           "dias": 148
         },
         "pesadas_sin_eid_ventana": 74,
         "dias_datamars_prom": 171.2
       },
-      "cobertura_pct": 46.2,
+      "cobertura_pct": 95.4,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 10,
-          "kg_ingreso": 4502.5,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4765.45
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 4,
-          "kg_ingreso": 1801.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4765.45
-        },
         {
           "tropa": "PEG.DES.06/02/26",
           "categoria": "Ternero",
           "cabezas": 1,
           "kg_ingreso": 328.0,
           "fecha_ingreso": "2026-02-06",
-          "estimado_a": 4765.45
+          "estimado_a": 4893.21
         },
         {
           "tropa": "PEG.COL.22/10/25",
@@ -39863,10 +39660,10 @@
           "cabezas": 1,
           "kg_ingreso": 262.0,
           "fecha_ingreso": "2025-10-22",
-          "estimado_a": 4765.45
+          "estimado_a": 4893.21
         }
       ],
-      "precio_estimado": 4765.45,
+      "precio_estimado": 4893.21,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -39897,21 +39694,21 @@
           "dias": 148,
           "kg_ingreso": 3651.0,
           "kg_egreso": 5398.0,
-          "precio_kg": 4256.44,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 466207.77,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 366061.67,
           "gastos_pct": 0.0,
-          "costo_compra": 15540258.97,
-          "costo_compra_cg": 16006466.74,
+          "costo_compra": 11277538.33,
+          "costo_compra_cg": 11643600.0,
           "gastos_compra": 0.0,
           "kg_ms": 13565.9,
           "pct_ms": 2.03,
@@ -39919,7 +39716,7 @@
           "alimento": 4697929.83,
           "estructura": 464480.0,
           "sanidad": 61040.0,
-          "mortandad": 153982.21
+          "mortandad": 112011.43
         },
         {
           "origen": "imputado",
@@ -39942,21 +39739,21 @@
           "dias": 148,
           "kg_ingreso": 3194.6,
           "kg_egreso": 4762.7,
-          "precio_kg": 4256.44,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 407931.8,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 320303.96,
           "gastos_pct": 0.0,
-          "costo_compra": 13597726.6,
-          "costo_compra_cg": 14005658.39,
+          "costo_compra": 9867846.04,
+          "costo_compra_cg": 10188150.0,
           "gastos_compra": 0.0,
           "kg_ms": 11929.4,
           "pct_ms": 2.03,
@@ -39964,7 +39761,7 @@
           "alimento": 4131373.89,
           "estructura": 406420.0,
           "sanidad": 53410.0,
-          "mortandad": 134734.43
+          "mortandad": 98010.0
         },
         {
           "origen": "confirmado",
@@ -40347,7 +40144,7 @@
           "dias": 310,
           "kg_ingreso": 253.0,
           "kg_egreso": 659.1,
-          "precio_kg": 4256.44,
+          "precio_kg": 4674.6,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -40358,10 +40155,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 32306.37,
+          "comision": 35480.19,
           "gastos_pct": 0.0,
-          "costo_compra": 1076879.08,
-          "costo_compra_cg": 1109185.45,
+          "costo_compra": 1182672.85,
+          "costo_compra_cg": 1218153.03,
           "gastos_compra": 0.0,
           "kg_ms": 3087.5,
           "pct_ms": 2.18,
@@ -40369,7 +40166,7 @@
           "alimento": 1081208.76,
           "estructura": 102926.0,
           "sanidad": 7758.0,
-          "mortandad": 10670.36
+          "mortandad": 11718.63
         }
       ],
       "cabezas": 28,
@@ -40381,15 +40178,15 @@
       "fecha_egreso": "2026-08-27",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 50785456.77,
-        "comision": 1508813.53,
+        "compra": 42898649.34,
+        "comision": 1324213.41,
         "gastos": 0.0,
         "alimento": 17854120.87,
         "estructura": 1735122.0,
         "sanidad": 214664.0,
-        "mortandad": 503070.88,
-        "total": 72601248.06,
-        "por_kg_vendido": 3841.34
+        "mortandad": 425423.94,
+        "total": 64452193.56,
+        "por_kg_vendido": 3410.17
       },
       "indicadores": {
         "kg_prom_ingreso": 451.5,
@@ -40399,20 +40196,20 @@
         "pct_ms": 2.06,
         "conversion_ms": 8.23,
         "costo_kg_producido": 3164.28,
-        "precio_prom_pagado": 4017.39,
-        "precio_prom_pagado_cg": 4136.75
+        "precio_prom_pagado": 3393.51,
+        "precio_prom_pagado_cg": 3498.26
       },
       "reposicion": {
-        "precio_kg": 4256.44,
+        "precio_kg": 4674.6,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 53807327.31,
-        "comision": 1614219.82,
+        "compra": 59093417.39,
+        "comision": 1772802.52,
         "alimento": 18312493.87,
-        "mortandad": 517626.49,
-        "total": 76201453.49,
-        "por_kg_vendido": 4031.83
+        "mortandad": 568478.68,
+        "total": 81696978.46,
+        "por_kg_vendido": 4322.6
       },
       "verificacion": {
         "estado": "verificado",
@@ -40431,41 +40228,25 @@
         "tropa_imputada": "PECDAR25/04/2026",
         "imputado": {
           "kg_ingreso_cab": 456.4,
-          "precio_kg": null,
+          "precio_kg": 5013.17,
           "fecha_ingreso": "2026-04-01",
           "dias": 148
         },
         "pesadas_sin_eid_ventana": 74,
         "dias_datamars_prom": 160.3
       },
-      "cobertura_pct": 43.8,
+      "cobertura_pct": 98.0,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 8,
-          "kg_ingreso": 3651.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4256.44
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 7,
-          "kg_ingreso": 3194.6,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4256.44
-        },
         {
           "tropa": "PEG.COL21/10/25",
           "categoria": "Ternero",
           "cabezas": 1,
           "kg_ingreso": 253.0,
           "fecha_ingreso": "2025-10-21",
-          "estimado_a": 4256.44
+          "estimado_a": 4674.6
         }
       ],
-      "precio_estimado": 4256.44,
+      "precio_estimado": 4674.6,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -43167,21 +42948,21 @@
           "dias": 153,
           "kg_ingreso": 446.0,
           "kg_egreso": 686.5,
-          "precio_kg": 3026.94,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 40500.42,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 27422.76,
           "gastos_pct": 0.0,
-          "costo_compra": 1350014.09,
-          "costo_compra_cg": 1390514.51,
+          "costo_compra": 1414613.26,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 2283.8,
           "pct_ms": 2.64,
@@ -43189,7 +42970,7 @@
           "alimento": 791847.85,
           "estructura": 60310.0,
           "sanidad": 7630.0,
-          "mortandad": 24514.77
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -43291,15 +43072,15 @@
       "fecha_egreso": "2026-09-01",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 43461141.3,
-        "comision": 1095682.08,
+        "compra": 43525740.48,
+        "comision": 1082604.42,
         "gastos": 0.0,
         "alimento": 20505222.65,
         "estructura": 1606785.0,
         "sanidad": 229666.0,
-        "mortandad": 785536.8,
-        "total": 67684033.84,
-        "por_kg_vendido": 3573.6
+        "mortandad": 786445.12,
+        "total": 67736463.67,
+        "por_kg_vendido": 3576.37
       },
       "indicadores": {
         "kg_prom_ingreso": 479.5,
@@ -43309,8 +43090,8 @@
         "pct_ms": 2.67,
         "conversion_ms": 12.95,
         "costo_kg_producido": 4903.48,
-        "precio_prom_pagado": 3021.55,
-        "precio_prom_pagado_cg": 3097.73
+        "precio_prom_pagado": 3026.04,
+        "precio_prom_pagado_cg": 3101.31
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -43348,18 +43129,9 @@
         "pesadas_sin_eid_ventana": 95,
         "dias_datamars_prom": 132.7
       },
-      "cobertura_pct": 96.9,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 446.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3026.94
-        }
-      ],
-      "precio_estimado": 3026.94,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3028.41,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -44774,21 +44546,21 @@
           "dias": 153,
           "kg_ingreso": 477.0,
           "kg_egreso": 603.2,
-          "precio_kg": 2983.8,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 42698.17,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 29328.82,
           "gastos_pct": 0.0,
-          "costo_compra": 1423272.41,
-          "costo_compra_cg": 1465970.58,
+          "costo_compra": 1412707.2,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 2177.7,
           "pct_ms": 2.64,
@@ -44796,7 +44568,7 @@
           "alimento": 754333.88,
           "estructura": 60310.0,
           "sanidad": 7630.0,
-          "mortandad": 25845.06
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -45123,15 +44895,15 @@
       "fecha_egreso": "2026-09-01",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 43923569.23,
-        "comision": 1015595.62,
+        "compra": 43913004.02,
+        "comision": 1002226.27,
         "gastos": 0.0,
         "alimento": 21798192.82,
         "estructura": 1725238.0,
         "sanidad": 237680.0,
-        "mortandad": 792277.48,
-        "total": 69492553.15,
-        "por_kg_vendido": 3696.41
+        "mortandad": 791855.51,
+        "total": 69468196.62,
+        "por_kg_vendido": 3695.11
       },
       "indicadores": {
         "kg_prom_ingreso": 480.0,
@@ -45141,8 +44913,8 @@
         "pct_ms": 2.68,
         "conversion_ms": 16.0,
         "costo_kg_producido": 6059.99,
-        "precio_prom_pagado": 2952.04,
-        "precio_prom_pagado_cg": 3020.3
+        "precio_prom_pagado": 2951.33,
+        "precio_prom_pagado_cg": 3018.69
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -45180,18 +44952,9 @@
         "pesadas_sin_eid_ventana": 95,
         "dias_datamars_prom": 149.9
       },
-      "cobertura_pct": 96.8,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 477.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 2983.8
-        }
-      ],
-      "precio_estimado": 2983.8,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 2986.7,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -45675,18 +45438,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 36700.82,
           "gastos_pct": 0.0,
-          "costo_compra": 1013737.34,
-          "costo_compra_cg": 1050438.16,
+          "costo_compra": 1013737.28,
+          "costo_compra_cg": 1050438.1,
           "gastos_compra": 0.0,
           "kg_ms": 898.6,
           "pct_ms": 2.03,
@@ -45694,7 +45457,7 @@
           "alimento": 313775.32,
           "estructura": 44950.0,
           "sanidad": 7630.0,
-          "mortandad": 10105.22
+          "mortandad": 10105.21
         },
         {
           "origen": "confirmado",
@@ -45720,18 +45483,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 36198.07,
           "gastos_pct": 0.0,
-          "costo_compra": 1014240.09,
-          "costo_compra_cg": 1050438.16,
+          "costo_compra": 1014240.03,
+          "costo_compra_cg": 1050438.1,
           "gastos_compra": 0.0,
           "kg_ms": 886.4,
           "pct_ms": 2.03,
@@ -45739,7 +45502,7 @@
           "alimento": 310134.59,
           "estructura": 43400.0,
           "sanidad": 7630.0,
-          "mortandad": 10105.22
+          "mortandad": 10105.21
         },
         {
           "origen": "confirmado",
@@ -46111,14 +45874,14 @@
       "fecha_egreso": "2026-09-02",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 79836900.06,
+        "compra": 79836899.94,
         "comision": 1662346.59,
         "gastos": 0.0,
         "alimento": 30585031.96,
         "estructura": 4101552.0,
         "sanidad": 424642.0,
         "mortandad": 784022.75,
-        "total": 117394495.36,
+        "total": 117394495.24,
         "por_kg_vendido": 4268.89
       },
       "indicadores": {
@@ -48574,21 +48337,21 @@
           "dias": 158,
           "kg_ingreso": 945.0,
           "kg_egreso": 1302.6,
-          "precio_kg": 4269.03,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 121026.92,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 94748.91,
           "gastos_pct": 0.0,
-          "costo_compra": 4034230.68,
-          "costo_compra_cg": 4155257.6,
+          "costo_compra": 2816151.09,
+          "costo_compra_cg": 2910900.0,
           "gastos_compra": 0.0,
           "kg_ms": 3597.9,
           "pct_ms": 2.03,
@@ -48596,7 +48359,7 @@
           "alimento": 1247934.03,
           "estructura": 125120.0,
           "sanidad": 15260.0,
-          "mortandad": 39973.58
+          "mortandad": 28002.86
         },
         {
           "origen": "confirmado",
@@ -48979,7 +48742,7 @@
           "dias": 16,
           "kg_ingreso": 185.0,
           "kg_egreso": 709.8,
-          "precio_kg": 4269.03,
+          "precio_kg": 4320.98,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -48990,10 +48753,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 23693.1,
+          "comision": 23981.46,
           "gastos_pct": 0.0,
-          "costo_compra": 789770.03,
-          "costo_compra_cg": 813463.13,
+          "costo_compra": 799382.14,
+          "costo_compra_cg": 823363.61,
           "gastos_compra": 0.0,
           "kg_ms": 146.0,
           "pct_ms": 2.04,
@@ -49001,7 +48764,7 @@
           "alimento": 51903.65,
           "estructura": 7200.0,
           "sanidad": 7500.0,
-          "mortandad": 7825.52
+          "mortandad": 7920.76
         }
       ],
       "cabezas": 29,
@@ -49013,15 +48776,15 @@
       "fecha_egreso": "2026-09-06",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 53551008.62,
-        "comision": 1336901.18,
+        "compra": 52342541.13,
+        "comision": 1310911.53,
         "gastos": 0.0,
         "alimento": 8641536.02,
         "estructura": 881337.0,
         "sanidad": 219442.0,
-        "mortandad": 528021.69,
-        "total": 65158246.51,
-        "por_kg_vendido": 3484.4
+        "mortandad": 516146.21,
+        "total": 63911913.9,
+        "por_kg_vendido": 3417.75
       },
       "indicadores": {
         "kg_prom_ingreso": 473.1,
@@ -49031,20 +48794,20 @@
         "pct_ms": 2.07,
         "conversion_ms": 4.97,
         "costo_kg_producido": 1956.07,
-        "precio_prom_pagado": 3903.29,
-        "precio_prom_pagado_cg": 4000.73
+        "precio_prom_pagado": 3815.2,
+        "precio_prom_pagado_cg": 3910.76
       },
       "reposicion": {
-        "precio_kg": 4269.03,
+        "precio_kg": 4320.98,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 58568747.61,
-        "comision": 1757062.43,
+        "compra": 59281574.69,
+        "comision": 1778447.24,
         "alimento": 8800216.9,
-        "mortandad": 563431.35,
-        "total": 70790237.29,
-        "por_kg_vendido": 3785.57
+        "mortandad": 570288.75,
+        "total": 71531306.58,
+        "por_kg_vendido": 3825.2
       },
       "verificacion": {
         "estado": "verificado",
@@ -49070,26 +48833,18 @@
         "pesadas_sin_eid_ventana": 124,
         "dias_datamars_prom": 122.8
       },
-      "cobertura_pct": 91.8,
+      "cobertura_pct": 98.7,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 2,
-          "kg_ingreso": 945.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4269.03
-        },
         {
           "tropa": "PEG.ELD.23/08/2026",
           "categoria": "Ternero",
           "cabezas": 1,
           "kg_ingreso": 185.0,
           "fecha_ingreso": "2026-08-21",
-          "estimado_a": 4269.03
+          "estimado_a": 4320.98
         }
       ],
-      "precio_estimado": 4269.03,
+      "precio_estimado": 4320.98,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -49211,7 +48966,7 @@
           "dias": 199,
           "kg_ingreso": 1238.0,
           "kg_egreso": 2535.0,
-          "precio_kg": 4915.11,
+          "precio_kg": 4917.8,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -49222,10 +48977,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 182547.12,
+          "comision": 182647.25,
           "gastos_pct": 0.0,
-          "costo_compra": 6084903.85,
-          "costo_compra_cg": 6267450.96,
+          "costo_compra": 6088241.71,
+          "costo_compra_cg": 6270888.97,
           "gastos_compra": 0.0,
           "kg_ms": 7718.0,
           "pct_ms": 2.06,
@@ -49233,7 +48988,7 @@
           "alimento": 2662540.11,
           "estructura": 373550.0,
           "sanidad": 38790.0,
-          "mortandad": 60292.88
+          "mortandad": 60325.95
         },
         {
           "origen": "confirmado",
@@ -49709,18 +49464,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 37203.57,
           "gastos_pct": 0.0,
-          "costo_compra": 1013234.59,
-          "costo_compra_cg": 1050438.16,
+          "costo_compra": 1013234.53,
+          "costo_compra_cg": 1050438.1,
           "gastos_compra": 0.0,
           "kg_ms": 876.0,
           "pct_ms": 2.03,
@@ -49728,7 +49483,7 @@
           "alimento": 306445.8,
           "estructura": 45200.0,
           "sanidad": 7630.0,
-          "mortandad": 10105.22
+          "mortandad": 10105.21
         },
         {
           "origen": "confirmado",
@@ -49841,21 +49596,21 @@
           "dias": 158,
           "kg_ingreso": 310.0,
           "kg_egreso": 498.0,
-          "precio_kg": 4915.11,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 45710.51,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 31081.65,
           "gastos_pct": 0.0,
-          "costo_compra": 1523683.52,
-          "costo_compra_cg": 1569394.02,
+          "costo_compra": 1424368.35,
+          "costo_compra_cg": 1455450.0,
           "gastos_compra": 0.0,
           "kg_ms": 1293.7,
           "pct_ms": 2.03,
@@ -49863,7 +49618,7 @@
           "alimento": 449050.3,
           "estructura": 62560.0,
           "sanidad": 7630.0,
-          "mortandad": 15097.57
+          "mortandad": 14001.43
         },
         {
           "origen": "confirmado",
@@ -49886,7 +49641,7 @@
           "dias": 143,
           "kg_ingreso": 260.0,
           "kg_egreso": 479.0,
-          "precio_kg": 4915.11,
+          "precio_kg": 4917.8,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -49897,10 +49652,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 38337.84,
+          "comision": 38358.87,
           "gastos_pct": 0.0,
-          "costo_compra": 1277928.11,
-          "costo_compra_cg": 1316265.95,
+          "costo_compra": 1278629.12,
+          "costo_compra_cg": 1316987.99,
           "gastos_compra": 0.0,
           "kg_ms": 1072.2,
           "pct_ms": 2.03,
@@ -49908,7 +49663,7 @@
           "alimento": 372918.21,
           "estructura": 57910.0,
           "sanidad": 7630.0,
-          "mortandad": 12662.48
+          "mortandad": 12669.42
         },
         {
           "origen": "confirmado",
@@ -49931,7 +49686,7 @@
           "dias": 212,
           "kg_ingreso": 244.0,
           "kg_egreso": 464.0,
-          "precio_kg": 4915.11,
+          "precio_kg": 4917.8,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -49942,10 +49697,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 35978.59,
+          "comision": 35998.33,
           "gastos_pct": 0.0,
-          "costo_compra": 1199286.38,
-          "costo_compra_cg": 1235264.97,
+          "costo_compra": 1199944.25,
+          "costo_compra_cg": 1235942.57,
           "gastos_compra": 0.0,
           "kg_ms": 1554.1,
           "pct_ms": 2.07,
@@ -49953,7 +49708,7 @@
           "alimento": 535961.84,
           "estructura": 78415.0,
           "sanidad": 7758.0,
-          "mortandad": 11883.25
+          "mortandad": 11889.77
         },
         {
           "origen": "confirmado",
@@ -50010,15 +49765,15 @@
       "fecha_egreso": "2026-09-06",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 66836586.14,
-        "comision": 1584745.84,
+        "compra": 66741967.65,
+        "comision": 1570257.89,
         "gastos": 0.0,
         "alimento": 26700923.31,
         "estructura": 3559620.0,
         "sanidad": 362958.0,
-        "mortandad": 658213.21,
-        "total": 99703046.51,
-        "por_kg_vendido": 4235.83
+        "mortandad": 657163.61,
+        "total": 99592890.46,
+        "por_kg_vendido": 4231.15
       },
       "indicadores": {
         "kg_prom_ingreso": 277.0,
@@ -50028,20 +49783,20 @@
         "pct_ms": 2.09,
         "conversion_ms": 7.3,
         "costo_kg_producido": 2910.68,
-        "precio_prom_pagado": 5134.59,
-        "precio_prom_pagado_cg": 5256.33
+        "precio_prom_pagado": 5127.32,
+        "precio_prom_pagado_cg": 5247.95
       },
       "reposicion": {
-        "precio_kg": 4915.11,
+        "precio_kg": 4917.8,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 63979609.37,
-        "comision": 1919388.28,
+        "compra": 64014705.29,
+        "comision": 1920441.16,
         "alimento": 27293720.31,
-        "mortandad": 615483.84,
-        "total": 97730779.8,
-        "por_kg_vendido": 4152.04
+        "mortandad": 615821.46,
+        "total": 97767266.22,
+        "por_kg_vendido": 4153.59
       },
       "verificacion": {
         "estado": "verificado",
@@ -50067,7 +49822,7 @@
         "pesadas_sin_eid_ventana": 124,
         "dias_datamars_prom": 216.6
       },
-      "cobertura_pct": 84.2,
+      "cobertura_pct": 86.6,
       "tropas_sin_precio": [
         {
           "tropa": "PEG.DES.19/02/26",
@@ -50075,15 +49830,7 @@
           "cabezas": 5,
           "kg_ingreso": 1238.0,
           "fecha_ingreso": "2026-02-19",
-          "estimado_a": 4915.11
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 1,
-          "kg_ingreso": 310.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 4915.11
+          "estimado_a": 4917.8
         },
         {
           "tropa": "PECDES16/04/2026",
@@ -50091,7 +49838,7 @@
           "cabezas": 1,
           "kg_ingreso": 260.0,
           "fecha_ingreso": "2026-04-16",
-          "estimado_a": 4915.11
+          "estimado_a": 4917.8
         },
         {
           "tropa": "PEG.DES.06/02/26",
@@ -50099,10 +49846,10 @@
           "cabezas": 1,
           "kg_ingreso": 244.0,
           "fecha_ingreso": "2026-02-06",
-          "estimado_a": 4915.11
+          "estimado_a": 4917.8
         }
       ],
-      "precio_estimado": 4915.11,
+      "precio_estimado": 4917.8,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -50224,7 +49971,7 @@
           "dias": 200,
           "kg_ingreso": 1929.0,
           "kg_egreso": 3964.2,
-          "precio_kg": 5181.96,
+          "precio_kg": 5176.48,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -50235,10 +49982,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 299879.95,
+          "comision": 299562.85,
           "gastos_pct": 0.0,
-          "costo_compra": 9995998.43,
-          "costo_compra_cg": 10295878.38,
+          "costo_compra": 9985428.49,
+          "costo_compra_cg": 10284991.35,
           "gastos_compra": 0.0,
           "kg_ms": 12113.3,
           "pct_ms": 2.06,
@@ -50246,7 +49993,7 @@
           "alimento": 4179695.92,
           "estructura": 601280.0,
           "sanidad": 62064.0,
-          "mortandad": 99046.35
+          "mortandad": 98941.62
         },
         {
           "origen": "confirmado",
@@ -50452,18 +50199,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 70686.79,
           "gastos_pct": 0.0,
-          "costo_compra": 2030189.53,
-          "costo_compra_cg": 2100876.32,
+          "costo_compra": 2030189.41,
+          "costo_compra_cg": 2100876.2,
           "gastos_compra": 0.0,
           "kg_ms": 1794.7,
           "pct_ms": 2.03,
@@ -50539,21 +50286,21 @@
           "dias": 159,
           "kg_ingreso": 428.0,
           "kg_egreso": 514.7,
-          "precio_kg": 5181.96,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 66536.35,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 42912.74,
           "gastos_pct": 0.0,
-          "costo_compra": 2217878.35,
-          "costo_compra_cg": 2284414.7,
+          "costo_compra": 1412537.26,
+          "costo_compra_cg": 1455450.0,
           "gastos_compra": 0.0,
           "kg_ms": 1518.2,
           "pct_ms": 2.03,
@@ -50561,7 +50308,7 @@
           "alimento": 526323.86,
           "estructura": 63010.0,
           "sanidad": 7630.0,
-          "mortandad": 21976.07
+          "mortandad": 14001.43
         },
         {
           "origen": "confirmado",
@@ -50809,7 +50556,7 @@
           "dias": 144,
           "kg_ingreso": 252.0,
           "kg_egreso": 486.4,
-          "precio_kg": 5181.96,
+          "precio_kg": 5176.48,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -50820,10 +50567,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 39175.61,
+          "comision": 39134.18,
           "gastos_pct": 0.0,
-          "costo_compra": 1305853.61,
-          "costo_compra_cg": 1345029.21,
+          "costo_compra": 1304472.77,
+          "costo_compra_cg": 1343606.96,
           "gastos_compra": 0.0,
           "kg_ms": 1078.8,
           "pct_ms": 2.03,
@@ -50831,7 +50578,7 @@
           "alimento": 375361.39,
           "estructura": 58360.0,
           "sanidad": 7630.0,
-          "mortandad": 12939.18
+          "mortandad": 12925.5
         },
         {
           "origen": "confirmado",
@@ -50989,7 +50736,7 @@
           "dias": 322,
           "kg_ingreso": 192.0,
           "kg_egreso": 545.0,
-          "precio_kg": 5181.96,
+          "precio_kg": 5176.48,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -51000,10 +50747,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 29848.08,
+          "comision": 29816.52,
           "gastos_pct": 0.0,
-          "costo_compra": 994936.08,
-          "costo_compra_cg": 1024784.16,
+          "costo_compra": 993884.02,
+          "costo_compra_cg": 1023700.54,
           "gastos_compra": 0.0,
           "kg_ms": 2580.0,
           "pct_ms": 2.17,
@@ -51011,7 +50758,7 @@
           "alimento": 903907.46,
           "estructura": 108136.0,
           "sanidad": 7758.0,
-          "mortandad": 9858.42
+          "mortandad": 9848.0
         }
       ],
       "cabezas": 56,
@@ -51023,15 +50770,15 @@
       "fecha_egreso": "2026-09-07",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 82609127.76,
-        "comision": 1848383.68,
+        "compra": 81790783.73,
+        "comision": 1824369.98,
         "gastos": 0.0,
         "alimento": 29346427.14,
         "estructura": 4007767.0,
         "sanidad": 432268.0,
-        "mortandad": 812481.26,
-        "total": 119056454.83,
-        "por_kg_vendido": 4212.89
+        "mortandad": 804377.78,
+        "total": 118205993.62,
+        "por_kg_vendido": 4182.8
       },
       "indicadores": {
         "kg_prom_ingreso": 277.8,
@@ -51041,20 +50788,20 @@
         "pct_ms": 2.07,
         "conversion_ms": 6.66,
         "costo_kg_producido": 2659.71,
-        "precio_prom_pagado": 5310.09,
-        "precio_prom_pagado_cg": 5428.91
+        "precio_prom_pagado": 5257.49,
+        "precio_prom_pagado_cg": 5374.76
       },
       "reposicion": {
-        "precio_kg": 5181.96,
+        "precio_kg": 5176.48,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 80615732.28,
-        "comision": 2418471.97,
+        "compra": 80530487.86,
+        "comision": 2415914.64,
         "alimento": 30079761.25,
-        "mortandad": 775523.34,
-        "total": 118329523.84,
-        "por_kg_vendido": 4187.17
+        "mortandad": 774703.29,
+        "total": 118240902.05,
+        "por_kg_vendido": 4184.03
       },
       "verificacion": {
         "estado": "verificado",
@@ -51080,7 +50827,7 @@
         "pesadas_sin_eid_ventana": 126,
         "dias_datamars_prom": 209.5
       },
-      "cobertura_pct": 82.0,
+      "cobertura_pct": 84.7,
       "tropas_sin_precio": [
         {
           "tropa": "PEG.DES.19/02/26",
@@ -51088,15 +50835,7 @@
           "cabezas": 8,
           "kg_ingreso": 1929.0,
           "fecha_ingreso": "2026-02-19",
-          "estimado_a": 5181.96
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 1,
-          "kg_ingreso": 428.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 5181.96
+          "estimado_a": 5176.48
         },
         {
           "tropa": "PECDES16/04/2026",
@@ -51104,7 +50843,7 @@
           "cabezas": 1,
           "kg_ingreso": 252.0,
           "fecha_ingreso": "2026-04-16",
-          "estimado_a": 5181.96
+          "estimado_a": 5176.48
         },
         {
           "tropa": "PEG.PDP.20/10/25",
@@ -51112,10 +50851,10 @@
           "cabezas": 1,
           "kg_ingreso": 192.0,
           "fecha_ingreso": "2025-10-20",
-          "estimado_a": 5181.96
+          "estimado_a": 5176.48
         }
       ],
-      "precio_estimado": 5181.96,
+      "precio_estimado": 5176.48,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -51282,7 +51021,7 @@
           "dias": 200,
           "kg_ingreso": 1810.0,
           "kg_egreso": 3448.3,
-          "precio_kg": 5132.7,
+          "precio_kg": 5129.94,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -51293,10 +51032,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 278705.67,
+          "comision": 278555.67,
           "gastos_pct": 0.0,
-          "costo_compra": 9290188.89,
-          "costo_compra_cg": 9568894.56,
+          "costo_compra": 9285188.86,
+          "costo_compra_cg": 9563744.53,
           "gastos_compra": 0.0,
           "kg_ms": 10813.8,
           "pct_ms": 2.06,
@@ -51304,7 +51043,7 @@
           "alimento": 3729743.8,
           "estructura": 526120.0,
           "sanidad": 54306.0,
-          "mortandad": 92052.77
+          "mortandad": 92003.22
         },
         {
           "origen": "confirmado",
@@ -51420,18 +51159,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 111610.72,
           "gastos_pct": 0.0,
-          "costo_compra": 3039703.76,
-          "costo_compra_cg": 3151314.48,
+          "costo_compra": 3039703.58,
+          "costo_compra_cg": 3151314.3,
           "gastos_compra": 0.0,
           "kg_ms": 2863.7,
           "pct_ms": 2.03,
@@ -51439,7 +51178,7 @@
           "alimento": 1000854.3,
           "estructura": 141600.0,
           "sanidad": 22890.0,
-          "mortandad": 30315.65
+          "mortandad": 30315.64
         },
         {
           "origen": "confirmado",
@@ -51462,7 +51201,7 @@
           "dias": 213,
           "kg_ingreso": 762.0,
           "kg_egreso": 1474.0,
-          "precio_kg": 5132.7,
+          "precio_kg": 5129.94,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -51473,10 +51212,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 117333.55,
+          "comision": 117270.4,
           "gastos_pct": 0.0,
-          "costo_compra": 3911118.2,
-          "costo_compra_cg": 4028451.74,
+          "costo_compra": 3909013.21,
+          "costo_compra_cg": 4026283.61,
           "gastos_compra": 0.0,
           "kg_ms": 4929.5,
           "pct_ms": 2.07,
@@ -51484,7 +51223,7 @@
           "alimento": 1700513.5,
           "estructura": 236595.0,
           "sanidad": 23274.0,
-          "mortandad": 38753.71
+          "mortandad": 38732.85
         },
         {
           "origen": "confirmado",
@@ -51600,18 +51339,18 @@
           "precio_kg": 5027.51,
           "estimado": false,
           "fuente_precio": "liquidacion",
-          "liq_id": "PEGDAR220526_2026-05-27",
+          "liq_id": "PEGDAR220526_2026-05-22",
           "liq_semaforo": "revisar",
           "liq_motivos": "Novillito: kg_75.9% · Ternera: kg_32.6% · Vaca: kg_18.1% · Vaquillona: kg_16.8%",
           "tropa_norm": "PEGDAR220526",
           "precio_kg_cg": 5128.06,
-          "precio_cab_cg": 1050438.16,
+          "precio_cab_cg": 1050438.1,
           "desbaste_pct": null,
           "comision_pct": 2.0,
           "comision": 36600.27,
           "gastos_pct": 0.0,
-          "costo_compra": 1013837.89,
-          "costo_compra_cg": 1050438.16,
+          "costo_compra": 1013837.83,
+          "costo_compra_cg": 1050438.1,
           "gastos_compra": 0.0,
           "kg_ms": 894.3,
           "pct_ms": 2.03,
@@ -51619,7 +51358,7 @@
           "alimento": 312978.32,
           "estructura": 45650.0,
           "sanidad": 7630.0,
-          "mortandad": 10105.22
+          "mortandad": 10105.21
         },
         {
           "origen": "confirmado",
@@ -51732,21 +51471,21 @@
           "dias": 159,
           "kg_ingreso": 319.0,
           "kg_egreso": 470.6,
-          "precio_kg": 5132.7,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 5013.17,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 49119.95,
+          "precio_kg_cg": 5113.44,
+          "precio_cab_cg": 1455450.0,
+          "desbaste_pct": -38.99,
+          "comision_pct": 2.0,
+          "comision": 31984.02,
           "gastos_pct": 0.0,
-          "costo_compra": 1637331.63,
-          "costo_compra_cg": 1686451.58,
+          "costo_compra": 1423465.98,
+          "costo_compra_cg": 1455450.0,
           "gastos_compra": 0.0,
           "kg_ms": 1272.0,
           "pct_ms": 2.03,
@@ -51754,7 +51493,7 @@
           "alimento": 441422.05,
           "estructura": 63010.0,
           "sanidad": 7630.0,
-          "mortandad": 16223.66
+          "mortandad": 14001.43
         },
         {
           "origen": "confirmado",
@@ -51856,15 +51595,15 @@
       "fecha_egreso": "2026-09-07",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 83749446.64,
-        "comision": 1934750.21,
+        "compra": 83528475.72,
+        "comision": 1917401.13,
         "gastos": 0.0,
         "alimento": 34727246.44,
         "estructura": 4748737.0,
         "sanidad": 479202.0,
-        "mortandad": 824281.97,
-        "total": 126463664.26,
-        "por_kg_vendido": 4105.96
+        "mortandad": 821989.34,
+        "total": 126223051.63,
+        "por_kg_vendido": 4098.15
       },
       "indicadores": {
         "kg_prom_ingreso": 264.1,
@@ -51874,20 +51613,20 @@
         "pct_ms": 2.09,
         "conversion_ms": 6.92,
         "costo_kg_producido": 2769.88,
-        "precio_prom_pagado": 5114.43,
-        "precio_prom_pagado_cg": 5232.58
+        "precio_prom_pagado": 5100.94,
+        "precio_prom_pagado_cg": 5218.03
       },
       "reposicion": {
-        "precio_kg": 5132.7,
+        "precio_kg": 5129.94,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 84048608.35,
-        "comision": 2521458.25,
+        "compra": 84003372.94,
+        "comision": 2520101.19,
         "alimento": 35494403.13,
-        "mortandad": 808547.61,
-        "total": 128100956.35,
-        "por_kg_vendido": 4159.12
+        "mortandad": 808112.45,
+        "total": 128053928.7,
+        "por_kg_vendido": 4157.6
       },
       "verificacion": {
         "estado": "verificado",
@@ -51913,7 +51652,7 @@
         "pesadas_sin_eid_ventana": 126,
         "dias_datamars_prom": 211.4
       },
-      "cobertura_pct": 82.3,
+      "cobertura_pct": 84.3,
       "tropas_sin_precio": [
         {
           "tropa": "PEG.DES.19/02/26",
@@ -51921,7 +51660,7 @@
           "cabezas": 7,
           "kg_ingreso": 1810.0,
           "fecha_ingreso": "2026-02-19",
-          "estimado_a": 5132.7
+          "estimado_a": 5129.94
         },
         {
           "tropa": "PEG.DES.06/02/26",
@@ -51929,18 +51668,10 @@
           "cabezas": 3,
           "kg_ingreso": 762.0,
           "fecha_ingreso": "2026-02-06",
-          "estimado_a": 5132.7
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Novillito",
-          "cabezas": 1,
-          "kg_ingreso": 319.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 5132.7
+          "estimado_a": 5129.94
         }
       ],
-      "precio_estimado": 5132.7,
+      "precio_estimado": 5129.94,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -52997,7 +52728,7 @@
           "dias": 70,
           "kg_ingreso": 1548.0,
           "kg_egreso": 1893.0,
-          "precio_kg": 3142.39,
+          "precio_kg": 3040.22,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -53008,10 +52739,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 145932.77,
+          "comision": 141187.99,
           "gastos_pct": 0.0,
-          "costo_compra": 4864425.63,
-          "costo_compra_cg": 5010358.39,
+          "costo_compra": 4706266.37,
+          "costo_compra_cg": 4847454.36,
           "gastos_compra": 0.0,
           "kg_ms": 3181.7,
           "pct_ms": 2.64,
@@ -53019,7 +52750,7 @@
           "alimento": 1129772.6,
           "estructura": 126000.0,
           "sanidad": 30520.0,
-          "mortandad": 88332.62
+          "mortandad": 85460.62
         },
         {
           "origen": "confirmado",
@@ -53177,7 +52908,7 @@
           "dias": 70,
           "kg_ingreso": 831.0,
           "kg_egreso": 1029.2,
-          "precio_kg": 3142.39,
+          "precio_kg": 3040.22,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -53188,10 +52919,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 78339.88,
+          "comision": 75792.78,
           "gastos_pct": 0.0,
-          "costo_compra": 2611329.26,
-          "costo_compra_cg": 2689669.14,
+          "costo_compra": 2526425.94,
+          "costo_compra_cg": 2602218.72,
           "gastos_compra": 0.0,
           "kg_ms": 1323.2,
           "pct_ms": 2.03,
@@ -53199,7 +52930,7 @@
           "alimento": 469848.89,
           "estructura": 63000.0,
           "sanidad": 15260.0,
-          "mortandad": 21006.32
+          "mortandad": 20323.33
         },
         {
           "origen": "confirmado",
@@ -53582,21 +53313,21 @@
           "dias": 159,
           "kg_ingreso": 418.0,
           "kg_egreso": 640.0,
-          "precio_kg": 3142.39,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 446.36,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 39405.62,
+          "precio_kg_cg": 455.29,
+          "precio_cab_cg": 147573.73,
+          "desbaste_pct": 7.68,
+          "comision_pct": 2.0,
+          "comision": 3731.57,
           "gastos_pct": 0.0,
-          "costo_compra": 1313520.61,
-          "costo_compra_cg": 1352926.23,
+          "costo_compra": 143842.16,
+          "costo_compra_cg": 147573.73,
           "gastos_compra": 0.0,
           "kg_ms": 1704.4,
           "pct_ms": 2.03,
@@ -53604,7 +53335,7 @@
           "alimento": 591591.98,
           "estructura": 63010.0,
           "sanidad": 7630.0,
-          "mortandad": 10566.35
+          "mortandad": 1152.55
         },
         {
           "origen": "confirmado",
@@ -53987,21 +53718,21 @@
           "dias": 159,
           "kg_ingreso": 324.0,
           "kg_egreso": 484.5,
-          "precio_kg": 3142.39,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 30544.07,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 19921.46,
           "gastos_pct": 0.0,
-          "costo_compra": 1018135.6,
-          "costo_compra_cg": 1048679.66,
+          "costo_compra": 1422114.56,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 1693.2,
           "pct_ms": 2.63,
@@ -54009,7 +53740,7 @@
           "alimento": 587632.41,
           "estructura": 63010.0,
           "sanidad": 7630.0,
-          "mortandad": 18488.22
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -54032,7 +53763,7 @@
           "dias": 324,
           "kg_ingreso": 193.0,
           "kg_egreso": 400.3,
-          "precio_kg": 3142.39,
+          "precio_kg": 3040.22,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -54043,10 +53774,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 18194.46,
+          "comision": 17602.9,
           "gastos_pct": 0.0,
-          "costo_compra": 606482.01,
-          "costo_compra_cg": 624676.47,
+          "costo_compra": 586763.18,
+          "costo_compra_cg": 604366.08,
           "gastos_compra": 0.0,
           "kg_ms": 2106.8,
           "pct_ms": 2.19,
@@ -54054,7 +53785,7 @@
           "alimento": 739004.15,
           "estructura": 108656.0,
           "sanidad": 7758.0,
-          "mortandad": 4878.72
+          "mortandad": 4720.1
         }
       ],
       "cabezas": 34,
@@ -54066,15 +53797,15 @@
       "fecha_egreso": "2026-09-07",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 46230656.96,
-        "comision": 1176866.55,
+        "compra": 45202176.06,
+        "comision": 1122686.46,
         "gastos": 0.0,
         "alimento": 21806845.2,
         "estructura": 2061213.0,
         "sanidad": 261212.0,
-        "mortandad": 757952.61,
-        "total": 72294746.33,
-        "por_kg_vendido": 4079.85
+        "mortandad": 751760.07,
+        "total": 71205892.8,
+        "por_kg_vendido": 4018.4
       },
       "indicadores": {
         "kg_prom_ingreso": 406.4,
@@ -54084,20 +53815,20 @@
         "pct_ms": 2.59,
         "conversion_ms": 16.06,
         "costo_kg_producido": 6183.92,
-        "precio_prom_pagado": 3345.68,
-        "precio_prom_pagado_cg": 3430.85
+        "precio_prom_pagado": 3271.25,
+        "precio_prom_pagado_cg": 3352.5
       },
       "reposicion": {
-        "precio_kg": 3142.39,
+        "precio_kg": 3040.22,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 43421597.73,
-        "comision": 1302647.93,
+        "compra": 42009811.8,
+        "comision": 1260294.35,
         "alimento": 22286551.12,
-        "mortandad": 696955.61,
-        "total": 70030177.39,
-        "por_kg_vendido": 3952.05
+        "mortandad": 674295.18,
+        "total": 68553377.45,
+        "por_kg_vendido": 3868.71
       },
       "verificacion": {
         "estado": "verificado",
@@ -54118,7 +53849,7 @@
         "pesadas_sin_eid_ventana": 126,
         "dias_datamars_prom": 141.4
       },
-      "cobertura_pct": 76.0,
+      "cobertura_pct": 81.4,
       "tropas_sin_precio": [
         {
           "tropa": "PEG.DES.29/06/26",
@@ -54126,7 +53857,7 @@
           "cabezas": 4,
           "kg_ingreso": 1548.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3142.39
+          "estimado_a": 3040.22
         },
         {
           "tropa": "PEG.DES.29/06/26",
@@ -54134,23 +53865,7 @@
           "cabezas": 2,
           "kg_ingreso": 831.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3142.39
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 418.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3142.39
-        },
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 324.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3142.39
+          "estimado_a": 3040.22
         },
         {
           "tropa": "PEG..PDP.18/10/25",
@@ -54158,10 +53873,10 @@
           "cabezas": 1,
           "kg_ingreso": 193.0,
           "fecha_ingreso": "2025-10-18",
-          "estimado_a": 3142.39
+          "estimado_a": 3040.22
         }
       ],
-      "precio_estimado": 3142.39,
+      "precio_estimado": 3040.22,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -54643,21 +54358,21 @@
           "dias": 159,
           "kg_ingreso": 459.0,
           "kg_egreso": 583.8,
-          "precio_kg": 3031.47,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 41743.29,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 28222.07,
           "gastos_pct": 0.0,
-          "costo_compra": 1391443.02,
-          "costo_compra_cg": 1433186.31,
+          "costo_compra": 1413813.95,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 2183.5,
           "pct_ms": 2.63,
@@ -54665,7 +54380,7 @@
           "alimento": 757162.62,
           "estructura": 63010.0,
           "sanidad": 7630.0,
-          "mortandad": 25267.07
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -55262,15 +54977,15 @@
       "fecha_egreso": "2026-09-07",
       "comprador": "SOCIEDAD ANONIMA CARNES  PAMPEANA",
       "costos": {
-        "compra": 44190070.04,
-        "comision": 1145880.54,
+        "compra": 44212440.96,
+        "comision": 1132359.33,
         "gastos": 0.0,
         "alimento": 24590098.78,
         "estructura": 1973606.0,
         "sanidad": 238322.0,
-        "mortandad": 799272.81,
-        "total": 72937250.17,
-        "por_kg_vendido": 3879.64
+        "mortandad": 799428.83,
+        "total": 72946255.9,
+        "por_kg_vendido": 3880.12
       },
       "indicadores": {
         "kg_prom_ingreso": 439.5,
@@ -55280,8 +54995,8 @@
         "pct_ms": 2.68,
         "conversion_ms": 13.68,
         "costo_kg_producido": 5180.14,
-        "precio_prom_pagado": 3243.07,
-        "precio_prom_pagado_cg": 3327.17
+        "precio_prom_pagado": 3244.71,
+        "precio_prom_pagado_cg": 3327.82
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -55319,18 +55034,9 @@
         "pesadas_sin_eid_ventana": 126,
         "dias_datamars_prom": 165.5
       },
-      "cobertura_pct": 96.6,
-      "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 459.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 3031.47
-        }
-      ],
-      "precio_estimado": 3031.47,
+      "cobertura_pct": 100.0,
+      "tropas_sin_precio": [],
+      "precio_estimado": 3032.91,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,
@@ -58006,21 +57712,21 @@
           "dias": 160,
           "kg_ingreso": 479.0,
           "kg_egreso": 615.6,
-          "precio_kg": 2988.34,
-          "estimado": true,
-          "fuente_precio": "estimado",
-          "liq_id": null,
-          "liq_semaforo": null,
-          "liq_motivos": null,
+          "precio_kg": 3074.3,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "liq_id": "PECDAR250426_2026-04-01",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "Novillito: kg_39.0%",
           "tropa_norm": "PECDAR250426",
-          "precio_kg_cg": null,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 3.0,
-          "comision": 42942.49,
+          "precio_kg_cg": 3135.78,
+          "precio_cab_cg": 1442036.02,
+          "desbaste_pct": -2.36,
+          "comision_pct": 2.0,
+          "comision": 29451.79,
           "gastos_pct": 0.0,
-          "costo_compra": 1431416.46,
-          "costo_compra_cg": 1474358.95,
+          "costo_compra": 1412584.23,
+          "costo_compra_cg": 1442036.02,
           "gastos_compra": 0.0,
           "kg_ms": 2306.1,
           "pct_ms": 2.63,
@@ -58028,7 +57734,7 @@
           "alimento": 799862.49,
           "estructura": 63460.0,
           "sanidad": 7630.0,
-          "mortandad": 25992.95
+          "mortandad": 25423.1
         },
         {
           "origen": "confirmado",
@@ -58051,7 +57757,7 @@
           "dias": 71,
           "kg_ingreso": 447.0,
           "kg_egreso": 572.2,
-          "precio_kg": 2988.34,
+          "precio_kg": 2991.34,
           "estimado": true,
           "fuente_precio": "estimado",
           "liq_id": null,
@@ -58062,10 +57768,10 @@
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 3.0,
-          "comision": 40073.68,
+          "comision": 40113.8,
           "gastos_pct": 0.0,
-          "costo_compra": 1335789.47,
-          "costo_compra_cg": 1375863.16,
+          "costo_compra": 1337126.81,
+          "costo_compra_cg": 1377240.62,
           "gastos_compra": 0.0,
           "kg_ms": 955.7,
           "pct_ms": 2.64,
@@ -58073,7 +57779,7 @@
           "alimento": 339384.37,
           "estructura": 31950.0,
           "sanidad": 7630.0,
-          "mortandad": 24256.47
+          "mortandad": 24280.75
         },
         {
           "origen": "confirmado",
@@ -58310,15 +58016,15 @@
       "fecha_egreso": "2026-09-08",
       "comprador": "SOCIEDAD ANONIMA CARNES  PAMPEANA",
       "costos": {
-        "compra": 43977744.56,
-        "comision": 1072392.42,
+        "compra": 43960249.66,
+        "comision": 1058941.84,
         "gastos": 0.0,
         "alimento": 22978687.89,
         "estructura": 1926096.0,
         "sanidad": 245568.0,
-        "mortandad": 794233.92,
-        "total": 70994722.79,
-        "por_kg_vendido": 3875.26
+        "mortandad": 793688.35,
+        "total": 70963231.75,
+        "por_kg_vendido": 3873.54
       },
       "indicadores": {
         "kg_prom_ingreso": 444.0,
@@ -58328,8 +58034,8 @@
         "pct_ms": 2.69,
         "conversion_ms": 16.05,
         "costo_kg_producido": 6117.8,
-        "precio_prom_pagado": 3095.07,
-        "precio_prom_pagado_cg": 3170.54
+        "precio_prom_pagado": 3093.84,
+        "precio_prom_pagado_cg": 3168.36
       },
       "reposicion": {
         "precio_kg": 3874.18,
@@ -58367,26 +58073,18 @@
         "pesadas_sin_eid_ventana": 126,
         "dias_datamars_prom": 157.0
       },
-      "cobertura_pct": 93.5,
+      "cobertura_pct": 96.9,
       "tropas_sin_precio": [
-        {
-          "tropa": "PECDAR25/04/2026",
-          "categoria": "Vaca",
-          "cabezas": 1,
-          "kg_ingreso": 479.0,
-          "fecha_ingreso": "2026-04-01",
-          "estimado_a": 2988.34
-        },
         {
           "tropa": "PEG.DES.29/06/26",
           "categoria": "Vaca",
           "cabezas": 1,
           "kg_ingreso": 447.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 2988.34
+          "estimado_a": 2991.34
         }
       ],
-      "precio_estimado": 2988.34,
+      "precio_estimado": 2991.34,
       "meses_pv_acotados": {
         "2026-04": 1.91,
         "2026-06": 1.92,

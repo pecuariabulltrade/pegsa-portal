@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generado": "2026-09-16T17:07:14.614745",
+    "generado": "2026-09-16T18:07:21.532901",
     "fuente": "archivos",
     "motivo_sin_base": "sin SUPABASE_URL / SUPABASE_SERVICE_KEY",
     "n_supabase": 0,
-    "n_archivos": 142,
-    "n_liquidaciones": 142,
+    "n_archivos": 143,
+    "n_liquidaciones": 143,
     "n_anuladas": 0,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
       "ok": 97,
-      "revisar": 62,
-      "sin_liquidar": 291,
+      "revisar": 63,
+      "sin_liquidar": 290,
       "terceros": 117,
       "tol_kg_pct": 8,
       "tol_cab": 0
@@ -4265,6 +4265,131 @@
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": null,
         "cabezas_dif": -163.0
+      }
+    },
+    {
+      "id": "PECDAR250426_2026-04-01",
+      "fecha": "2026-04-01",
+      "consignataria": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "nro_liquidacion": "11-9291/9352/9254",
+      "archivo": "14-04-26 feria darwash (1)",
+      "comision_modo": "pct",
+      "comision_valor": 0.02,
+      "gastos_monto": null,
+      "observaciones": "es el cruce de varias ferias",
+      "estado": "cargada",
+      "generado": "2026-09-16T21:04:44.405Z",
+      "version_portal": "v15.74.10",
+      "categorias": [
+        {
+          "tropa": "PECDAR25/04/2026",
+          "tropa_norm": "PECDAR250426",
+          "hotelero": "PEGSA",
+          "categoria": "Novillito",
+          "cabezas_wc": 68,
+          "kg_wc": 26901,
+          "cabezas_liq": 68,
+          "kg_liq": 19355,
+          "precio_modo": "kg",
+          "precio_valor": 5013.17489,
+          "categorias_de": "caravanas",
+          "kg_liq_cab": 284.63235294117646,
+          "precio_kg": 5013.17489,
+          "importe": 97029999.99595,
+          "comision_cat": 1940599.999919,
+          "gastos_cat": 0.0,
+          "importe_cg": 98970599.995869,
+          "precio_kg_cg": 5113.4383878,
+          "precio_cab_cg": 1455449.9999392498,
+          "kg_wc_cab": 395.6029411764706,
+          "desbaste_pct": -38.98734177215191
+        },
+        {
+          "tropa": "PECDAR25/04/2026",
+          "tropa_norm": "PECDAR250426",
+          "hotelero": "PEGSA",
+          "categoria": "Ternero",
+          "cabezas_wc": 51,
+          "kg_wc": 9558,
+          "cabezas_liq": 51,
+          "kg_liq": 9735,
+          "precio_modo": "kg",
+          "precio_valor": 4876.2198,
+          "categorias_de": "caravanas",
+          "kg_liq_cab": 190.88235294117646,
+          "precio_kg": 4876.2198,
+          "importe": 47469999.753,
+          "comision_cat": 949399.99506,
+          "gastos_cat": 0.0,
+          "importe_cg": 48419399.748059995,
+          "precio_kg_cg": 4973.744196,
+          "precio_cab_cg": 949399.9950599999,
+          "kg_wc_cab": 187.41176470588235,
+          "desbaste_pct": 1.8181818181818175
+        },
+        {
+          "tropa": "PECDAR25/04/2026",
+          "tropa_norm": "PECDAR250426",
+          "hotelero": "PEGSA",
+          "categoria": "Vaca",
+          "cabezas_wc": 37,
+          "kg_wc": 17417,
+          "cabezas_liq": 37,
+          "kg_liq": 17015,
+          "precio_modo": "kg",
+          "precio_valor": 3074.2962,
+          "categorias_de": "caravanas",
+          "kg_liq_cab": 459.86486486486484,
+          "precio_kg": 3074.2962,
+          "importe": 52309149.843,
+          "comision_cat": 1046182.9968600001,
+          "gastos_cat": 0.0,
+          "importe_cg": 53355332.83986,
+          "precio_kg_cg": 3135.782124,
+          "precio_cab_cg": 1442036.0226989188,
+          "kg_wc_cab": 470.72972972972974,
+          "desbaste_pct": -2.362621216573619
+        },
+        {
+          "tropa": "PECDAR25/04/2026",
+          "tropa_norm": "PECDAR250426",
+          "hotelero": "PEGSA",
+          "categoria": "Vaquillona",
+          "cabezas_wc": 75,
+          "kg_wc": 22443,
+          "cabezas_liq": 75,
+          "kg_liq": 24310,
+          "precio_modo": "kg",
+          "precio_valor": 446.35993,
+          "categorias_de": "caravanas",
+          "kg_liq_cab": 324.1333333333333,
+          "precio_kg": 446.35993,
+          "importe": 10851009.898300001,
+          "comision_cat": 217020.19796600004,
+          "gastos_cat": 0.0,
+          "importe_cg": 11068030.096266001,
+          "precio_kg_cg": 455.2871286000001,
+          "precio_cab_cg": 147573.73461688,
+          "kg_wc_cab": 299.24,
+          "desbaste_pct": 7.679967091731793
+        }
+      ],
+      "total": {
+        "cabezas_liq": 231.0,
+        "kg_liq": 70415.0,
+        "cabezas_wc": 231.0,
+        "kg_wc": 76319.0,
+        "importe": 207660159.49025,
+        "comision": 4153203.189805,
+        "gastos": 0.0,
+        "importe_cg": 211813362.680055,
+        "precio_kg": 2949.089817372009,
+        "precio_kg_cg": 3008.071613719449,
+        "precio_cab_cg": 916940.963982922,
+        "recargo_pct": 2.0000000000000018,
+        "desbaste_pct": -8.384577149755028,
+        "cabezas_dif": 0.0
       }
     },
     {
@@ -11379,7 +11504,11 @@
       "Vaca": {
         "liq_id": "AGRPEC060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 32,
+        "liq_ids": [
+          "AGRPEC060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
         "kg_liq": 17060.0,
         "precio_kg": 3228.886283704572,
         "precio_kg_cg": 3325.7528722157094,
@@ -11396,7 +11525,11 @@
       "Vaca": {
         "liq_id": "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12",
         "fecha": "2025-09-12",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 21811.71,
         "precio_kg": 2591.640914036997,
         "precio_kg_cg": 2645.3319388531017,
@@ -11405,7 +11538,7 @@
         "gastos_cat": 0.0,
         "importe": 56528120.041109905,
         "importe_cg": 57699213.10400158,
-        "desbaste_pct": -27.3673636775842,
+        "desbaste_pct": -27.367363677584205,
         "hotelero": "PEGSA"
       }
     },
@@ -11413,9 +11546,13 @@
       "Ternera": {
         "liq_id": "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12",
         "fecha": "2025-09-12",
-        "cabezas_liq": 95,
+        "liq_ids": [
+          "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 95.0,
         "kg_liq": 21257.07,
-        "precio_kg": 3578.209277238404,
+        "precio_kg": 3578.2092772384035,
         "precio_kg_cg": 3652.3390388349517,
         "precio_cab_cg": 817242.3853920767,
         "comision_cat": 1575781.5313411327,
@@ -11428,7 +11565,11 @@
       "Vaca": {
         "liq_id": "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12",
         "fecha": "2025-09-12",
-        "cabezas_liq": 108,
+        "liq_ids": [
+          "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 108.0,
         "kg_liq": 47113.29,
         "precio_kg": 2591.640914036997,
         "precio_kg_cg": 2645.3319388531013,
@@ -11445,9 +11586,13 @@
       "Novillo": {
         "liq_id": "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12",
         "fecha": "2025-09-12",
-        "cabezas_liq": 7,
+        "liq_ids": [
+          "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 7.0,
         "kg_liq": 3420.0,
-        "precio_kg": 3385.672514619883,
+        "precio_kg": 3385.6725146198833,
         "precio_kg_cg": 3455.813492105263,
         "precio_cab_cg": 1688411.7347142857,
         "comision_cat": 239882.14299999998,
@@ -11460,7 +11605,11 @@
       "Ternero": {
         "liq_id": "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12",
         "fecha": "2025-09-12",
-        "cabezas_liq": 84,
+        "liq_ids": [
+          "ALODAR120925-BULDAR120925-PEGDAR120925_2025-09-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 84.0,
         "kg_liq": 19667.45,
         "precio_kg": 3886.623956513298,
         "precio_kg_cg": 3967.1431450203836,
@@ -11477,9 +11626,13 @@
       "Toro": {
         "liq_id": "BULBRE100226_2026-02-10",
         "fecha": "2026-02-10",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "BULBRE100226_2026-02-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 4640.0,
-        "precio_kg": 3785.991379310345,
+        "precio_kg": 3785.9913793103447,
         "precio_kg_cg": 3931.206864655173,
         "precio_cab_cg": 1302914.2751428573,
         "comision_cat": 673799.8520000001,
@@ -11492,7 +11645,11 @@
       "Vaca": {
         "liq_id": "BULBRE100226_2026-02-10",
         "fecha": "2026-02-10",
-        "cabezas_liq": 23,
+        "liq_ids": [
+          "BULBRE100226_2026-02-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
         "kg_liq": 10590.0,
         "precio_kg": 3203.342776203966,
         "precio_kg_cg": 3326.210191728045,
@@ -11509,7 +11666,11 @@
       "Novillito": {
         "liq_id": "BULBYC121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "BULBYC121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 3430.0,
         "precio_kg": 4360.0,
         "precio_kg_cg": 4515.6738,
@@ -11524,7 +11685,11 @@
       "Vaquillona": {
         "liq_id": "BULBYC121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 6,
+        "liq_ids": [
+          "BULBYC121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 6.0,
         "kg_liq": 2110.0,
         "precio_kg": 3674.170616113744,
         "precio_kg_cg": 3805.3568779620855,
@@ -11541,7 +11706,11 @@
       "Novillito": {
         "liq_id": "BULCAR181225_2025-12-18",
         "fecha": "2025-12-18",
-        "cabezas_liq": 22,
+        "liq_ids": [
+          "BULCAR181225_2025-12-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
         "kg_liq": 6050.0,
         "precio_kg": 5008.132231404958,
         "precio_kg_cg": 5166.5294376198335,
@@ -11556,7 +11725,11 @@
       "Vaca": {
         "liq_id": "BULCAR181225_2025-12-18",
         "fecha": "2025-12-18",
-        "cabezas_liq": 20,
+        "liq_ids": [
+          "BULCAR181225_2025-12-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
         "kg_liq": 10010.0,
         "precio_kg": 2824.815184815185,
         "precio_kg_cg": 2914.15843948052,
@@ -11573,7 +11746,11 @@
       "Vaca": {
         "liq_id": "BULCYG141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 83,
+        "liq_ids": [
+          "BULCYG141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 83.0,
         "kg_liq": 41980.0,
         "precio_kg": 2718.256312529776,
         "precio_kg_cg": 2828.593054511672,
@@ -11590,7 +11767,11 @@
       "Ternera": {
         "liq_id": "BULDAR041225-PEGDAR041225_2025-12-04",
         "fecha": "2025-12-04",
-        "cabezas_liq": 25,
+        "liq_ids": [
+          "BULDAR041225-PEGDAR041225_2025-12-04"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 25.0,
         "kg_liq": 5450.0,
         "precio_kg": 3974.311926605505,
         "precio_kg_cg": 4053.7981651376153,
@@ -11605,9 +11786,13 @@
       "Ternero": {
         "liq_id": "BULDAR041225-PEGDAR041225_2025-12-04",
         "fecha": "2025-12-04",
-        "cabezas_liq": 62,
+        "liq_ids": [
+          "BULDAR041225-PEGDAR041225_2025-12-04"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 62.0,
         "kg_liq": 13516.0,
-        "precio_kg": 3889.09440662918,
+        "precio_kg": 3889.0944066291804,
         "precio_kg_cg": 3966.876294761764,
         "precio_cab_cg": 864779.0322580645,
         "comision_cat": 1051300.0,
@@ -11622,7 +11807,11 @@
       "Novillito": {
         "liq_id": "BULDAR041225-PEGDAR041225_2025-12-04",
         "fecha": "2025-12-04",
-        "cabezas_liq": 2,
+        "liq_ids": [
+          "BULDAR041225-PEGDAR041225_2025-12-04"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 2.0,
         "kg_liq": 745.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3060.0,
@@ -11637,9 +11826,13 @@
       "Vaca": {
         "liq_id": "BULDAR041225-PEGDAR041225_2025-12-04",
         "fecha": "2025-12-04",
-        "cabezas_liq": 4,
+        "liq_ids": [
+          "BULDAR041225-PEGDAR041225_2025-12-04"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 4.0,
         "kg_liq": 1805.0,
-        "precio_kg": 2802.105263157895,
+        "precio_kg": 2802.1052631578955,
         "precio_kg_cg": 2858.147368421053,
         "precio_cab_cg": 1289739.0000000002,
         "comision_cat": 101156.00000000001,
@@ -11654,7 +11847,11 @@
       "Ternero": {
         "liq_id": "BULDAR050226_2026-02-05",
         "fecha": "2026-02-05",
-        "cabezas_liq": 80,
+        "liq_ids": [
+          "BULDAR050226_2026-02-05"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 80.0,
         "kg_liq": 18787.0,
         "precio_kg": 3935.247777718635,
         "precio_kg_cg": 4013.952733273008,
@@ -11671,7 +11868,11 @@
       "Ternera": {
         "liq_id": "BULDAR100626_2026-06-10",
         "fecha": "2026-06-10",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "BULDAR100626_2026-06-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 1810.0,
         "precio_kg": 5469.613259668508,
         "precio_kg_cg": 5579.005524861878,
@@ -11686,7 +11887,11 @@
       "Ternero": {
         "liq_id": "BULDAR100626_2026-06-10",
         "fecha": "2026-06-10",
-        "cabezas_liq": 102,
+        "liq_ids": [
+          "BULDAR100626_2026-06-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 102.0,
         "kg_liq": 23890.0,
         "precio_kg": 5914.608622854751,
         "precio_kg_cg": 6032.900795311846,
@@ -11701,7 +11906,11 @@
       "Vaca": {
         "liq_id": "BULDAR100626_2026-06-10",
         "fecha": "2026-06-10",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "BULDAR100626_2026-06-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 485.0,
         "precio_kg": 4123.711340206186,
         "precio_kg_cg": 4206.18556701031,
@@ -11718,9 +11927,13 @@
       "Novillito": {
         "liq_id": "BULDAR200126_2026-01-20",
         "fecha": "2026-01-20",
-        "cabezas_liq": 15,
+        "liq_ids": [
+          "BULDAR200126_2026-01-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 15.0,
         "kg_liq": 3690.0,
-        "precio_kg": 3983.739837398374,
+        "precio_kg": 3983.7398373983738,
         "precio_kg_cg": 4063.4146341463415,
         "precio_cab_cg": 999600.0,
         "comision_cat": 294000.0,
@@ -11733,7 +11946,11 @@
       "Novillo": {
         "liq_id": "BULDAR200126_2026-01-20",
         "fecha": "2026-01-20",
-        "cabezas_liq": 44,
+        "liq_ids": [
+          "BULDAR200126_2026-01-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 44.0,
         "kg_liq": 16190.0,
         "precio_kg": 4276.831377393452,
         "precio_kg_cg": 4362.3680049413215,
@@ -11748,7 +11965,11 @@
       "Ternera": {
         "liq_id": "BULDAR200126_2026-01-20",
         "fecha": "2026-01-20",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "BULDAR200126_2026-01-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 2345.0,
         "precio_kg": 3113.006396588486,
         "precio_kg_cg": 3175.2665245202556,
@@ -11763,7 +11984,11 @@
       "Vaca": {
         "liq_id": "BULDAR200126_2026-01-20",
         "fecha": "2026-01-20",
-        "cabezas_liq": 71,
+        "liq_ids": [
+          "BULDAR200126_2026-01-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 71.0,
         "kg_liq": 31580.0,
         "precio_kg": 2747.009183027232,
         "precio_kg_cg": 2801.949366687777,
@@ -11772,13 +11997,17 @@
         "gastos_cat": 0.0,
         "importe": 86750550.0,
         "importe_cg": 88485561.0,
-        "desbaste_pct": 5.702976567447758,
+        "desbaste_pct": 5.702976567447757,
         "hotelero": "PEGSA"
       },
       "Vaquillona": {
         "liq_id": "BULDAR200126_2026-01-20",
         "fecha": "2026-01-20",
-        "cabezas_liq": 68,
+        "liq_ids": [
+          "BULDAR200126_2026-01-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 68.0,
         "kg_liq": 27980.0,
         "precio_kg": 4003.693709792709,
         "precio_kg_cg": 4083.7675839885633,
@@ -11795,7 +12024,11 @@
       "Novillito": {
         "liq_id": "BULDAR210126_2026-01-21",
         "fecha": "2026-01-21",
-        "cabezas_liq": 23,
+        "liq_ids": [
+          "BULDAR210126_2026-01-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
         "kg_liq": 5785.0,
         "precio_kg": 4708.729472774417,
         "precio_kg_cg": 4802.904062229905,
@@ -11810,7 +12043,11 @@
       "Novillo": {
         "liq_id": "BULDAR210126_2026-01-21",
         "fecha": "2026-01-21",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "BULDAR210126_2026-01-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 5255.0,
         "precio_kg": 3916.622264509991,
         "precio_kg_cg": 3994.954709800191,
@@ -11825,7 +12062,11 @@
       "Vaca": {
         "liq_id": "BULDAR210126_2026-01-21",
         "fecha": "2026-01-21",
-        "cabezas_liq": 80,
+        "liq_ids": [
+          "BULDAR210126_2026-01-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 80.0,
         "kg_liq": 35690.0,
         "precio_kg": 2722.425049033342,
         "precio_kg_cg": 2776.8735500140087,
@@ -11840,7 +12081,11 @@
       "Vaquillona": {
         "liq_id": "BULDAR210126_2026-01-21",
         "fecha": "2026-01-21",
-        "cabezas_liq": 5,
+        "liq_ids": [
+          "BULDAR210126_2026-01-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
         "kg_liq": 1690.0,
         "precio_kg": 3846.153846153846,
         "precio_kg_cg": 3923.076923076923,
@@ -11857,7 +12102,11 @@
       "Ternero": {
         "liq_id": "BULDAR211125_2025-11-21",
         "fecha": "2025-11-21",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "BULDAR211125_2025-11-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 203.0,
         "precio_kg": 3497.536945812808,
         "precio_kg_cg": 3567.487684729064,
@@ -11872,9 +12121,13 @@
       "Vaca": {
         "liq_id": "BULDAR211125_2025-11-21",
         "fecha": "2025-11-21",
-        "cabezas_liq": 58,
+        "liq_ids": [
+          "BULDAR211125_2025-11-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 58.0,
         "kg_liq": 28140.0,
-        "precio_kg": 3114.413646055437,
+        "precio_kg": 3114.4136460554373,
         "precio_kg_cg": 3176.701918976546,
         "precio_cab_cg": 1541248.1379310344,
         "comision_cat": 1752792.0,
@@ -11887,7 +12140,11 @@
       "Vaquillona": {
         "liq_id": "BULDAR211125_2025-11-21",
         "fecha": "2025-11-21",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "BULDAR211125_2025-11-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 2900.0,
         "precio_kg": 4317.241379310345,
         "precio_kg_cg": 4403.586206896552,
@@ -11904,7 +12161,11 @@
       "Ternero": {
         "liq_id": "BULDAR251125_2025-11-25",
         "fecha": "2025-11-25",
-        "cabezas_liq": 233,
+        "liq_ids": [
+          "BULDAR251125_2025-11-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 233.0,
         "kg_liq": 55175.0,
         "precio_kg": 4962.211146352514,
         "precio_kg_cg": 5061.455369279565,
@@ -11921,7 +12182,11 @@
       "Vaca": {
         "liq_id": "BULENR230626_2026-06-23",
         "fecha": "2026-06-23",
-        "cabezas_liq": 33,
+        "liq_ids": [
+          "BULENR230626_2026-06-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 33.0,
         "kg_liq": 15566.0,
         "precio_kg": 2650.0,
         "precio_kg_cg": 2703.0,
@@ -11938,7 +12203,11 @@
       "Novillito": {
         "liq_id": "BULFAL021225_2025-12-02",
         "fecha": "2025-12-02",
-        "cabezas_liq": 23,
+        "liq_ids": [
+          "BULFAL021225_2025-12-02"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
         "kg_liq": 8300.0,
         "precio_kg": 4228.795180722892,
         "precio_kg_cg": 4398.107682168675,
@@ -11953,7 +12222,11 @@
       "Vaca": {
         "liq_id": "BULFAL021225_2025-12-02",
         "fecha": "2025-12-02",
-        "cabezas_liq": 29,
+        "liq_ids": [
+          "BULFAL021225_2025-12-02"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 29.0,
         "kg_liq": 13180.0,
         "precio_kg": 2997.73899848255,
         "precio_kg_cg": 3117.762472503794,
@@ -11970,7 +12243,11 @@
       "Vaquillona": {
         "liq_id": "BULFAL031225_2025-12-03",
         "fecha": "2025-12-03",
-        "cabezas_liq": 45,
+        "liq_ids": [
+          "BULFAL031225_2025-12-03"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 45.0,
         "kg_liq": 12410.0,
         "precio_kg": 4400.757453666398,
         "precio_kg_cg": 4576.954980596293,
@@ -11987,7 +12264,11 @@
       "Vaca": {
         "liq_id": "BULFER020126_2026-01-02",
         "fecha": "2026-01-02",
-        "cabezas_liq": 30,
+        "liq_ids": [
+          "BULFER020126_2026-01-02"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 30.0,
         "kg_liq": 13110.0,
         "precio_kg": 2946.643783371472,
         "precio_kg_cg": 3064.6244538138826,
@@ -12004,8 +12285,12 @@
       "Novillito": {
         "liq_id": "BULFER091225_2025-12-09",
         "fecha": "2025-12-09",
-        "cabezas_liq": 40,
-        "kg_liq": 14530,
+        "liq_ids": [
+          "BULFER091225_2025-12-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
+        "kg_liq": 14530.0,
         "precio_kg": 4100.0,
         "precio_kg_cg": 4223.0,
         "precio_cab_cg": 1534004.75,
@@ -12019,8 +12304,12 @@
       "Vaca": {
         "liq_id": "BULFER091225_2025-12-09",
         "fecha": "2025-12-09",
-        "cabezas_liq": 20,
-        "kg_liq": 9364,
+        "liq_ids": [
+          "BULFER091225_2025-12-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
+        "kg_liq": 9364.0,
         "precio_kg": 3200.0,
         "precio_kg_cg": 3296.0,
         "precio_cab_cg": 1543187.2,
@@ -12034,8 +12323,12 @@
       "Vaquillona": {
         "liq_id": "BULFER091225_2025-12-09",
         "fecha": "2025-12-09",
-        "cabezas_liq": 4,
-        "kg_liq": 1545,
+        "liq_ids": [
+          "BULFER091225_2025-12-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 4.0,
+        "kg_liq": 1545.0,
         "precio_kg": 4100.0,
         "precio_kg_cg": 4223.0,
         "precio_cab_cg": 1631133.75,
@@ -12051,7 +12344,11 @@
       "Vaca": {
         "liq_id": "BULFER290126_2026-01-29",
         "fecha": "2026-01-29",
-        "cabezas_liq": 58,
+        "liq_ids": [
+          "BULFER290126_2026-01-29"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 58.0,
         "kg_liq": 29840.0,
         "precio_kg": 3257.741286863271,
         "precio_kg_cg": 3388.1486705764073,
@@ -12068,7 +12365,11 @@
       "Toro": {
         "liq_id": "BULFON141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "BULFON141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 5662.0,
         "precio_kg": 3125.0,
         "precio_kg_cg": 3187.5,
@@ -12083,7 +12384,11 @@
       "Vaca": {
         "liq_id": "BULFON141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 23,
+        "liq_ids": [
+          "BULFON141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
         "kg_liq": 12867.0,
         "precio_kg": 3125.0,
         "precio_kg_cg": 3187.5,
@@ -12100,7 +12405,11 @@
       "Toro": {
         "liq_id": "BULFRE290126_2026-01-29",
         "fecha": "2026-01-29",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "BULFRE290126_2026-01-29"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 7139.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3060.0,
@@ -12115,7 +12424,11 @@
       "Vaca": {
         "liq_id": "BULFRE290126_2026-01-29",
         "fecha": "2026-01-29",
-        "cabezas_liq": 21,
+        "liq_ids": [
+          "BULFRE290126_2026-01-29"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 21.0,
         "kg_liq": 10679.0,
         "precio_kg": 2900.0,
         "precio_kg_cg": 2958.0,
@@ -12132,7 +12445,11 @@
       "Vaca": {
         "liq_id": "BULGGA190925_2025-09-19",
         "fecha": "2025-09-19",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "BULGGA190925_2025-09-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 15380.0,
         "precio_kg": 2595.760728218465,
         "precio_kg_cg": 2743.5970889726914,
@@ -12149,7 +12466,11 @@
       "Vaca": {
         "liq_id": "BULHUI121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 141,
+        "liq_ids": [
+          "BULHUI121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 141.0,
         "kg_liq": 60030.0,
         "precio_kg": 2808.532400466434,
         "precio_kg_cg": 2895.0071130767956,
@@ -12166,7 +12487,11 @@
       "Novillito": {
         "liq_id": "BULHUI160126_2026-01-16",
         "fecha": "2026-01-16",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "BULHUI160126_2026-01-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 2880.0,
         "precio_kg": 4541.666666666667,
         "precio_kg_cg": 4681.441,
@@ -12181,7 +12506,11 @@
       "Novillo": {
         "liq_id": "BULHUI160126_2026-01-16",
         "fecha": "2026-01-16",
-        "cabezas_liq": 122,
+        "liq_ids": [
+          "BULHUI160126_2026-01-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 122.0,
         "kg_liq": 49700.0,
         "precio_kg": 4024.87323943662,
         "precio_kg_cg": 4148.742738253522,
@@ -12196,7 +12525,11 @@
       "Toro": {
         "liq_id": "BULHUI160126_2026-01-16",
         "fecha": "2026-01-16",
-        "cabezas_liq": 5,
+        "liq_ids": [
+          "BULHUI160126_2026-01-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
         "kg_liq": 2500.0,
         "precio_kg": 3593.0,
         "precio_kg_cg": 3703.578168,
@@ -12211,7 +12544,11 @@
       "Vaca": {
         "liq_id": "BULHUI160126_2026-01-16",
         "fecha": "2026-01-16",
-        "cabezas_liq": 157,
+        "liq_ids": [
+          "BULHUI160126_2026-01-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 157.0,
         "kg_liq": 73240.0,
         "precio_kg": 2794.614964500273,
         "precio_kg_cg": 2880.6220346477335,
@@ -12226,7 +12563,11 @@
       "Vaquillona": {
         "liq_id": "BULHUI160126_2026-01-16",
         "fecha": "2026-01-16",
-        "cabezas_liq": 38,
+        "liq_ids": [
+          "BULHUI160126_2026-01-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 38.0,
         "kg_liq": 12420.0,
         "precio_kg": 4163.800322061192,
         "precio_kg_cg": 4291.945440772946,
@@ -12243,9 +12584,13 @@
       "Novillito": {
         "liq_id": "BULHUI270526_2026-05-27",
         "fecha": "2026-05-27",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "BULHUI270526_2026-05-27"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 6020.0,
-        "precio_kg": 3630.282392026578,
+        "precio_kg": 3630.2823920265782,
         "precio_kg_cg": 3742.2185193023256,
         "precio_cab_cg": 1609153.9633000002,
         "comision_cat": 673855.4862,
@@ -12258,7 +12603,11 @@
       "Ternera": {
         "liq_id": "BULHUI270526_2026-05-27",
         "fecha": "2026-05-27",
-        "cabezas_liq": 22,
+        "liq_ids": [
+          "BULHUI270526_2026-05-27"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
         "kg_liq": 4400.0,
         "precio_kg": 5586.363636363636,
         "precio_kg_cg": 5758.613572727272,
@@ -12275,7 +12624,11 @@
       "Vaca": {
         "liq_id": "BULHVG020126_2026-01-02",
         "fecha": "2026-01-02",
-        "cabezas_liq": 28,
+        "liq_ids": [
+          "BULHVG020126_2026-01-02"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 28.0,
         "kg_liq": 13613.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3090.0,
@@ -12292,7 +12645,11 @@
       "Novillo": {
         "liq_id": "BULLBRE14126_2026-01-14",
         "fecha": "2026-01-14",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "BULLBRE14126_2026-01-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 6250.0,
         "precio_kg": 3646.72,
         "precio_kg_cg": 3774.37708032,
@@ -12301,13 +12658,17 @@
         "gastos_cat": 0.0,
         "importe": 22792000.0,
         "importe_cg": 23589856.752,
-        "desbaste_pct": -1.9199999999999964,
+        "desbaste_pct": -1.9199999999999966,
         "hotelero": "PEGSA"
       },
       "Vaca": {
         "liq_id": "BULLBRE14126_2026-01-14",
         "fecha": "2026-01-14",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "BULLBRE14126_2026-01-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 6950.0,
         "precio_kg": 2688.489208633093,
         "precio_kg_cg": 2782.602461870503,
@@ -12324,7 +12685,11 @@
       "Vaca": {
         "liq_id": "BULLDAR140526_2026-05-14",
         "fecha": "2026-05-14",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "BULLDAR140526_2026-05-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 27334.27,
         "precio_kg": 3166.135032370774,
         "precio_kg_cg": 3229.457733018189,
@@ -12341,7 +12706,11 @@
       "Vaca": {
         "liq_id": "BULLDARW280526-PEGDARW280526_2026-05-28",
         "fecha": "2026-05-28",
-        "cabezas_liq": 47,
+        "liq_ids": [
+          "BULLDARW280526-PEGDARW280526_2026-05-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 47.0,
         "kg_liq": 23685.0,
         "precio_kg": 3094.621068186616,
         "precio_kg_cg": 3106.433236803884,
@@ -12356,7 +12725,11 @@
       "Vaquillona": {
         "liq_id": "BULLDARW280526-PEGDARW280526_2026-05-28",
         "fecha": "2026-05-28",
-        "cabezas_liq": 31,
+        "liq_ids": [
+          "BULLDARW280526-PEGDARW280526_2026-05-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 31.0,
         "kg_liq": 12215.0,
         "precio_kg": 3645.579205894392,
         "precio_kg_cg": 3659.494381723291,
@@ -12373,7 +12746,11 @@
       "Novillito": {
         "liq_id": "BULLDARW280526-PEGDARW280526_2026-05-28",
         "fecha": "2026-05-28",
-        "cabezas_liq": 19,
+        "liq_ids": [
+          "BULLDARW280526-PEGDARW280526_2026-05-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 19.0,
         "kg_liq": 6015.0,
         "precio_kg": 4620.116375727348,
         "precio_kg_cg": 4637.751359933499,
@@ -12390,7 +12767,11 @@
       "Novillo": {
         "liq_id": "BULLHUIN150526_2026-05-15",
         "fecha": "2026-05-15",
-        "cabezas_liq": 24,
+        "liq_ids": [
+          "BULLHUIN150526_2026-05-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 24.0,
         "kg_liq": 9800.0,
         "precio_kg": 4411.030612244898,
         "precio_kg_cg": 4547.040330142857,
@@ -12405,7 +12786,11 @@
       "Vaca": {
         "liq_id": "BULLHUIN150526_2026-05-15",
         "fecha": "2026-05-15",
-        "cabezas_liq": 120,
+        "liq_ids": [
+          "BULLHUIN150526_2026-05-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 120.0,
         "kg_liq": 54030.0,
         "precio_kg": 2937.231167869702,
         "precio_kg_cg": 3027.7977536997964,
@@ -12420,9 +12805,13 @@
       "Vaquillona": {
         "liq_id": "BULLHUIN150526_2026-05-15",
         "fecha": "2026-05-15",
-        "cabezas_liq": 75,
+        "liq_ids": [
+          "BULLHUIN150526_2026-05-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 75.0,
         "kg_liq": 25740.0,
-        "precio_kg": 3931.779331779332,
+        "precio_kg": 3931.7793317793326,
         "precio_kg_cg": 4053.0118156954168,
         "precio_cab_cg": 1390993.655146667,
         "comision_cat": 3120524.1360000004,
@@ -12437,7 +12826,11 @@
       "Vaca": {
         "liq_id": "BULLMAR070526_2026-05-07",
         "fecha": "2026-05-07",
-        "cabezas_liq": 186,
+        "liq_ids": [
+          "BULLMAR070526_2026-05-07"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 186.0,
         "kg_liq": 93872.0,
         "precio_kg": 3187.75513465144,
         "precio_kg_cg": 3283.3877886909836,
@@ -12454,7 +12847,11 @@
       "Novillito": {
         "liq_id": "BULLVILL210526_2026-05-21",
         "fecha": "2026-05-21",
-        "cabezas_liq": 35,
+        "liq_ids": [
+          "BULLVILL210526_2026-05-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 35.0,
         "kg_liq": 12480.0,
         "precio_kg": 4674.154647435897,
         "precio_kg_cg": 4767.6377403846145,
@@ -12469,7 +12866,11 @@
       "Ternera": {
         "liq_id": "BULLVILL210526_2026-05-21",
         "fecha": "2026-05-21",
-        "cabezas_liq": 32,
+        "liq_ids": [
+          "BULLVILL210526_2026-05-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
         "kg_liq": 6045.0,
         "precio_kg": 6342.431761786601,
         "precio_kg_cg": 6469.280397022332,
@@ -12484,7 +12885,11 @@
       "Vaca": {
         "liq_id": "BULLVILL210526_2026-05-21",
         "fecha": "2026-05-21",
-        "cabezas_liq": 101,
+        "liq_ids": [
+          "BULLVILL210526_2026-05-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 101.0,
         "kg_liq": 47875.0,
         "precio_kg": 3008.683028720627,
         "precio_kg_cg": 3068.85668929504,
@@ -12501,7 +12906,11 @@
       "Novillo": {
         "liq_id": "BULMYA090126_2026-01-09",
         "fecha": "2026-01-09",
-        "cabezas_liq": 23,
+        "liq_ids": [
+          "BULMYA090126_2026-01-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
         "kg_liq": 12516.0,
         "precio_kg": 4000.0,
         "precio_kg_cg": 4124.144,
@@ -12516,7 +12925,11 @@
       "Vaca": {
         "liq_id": "BULMYA090126_2026-01-09",
         "fecha": "2026-01-09",
-        "cabezas_liq": 27,
+        "liq_ids": [
+          "BULMYA090126_2026-01-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 27.0,
         "kg_liq": 12159.0,
         "precio_kg": 2900.557611645695,
         "precio_kg_cg": 2990.579317680731,
@@ -12533,9 +12946,13 @@
       "Vaca": {
         "liq_id": "BULMYA150126_2026-01-16",
         "fecha": "2026-01-16",
-        "cabezas_liq": 53,
+        "liq_ids": [
+          "BULMYA150126_2026-01-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 53.0,
         "kg_liq": 27375.0,
-        "precio_kg": 2850.323287671233,
+        "precio_kg": 2850.3232876712336,
         "precio_kg_cg": 2940.8096507616447,
         "precio_cab_cg": 1518955.9281056607,
         "comision_cat": 2477064.1896000006,
@@ -12550,7 +12967,11 @@
       "Vaca": {
         "liq_id": "BULMYA190126_2026-01-19",
         "fecha": "2026-01-19",
-        "cabezas_liq": 51,
+        "liq_ids": [
+          "BULMYA190126_2026-01-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 51.0,
         "kg_liq": 25795.0,
         "precio_kg": 2800.0,
         "precio_kg_cg": 2884.0,
@@ -12567,7 +12988,11 @@
       "Vaca": {
         "liq_id": "BULMYA210126_2026-01-21",
         "fecha": "2026-01-21",
-        "cabezas_liq": 73,
+        "liq_ids": [
+          "BULMYA210126_2026-01-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 73.0,
         "kg_liq": 32577.0,
         "precio_kg": 2743.860699266354,
         "precio_kg_cg": 2872.465450240968,
@@ -12584,7 +13009,11 @@
       "Vaca": {
         "liq_id": "BULMYA260126_2026-01-26",
         "fecha": "2026-01-26",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "BULMYA260126_2026-01-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 24340.0,
         "precio_kg": 2800.0,
         "precio_kg_cg": 2884.0,
@@ -12601,7 +13030,11 @@
       "Vaca": {
         "liq_id": "BULSFR181225_2025-12-18",
         "fecha": "2025-12-18",
-        "cabezas_liq": 34,
+        "liq_ids": [
+          "BULSFR181225_2025-12-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 34.0,
         "kg_liq": 17043.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3090.162,
@@ -12618,7 +13051,11 @@
       "Vaca": {
         "liq_id": "BULSRH190925-PEGSRH190925_2025-09-19",
         "fecha": "2025-09-19",
-        "cabezas_liq": 177,
+        "liq_ids": [
+          "BULSRH190925-PEGSRH190925_2025-09-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 177.0,
         "kg_liq": 86500.0,
         "precio_kg": 2727.663583815029,
         "precio_kg_cg": 2811.4192218196536,
@@ -12627,7 +13064,7 @@
         "gastos_cat": 0.0,
         "importe": 235942900.00000003,
         "importe_cg": 243187762.68740004,
-        "desbaste_pct": -6.262427745664727,
+        "desbaste_pct": -6.262427745664726,
         "hotelero": "PEGSA"
       }
     },
@@ -12635,7 +13072,11 @@
       "Novillo": {
         "liq_id": "BULSRH190925-PEGSRH190925_2025-09-19",
         "fecha": "2025-09-19",
-        "cabezas_liq": 140,
+        "liq_ids": [
+          "BULSRH190925-PEGSRH190925_2025-09-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 140.0,
         "kg_liq": 61440.0,
         "precio_kg": 3246.142578125,
         "precio_kg_cg": 3345.818632128906,
@@ -12650,7 +13091,11 @@
       "Vaquillona": {
         "liq_id": "BULSRH190925-PEGSRH190925_2025-09-19",
         "fecha": "2025-09-19",
-        "cabezas_liq": 13,
+        "liq_ids": [
+          "BULSRH190925-PEGSRH190925_2025-09-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 13.0,
         "kg_liq": 4370.0,
         "precio_kg": 3220.0,
         "precio_kg_cg": 3318.8733199999997,
@@ -12667,7 +13112,11 @@
       "Vaca": {
         "liq_id": "BULSRV170925-PEGFDV170925_2025-09-17",
         "fecha": "2025-09-17",
-        "cabezas_liq": 129,
+        "liq_ids": [
+          "BULSRV170925-PEGFDV170925_2025-09-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 129.0,
         "kg_liq": 57270.0,
         "precio_kg": 2675.816308713113,
         "precio_kg_cg": 2729.332634887375,
@@ -12684,7 +13133,11 @@
       "Ternera": {
         "liq_id": "BULSRV170925-PEGFDV170925_2025-09-17",
         "fecha": "2025-09-17",
-        "cabezas_liq": 16,
+        "liq_ids": [
+          "BULSRV170925-PEGFDV170925_2025-09-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 16.0,
         "kg_liq": 6160.0,
         "precio_kg": 2497.711038961039,
         "precio_kg_cg": 2547.66525974026,
@@ -12699,7 +13152,11 @@
       "Ternero": {
         "liq_id": "BULSRV170925-PEGFDV170925_2025-09-17",
         "fecha": "2025-09-17",
-        "cabezas_liq": 28,
+        "liq_ids": [
+          "BULSRV170925-PEGFDV170925_2025-09-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 28.0,
         "kg_liq": 5059.0,
         "precio_kg": 4031.943071753311,
         "precio_kg_cg": 4112.581933188377,
@@ -12716,7 +13173,11 @@
       "Novillo": {
         "liq_id": "BULTAL130126_2026-01-13",
         "fecha": "2026-01-13",
-        "cabezas_liq": 6,
+        "liq_ids": [
+          "BULTAL130126_2026-01-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 6.0,
         "kg_liq": 3460.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3125.244,
@@ -12731,7 +13192,11 @@
       "Vaca": {
         "liq_id": "BULTAL130126_2026-01-13",
         "fecha": "2026-01-13",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "BULTAL130126_2026-01-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 17220.0,
         "precio_kg": 2805.720092915215,
         "precio_kg_cg": 2922.8532953542394,
@@ -12746,7 +13211,11 @@
       "Vaquillona": {
         "liq_id": "BULTAL130126_2026-01-13",
         "fecha": "2026-01-13",
-        "cabezas_liq": 4,
+        "liq_ids": [
+          "BULTAL130126_2026-01-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 4.0,
         "kg_liq": 1700.0,
         "precio_kg": 2400.0,
         "precio_kg_cg": 2500.1952,
@@ -12763,7 +13232,11 @@
       "Novillito": {
         "liq_id": "BULTES041225_2025-12-04",
         "fecha": "2025-12-04",
-        "cabezas_liq": 3,
+        "liq_ids": [
+          "BULTES041225_2025-12-04"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 3.0,
         "kg_liq": 1340.0,
         "precio_kg": 3450.0,
         "precio_kg_cg": 3553.5,
@@ -12778,7 +13251,11 @@
       "Vaca": {
         "liq_id": "BULTES041225_2025-12-04",
         "fecha": "2025-12-04",
-        "cabezas_liq": 26,
+        "liq_ids": [
+          "BULTES041225_2025-12-04"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 26.0,
         "kg_liq": 13280.0,
         "precio_kg": 3118.960843373494,
         "precio_kg_cg": 3212.5296686746988,
@@ -12795,7 +13272,11 @@
       "Novillito": {
         "liq_id": "BULTLE050226_2026-02-05",
         "fecha": "2026-02-05",
-        "cabezas_liq": 21,
+        "liq_ids": [
+          "BULTLE050226_2026-02-05"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 21.0,
         "kg_liq": 8800.0,
         "precio_kg": 4194.488636363636,
         "precio_kg_cg": 4322.386983863636,
@@ -12810,7 +13291,11 @@
       "Vaca": {
         "liq_id": "BULTLE050226_2026-02-05",
         "fecha": "2026-02-05",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "BULTLE050226_2026-02-05"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 26050.0,
         "precio_kg": 3134.04990403071,
         "precio_kg_cg": 3229.6133537044143,
@@ -12827,7 +13312,11 @@
       "Novillo": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 14580.0,
         "precio_kg": 4167.680588389809,
         "precio_kg_cg": 4259.752987948516,
@@ -12842,7 +13331,11 @@
       "Ternera": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 43,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 43.0,
         "kg_liq": 11115.0,
         "precio_kg": 4351.875843454791,
         "precio_kg_cg": 4448.017484588394,
@@ -12851,13 +13344,17 @@
         "gastos_cat": 0.0,
         "importe": 48371100.0,
         "importe_cg": 49439714.3412,
-        "desbaste_pct": 13.569536376553925,
+        "desbaste_pct": 13.569536376553927,
         "hotelero": "PEGSA"
       },
       "Ternero": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 34,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 34.0,
         "kg_liq": 7832.14,
         "precio_kg": 5268.217054263566,
         "precio_kg_cg": 5384.602505426356,
@@ -12872,7 +13369,11 @@
       "Vaca": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 120,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 120.0,
         "kg_liq": 55330.0,
         "precio_kg": 3139.797578167359,
         "precio_kg_cg": 3209.161986264232,
@@ -12887,7 +13388,11 @@
       "Vaquillona": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 20,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
         "kg_liq": 8735.0,
         "precio_kg": 3106.857469948483,
         "precio_kg_cg": 3175.494165174585,
@@ -12904,7 +13409,11 @@
       "Novillo": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 11,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 11.0,
         "kg_liq": 4455.0,
         "precio_kg": 4167.680588389809,
         "precio_kg_cg": 4259.7529879485155,
@@ -12919,7 +13428,11 @@
       "Ternero": {
         "liq_id": "BULUTE060526-PEGUTE060526_2026-05-06",
         "fecha": "2026-05-06",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "BULUTE060526-PEGUTE060526_2026-05-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 8292.86,
         "precio_kg": 5268.217054263566,
         "precio_kg_cg": 5384.602505426356,
@@ -12936,7 +13449,11 @@
       "Vaca": {
         "liq_id": "BULVGS190925_2025-09-19",
         "fecha": "2025-09-19",
-        "cabezas_liq": 34,
+        "liq_ids": [
+          "BULVGS190925_2025-09-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 34.0,
         "kg_liq": 15295.0,
         "precio_kg": 2585.387381497221,
         "precio_kg_cg": 2686.201977051324,
@@ -12953,7 +13470,11 @@
       "Vaca": {
         "liq_id": "DARHUI190626-PEGHUI190626_2026-06-19",
         "fecha": "2026-06-19",
-        "cabezas_liq": 68,
+        "liq_ids": [
+          "DARHUI190626-PEGHUI190626_2026-06-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 68.0,
         "kg_liq": 33663.3,
         "precio_kg": 2967.424985291233,
         "precio_kg_cg": 3058.5605414394977,
@@ -12970,7 +13491,11 @@
       "Novillo": {
         "liq_id": "DARHUI190626-PEGHUI190626_2026-06-19",
         "fecha": "2026-06-19",
-        "cabezas_liq": 29,
+        "liq_ids": [
+          "DARHUI190626-PEGHUI190626_2026-06-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 29.0,
         "kg_liq": 14185.0,
         "precio_kg": 3989.876630243215,
         "precio_kg_cg": 4112.413721311244,
@@ -12985,7 +13510,11 @@
       "Toro": {
         "liq_id": "DARHUI190626-PEGHUI190626_2026-06-19",
         "fecha": "2026-06-19",
-        "cabezas_liq": 5,
+        "liq_ids": [
+          "DARHUI190626-PEGHUI190626_2026-06-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
         "kg_liq": 2685.0,
         "precio_kg": 2639.292364990689,
         "precio_kg_cg": 2720.3503121042827,
@@ -13002,7 +13531,11 @@
       "Vaca": {
         "liq_id": "DARHUI210626_2026-06-21",
         "fecha": "2026-06-21",
-        "cabezas_liq": 35,
+        "liq_ids": [
+          "DARHUI210626_2026-06-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 35.0,
         "kg_liq": 17326.7,
         "precio_kg": 2967.424985291233,
         "precio_kg_cg": 3058.560541439497,
@@ -13019,7 +13552,11 @@
       "Vaca": {
         "liq_id": "DARUTE170626_2026-06-17",
         "fecha": "2026-06-17",
-        "cabezas_liq": 5,
+        "liq_ids": [
+          "DARUTE170626_2026-06-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
         "kg_liq": 2290.0,
         "precio_kg": 3014.017467248908,
         "precio_kg_cg": 3074.297816593886,
@@ -13034,7 +13571,11 @@
       "Vaquillona": {
         "liq_id": "DARUTE170626_2026-06-17",
         "fecha": "2026-06-17",
-        "cabezas_liq": 22,
+        "liq_ids": [
+          "DARUTE170626_2026-06-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
         "kg_liq": 8570.0,
         "precio_kg": 3708.28471411902,
         "precio_kg_cg": 3782.4504084014,
@@ -13051,7 +13592,11 @@
       "Vaquillona": {
         "liq_id": "LTATIG280726_2026-07-28",
         "fecha": "2026-07-28",
-        "cabezas_liq": 200,
+        "liq_ids": [
+          "LTATIG280726_2026-07-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 200.0,
         "kg_liq": 59120.0,
         "precio_kg": 6250.0,
         "precio_kg_cg": 6312.5,
@@ -13068,7 +13613,11 @@
       "Vaquillona": {
         "liq_id": "LTPLCT260626_2026-06-26",
         "fecha": "2026-06-26",
-        "cabezas_liq": 162,
+        "liq_ids": [
+          "LTPLCT260626_2026-06-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 162.0,
         "kg_liq": 32860.0,
         "precio_kg": 6162.507608034084,
         "precio_kg_cg": 6162.507608034084,
@@ -13085,7 +13634,11 @@
       "Vaca": {
         "liq_id": "PACPAC230126_2026-01-23",
         "fecha": "2026-01-23",
-        "cabezas_liq": 26,
+        "liq_ids": [
+          "PACPAC230126_2026-01-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 26.0,
         "kg_liq": 12006.0,
         "precio_kg": 2750.0,
         "precio_kg_cg": 2750.0,
@@ -13094,7 +13647,7 @@
         "gastos_cat": 0.0,
         "importe": 33016500.0,
         "importe_cg": 33016500.0,
-        "desbaste_pct": 0.8995502248875514,
+        "desbaste_pct": 0.8995502248875513,
         "hotelero": "PEGSA"
       }
     },
@@ -13102,7 +13655,11 @@
       "Novillito": {
         "liq_id": "PECDAR130326_2026-03-12",
         "fecha": "2026-03-12",
-        "cabezas_liq": 78,
+        "liq_ids": [
+          "PECDAR130326_2026-03-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 78.0,
         "kg_liq": 17840.0,
         "precio_kg": 5169.843049327354,
         "precio_kg_cg": 5273.2399103139005,
@@ -13119,7 +13676,11 @@
       "Novillito": {
         "liq_id": "PECDAR170426_2026-04-01",
         "fecha": "2026-04-01",
-        "cabezas_liq": 68,
+        "liq_ids": [
+          "PECDAR170426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 68.0,
         "kg_liq": 19355.0,
         "precio_kg": 5013.174890209249,
         "precio_kg_cg": 5113.438388013433,
@@ -13134,7 +13695,11 @@
       "Ternero": {
         "liq_id": "PECDAR170426_2026-04-16",
         "fecha": "2026-04-16",
-        "cabezas_liq": 51,
+        "liq_ids": [
+          "PECDAR170426_2026-04-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 51.0,
         "kg_liq": 10021.5,
         "precio_kg": 5841.51217739004,
         "precio_kg_cg": 5958.34242093784,
@@ -13149,7 +13714,11 @@
       "Vaca": {
         "liq_id": "PECDAR170426_2026-04-16",
         "fecha": "2026-04-16",
-        "cabezas_liq": 37,
+        "liq_ids": [
+          "PECDAR170426_2026-04-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 37.0,
         "kg_liq": 17015.0,
         "precio_kg": 3074.296209227152,
         "precio_kg_cg": 3135.7821334116948,
@@ -13164,7 +13733,11 @@
       "Vaquillona": {
         "liq_id": "PECDAR170426_2026-04-16",
         "fecha": "2026-04-16",
-        "cabezas_liq": 75,
+        "liq_ids": [
+          "PECDAR170426_2026-04-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 75.0,
         "kg_liq": 24310.0,
         "precio_kg": 4465.359934183463,
         "precio_kg_cg": 4554.667132867133,
@@ -13177,11 +13750,93 @@
         "hotelero": "PEGSA"
       }
     },
+    "PECDAR250426": {
+      "Novillito": {
+        "liq_id": "PECDAR250426_2026-04-01",
+        "fecha": "2026-04-01",
+        "liq_ids": [
+          "PECDAR250426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 68.0,
+        "kg_liq": 19355.0,
+        "precio_kg": 5013.17489,
+        "precio_kg_cg": 5113.4383878,
+        "precio_cab_cg": 1455449.9999392498,
+        "comision_cat": 1940599.999919,
+        "gastos_cat": 0.0,
+        "importe": 97029999.99595,
+        "importe_cg": 98970599.995869,
+        "desbaste_pct": -38.98734177215191,
+        "hotelero": "PEGSA"
+      },
+      "Ternero": {
+        "liq_id": "PECDAR250426_2026-04-01",
+        "fecha": "2026-04-01",
+        "liq_ids": [
+          "PECDAR250426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 51.0,
+        "kg_liq": 9735.0,
+        "precio_kg": 4876.2198,
+        "precio_kg_cg": 4973.744196,
+        "precio_cab_cg": 949399.9950599999,
+        "comision_cat": 949399.99506,
+        "gastos_cat": 0.0,
+        "importe": 47469999.753,
+        "importe_cg": 48419399.748059995,
+        "desbaste_pct": 1.8181818181818175,
+        "hotelero": "PEGSA"
+      },
+      "Vaca": {
+        "liq_id": "PECDAR250426_2026-04-01",
+        "fecha": "2026-04-01",
+        "liq_ids": [
+          "PECDAR250426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 37.0,
+        "kg_liq": 17015.0,
+        "precio_kg": 3074.2962,
+        "precio_kg_cg": 3135.782124,
+        "precio_cab_cg": 1442036.0226989188,
+        "comision_cat": 1046182.9968600001,
+        "gastos_cat": 0.0,
+        "importe": 52309149.843,
+        "importe_cg": 53355332.83986,
+        "desbaste_pct": -2.362621216573619,
+        "hotelero": "PEGSA"
+      },
+      "Vaquillona": {
+        "liq_id": "PECDAR250426_2026-04-01",
+        "fecha": "2026-04-01",
+        "liq_ids": [
+          "PECDAR250426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 75.0,
+        "kg_liq": 24310.0,
+        "precio_kg": 446.3599300000001,
+        "precio_kg_cg": 455.2871286000001,
+        "precio_cab_cg": 147573.73461688,
+        "comision_cat": 217020.19796600004,
+        "gastos_cat": 0.0,
+        "importe": 10851009.898300001,
+        "importe_cg": 11068030.096266001,
+        "desbaste_pct": 7.679967091731793,
+        "hotelero": "PEGSA"
+      }
+    },
     "PECDARW100426": {
       "Novillito": {
         "liq_id": "PECDARW100426_2026-04-10",
         "fecha": "2026-04-10",
-        "cabezas_liq": 64,
+        "liq_ids": [
+          "PECDARW100426_2026-04-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 64.0,
         "kg_liq": 18535.5,
         "precio_kg": 4792.809743465243,
         "precio_kg_cg": 4888.665938334547,
@@ -13198,7 +13853,11 @@
       "Novillo": {
         "liq_id": "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10",
         "fecha": "2025-10-10",
-        "cabezas_liq": 75,
+        "liq_ids": [
+          "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 75.0,
         "kg_liq": 28732.14,
         "precio_kg": 3397.5015537601,
         "precio_kg_cg": 3501.84562147918,
@@ -13215,7 +13874,11 @@
       "Novillo": {
         "liq_id": "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10",
         "fecha": "2025-10-10",
-        "cabezas_liq": 71,
+        "liq_ids": [
+          "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 71.0,
         "kg_liq": 27199.76,
         "precio_kg": 3397.5015537601,
         "precio_kg_cg": 3501.84562147918,
@@ -13232,7 +13895,11 @@
       "Novillo": {
         "liq_id": "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10",
         "fecha": "2025-10-10",
-        "cabezas_liq": 22,
+        "liq_ids": [
+          "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
         "kg_liq": 8428.1,
         "precio_kg": 3397.5015537601,
         "precio_kg_cg": 3501.8456214791804,
@@ -13247,7 +13914,11 @@
       "Toro": {
         "liq_id": "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10",
         "fecha": "2025-10-10",
-        "cabezas_liq": 17,
+        "liq_ids": [
+          "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 17.0,
         "kg_liq": 9390.0,
         "precio_kg": 2900.0,
         "precio_kg_cg": 2989.0648,
@@ -13264,7 +13935,11 @@
       "Vaca": {
         "liq_id": "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10",
         "fecha": "2025-10-10",
-        "cabezas_liq": 60,
+        "liq_ids": [
+          "PECFRH101025-PECSRH101025-PEGFRH101025-PEGSRH101025_2025-10-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 60.0,
         "kg_liq": 28580.0,
         "precio_kg": 2683.491952414276,
         "precio_kg_cg": 2765.9073572568236,
@@ -13281,7 +13956,11 @@
       "Novillo": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 3920.0,
         "precio_kg": 4117.423469387755,
         "precio_kg_cg": 4244.713615943878,
@@ -13296,7 +13975,11 @@
       "Toro": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 5,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
         "kg_liq": 1712.5,
         "precio_kg": 3117.883211678832,
         "precio_kg_cg": 3214.272571167883,
@@ -13305,13 +13988,17 @@
         "gastos_cat": 0.0,
         "importe": 5339375.0,
         "importe_cg": 5504441.778125,
-        "desbaste_pct": -15.62043795620438,
+        "desbaste_pct": -15.620437956204379,
         "hotelero": "PEGSA"
       },
       "Vaca": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 55,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 55.0,
         "kg_liq": 22910.34,
         "precio_kg": 2569.470198675497,
         "precio_kg_cg": 2648.9053698675502,
@@ -13326,7 +14013,11 @@
       "Vaquillona": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 39,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 39.0,
         "kg_liq": 13750.0,
         "precio_kg": 3951.469090909091,
         "precio_kg_cg": 4073.6287578545457,
@@ -13343,7 +14034,11 @@
       "Toro": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 3,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 3.0,
         "kg_liq": 1027.5,
         "precio_kg": 3117.883211678832,
         "precio_kg_cg": 3214.272571167883,
@@ -13358,7 +14053,11 @@
       "Vaca": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 32,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
         "kg_liq": 13329.66,
         "precio_kg": 2569.470198675497,
         "precio_kg_cg": 2648.9053698675502,
@@ -13373,7 +14072,11 @@
       "Ternera": {
         "liq_id": "PECHUIN170426-PEGHUI170426_2026-04-17",
         "fecha": "2026-04-17",
-        "cabezas_liq": 70,
+        "liq_ids": [
+          "PECHUIN170426-PEGHUI170426_2026-04-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 70.0,
         "kg_liq": 14630.0,
         "precio_kg": 5570.745044429255,
         "precio_kg_cg": 5742.964627477785,
@@ -13390,7 +14093,11 @@
       "Novillo": {
         "liq_id": "PECHUIN200326_2026-03-20",
         "fecha": "2026-03-20",
-        "cabezas_liq": 17,
+        "liq_ids": [
+          "PECHUIN200326_2026-03-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 17.0,
         "kg_liq": 7570.0,
         "precio_kg": 4213.632760898283,
         "precio_kg_cg": 4344.449203593131,
@@ -13405,7 +14112,11 @@
       "Vaca": {
         "liq_id": "PECHUIN200326_2026-03-20",
         "fecha": "2026-03-20",
-        "cabezas_liq": 136,
+        "liq_ids": [
+          "PECHUIN200326_2026-03-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 136.0,
         "kg_liq": 58670.0,
         "precio_kg": 3072.3197545594,
         "precio_kg_cg": 3167.7029936594513,
@@ -13420,7 +14131,11 @@
       "Vaquillona": {
         "liq_id": "PECHUIN200326_2026-03-20",
         "fecha": "2026-03-20",
-        "cabezas_liq": 47,
+        "liq_ids": [
+          "PECHUIN200326_2026-03-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 47.0,
         "kg_liq": 15515.0,
         "precio_kg": 4163.254914598775,
         "precio_kg_cg": 4292.507326677409,
@@ -13437,7 +14152,11 @@
       "Vaca": {
         "liq_id": "PECMAD240426_2026-04-24",
         "fecha": "2026-04-24",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PECMAD240426_2026-04-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 17608.8,
         "precio_kg": 3400.0,
         "precio_kg_cg": 3400.0,
@@ -13454,7 +14173,11 @@
       "Vaca": {
         "liq_id": "PECMAR110326_2026-03-12",
         "fecha": "2026-03-12",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PECMAR110326_2026-03-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 17549.0,
         "precio_kg": 3084.654396261895,
         "precio_kg_cg": 3177.194028149752,
@@ -13471,7 +14194,11 @@
       "Novillo": {
         "liq_id": "PECSIL130326_2026-03-13",
         "fecha": "2026-03-13",
-        "cabezas_liq": 11,
+        "liq_ids": [
+          "PECSIL130326_2026-03-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 11.0,
         "kg_liq": 6190.0,
         "precio_kg": 4091.922455573505,
         "precio_kg_cg": 4221.4931801292405,
@@ -13486,7 +14213,11 @@
       "Vaca": {
         "liq_id": "PECSIL130326_2026-03-13",
         "fecha": "2026-03-13",
-        "cabezas_liq": 57,
+        "liq_ids": [
+          "PECSIL130326_2026-03-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 57.0,
         "kg_liq": 27800.0,
         "precio_kg": 2979.294964028777,
         "precio_kg_cg": 3073.6343390647485,
@@ -13503,7 +14234,11 @@
       "Ternera": {
         "liq_id": "PECSRP311025-PEGSRP311025_2025-10-31",
         "fecha": "2025-10-31",
-        "cabezas_liq": 27,
+        "liq_ids": [
+          "PECSRP311025-PEGSRP311025_2025-10-31"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 27.0,
         "kg_liq": 7225.0,
         "precio_kg": 3843.598615916955,
         "precio_kg_cg": 3922.876680968858,
@@ -13518,7 +14253,11 @@
       "Ternero": {
         "liq_id": "PECSRP311025-PEGSRP311025_2025-10-31",
         "fecha": "2025-10-31",
-        "cabezas_liq": 67,
+        "liq_ids": [
+          "PECSRP311025-PEGSRP311025_2025-10-31"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 67.0,
         "kg_liq": 20060.0,
         "precio_kg": 4130.109670987039,
         "precio_kg_cg": 4215.297313060817,
@@ -13535,7 +14274,11 @@
       "Vaca": {
         "liq_id": "PECSRP311025-PEGSRP311025_2025-10-31",
         "fecha": "2025-10-31",
-        "cabezas_liq": 72,
+        "liq_ids": [
+          "PECSRP311025-PEGSRP311025_2025-10-31"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 72.0,
         "kg_liq": 32650.0,
         "precio_kg": 2987.338437978561,
         "precio_kg_cg": 3048.9552806003067,
@@ -13552,7 +14295,11 @@
       "Novillo": {
         "liq_id": "PECVIL010426_2026-04-01",
         "fecha": "2026-04-01",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "PECVIL010426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 17912.5,
         "precio_kg": 4589.748778785764,
         "precio_kg_cg": 4681.54375436148,
@@ -13567,7 +14314,11 @@
       "Toro": {
         "liq_id": "PECVIL010426_2026-04-01",
         "fecha": "2026-04-01",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "PECVIL010426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 340.0,
         "precio_kg": 3950.0,
         "precio_kg_cg": 4029.0,
@@ -13582,7 +14333,11 @@
       "Vaca": {
         "liq_id": "PECVIL010426_2026-04-01",
         "fecha": "2026-04-01",
-        "cabezas_liq": 79,
+        "liq_ids": [
+          "PECVIL010426_2026-04-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 79.0,
         "kg_liq": 33230.0,
         "precio_kg": 2791.89587721938,
         "precio_kg_cg": 2847.7337947637675,
@@ -13599,7 +14354,11 @@
       "Novillo": {
         "liq_id": "PEGADMAR150426_2026-04-15",
         "fecha": "2026-04-15",
-        "cabezas_liq": 59,
+        "liq_ids": [
+          "PEGADMAR150426_2026-04-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 59.0,
         "kg_liq": 25350.0,
         "precio_kg": 4263.783037475345,
         "precio_kg_cg": 4401.435009057199,
@@ -13616,7 +14375,11 @@
       "Novillo": {
         "liq_id": "PEGAEA111025-PEGJLD111025-PEGJLU111025_2025-10-11",
         "fecha": "2025-10-11",
-        "cabezas_liq": 30,
+        "liq_ids": [
+          "PEGAEA111025-PEGJLD111025-PEGJLU111025_2025-10-11"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 30.0,
         "kg_liq": 13186.0,
         "precio_kg": 3200.0,
         "precio_kg_cg": 3296.0,
@@ -13633,7 +14396,11 @@
       "Vaca": {
         "liq_id": "PEGAEA111025-PEGJLD111025-PEGJLU111025_2025-10-11",
         "fecha": "2025-10-11",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "PEGAEA111025-PEGJLD111025-PEGJLU111025_2025-10-11"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 23543.0,
         "precio_kg": 2637.75177335089,
         "precio_kg_cg": 2716.8843265514165,
@@ -13650,7 +14417,11 @@
       "Vaquillona": {
         "liq_id": "PEGAEA111025-PEGJLD111025-PEGJLU111025_2025-10-11",
         "fecha": "2025-10-11",
-        "cabezas_liq": 30,
+        "liq_ids": [
+          "PEGAEA111025-PEGJLD111025-PEGJLU111025_2025-10-11"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 30.0,
         "kg_liq": 12060.0,
         "precio_kg": 2820.0,
         "precio_kg_cg": 2904.6,
@@ -13667,7 +14438,11 @@
       "Vaca": {
         "liq_id": "PEGAGC231025_2025-10-23",
         "fecha": "2025-10-23",
-        "cabezas_liq": 80,
+        "liq_ids": [
+          "PEGAGC231025_2025-10-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 80.0,
         "kg_liq": 29170.0,
         "precio_kg": 2542.33801851217,
         "precio_kg_cg": 2624.6665505656497,
@@ -13684,7 +14459,11 @@
       "Novillito": {
         "liq_id": "PEGAGP150925_2025-09-15",
         "fecha": "2025-09-15",
-        "cabezas_liq": 3,
+        "liq_ids": [
+          "PEGAGP150925_2025-09-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 3.0,
         "kg_liq": 925.0,
         "precio_kg": 3128.172,
         "precio_kg_cg": 3190.73544,
@@ -13699,7 +14478,11 @@
       "Vaca": {
         "liq_id": "PEGAGP150925_2025-09-15",
         "fecha": "2025-09-15",
-        "cabezas_liq": 73,
+        "liq_ids": [
+          "PEGAGP150925_2025-09-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 73.0,
         "kg_liq": 32114.0,
         "precio_kg": 2398.19,
         "precio_kg_cg": 2446.1537999999996,
@@ -13714,7 +14497,11 @@
       "Vaquillona": {
         "liq_id": "PEGAGP150925_2025-09-15",
         "fecha": "2025-09-15",
-        "cabezas_liq": 19,
+        "liq_ids": [
+          "PEGAGP150925_2025-09-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 19.0,
         "kg_liq": 6190.0,
         "precio_kg": 2979.22736898223,
         "precio_kg_cg": 3038.811916361875,
@@ -13731,7 +14518,11 @@
       "Ternero": {
         "liq_id": "PEGANI210826_2026-08-21",
         "fecha": "2026-08-21",
-        "cabezas_liq": 300,
+        "liq_ids": [
+          "PEGANI210826_2026-08-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 300.0,
         "kg_liq": 56744.0,
         "precio_kg": 6300.0,
         "precio_kg_cg": 6426.0,
@@ -13748,7 +14539,11 @@
       "Vaca": {
         "liq_id": "PEGDAR050826_2026-08-06",
         "fecha": "2026-08-06",
-        "cabezas_liq": 5,
+        "liq_ids": [
+          "PEGDAR050826_2026-08-06"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
         "kg_liq": 2333.65,
         "precio_kg": 3259.169610284324,
         "precio_kg_cg": 3324.35300249001,
@@ -13765,7 +14560,11 @@
       "Novillo": {
         "liq_id": "PEGDAR070826_2026-08-07",
         "fecha": "2026-08-07",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "PEGDAR070826_2026-08-07"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 365.0,
         "precio_kg": 5070.0,
         "precio_kg_cg": 5171.4,
@@ -13780,7 +14579,11 @@
       "Ternera": {
         "liq_id": "PEGDAR070826_2026-08-07",
         "fecha": "2026-08-07",
-        "cabezas_liq": 59,
+        "liq_ids": [
+          "PEGDAR070826_2026-08-07"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 59.0,
         "kg_liq": 11435.0,
         "precio_kg": 5653.388718845649,
         "precio_kg_cg": 5766.456493222562,
@@ -13795,7 +14598,11 @@
       "Ternero": {
         "liq_id": "PEGDAR070826_2026-08-07",
         "fecha": "2026-08-07",
-        "cabezas_liq": 107,
+        "liq_ids": [
+          "PEGDAR070826_2026-08-07"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 107.0,
         "kg_liq": 22425.0,
         "precio_kg": 6175.696767001114,
         "precio_kg_cg": 6299.210702341135,
@@ -13810,7 +14617,11 @@
       "Vaca": {
         "liq_id": "PEGDAR070826_2026-08-07",
         "fecha": "2026-08-07",
-        "cabezas_liq": 32,
+        "liq_ids": [
+          "PEGDAR070826_2026-08-07"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
         "kg_liq": 14935.35,
         "precio_kg": 3259.169610284324,
         "precio_kg_cg": 3324.35300249001,
@@ -13827,7 +14638,11 @@
       "Ternera": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 75,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 75.0,
         "kg_liq": 21819.08,
         "precio_kg": 4879.692446856626,
         "precio_kg_cg": 4977.286295793758,
@@ -13844,7 +14659,11 @@
       "Novillito": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 266,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 266.0,
         "kg_liq": 83860.0,
         "precio_kg": 4982.963272120201,
         "precio_kg_cg": 5082.6225375626045,
@@ -13859,7 +14678,11 @@
       "Novillo": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 3,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 3.0,
         "kg_liq": 1265.0,
         "precio_kg": 4810.0,
         "precio_kg_cg": 4906.2,
@@ -13874,7 +14697,11 @@
       "Ternera": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 290.92,
         "precio_kg": 4879.692446856626,
         "precio_kg_cg": 4977.286295793759,
@@ -13889,7 +14716,11 @@
       "Ternero": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 9,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 9.0,
         "kg_liq": 990.0,
         "precio_kg": 4636.363636363636,
         "precio_kg_cg": 4729.090909090909,
@@ -13904,9 +14735,13 @@
       "Vaca": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 58,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 58.0,
         "kg_liq": 26850.0,
-        "precio_kg": 3080.977653631285,
+        "precio_kg": 3080.9776536312847,
         "precio_kg_cg": 3142.5972067039106,
         "precio_cab_cg": 1454805.7758620689,
         "comision_cat": 1654485.0,
@@ -13919,7 +14754,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR110226-PEGDAR120226_2026-02-12",
         "fecha": "2026-02-12",
-        "cabezas_liq": 2,
+        "liq_ids": [
+          "PEGDAR110226-PEGDAR120226_2026-02-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 2.0,
         "kg_liq": 655.0,
         "precio_kg": 4277.633587786259,
         "precio_kg_cg": 4363.186259541984,
@@ -13936,7 +14775,11 @@
       "Novillito": {
         "liq_id": "PEGDAR121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 69,
+        "liq_ids": [
+          "PEGDAR121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 69.0,
         "kg_liq": 22170.0,
         "precio_kg": 3708.61523511502,
         "precio_kg_cg": 3782.78753981732,
@@ -13951,7 +14794,11 @@
       "Ternera": {
         "liq_id": "PEGDAR121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "PEGDAR121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 3135.0,
         "precio_kg": 3476.87402583732,
         "precio_kg_cg": 3546.4115063540667,
@@ -13966,7 +14813,11 @@
       "Toro": {
         "liq_id": "PEGDAR121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 2,
+        "liq_ids": [
+          "PEGDAR121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 2.0,
         "kg_liq": 740.0,
         "precio_kg": 3200.0,
         "precio_kg_cg": 3264.0,
@@ -13981,7 +14832,11 @@
       "Vaca": {
         "liq_id": "PEGDAR121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 25,
+        "liq_ids": [
+          "PEGDAR121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 25.0,
         "kg_liq": 9900.0,
         "precio_kg": 2674.666663939394,
         "precio_kg_cg": 2728.1599972181816,
@@ -13996,7 +14851,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR121225_2025-12-12",
         "fecha": "2025-12-12",
-        "cabezas_liq": 9,
+        "liq_ids": [
+          "PEGDAR121225_2025-12-12"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 9.0,
         "kg_liq": 4615.0,
         "precio_kg": 4100.0,
         "precio_kg_cg": 4182.0,
@@ -14013,7 +14872,11 @@
       "Novillito": {
         "liq_id": "PEGDAR141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 73,
+        "liq_ids": [
+          "PEGDAR141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 73.0,
         "kg_liq": 26415.0,
         "precio_kg": 4350.291501041075,
         "precio_kg_cg": 4437.297331061896,
@@ -14028,7 +14891,11 @@
       "Novillo": {
         "liq_id": "PEGDAR141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 122,
+        "liq_ids": [
+          "PEGDAR141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 122.0,
         "kg_liq": 49705.0,
         "precio_kg": 4155.427019414546,
         "precio_kg_cg": 4238.535559802836,
@@ -14043,7 +14910,11 @@
       "Vaca": {
         "liq_id": "PEGDAR141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 89,
+        "liq_ids": [
+          "PEGDAR141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 89.0,
         "kg_liq": 40745.0,
         "precio_kg": 3035.58228003436,
         "precio_kg_cg": 3096.2939256350473,
@@ -14058,7 +14929,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 164,
+        "liq_ids": [
+          "PEGDAR141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 164.0,
         "kg_liq": 47125.0,
         "precio_kg": 4230.839257294429,
         "precio_kg_cg": 4315.456042440318,
@@ -14075,7 +14950,11 @@
       "Ternera": {
         "liq_id": "PEGDAR150426_2026-04-15",
         "fecha": "2026-04-15",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "PEGDAR150426_2026-04-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 9345.0,
         "precio_kg": 6064.205457463884,
         "precio_kg_cg": 6185.489566613162,
@@ -14090,9 +14969,13 @@
       "Ternero": {
         "liq_id": "PEGDAR150426_2026-04-15",
         "fecha": "2026-04-15",
-        "cabezas_liq": 159,
+        "liq_ids": [
+          "PEGDAR150426_2026-04-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 159.0,
         "kg_liq": 31243.5,
-        "precio_kg": 5841.51217739004,
+        "precio_kg": 5841.512177390039,
         "precio_kg_cg": 5958.34242093784,
         "precio_cab_cg": 1170814.2857142854,
         "comision_cat": 3650185.714285714,
@@ -14107,7 +14990,11 @@
       "Ternera": {
         "liq_id": "PEGDAR171225_2025-12-17",
         "fecha": "2025-12-17",
-        "cabezas_liq": 2,
+        "liq_ids": [
+          "PEGDAR171225_2025-12-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 2.0,
         "kg_liq": 489.0,
         "precio_kg": 2740.286298568507,
         "precio_kg_cg": 2796.7964826175867,
@@ -14122,7 +15009,11 @@
       "Ternero": {
         "liq_id": "PEGDAR171225_2025-12-17",
         "fecha": "2025-12-17",
-        "cabezas_liq": 27,
+        "liq_ids": [
+          "PEGDAR171225_2025-12-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 27.0,
         "kg_liq": 6175.0,
         "precio_kg": 3252.631578947368,
         "precio_kg_cg": 3319.7073473684204,
@@ -14137,7 +15028,11 @@
       "Vaca": {
         "liq_id": "PEGDAR171225_2025-12-17",
         "fecha": "2025-12-17",
-        "cabezas_liq": 144,
+        "liq_ids": [
+          "PEGDAR171225_2025-12-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 144.0,
         "kg_liq": 65953.0,
         "precio_kg": 2946.842448410232,
         "precio_kg_cg": 3007.612233381348,
@@ -14154,7 +15049,11 @@
       "Novillito": {
         "liq_id": "PEGDAR181225_2025-12-18",
         "fecha": "2025-12-18",
-        "cabezas_liq": 680,
+        "liq_ids": [
+          "PEGDAR181225_2025-12-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 680.0,
         "kg_liq": 150805.0,
         "precio_kg": 5397.305129140281,
         "precio_kg_cg": 5505.251231723086,
@@ -14169,7 +15068,11 @@
       "Vaca": {
         "liq_id": "PEGDAR181225_2025-12-18",
         "fecha": "2025-12-18",
-        "cabezas_liq": 179,
+        "liq_ids": [
+          "PEGDAR181225_2025-12-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 179.0,
         "kg_liq": 83070.0,
         "precio_kg": 3020.518839532924,
         "precio_kg_cg": 3080.9292163235823,
@@ -14184,24 +15087,33 @@
     },
     "PEGDAR220526": {
       "Novillito": {
-        "liq_id": "PEGDAR220526_2026-05-27",
+        "liq_id": "PEGDAR220526_2026-05-22",
         "fecha": "2026-05-27",
-        "cabezas_liq": 39,
-        "kg_liq": 7988.81,
+        "liq_ids": [
+          "PEGDAR220526_2026-05-22",
+          "PEGDAR220526_2026-05-27"
+        ],
+        "n_liq": 2,
+        "cabezas_liq": 63.0,
+        "kg_liq": 12905.0,
         "precio_kg": 5027.508717551336,
         "precio_kg_cg": 5128.058891902362,
-        "precio_cab_cg": 1050438.1578517568,
-        "comision_cat": 803276.2383572258,
+        "precio_cab_cg": 1050438.095238095,
+        "comision_cat": 1297599.9999999998,
         "gastos_cat": 0.0,
-        "importe": 40163811.91786129,
-        "importe_cg": 40967088.156218514,
+        "importe": 64879999.99999999,
+        "importe_cg": 66177599.999999985,
         "desbaste_pct": null,
         "hotelero": "PEGSA"
       },
       "Vaca": {
         "liq_id": "PEGDAR220526_2026-05-22",
         "fecha": "2026-05-22",
-        "cabezas_liq": 39,
+        "liq_ids": [
+          "PEGDAR220526_2026-05-22"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 39.0,
         "kg_liq": 21320.73,
         "precio_kg": 3166.135032370774,
         "precio_kg_cg": 3229.4577330181896,
@@ -14216,7 +15128,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR220526_2026-05-22",
         "fecha": "2026-05-22",
-        "cabezas_liq": 67,
+        "liq_ids": [
+          "PEGDAR220526_2026-05-22"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 67.0,
         "kg_liq": 25590.0,
         "precio_kg": 4370.15435717077,
         "precio_kg_cg": 4457.557444314185,
@@ -14231,7 +15147,11 @@
       "Ternera": {
         "liq_id": "PEGDAR220526_2026-05-27",
         "fecha": "2026-05-27",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "PEGDAR220526_2026-05-27"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 1810.0,
         "precio_kg": 3182.32044198895,
         "precio_kg_cg": 3245.9668508287286,
@@ -14248,7 +15168,11 @@
       "Vaca": {
         "liq_id": "PEGDAR250326_2026-03-25",
         "fecha": "2026-03-25",
-        "cabezas_liq": 46,
+        "liq_ids": [
+          "PEGDAR250326_2026-03-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 46.0,
         "kg_liq": 20874.35,
         "precio_kg": 2928.240625555358,
         "precio_kg_cg": 2986.8054380664653,
@@ -14263,7 +15187,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR250326_2026-03-25",
         "fecha": "2026-03-25",
-        "cabezas_liq": 32,
+        "liq_ids": [
+          "PEGDAR250326_2026-03-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
         "kg_liq": 10915.0,
         "precio_kg": 4626.972056802565,
         "precio_kg_cg": 4719.511497938616,
@@ -14280,7 +15208,11 @@
       "Vaca": {
         "liq_id": "PEGDAR260326_2026-03-26",
         "fecha": "2026-03-26",
-        "cabezas_liq": 16,
+        "liq_ids": [
+          "PEGDAR260326_2026-03-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 16.0,
         "kg_liq": 7260.65,
         "precio_kg": 2928.240625555358,
         "precio_kg_cg": 2986.805438066465,
@@ -14297,7 +15229,11 @@
       "Ternero": {
         "liq_id": "PEGDAR260626_2026-06-26",
         "fecha": "2026-06-26",
-        "cabezas_liq": 7,
+        "liq_ids": [
+          "PEGDAR260626_2026-06-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 7.0,
         "kg_liq": 1705.0,
         "precio_kg": 5706.744868035191,
         "precio_kg_cg": 5820.8797653958945,
@@ -14312,7 +15248,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR260626_2026-06-26",
         "fecha": "2026-06-26",
-        "cabezas_liq": 9,
+        "liq_ids": [
+          "PEGDAR260626_2026-06-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 9.0,
         "kg_liq": 3485.0,
         "precio_kg": 4110.0,
         "precio_kg_cg": 4192.2,
@@ -14329,7 +15269,11 @@
       "Ternera": {
         "liq_id": "PEGDAR260826_2026-08-26",
         "fecha": "2026-08-26",
-        "cabezas_liq": 11,
+        "liq_ids": [
+          "PEGDAR260826_2026-08-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 11.0,
         "kg_liq": 3730.0,
         "precio_kg": 4573.72654155496,
         "precio_kg_cg": 4665.201072386059,
@@ -14344,7 +15288,11 @@
       "Ternero": {
         "liq_id": "PEGDAR260826_2026-08-26",
         "fecha": "2026-08-26",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "PEGDAR260826_2026-08-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 7615.0,
         "precio_kg": 6337.491792514774,
         "precio_kg_cg": 6464.241628365069,
@@ -14359,7 +15307,11 @@
       "Vaca": {
         "liq_id": "PEGDAR260826_2026-08-26",
         "fecha": "2026-08-26",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "PEGDAR260826_2026-08-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 5795.0,
         "precio_kg": 3218.947368421052,
         "precio_kg_cg": 3283.326315789473,
@@ -14374,7 +15326,11 @@
       "Vaquillona": {
         "liq_id": "PEGDAR260826_2026-08-26",
         "fecha": "2026-08-26",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "PEGDAR260826_2026-08-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 385.0,
         "precio_kg": 4550.0,
         "precio_kg_cg": 4641.0,
@@ -14391,7 +15347,11 @@
       "Ternera": {
         "liq_id": "PEGDAR260925-PEGFDW260925_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 47,
+        "liq_ids": [
+          "PEGDAR260925-PEGFDW260925_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 47.0,
         "kg_liq": 8460.0,
         "precio_kg": 4614.214773432651,
         "precio_kg_cg": 4711.902314400993,
@@ -14406,9 +15366,13 @@
       "Ternero": {
         "liq_id": "PEGDAR260925-PEGFDW260925_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 25,
+        "liq_ids": [
+          "PEGDAR260925-PEGFDW260925_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 25.0,
         "kg_liq": 5576.53,
-        "precio_kg": 3817.017383348582,
+        "precio_kg": 3817.0173833485824,
         "precio_kg_cg": 3897.8274583714547,
         "precio_cab_cg": 869454.0702572868,
         "comision_cat": 450639.807667301,
@@ -14421,7 +15385,11 @@
       "Toro": {
         "liq_id": "PEGDAR260925-PEGFDW260925_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 4,
+        "liq_ids": [
+          "PEGDAR260925-PEGFDW260925_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 4.0,
         "kg_liq": 1925.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3063.5130000000004,
@@ -14436,7 +15404,11 @@
       "Vaca": {
         "liq_id": "PEGDAR260925-PEGFDW260925_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 49,
+        "liq_ids": [
+          "PEGDAR260925-PEGFDW260925_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 49.0,
         "kg_liq": 21710.0,
         "precio_kg": 2691.41870105942,
         "precio_kg_cg": 2748.398726379549,
@@ -14453,7 +15425,11 @@
       "Ternera": {
         "liq_id": "PEGDAR260925-PEGFDW260925_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 132,
+        "liq_ids": [
+          "PEGDAR260925-PEGFDW260925_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 132.0,
         "kg_liq": 23760.0,
         "precio_kg": 4614.214773432651,
         "precio_kg_cg": 4711.902314400993,
@@ -14468,9 +15444,13 @@
       "Ternero": {
         "liq_id": "PEGDAR260925-PEGFDW260925_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 24,
+        "liq_ids": [
+          "PEGDAR260925-PEGFDW260925_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 24.0,
         "kg_liq": 5353.47,
-        "precio_kg": 3817.017383348582,
+        "precio_kg": 3817.0173833485824,
         "precio_kg_cg": 3897.8274583714547,
         "precio_cab_cg": 869454.2651486597,
         "comision_cat": 432614.312332699,
@@ -14485,7 +15465,11 @@
       "Ternera": {
         "liq_id": "PEGDAR300426_2026-04-30",
         "fecha": "2026-04-30",
-        "cabezas_liq": 54,
+        "liq_ids": [
+          "PEGDAR300426_2026-04-30"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 54.0,
         "kg_liq": 8539.85,
         "precio_kg": 6226.672798344447,
         "precio_kg_cg": 6351.206254311337,
@@ -14500,22 +15484,31 @@
       "Ternero": {
         "liq_id": "PEGDAR300426_2026-04-30",
         "fecha": "2026-04-30",
-        "cabezas_liq": 47,
-        "kg_liq": 12195.62,
+        "liq_ids": [
+          "PEGDAR300426_2026-04-30",
+          "PEGDAR300426_2026-04-30"
+        ],
+        "n_liq": 2,
+        "cabezas_liq": 81.0,
+        "kg_liq": 21017.980000000003,
         "precio_kg": 5388.009730953585,
-        "precio_kg_cg": 5495.7699255726575,
-        "precio_cab_cg": 1426049.3961640939,
-        "comision_cat": 1314202.3847002434,
+        "precio_kg_cg": 5495.769925572657,
+        "precio_cab_cg": 1426049.1651887358,
+        "comision_cat": 2264901.6152997566,
         "gastos_cat": 0.0,
-        "importe": 65710119.235012166,
-        "importe_cg": 67024321.61971241,
-        "desbaste_pct": 37.80763177305309,
+        "importe": 113245080.76498784,
+        "importe_cg": 115509982.3802876,
+        "desbaste_pct": 37.8076216998348,
         "hotelero": "PEGSA"
       },
       "Vaca": {
         "liq_id": "PEGDAR300426_2026-04-30",
         "fecha": "2026-04-30",
-        "cabezas_liq": 27,
+        "liq_ids": [
+          "PEGDAR300426_2026-04-30"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 27.0,
         "kg_liq": 11960.0,
         "precio_kg": 3220.60618729097,
         "precio_kg_cg": 3285.0183110367893,
@@ -14532,7 +15525,11 @@
       "Novillo": {
         "liq_id": "PEGDARW140526_2026-05-14",
         "fecha": "2026-05-14",
-        "cabezas_liq": 6,
+        "liq_ids": [
+          "PEGDARW140526_2026-05-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 6.0,
         "kg_liq": 3141.0,
         "precio_kg": 2917.402101241643,
         "precio_kg_cg": 2997.8523815854824,
@@ -14547,7 +15544,11 @@
       "Vaca": {
         "liq_id": "PEGDARW140526_2026-05-14",
         "fecha": "2026-05-14",
-        "cabezas_liq": 21,
+        "liq_ids": [
+          "PEGDARW140526_2026-05-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 21.0,
         "kg_liq": 9186.0,
         "precio_kg": 2946.26496843022,
         "precio_kg_cg": 3027.5111711996515,
@@ -14564,7 +15565,11 @@
       "Novillito": {
         "liq_id": "PEGDES240326_2026-03-24",
         "fecha": "2026-03-24",
-        "cabezas_liq": 38,
+        "liq_ids": [
+          "PEGDES240326_2026-03-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 38.0,
         "kg_liq": 9158.0,
         "precio_kg": 5248.96265560166,
         "precio_kg_cg": 5411.921950207468,
@@ -14579,7 +15584,11 @@
       "Ternera": {
         "liq_id": "PEGDES240326_2026-03-24",
         "fecha": "2026-03-24",
-        "cabezas_liq": 22,
+        "liq_ids": [
+          "PEGDES240326_2026-03-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
         "kg_liq": 5874.0,
         "precio_kg": 4194.756554307116,
         "precio_kg_cg": 4324.986966292135,
@@ -14596,7 +15605,11 @@
       "Ternera": {
         "liq_id": "PEGENR170626_2026-06-17",
         "fecha": "2026-06-17",
-        "cabezas_liq": 63,
+        "liq_ids": [
+          "PEGENR170626_2026-06-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 63.0,
         "kg_liq": 10282.63,
         "precio_kg": 5386.344273601364,
         "precio_kg_cg": 5386.344273601364,
@@ -14611,7 +15624,11 @@
       "Ternero": {
         "liq_id": "PEGENR170626_2026-06-17",
         "fecha": "2026-06-17",
-        "cabezas_liq": 61,
+        "liq_ids": [
+          "PEGENR170626_2026-06-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 61.0,
         "kg_liq": 10800.64,
         "precio_kg": 5373.061439269806,
         "precio_kg_cg": 5373.061439269806,
@@ -14628,7 +15645,11 @@
       "Ternera": {
         "liq_id": "PEGENR180626_2026-06-18",
         "fecha": "2026-06-18",
-        "cabezas_liq": 11,
+        "liq_ids": [
+          "PEGENR180626_2026-06-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 11.0,
         "kg_liq": 1795.38,
         "precio_kg": 5386.344273601364,
         "precio_kg_cg": 5386.344273601364,
@@ -14643,7 +15664,11 @@
       "Ternero": {
         "liq_id": "PEGENR180626_2026-06-18",
         "fecha": "2026-06-18",
-        "cabezas_liq": 21,
+        "liq_ids": [
+          "PEGENR180626_2026-06-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 21.0,
         "kg_liq": 3718.25,
         "precio_kg": 5373.061439269806,
         "precio_kg_cg": 5373.061439269806,
@@ -14660,7 +15685,11 @@
       "Ternera": {
         "liq_id": "PEGERI030626_2026-06-03",
         "fecha": "2026-06-03",
-        "cabezas_liq": 20,
+        "liq_ids": [
+          "PEGERI030626_2026-06-03"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
         "kg_liq": 3822.1,
         "precio_kg": 5665.675740199578,
         "precio_kg_cg": 5665.675740199578,
@@ -14675,7 +15704,11 @@
       "Ternero": {
         "liq_id": "PEGERI030626_2026-06-03",
         "fecha": "2026-06-03",
-        "cabezas_liq": 44,
+        "liq_ids": [
+          "PEGERI030626_2026-06-03"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 44.0,
         "kg_liq": 8711.7,
         "precio_kg": 5931.465734454829,
         "precio_kg_cg": 5931.465734454829,
@@ -14692,7 +15725,11 @@
       "Ternera": {
         "liq_id": "PEGERI080626_2026-06-08",
         "fecha": "2026-06-08",
-        "cabezas_liq": 39,
+        "liq_ids": [
+          "PEGERI080626_2026-06-08"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 39.0,
         "kg_liq": 7453.09,
         "precio_kg": 5665.675740199578,
         "precio_kg_cg": 5665.675740199578,
@@ -14707,7 +15744,11 @@
       "Ternero": {
         "liq_id": "PEGERI080626_2026-06-08",
         "fecha": "2026-06-08",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "PEGERI080626_2026-06-08"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 7919.73,
         "precio_kg": 5931.465734454829,
         "precio_kg_cg": 5931.465734454829,
@@ -14724,7 +15765,11 @@
       "Ternera": {
         "liq_id": "PEGERI290526_2026-05-29",
         "fecha": "2026-05-29",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PEGERI290526_2026-05-29"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 6879.77,
         "precio_kg": 5665.675740199578,
         "precio_kg_cg": 5665.675740199578,
@@ -14733,13 +15778,17 @@
         "gastos_cat": 0.0,
         "importe": 38978545.98715285,
         "importe_cg": 38978545.98715285,
-        "desbaste_pct": -5.701208034570923,
+        "desbaste_pct": -5.701208034570922,
         "hotelero": "PEGSA"
       },
       "Ternero": {
         "liq_id": "PEGERI290526_2026-05-29",
         "fecha": "2026-05-29",
-        "cabezas_liq": 73,
+        "liq_ids": [
+          "PEGERI290526_2026-05-29"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 73.0,
         "kg_liq": 14453.51,
         "precio_kg": 5931.465734454829,
         "precio_kg_cg": 5931.465734454829,
@@ -14756,7 +15805,11 @@
       "Vaca": {
         "liq_id": "PEGFAS110925_2025-09-11",
         "fecha": "2025-09-11",
-        "cabezas_liq": 43,
+        "liq_ids": [
+          "PEGFAS110925_2025-09-11"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 43.0,
         "kg_liq": 21270.0,
         "precio_kg": 2633.568406205924,
         "precio_kg_cg": 2712.6781675599436,
@@ -14771,7 +15824,11 @@
       "Vaquillona": {
         "liq_id": "PEGFAS110925_2025-09-11",
         "fecha": "2025-09-11",
-        "cabezas_liq": 11,
+        "liq_ids": [
+          "PEGFAS110925_2025-09-11"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 11.0,
         "kg_liq": 4290.0,
         "precio_kg": 3143.076923076923,
         "precio_kg_cg": 3237.491810769231,
@@ -14788,7 +15845,11 @@
       "Vaca": {
         "liq_id": "PEGFDW101025_2025-10-10",
         "fecha": "2025-10-10",
-        "cabezas_liq": 82,
+        "liq_ids": [
+          "PEGFDW101025_2025-10-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 82.0,
         "kg_liq": 38435.0,
         "precio_kg": 2859.203850656953,
         "precio_kg_cg": 2918.9812255626375,
@@ -14805,7 +15866,11 @@
       "Novillo": {
         "liq_id": "PEGFDW211025_2025-10-21",
         "fecha": "2025-10-21",
-        "cabezas_liq": 33,
+        "liq_ids": [
+          "PEGFDW211025_2025-10-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 33.0,
         "kg_liq": 8890.0,
         "precio_kg": 3598.425196850394,
         "precio_kg_cg": 3673.657472440945,
@@ -14822,9 +15887,13 @@
       "Ternera": {
         "liq_id": "PEGFDW240925_2025-09-24",
         "fecha": "2025-09-24",
-        "cabezas_liq": 50,
+        "liq_ids": [
+          "PEGFDW240925_2025-09-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 50.0,
         "kg_liq": 11187.93,
-        "precio_kg": 3578.209277238404,
+        "precio_kg": 3578.2092772384035,
         "precio_kg_cg": 3652.3390388349517,
         "precio_cab_cg": 817242.2700550545,
         "comision_cat": 829358.5836588674,
@@ -14837,9 +15906,13 @@
       "Ternero": {
         "liq_id": "PEGFDW240925_2025-09-24",
         "fecha": "2025-09-24",
-        "cabezas_liq": 26,
+        "liq_ids": [
+          "PEGFDW240925_2025-09-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 26.0,
         "kg_liq": 6087.55,
-        "precio_kg": 3886.623956513298,
+        "precio_kg": 3886.6239565132983,
         "precio_kg_cg": 3967.143145020384,
         "precio_cab_cg": 928853.1635564938,
         "comision_cat": 490164.58599631133,
@@ -14854,7 +15927,11 @@
       "Novillito": {
         "liq_id": "PEGFDW260226_2026-02-26",
         "fecha": "2026-02-26",
-        "cabezas_liq": 339,
+        "liq_ids": [
+          "PEGFDW260226_2026-02-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 339.0,
         "kg_liq": 95090.0,
         "precio_kg": 5928.935745083605,
         "precio_kg_cg": 6047.514459985277,
@@ -14869,7 +15946,11 @@
       "Ternera": {
         "liq_id": "PEGFDW260226_2026-02-26",
         "fecha": "2026-02-26",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "PEGFDW260226_2026-02-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 1520.0,
         "precio_kg": 6381.578947368421,
         "precio_kg_cg": 6509.210526315789,
@@ -14884,7 +15965,11 @@
       "Ternero": {
         "liq_id": "PEGFDW260226_2026-02-26",
         "fecha": "2026-02-26",
-        "cabezas_liq": 18,
+        "liq_ids": [
+          "PEGFDW260226_2026-02-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 18.0,
         "kg_liq": 4010.0,
         "precio_kg": 5206.982543640897,
         "precio_kg_cg": 5311.122194513716,
@@ -14899,7 +15984,11 @@
       "Vaca": {
         "liq_id": "PEGFDW260226_2026-02-26",
         "fecha": "2026-02-26",
-        "cabezas_liq": 64,
+        "liq_ids": [
+          "PEGFDW260226_2026-02-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 64.0,
         "kg_liq": 27990.0,
         "precio_kg": 3447.402643801357,
         "precio_kg_cg": 3516.3506966773843,
@@ -14916,7 +16005,11 @@
       "Vaca": {
         "liq_id": "PEGFDW281025_2025-10-28",
         "fecha": "2025-10-28",
-        "cabezas_liq": 31,
+        "liq_ids": [
+          "PEGFDW281025_2025-10-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 31.0,
         "kg_liq": 13610.0,
         "precio_kg": 2600.55473916238,
         "precio_kg_cg": 2652.5658339456277,
@@ -14933,7 +16026,11 @@
       "Novillito": {
         "liq_id": "PEGFER240226_2026-02-24",
         "fecha": "2026-02-24",
-        "cabezas_liq": 10,
+        "liq_ids": [
+          "PEGFER240226_2026-02-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
         "kg_liq": 3780.0,
         "precio_kg": 4500.0,
         "precio_kg_cg": 4635.1305,
@@ -14948,7 +16045,11 @@
       "Vaca": {
         "liq_id": "PEGFER240226_2026-02-24",
         "fecha": "2026-02-24",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "PEGFER240226_2026-02-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 20840.0,
         "precio_kg": 3469.952015355087,
         "precio_kg_cg": 3574.151204424185,
@@ -14963,7 +16064,11 @@
       "Vaquillona": {
         "liq_id": "PEGFER240226_2026-02-24",
         "fecha": "2026-02-24",
-        "cabezas_liq": 9,
+        "liq_ids": [
+          "PEGFER240226_2026-02-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 9.0,
         "kg_liq": 2560.0,
         "precio_kg": 5220.0,
         "precio_kg_cg": 5376.75138,
@@ -14980,7 +16085,11 @@
       "Novillito": {
         "liq_id": "PEGFER251125_2025-11-25",
         "fecha": "2025-11-25",
-        "cabezas_liq": 43,
+        "liq_ids": [
+          "PEGFER251125_2025-11-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 43.0,
         "kg_liq": 16850.0,
         "precio_kg": 4232.142433234421,
         "precio_kg_cg": 4359.237902646884,
@@ -14995,7 +16104,11 @@
       "Ternera": {
         "liq_id": "PEGFER251125_2025-11-25",
         "fecha": "2025-11-25",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "PEGFER251125_2025-11-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 200.0,
         "precio_kg": 4470.0,
         "precio_kg_cg": 4604.23857,
@@ -15010,7 +16123,11 @@
       "Vaca": {
         "liq_id": "PEGFER251125_2025-11-25",
         "fecha": "2025-11-25",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "PEGFER251125_2025-11-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 3820.0,
         "precio_kg": 3185.968586387435,
         "precio_kg_cg": 3281.6464090052364,
@@ -15027,7 +16144,11 @@
       "Novillo": {
         "liq_id": "PEGFRH230826_2026-08-21",
         "fecha": "2026-08-21",
-        "cabezas_liq": 101,
+        "liq_ids": [
+          "PEGFRH230826_2026-08-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 101.0,
         "kg_liq": 47780.0,
         "precio_kg": 4373.668899120971,
         "precio_kg_cg": 4461.14227710339,
@@ -15042,7 +16163,11 @@
       "Vaca": {
         "liq_id": "PEGFRH230826_2026-08-21",
         "fecha": "2026-08-21",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "PEGFRH230826_2026-08-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 4270.0,
         "precio_kg": 3610.0,
         "precio_kg_cg": 3682.2,
@@ -15057,7 +16182,11 @@
       "Vaquillona": {
         "liq_id": "PEGFRH230826_2026-08-21",
         "fecha": "2026-08-21",
-        "cabezas_liq": 91,
+        "liq_ids": [
+          "PEGFRH230826_2026-08-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 91.0,
         "kg_liq": 39330.0,
         "precio_kg": 4032.390033053648,
         "precio_kg_cg": 4113.037833714721,
@@ -15074,7 +16203,11 @@
       "Vaca": {
         "liq_id": "PEGGAL141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 29,
+        "liq_ids": [
+          "PEGGAL141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 29.0,
         "kg_liq": 13690.0,
         "precio_kg": 3000.0,
         "precio_kg_cg": 3060.0,
@@ -15091,7 +16224,11 @@
       "Vaca": {
         "liq_id": "PEGGGG081025-PEGSNA081025_2025-10-08",
         "fecha": "2025-10-08",
-        "cabezas_liq": 47,
+        "liq_ids": [
+          "PEGGGG081025-PEGSNA081025_2025-10-08"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 47.0,
         "kg_liq": 17437.0,
         "precio_kg": 2873.20066525205,
         "precio_kg_cg": 2930.6646785570906,
@@ -15108,7 +16245,11 @@
       "Ternera": {
         "liq_id": "PEGGGG081025-PEGSNA081025_2025-10-08",
         "fecha": "2025-10-08",
-        "cabezas_liq": 20,
+        "liq_ids": [
+          "PEGGGG081025-PEGSNA081025_2025-10-08"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
         "kg_liq": 1800.0,
         "precio_kg": 5000.0,
         "precio_kg_cg": 5100.0,
@@ -15123,7 +16264,11 @@
       "Ternero": {
         "liq_id": "PEGGGG081025-PEGSNA081025_2025-10-08",
         "fecha": "2025-10-08",
-        "cabezas_liq": 22,
+        "liq_ids": [
+          "PEGGGG081025-PEGSNA081025_2025-10-08"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
         "kg_liq": 1980.0,
         "precio_kg": 5000.0,
         "precio_kg_cg": 5100.0,
@@ -15140,7 +16285,11 @@
       "Vaca": {
         "liq_id": "PEGHOV151025_2025-10-15",
         "fecha": "2025-10-15",
-        "cabezas_liq": 30,
+        "liq_ids": [
+          "PEGHOV151025_2025-10-15"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 30.0,
         "kg_liq": 10666.0,
         "precio_kg": 2420.0,
         "precio_kg_cg": 2480.5,
@@ -15157,7 +16306,11 @@
       "Vaca": {
         "liq_id": "PEGHUA221025_2025-10-22",
         "fecha": "2025-10-22",
-        "cabezas_liq": 34,
+        "liq_ids": [
+          "PEGHUA221025_2025-10-22"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 34.0,
         "kg_liq": 15364.0,
         "precio_kg": 2564.102,
         "precio_kg_cg": 2615.38404,
@@ -15174,7 +16327,11 @@
       "Novillo": {
         "liq_id": "PEGHUI131225_2025-12-13",
         "fecha": "2025-12-13",
-        "cabezas_liq": 93,
+        "liq_ids": [
+          "PEGHUI131225_2025-12-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 93.0,
         "kg_liq": 25656.77,
         "precio_kg": 5351.613009612099,
         "precio_kg_cg": 5516.389174178055,
@@ -15189,7 +16346,11 @@
       "Vaquillona": {
         "liq_id": "PEGHUI131225_2025-12-13",
         "fecha": "2025-12-13",
-        "cabezas_liq": 67,
+        "liq_ids": [
+          "PEGHUI131225_2025-12-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 67.0,
         "kg_liq": 15183.23,
         "precio_kg": 3997.172994497978,
         "precio_kg_cg": 4120.24595099857,
@@ -15206,7 +16367,11 @@
       "Novillo": {
         "liq_id": "PEGHUI141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 121,
+        "liq_ids": [
+          "PEGHUI141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 121.0,
         "kg_liq": 35816.0,
         "precio_kg": 4241.400491400492,
         "precio_kg_cg": 4371.50121007371,
@@ -15221,9 +16386,13 @@
       "Ternero": {
         "liq_id": "PEGHUI141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 86,
+        "liq_ids": [
+          "PEGHUI141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 86.0,
         "kg_liq": 37610.0,
-        "precio_kg": 3997.508641318798,
+        "precio_kg": 3997.5086413187983,
         "precio_kg_cg": 4120.128221382611,
         "precio_cab_cg": 1801837.4698395347,
         "comision_cat": 4611722.4062,
@@ -15236,7 +16405,11 @@
       "Vaca": {
         "liq_id": "PEGHUI141125_2025-11-14",
         "fecha": "2025-11-14",
-        "cabezas_liq": 132,
+        "liq_ids": [
+          "PEGHUI141125_2025-11-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 132.0,
         "kg_liq": 59020.0,
         "precio_kg": 3060.760759064724,
         "precio_kg_cg": 3154.6465345882752,
@@ -15253,7 +16426,11 @@
       "Toro": {
         "liq_id": "PEGHUI160726_2026-07-16",
         "fecha": "2026-07-16",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "PEGHUI160726_2026-07-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 8150.0,
         "precio_kg": 3202.098159509203,
         "precio_kg_cg": 3298.161104294479,
@@ -15270,7 +16447,11 @@
       "Vaca": {
         "liq_id": "PEGHUI170726_2026-07-17",
         "fecha": "2026-07-17",
-        "cabezas_liq": 125,
+        "liq_ids": [
+          "PEGHUI170726_2026-07-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 125.0,
         "kg_liq": 57300.0,
         "precio_kg": 3185.497382198953,
         "precio_kg_cg": 3281.0623036649213,
@@ -15287,7 +16468,11 @@
       "Novillito": {
         "liq_id": "PEGHUI180726_2026-07-18",
         "fecha": "2026-07-18",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "PEGHUI180726_2026-07-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 3490.0,
         "precio_kg": 5409.74212034384,
         "precio_kg_cg": 5572.034383954155,
@@ -15302,7 +16487,11 @@
       "Novillo": {
         "liq_id": "PEGHUI180726_2026-07-18",
         "fecha": "2026-07-18",
-        "cabezas_liq": 19,
+        "liq_ids": [
+          "PEGHUI180726_2026-07-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 19.0,
         "kg_liq": 7680.0,
         "precio_kg": 4538.411458333333,
         "precio_kg_cg": 4674.563802083333,
@@ -15319,7 +16508,11 @@
       "Vaquillona": {
         "liq_id": "PEGHUI190726_2026-07-19",
         "fecha": "2026-07-19",
-        "cabezas_liq": 18,
+        "liq_ids": [
+          "PEGHUI190726_2026-07-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 18.0,
         "kg_liq": 5970.0,
         "precio_kg": 4248.509212730318,
         "precio_kg_cg": 4375.964489112227,
@@ -15336,7 +16529,11 @@
       "Novillo": {
         "liq_id": "PEGHUI200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 42,
+        "liq_ids": [
+          "PEGHUI200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 42.0,
         "kg_liq": 16861.0,
         "precio_kg": 4693.054978945495,
         "precio_kg_cg": 4837.375805658027,
@@ -15351,7 +16548,11 @@
       "Vaca": {
         "liq_id": "PEGHUI200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 86,
+        "liq_ids": [
+          "PEGHUI200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 86.0,
         "kg_liq": 37110.0,
         "precio_kg": 2923.799514955538,
         "precio_kg_cg": 3013.712197639451,
@@ -15366,7 +16567,11 @@
       "Vaquillona": {
         "liq_id": "PEGHUI200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 67,
+        "liq_ids": [
+          "PEGHUI200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 67.0,
         "kg_liq": 23550.0,
         "precio_kg": 4297.783439490446,
         "precio_kg_cg": 4429.948875821656,
@@ -15383,7 +16588,11 @@
       "Ternera": {
         "liq_id": "PEGIFN050925_2025-09-05",
         "fecha": "2025-09-05",
-        "cabezas_liq": 18,
+        "liq_ids": [
+          "PEGIFN050925_2025-09-05"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 18.0,
         "kg_liq": 3560.0,
         "precio_kg": 3900.0,
         "precio_kg_cg": 4017.0,
@@ -15392,13 +16601,17 @@
         "gastos_cat": 0.0,
         "importe": 13884000.0,
         "importe_cg": 14300520.0,
-        "desbaste_pct": 15.168539325842698,
+        "desbaste_pct": 15.1685393258427,
         "hotelero": "PEGSA"
       },
       "Ternero": {
         "liq_id": "PEGIFN050925_2025-09-05",
         "fecha": "2025-09-05",
-        "cabezas_liq": 23,
+        "liq_ids": [
+          "PEGIFN050925_2025-09-05"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
         "kg_liq": 4549.0,
         "precio_kg": 3900.0,
         "precio_kg_cg": 4017.0,
@@ -15407,7 +16620,7 @@
         "gastos_cat": 0.0,
         "importe": 17741100.0,
         "importe_cg": 18273333.0,
-        "desbaste_pct": 3.649153660145095,
+        "desbaste_pct": 3.6491536601450947,
         "hotelero": "PEGSA"
       }
     },
@@ -15415,7 +16628,11 @@
       "Toro": {
         "liq_id": "PEGLAP100626_2026-06-10",
         "fecha": "2026-06-10",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "PEGLAP100626_2026-06-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 3452.0,
         "precio_kg": 2900.0,
         "precio_kg_cg": 2958.0,
@@ -15424,13 +16641,17 @@
         "gastos_cat": 0.0,
         "importe": 10010800.0,
         "importe_cg": 10211016.0,
-        "desbaste_pct": -0.11587485515643105,
+        "desbaste_pct": -0.11587485515643106,
         "hotelero": "PEGSA"
       },
       "Vaca": {
         "liq_id": "PEGLAP100626_2026-06-10",
         "fecha": "2026-06-10",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PEGLAP100626_2026-06-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 15537.0,
         "precio_kg": 2900.0,
         "precio_kg_cg": 2958.0,
@@ -15447,7 +16668,11 @@
       "Vaquillona": {
         "liq_id": "PEGLSN080925_2025-09-08",
         "fecha": "2025-09-08",
-        "cabezas_liq": 57,
+        "liq_ids": [
+          "PEGLSN080925_2025-09-08"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 57.0,
         "kg_liq": 23975.0,
         "precio_kg": 2550.0,
         "precio_kg_cg": 2626.5,
@@ -15464,7 +16689,11 @@
       "Vaca": {
         "liq_id": "PEGMYA050326_2026-03-05",
         "fecha": "2026-03-05",
-        "cabezas_liq": 35,
+        "liq_ids": [
+          "PEGMYA050326_2026-03-05"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 35.0,
         "kg_liq": 16980.0,
         "precio_kg": 2591.277974087162,
         "precio_kg_cg": 2669.0163133097767,
@@ -15481,7 +16710,11 @@
       "Vaca": {
         "liq_id": "PEGMYA141225_2025-12-14",
         "fecha": "2025-12-14",
-        "cabezas_liq": 31,
+        "liq_ids": [
+          "PEGMYA141225_2025-12-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 31.0,
         "kg_liq": 16185.0,
         "precio_kg": 2465.0,
         "precio_kg_cg": 2538.95,
@@ -15498,7 +16731,11 @@
       "Vaca": {
         "liq_id": "PEGMYA161225_2025-12-16",
         "fecha": "2025-12-16",
-        "cabezas_liq": 90,
+        "liq_ids": [
+          "PEGMYA161225_2025-12-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 90.0,
         "kg_liq": 43600.0,
         "precio_kg": 3011.697247706422,
         "precio_kg_cg": 3102.048165137615,
@@ -15515,7 +16752,11 @@
       "Vaca": {
         "liq_id": "PEGMYA170925_2025-09-17",
         "fecha": "2025-09-17",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PEGMYA170925_2025-09-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 17920.0,
         "precio_kg": 2442.291294642857,
         "precio_kg_cg": 2515.5600334821424,
@@ -15532,7 +16773,11 @@
       "Vaca": {
         "liq_id": "PEGMYA241025_2025-10-24",
         "fecha": "2025-10-24",
-        "cabezas_liq": 32,
+        "liq_ids": [
+          "PEGMYA241025_2025-10-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
         "kg_liq": 14847.0,
         "precio_kg": 2792.669226106284,
         "precio_kg_cg": 2888.3572444695897,
@@ -15549,7 +16794,11 @@
       "Vaca": {
         "liq_id": "PEGSAN100925_2025-09-10",
         "fecha": "2025-09-10",
-        "cabezas_liq": 58,
+        "liq_ids": [
+          "PEGSAN100925_2025-09-10"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 58.0,
         "kg_liq": 20153.0,
         "precio_kg": 2300.0,
         "precio_kg_cg": 2369.0,
@@ -15566,7 +16815,11 @@
       "Vaca": {
         "liq_id": "PEGSEA201025_2025-10-20",
         "fecha": "2025-10-20",
-        "cabezas_liq": 21,
+        "liq_ids": [
+          "PEGSEA201025_2025-10-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 21.0,
         "kg_liq": 7746.0,
         "precio_kg": 2400.0,
         "precio_kg_cg": 2448.0,
@@ -15583,7 +16836,11 @@
       "Novillo": {
         "liq_id": "PEGSFE200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PEGSFE200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 15110.0,
         "precio_kg": 4665.85043017869,
         "precio_kg_cg": 4884.188901058901,
@@ -15598,7 +16855,11 @@
       "Vaca": {
         "liq_id": "PEGSFE200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 36,
+        "liq_ids": [
+          "PEGSFE200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 36.0,
         "kg_liq": 17370.0,
         "precio_kg": 2969.51065054692,
         "precio_kg_cg": 3108.4689014392634,
@@ -15615,7 +16876,11 @@
       "Ternera": {
         "liq_id": "PEGSIF180925_2025-09-18",
         "fecha": "2025-09-18",
-        "cabezas_liq": 60,
+        "liq_ids": [
+          "PEGSIF180925_2025-09-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 60.0,
         "kg_liq": 12441.0,
         "precio_kg": 3750.0,
         "precio_kg_cg": 3862.61625,
@@ -15630,9 +16895,13 @@
       "Ternero": {
         "liq_id": "PEGSIF180925_2025-09-18",
         "fecha": "2025-09-18",
-        "cabezas_liq": 58,
+        "liq_ids": [
+          "PEGSIF180925_2025-09-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 58.0,
         "kg_liq": 12333.0,
-        "precio_kg": 3493.33900916241,
+        "precio_kg": 3493.3390091624096,
         "precio_kg_cg": 3598.2474729465657,
         "precio_cab_cg": 765123.8979974138,
         "comision_cat": 1293836.08385,
@@ -15647,7 +16916,11 @@
       "Ternera": {
         "liq_id": "PEGSRC260925-PEGSRC2609255_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 7,
+        "liq_ids": [
+          "PEGSRC260925-PEGSRC2609255_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 7.0,
         "kg_liq": 1169.0,
         "precio_kg": 4057.290823757889,
         "precio_kg_cg": 4192.256603010195,
@@ -15662,7 +16935,11 @@
       "Ternero": {
         "liq_id": "PEGSRC260925-PEGSRC2609255_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 28,
+        "liq_ids": [
+          "PEGSRC260925-PEGSRC2609255_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 28.0,
         "kg_liq": 4798.97,
         "precio_kg": 3761.176377828589,
         "precio_kg_cg": 3886.291910037057,
@@ -15671,7 +16948,7 @@
         "gastos_cat": 0.0,
         "importe": 18049772.601908065,
         "importe_cg": 18650198.287510537,
-        "desbaste_pct": -28.52757987651515,
+        "desbaste_pct": -28.527579876515148,
         "hotelero": "PEGSA"
       }
     },
@@ -15679,7 +16956,11 @@
       "Ternera": {
         "liq_id": "PEGSRC260925-PEGSRC2609255_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 67,
+        "liq_ids": [
+          "PEGSRC260925-PEGSRC2609255_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 67.0,
         "kg_liq": 11189.0,
         "precio_kg": 4057.290823757889,
         "precio_kg_cg": 4192.256603010195,
@@ -15694,7 +16975,11 @@
       "Ternero": {
         "liq_id": "PEGSRC260925-PEGSRC2609255_2025-09-26",
         "fecha": "2025-09-26",
-        "cabezas_liq": 46,
+        "liq_ids": [
+          "PEGSRC260925-PEGSRC2609255_2025-09-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 46.0,
         "kg_liq": 7884.03,
         "precio_kg": 3761.176377828589,
         "precio_kg_cg": 3886.291910037057,
@@ -15711,7 +16996,11 @@
       "Vaca": {
         "liq_id": "PEGSVB111125_2025-11-11",
         "fecha": "2025-11-11",
-        "cabezas_liq": 41,
+        "liq_ids": [
+          "PEGSVB111125_2025-11-11"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 41.0,
         "kg_liq": 15131.0,
         "precio_kg": 3278.390060141432,
         "precio_kg_cg": 3371.4274916581858,
@@ -15728,7 +17017,11 @@
       "Vaca": {
         "liq_id": "PEGUTE090326_2026-03-09",
         "fecha": "2026-03-09",
-        "cabezas_liq": 45,
+        "liq_ids": [
+          "PEGUTE090326_2026-03-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 45.0,
         "kg_liq": 18768.0,
         "precio_kg": 2900.0,
         "precio_kg_cg": 2987.0,
@@ -15737,7 +17030,7 @@
         "gastos_cat": 0.0,
         "importe": 54427200.0,
         "importe_cg": 56060016.0,
-        "desbaste_pct": -7.4168797953964205,
+        "desbaste_pct": -7.416879795396421,
         "hotelero": "PEGSA"
       }
     },
@@ -15745,7 +17038,11 @@
       "Novillito": {
         "liq_id": "PEGUTE180826_2026-08-18",
         "fecha": "2026-08-18",
-        "cabezas_liq": 9,
+        "liq_ids": [
+          "PEGUTE180826_2026-08-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 9.0,
         "kg_liq": 2365.0,
         "precio_kg": 4718.816067653277,
         "precio_kg_cg": 4856.0581141649045,
@@ -15754,13 +17051,17 @@
         "gastos_cat": 0.0,
         "importe": 11160000.0,
         "importe_cg": 11484577.44,
-        "desbaste_pct": 7.238900634249457,
+        "desbaste_pct": 7.238900634249456,
         "hotelero": "PEGSA"
       },
       "Ternera": {
         "liq_id": "PEGUTE180826_2026-08-18",
         "fecha": "2026-08-18",
-        "cabezas_liq": 49,
+        "liq_ids": [
+          "PEGUTE180826_2026-08-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 49.0,
         "kg_liq": 8605.0,
         "precio_kg": 5765.252760023242,
         "precio_kg_cg": 5932.929371295759,
@@ -15775,7 +17076,11 @@
       "Ternero": {
         "liq_id": "PEGUTE180826_2026-08-18",
         "fecha": "2026-08-18",
-        "cabezas_liq": 14,
+        "liq_ids": [
+          "PEGUTE180826_2026-08-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 14.0,
         "kg_liq": 2790.0,
         "precio_kg": 5985.663082437276,
         "precio_kg_cg": 6159.750107526882,
@@ -15790,9 +17095,13 @@
       "Vaca": {
         "liq_id": "PEGUTE180826_2026-08-18",
         "fecha": "2026-08-18",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "PEGUTE180826_2026-08-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 4980.0,
-        "precio_kg": 3674.056224899598,
+        "precio_kg": 3674.0562248995975,
         "precio_kg_cg": 3780.912476144578,
         "precio_cab_cg": 1569078.6775999998,
         "comision_cat": 532144.1311999998,
@@ -15805,7 +17114,11 @@
       "Vaquillona": {
         "liq_id": "PEGUTE180826_2026-08-18",
         "fecha": "2026-08-18",
-        "cabezas_liq": 11,
+        "liq_ids": [
+          "PEGUTE180826_2026-08-18"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 11.0,
         "kg_liq": 4335.0,
         "precio_kg": 3707.958477508651,
         "precio_kg_cg": 3815.8007418685124,
@@ -15822,7 +17135,11 @@
       "Ternero": {
         "liq_id": "PEGUTE190626_2026-06-19",
         "fecha": "2026-06-19",
-        "cabezas_liq": 213,
+        "liq_ids": [
+          "PEGUTE190626_2026-06-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 213.0,
         "kg_liq": 49988.0,
         "precio_kg": 5413.299191806033,
         "precio_kg_cg": 5575.698167560215,
@@ -15839,7 +17156,11 @@
       "Ternera": {
         "liq_id": "PEGUTE210726_2026-07-21",
         "fecha": "2026-07-21",
-        "cabezas_liq": 33,
+        "liq_ids": [
+          "PEGUTE210726_2026-07-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 33.0,
         "kg_liq": 5535.0,
         "precio_kg": 4473.351400180669,
         "precio_kg_cg": 4575.943241192413,
@@ -15848,13 +17169,17 @@
         "gastos_cat": 0.0,
         "importe": 24760000.000000004,
         "importe_cg": 25327845.840000004,
-        "desbaste_pct": -3.125000000000005,
+        "desbaste_pct": -3.1250000000000044,
         "hotelero": "PEGSA"
       },
       "Ternero": {
         "liq_id": "PEGUTE210726_2026-07-21",
         "fecha": "2026-07-21",
-        "cabezas_liq": 88,
+        "liq_ids": [
+          "PEGUTE210726_2026-07-21"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 88.0,
         "kg_liq": 16370.0,
         "precio_kg": 6480.146609651802,
         "precio_kg_cg": 6628.762291997556,
@@ -15871,7 +17196,11 @@
       "Vaca": {
         "liq_id": "PEGUTE220726_2026-07-22",
         "fecha": "2026-07-22",
-        "cabezas_liq": 4,
+        "liq_ids": [
+          "PEGUTE220726_2026-07-22"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 4.0,
         "kg_liq": 1865.0,
         "precio_kg": 3868.632707774799,
         "precio_kg_cg": 3957.3559302949066,
@@ -15886,7 +17215,11 @@
       "Vaquillona": {
         "liq_id": "PEGUTE220726_2026-07-22",
         "fecha": "2026-07-22",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "PEGUTE220726_2026-07-22"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 3580.0,
         "precio_kg": 3157.821229050279,
         "precio_kg_cg": 3230.2427011173177,
@@ -15895,7 +17228,7 @@
         "gastos_cat": 0.0,
         "importe": 11304999.999999998,
         "importe_cg": 11564268.869999997,
-        "desbaste_pct": 18.854748603351958,
+        "desbaste_pct": 18.85474860335196,
         "hotelero": "PEGSA"
       }
     },
@@ -15903,7 +17236,11 @@
       "Novillo": {
         "liq_id": "PEGUTE230726_2026-07-23",
         "fecha": "2026-07-23",
-        "cabezas_liq": 1,
+        "liq_ids": [
+          "PEGUTE230726_2026-07-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 1.0,
         "kg_liq": 500.0,
         "precio_kg": 4450.0,
         "precio_kg_cg": 4552.0563,
@@ -15918,16 +17255,20 @@
       "Toro": {
         "liq_id": "PEGUTE230726_2026-07-23",
         "fecha": "2026-07-23",
-        "cabezas_liq": 20,
+        "liq_ids": [
+          "PEGUTE230726_2026-07-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
         "kg_liq": 12970.0,
-        "precio_kg": 3175.335389360062,
+        "precio_kg": 3175.3353893600624,
         "precio_kg_cg": 3248.158531179646,
         "precio_cab_cg": 2106430.8074700003,
         "comision_cat": 944516.1494000001,
         "gastos_cat": 0.0,
         "importe": 41184100.00000001,
         "importe_cg": 42128616.14940001,
-        "desbaste_pct": 0.3855050115651504,
+        "desbaste_pct": 0.3855050115651503,
         "hotelero": "PEGSA"
       }
     },
@@ -15935,7 +17276,11 @@
       "Ternero": {
         "liq_id": "PEGVIL170626_2026-06-17",
         "fecha": "2026-06-17",
-        "cabezas_liq": 17,
+        "liq_ids": [
+          "PEGVIL170626_2026-06-17"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 17.0,
         "kg_liq": 7245.0,
         "precio_kg": 4420.0,
         "precio_kg_cg": 4508.4,
@@ -15952,7 +17297,11 @@
       "Novillo": {
         "liq_id": "PEGVIL200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 16,
+        "liq_ids": [
+          "PEGVIL200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 16.0,
         "kg_liq": 6430.0,
         "precio_kg": 4773.390357698289,
         "precio_kg_cg": 4871.168485785382,
@@ -15967,7 +17316,11 @@
       "Vaca": {
         "liq_id": "PEGVIL200226_2026-02-20",
         "fecha": "2026-02-20",
-        "cabezas_liq": 64,
+        "liq_ids": [
+          "PEGVIL200226_2026-02-20"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 64.0,
         "kg_liq": 31240.0,
         "precio_kg": 3174.659090909091,
         "precio_kg_cg": 3239.688807727273,
@@ -15984,7 +17337,11 @@
       "Ternera": {
         "liq_id": "PEGVIL230726_2026-07-23",
         "fecha": "2026-07-23",
-        "cabezas_liq": 12,
+        "liq_ids": [
+          "PEGVIL230726_2026-07-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
         "kg_liq": 2315.0,
         "precio_kg": 5879.049676025918,
         "precio_kg_cg": 5999.352669546437,
@@ -15999,7 +17356,11 @@
       "Ternero": {
         "liq_id": "PEGVIL230726_2026-07-23",
         "fecha": "2026-07-23",
-        "cabezas_liq": 90,
+        "liq_ids": [
+          "PEGVIL230726_2026-07-23"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 90.0,
         "kg_liq": 22505.0,
         "precio_kg": 5609.864474561208,
         "precio_kg_cg": 5724.659131304154,
@@ -16016,7 +17377,11 @@
       "Vaca": {
         "liq_id": "PEGVIL240726_2026-07-24",
         "fecha": "2026-07-24",
-        "cabezas_liq": 114,
+        "liq_ids": [
+          "PEGVIL240726_2026-07-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 114.0,
         "kg_liq": 56916.47,
         "precio_kg": 3262.396615729949,
         "precio_kg_cg": 3327.644548044548,
@@ -16033,7 +17398,11 @@
       "Vaca": {
         "liq_id": "PEGVIL250726_2026-07-25",
         "fecha": "2026-07-25",
-        "cabezas_liq": 2,
+        "liq_ids": [
+          "PEGVIL250726_2026-07-25"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 2.0,
         "kg_liq": 998.53,
         "precio_kg": 3262.396615729949,
         "precio_kg_cg": 3327.6445480445477,
@@ -16050,7 +17419,11 @@
       "Novillito": {
         "liq_id": "PEGVIL300426_2026-04-30",
         "fecha": "2026-04-30",
-        "cabezas_liq": 17,
+        "liq_ids": [
+          "PEGVIL300426_2026-04-30"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 17.0,
         "kg_liq": 5815.0,
         "precio_kg": 4391.874462596733,
         "precio_kg_cg": 4479.711951848667,
@@ -16065,7 +17438,11 @@
       "Vaca": {
         "liq_id": "PEGVIL300426_2026-04-30",
         "fecha": "2026-04-30",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "PEGVIL300426_2026-04-30"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 19650.0,
         "precio_kg": 3332.64631043257,
         "precio_kg_cg": 3399.2992366412213,
@@ -16080,7 +17457,11 @@
       "Vaquillona": {
         "liq_id": "PEGVIL300426_2026-04-30",
         "fecha": "2026-04-30",
-        "cabezas_liq": 47,
+        "liq_ids": [
+          "PEGVIL300426_2026-04-30"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 47.0,
         "kg_liq": 18750.0,
         "precio_kg": 4251.744,
         "precio_kg_cg": 4336.77888,
@@ -16097,7 +17478,11 @@
       "Vaca": {
         "liq_id": "SAGDAR070826_2026-08-07",
         "fecha": "2026-08-07",
-        "cabezas_liq": 37,
+        "liq_ids": [
+          "SAGDAR070826_2026-08-07"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 37.0,
         "kg_liq": 15280.0,
         "precio_kg": 3844.895287958115,
         "precio_kg_cg": 3921.7931937172775,
@@ -16114,7 +17499,11 @@
       "Ternero": {
         "liq_id": "SAGDAR130526_2026-05-14",
         "fecha": "2026-05-14",
-        "cabezas_liq": 95,
+        "liq_ids": [
+          "SAGDAR130526_2026-05-14"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 95.0,
         "kg_liq": 31390.0,
         "precio_kg": 5043.172985027079,
         "precio_kg_cg": 5144.0364447276215,
@@ -16131,7 +17520,11 @@
       "Vaca": {
         "liq_id": "SAGDAR260826_2026-08-26",
         "fecha": "2026-08-26",
-        "cabezas_liq": 79,
+        "liq_ids": [
+          "SAGDAR260826_2026-08-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 79.0,
         "kg_liq": 32900.0,
         "precio_kg": 4390.577507598784,
         "precio_kg_cg": 4522.294832826748,
@@ -16146,7 +17539,11 @@
       "Vaquillona": {
         "liq_id": "SAGDAR260826_2026-08-26",
         "fecha": "2026-08-26",
-        "cabezas_liq": 8,
+        "liq_ids": [
+          "SAGDAR260826_2026-08-26"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 8.0,
         "kg_liq": 3325.0,
         "precio_kg": 4812.030075187969,
         "precio_kg_cg": 4956.390977443608,
@@ -16163,7 +17560,11 @@
       "Novillo": {
         "liq_id": "TAPFDW240925_2025-09-24",
         "fecha": "2025-09-24",
-        "cabezas_liq": 27,
+        "liq_ids": [
+          "TAPFDW240925_2025-09-24"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 27.0,
         "kg_liq": 10314.0,
         "precio_kg": 1659.879775063021,
         "precio_kg_cg": 1693.0773705642816,
@@ -16180,7 +17581,11 @@
       "Ternera": {
         "liq_id": "TAPVIL130726_2026-07-13",
         "fecha": "2026-07-13",
-        "cabezas_liq": 31,
+        "liq_ids": [
+          "TAPVIL130726_2026-07-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 31.0,
         "kg_liq": 7615.0,
         "precio_kg": 5346.027577150361,
         "precio_kg_cg": 5452.948128693369,
@@ -16195,7 +17600,11 @@
       "Ternero": {
         "liq_id": "TAPVIL130726_2026-07-13",
         "fecha": "2026-07-13",
-        "cabezas_liq": 40,
+        "liq_ids": [
+          "TAPVIL130726_2026-07-13"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 40.0,
         "kg_liq": 10240.0,
         "precio_kg": 5687.5,
         "precio_kg_cg": 5801.25,
@@ -16600,7 +18009,7 @@
           "kg_17.6%"
         ],
         "*": [
-          "total_33≠34"
+          "parcial_33/34"
         ]
       },
       "avisos": []
@@ -16835,7 +18244,7 @@
           "kg_12.3%"
         ],
         "*": [
-          "total_36≠37"
+          "parcial_36/37"
         ]
       },
       "avisos": [
@@ -17376,8 +18785,12 @@
       "avisos": []
     },
     "PECDAR250426": {
-      "estado": "sin_liquidar",
-      "motivos": {},
+      "estado": "revisar",
+      "motivos": {
+        "Novillito": [
+          "kg_39.0%"
+        ]
+      },
       "avisos": []
     },
     "PECDARW100426": {
