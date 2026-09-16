@@ -16,6 +16,9 @@
    cache-buster, GitHub Pages los refresca con el tick). Se cargan en
    paralelo y cada pestaña se dibuja en cuanto tiene lo suyo; si un JSON
    falla, esa card dice "sin datos" y el resto sigue.
+
+   v15.75.3 · La hoja de establecimiento ya no muestra "Corrales con más
+   hacienda" (decisión de Nicolás 16/09). El JSON sigue trayendo `corr`.
    --------------------------------------------------------------- */
 
 var SK_PER = "2025";
@@ -305,18 +308,16 @@ function SkTabStock(props) {
     var d = movil && movil.est && movil.est[who] && movil.est[who][e.n];
     openSheet({
       title: e.n,
-      sub: quien + " · " + skN(e.cab / tot * 100, 1) + " % del stock" + (d ? " · " + d.res.corrales + (d.res.corrales === 1 ? " corral" : " corrales") : ""),
+      // v15.75.3 · sin la sección de corrales ni el "N corrales" del subtítulo
+      // (decisión de Nicolás 16/09: por ahora no hace falta la cantidad por
+      // corral). El JSON sigue trayendo `corr` y `res.corrales` por si vuelve.
+      sub: quien + " · " + skN(e.cab / tot * 100, 1) + " % del stock",
       body: !d ? <div className="sk-hint">{movil === undefined ? "cargando el detalle…" : "sin detalle: stock_movil no está publicado todavía."}</div> : (
         <>
           <SkShGrid r={d.res} />
           <div className="sk-h4">Qué hay · por categoría</div>
           <SkTabla rows={d.cat} tot={d.res.cab} />
           {d.prop && d.prop.length > 1 && <><div className="sk-h4">De quién es · por propietario</div><SkTabla rows={d.prop} tot={d.res.cab} /></>}
-          {d.res.corrales > 1 && <>
-            <div className="sk-h4">Corrales con más hacienda</div>
-            <SkBars gold items={d.corr.map(function (x) { return { n: "Corral " + x.n, cab: x.cab, small: skN(x.kgcab, 0) + " kg/cab · " + skN(x.dias) + " d" }; })}
-                    label={function (i) { return skN(i.cab); }} />
-          </>}
         </>
       )
     });
