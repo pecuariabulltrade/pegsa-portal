@@ -8093,13 +8093,17 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
             add(cat, "sin_linea")
             continue
         cab_wc = _liq_num(g.get("cabezas")) or 0.0
+        # v15.74.9 · `a["cab"]` es la SUMA de las líneas de todas las
+        # liquidaciones activas: si no llega, es una liquidación parcial
+        if a["cab"] < cab_wc - tol_cab:
+            add(cat, f"parcial_{a['cab']:g}/{cab_wc:g}")
+            continue    # faltan animales: el kg/cab no es comparable
         if cab_sc > 0:
             # animales sin caravana: pueden estar en cualquier categoría
-            ok_cab = (cab_wc - tol_cab) <= a["cab"] <= (cab_wc + cab_sc + tol_cab)
-            if not ok_cab:
+            if a["cab"] > cab_wc + cab_sc + tol_cab:
                 add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}(+{cab_sc:g} sc)")
                 continue
-        elif abs(a["cab"] - cab_wc) > tol_cab:
+        elif a["cab"] > cab_wc + tol_cab:
             add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}")
             continue    # con cabezas distintas el kg/cab no es comparable
         # kg/cab de la categoría: el real de los animales si viene (`kg_cab`),
@@ -8112,7 +8116,9 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
                 add(cat, f"kg_{dif:.1f}%")
     if cab_sc > 0 and cab_rem:
         tot = sum(a["cab"] for a in por_cat.values())
-        if abs(tot - cab_rem) > tol_cab:
+        if tot < cab_rem - tol_cab:
+            add("*", f"parcial_{tot:g}/{cab_rem:g}")      # los sin caravana sin liquidar
+        elif tot > cab_rem + tol_cab:
             add("*", f"total_{tot:g}≠{cab_rem:g}")
     for cat in sorted(por_cat):
         if grupos_wc and cat not in wc_cats:
@@ -8213,6 +8219,31 @@ def _cl_leer_supabase(log):
         return [], str(e)
 
 
+def _cl_agregar_lineas(lineas):
+    """Agregado de las líneas activas de una tropa + categoría (v15.74.9).
+    `lineas` = [{liq_id, fecha, c}] con `c` la línea ya calculada."""
+    lineas = sorted(lineas, key=lambda x: (str(x.get("fecha") or ""), str(x.get("liq_id") or "")))
+    def _s(campo):
+        return sum(float(x["c"].get(campo) or 0) for x in lineas)
+    cab, kg = _s("cabezas_liq"), _s("kg_liq")
+    imp, imp_cg = _s("importe"), _s("importe_cg")
+    _dn = sum(float(x["c"].get("kg_liq") or 0) for x in lineas if x["c"].get("desbaste_pct") is not None)
+    _nu = sum(float(x["c"]["desbaste_pct"]) * float(x["c"].get("kg_liq") or 0)
+              for x in lineas if x["c"].get("desbaste_pct") is not None)
+    return {
+        "liq_id": lineas[0]["liq_id"], "fecha": lineas[-1].get("fecha"),
+        "liq_ids": [x["liq_id"] for x in lineas], "n_liq": len(lineas),
+        "cabezas_liq": cab, "kg_liq": kg,
+        "precio_kg":     (imp / kg) if kg else None,
+        "precio_kg_cg":  (imp_cg / kg) if kg else None,
+        "precio_cab_cg": (imp_cg / cab) if cab else None,
+        "comision_cat": _s("comision_cat"), "gastos_cat": _s("gastos_cat"),
+        "importe": imp, "importe_cg": imp_cg,
+        "desbaste_pct": (_nu / _dn) if _dn else None,
+        "hotelero": lineas[0]["c"].get("hotelero"),
+    }
+
+
 def generar_compras_liquidaciones(carpeta_out, log=None):
     """v15.74.1 · Consolida las liquidaciones de compra en
     `compras_liquidaciones.json`, uniendo la base (service key) con los
@@ -8290,17 +8321,18 @@ def generar_compras_liquidaciones(carpeta_out, log=None):
             cat = c.get("categoria")
             if not k or not cat:
                 continue
-            por_tropa_cat.setdefault(k, {})[cat] = {
-                "liq_id": i, "fecha": o.get("fecha"),
-                "cabezas_liq": c.get("cabezas_liq"), "kg_liq": c.get("kg_liq"),
-                "precio_kg": c.get("precio_kg"),
-                "precio_kg_cg": c.get("precio_kg_cg"),
-                "precio_cab_cg": c.get("precio_cab_cg"),
-                "comision_cat": c.get("comision_cat"), "gastos_cat": c.get("gastos_cat"),
-                "importe": c.get("importe"), "importe_cg": c.get("importe_cg"),
-                "desbaste_pct": c.get("desbaste_pct"),
-                "hotelero": c.get("hotelero"),
-            }
+            por_tropa_cat.setdefault(k, {}).setdefault(cat, []).append(
+                {"liq_id": i, "fecha": o.get("fecha"), "c": c})
+
+    # v15.74.9 · una tropa + categoría puede estar en N liquidaciones activas
+    # (parciales: parte de los animales en una fecha y el resto en otra). Lo que
+    # se publica es el AGREGADO: Σ cabezas, Σ kg, Σ importes, precios ponderados,
+    # desbaste ponderado por kg. `liq_id` = la primera por fecha y `fecha` = la
+    # última, para no cambiarle la forma a precios_compra_real ni al módulo 07,
+    # que sigue leyendo `precio_cab_cg` (ahora el ponderado).
+    for k, cats in por_tropa_cat.items():
+        for cat, lineas in cats.items():
+            cats[cat] = _cl_agregar_lineas(lineas)
 
     # v15.74.5 · semáforo estricto por tropa (categoría + cabezas + kg ±8 %)
     semaforo, sem_resumen = _cl_semaforo_todas(carpeta_out, activas, log)

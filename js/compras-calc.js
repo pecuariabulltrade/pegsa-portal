@@ -1,4 +1,4 @@
-/* compras-calc.js — v15.74.7 · La cuenta de una liquidación de compra + semáforo por tropa
+/* compras-calc.js — v15.74.9 · La cuenta de una liquidación de compra + semáforo por tropa
    ────────────────────────────────────────────────────────────────
    UNA sola función hace toda la aritmética de una liquidación, y la misma
    cuenta existe en Python (`liq_calcular` en actualizar_datos.py) para poder
@@ -231,11 +231,16 @@
       var a = porCat[cat];
       if (!a) { add(cat, 'sin_linea'); return; }
       var cabWc = _num(g.cabezas) || 0;
+      // v15.74.9 · a.cab es la SUMA de las líneas de todas las liquidaciones
+      // activas: si no llega, es una liquidación parcial
+      if (a.cab < cabWc - tolCab) {
+        add(cat, 'parcial_' + String(a.cab) + '/' + String(cabWc));
+        return;   // faltan animales: el kg/cab no es comparable
+      }
       if (cabSc > 0) {
         // animales sin caravana: pueden estar en cualquier categoría
-        var okCab = (cabWc - tolCab) <= a.cab && a.cab <= (cabWc + cabSc + tolCab);
-        if (!okCab) { add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc) + '(+' + String(cabSc) + ' sc)'); return; }
-      } else if (Math.abs(a.cab - cabWc) > tolCab) {
+        if (a.cab > cabWc + cabSc + tolCab) { add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc) + '(+' + String(cabSc) + ' sc)'); return; }
+      } else if (a.cab > cabWc + tolCab) {
         add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc));
         return;   // con cabezas distintas el kg/cab no es comparable
       }
@@ -250,7 +255,8 @@
     });
     if (cabSc > 0 && cabRem) {
       var tot = 0; Object.keys(porCat).forEach(function (c) { tot += porCat[c].cab; });
-      if (Math.abs(tot - cabRem) > tolCab) add('*', 'total_' + String(tot) + '≠' + String(cabRem));
+      if (tot < cabRem - tolCab) add('*', 'parcial_' + String(tot) + '/' + String(cabRem));   // los sin caravana sin liquidar
+      else if (tot > cabRem + tolCab) add('*', 'total_' + String(tot) + '≠' + String(cabRem));
     }
     Object.keys(porCat).sort().forEach(function (cat) {
       if (gruposWc.length && !wcCats[cat]) add(cat, 'cat_sobrante');

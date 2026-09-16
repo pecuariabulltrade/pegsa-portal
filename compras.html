@@ -126,6 +126,7 @@
   tr.liqrow td:first-child{padding-left:26px}
   tr.cat.sobra td{font-style:italic}
   tr.cat.info td{background:var(--surface);font-size:11.5px;padding-left:26px;border-bottom:1px dashed var(--border)}
+  #t-nueva tr.off td{opacity:.45}
   tr.form td{background:#fdf6e3;padding:10px 12px 12px 26px}
   .inl{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
   .inl .lbl{margin-bottom:2px}
@@ -299,10 +300,10 @@
 </main>
 
 <script src="js/config-supabase.js?v=15742"></script>
-<script src="js/compras-calc.js?v=15747"></script>
+<script src="js/compras-calc.js?v=15749"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
-   compras.html — v15.74.8 · Módulo 12 · Compras y Liquidaciones
+   compras.html — v15.74.9 · Módulo 12 · Compras y Liquidaciones
    ────────────────────────────────────────────────────────────
    Lo que WinCampo dice que entró (compras_ingresos.json) contra lo que el
    consignatario liquidó (cargado a mano acá). De ese cruce sale el costo de
@@ -334,10 +335,16 @@
    Nicolás: BUL.FER.09/12/25 era "64 Vaca" en el remito y 40 NT · 20 VA ·
    4 VQ en los animales. Nueva liquidación precarga las reales; "usar
    categorías del remito" para el caso raro.
+
+   v15.74.9 · Una tropa puede tener MÁS DE UNA liquidación activa
+   (parciales). IDX agrega las líneas por tropa + categoría (Σ cabezas, Σ kg,
+   precios ponderados), el semáforo compara la suma (`parcial_30/40` cuando
+   no llega), Nueva liquidación precarga lo que FALTA y los ids del mismo día
+   llevan sufijo _2, _3… Ya no bloquea "ya liquidadas en otra operación".
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.8';
+var VERSION = 'v15.74.9';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -467,8 +474,12 @@ async function cargar() {
   window.addEventListener('hashchange', aplicarHash);
 }
 
-/* Índice tropa_norm → categoría → liquidación ACTIVA que la cubre, y LIN con
-   TODAS las líneas activas de la tropa (para el semáforo y las herramientas). */
+/* LIN: tropa_norm → TODAS las líneas activas de la tropa [{o, i, c}].
+   IDX: tropa_norm → categoría → AGREGADO de esas líneas (v15.74.9: una tropa +
+   categoría puede estar en N liquidaciones — parciales — y lo que se compara
+   contra WinCampo es la suma). Misma cuenta que `_cl_agregar_lineas` del
+   pipeline: Σ cabezas, Σ kg, Σ importes, precios ponderados, desbaste
+   ponderado por kg; `liq_id` = la primera por fecha, `lineas` = todas. */
 function reindexar() {
   IDX = {}; LIN = {};
   LIQ.forEach(function (o) {
@@ -476,12 +487,36 @@ function reindexar() {
     (o.categorias || []).forEach(function (c, i) {
       var k = c.tropa_norm || normTropa(c.tropa);
       if (!k || !c.categoria) return;
-      if (!IDX[k]) IDX[k] = {};
-      IDX[k][c.categoria] = {liq_id: o.id, fecha: o.fecha, cat: c};
       (LIN[k] = LIN[k] || []).push({o: o, i: i, c: c});
     });
   });
+  Object.keys(LIN).forEach(function (k) {
+    var porCat = {};
+    LIN[k].forEach(function (x) { (porCat[x.c.categoria] = porCat[x.c.categoria] || []).push(x); });
+    IDX[k] = {};
+    Object.keys(porCat).forEach(function (cat) { IDX[k][cat] = agregarLineas(porCat[cat]); });
+  });
   calcSemaforos();
+}
+function agregarLineas(xs) {
+  xs = xs.slice().sort(function (a, b) {
+    return String(a.o.fecha || '').localeCompare(String(b.o.fecha || '')) || String(a.o.id).localeCompare(String(b.o.id));
+  });
+  var s = function (campo) { return xs.reduce(function (t, x) { return t + (Number(x.c[campo]) || 0); }, 0); };
+  var cab = s('cabezas_liq'), kg = s('kg_liq'), imp = s('importe'), impCg = s('importe_cg');
+  var dn = 0, dd = 0;
+  xs.forEach(function (x) { if (x.c.desbaste_pct != null) { dn += x.c.desbaste_pct * (Number(x.c.kg_liq) || 0); dd += Number(x.c.kg_liq) || 0; } });
+  return {
+    liq_id: xs[0].o.id, fecha: xs[xs.length - 1].o.fecha,
+    liq_ids: xs.map(function (x) { return x.o.id; }), n_liq: xs.length, lineas: xs,
+    cat: {
+      cabezas_liq: cab, kg_liq: kg, importe: imp, importe_cg: impCg,
+      comision_cat: s('comision_cat'), gastos_cat: s('gastos_cat'),
+      precio_kg: kg ? imp / kg : null, precio_kg_cg: kg ? impCg / kg : null,
+      precio_cab_cg: cab ? impCg / cab : null,
+      desbaste_pct: dd ? dn / dd : null
+    }
+  };
 }
 
 /* v15.74.5 · Semáforo de todas las tropas: las de WinCampo y las que sólo
@@ -546,11 +581,22 @@ function conHerramientas(k) {
   var hot = t ? t.hotelero : (((LIN[k] || [])[0] || {c: {}}).c.hotelero);
   return !liqEsTercero(hot);
 }
+/* v15.74.9 · liquidada = todas las categorías cubiertas (Σ líneas ≥ WinCampo);
+   parcial = hay líneas pero falta algo; pendiente = ninguna línea. */
 function estadoTropa(k) {
   var cs = catsDe(k);
   if (!cs.length) return 'pendiente';
-  var n = cs.filter(function (g) { return IDX[k] && IDX[k][g.categoria]; }).length;
-  return n === 0 ? 'pendiente' : (n === cs.length ? 'liquidada' : 'parcial');
+  if (!(LIN[k] || []).length) return 'pendiente';
+  var completas = cs.filter(function (g) {
+    var L = IDX[k] && IDX[k][g.categoria];
+    return L && (L.cat.cabezas_liq || 0) >= (g.cabezas || 0);
+  }).length;
+  return completas === cs.length ? 'liquidada' : 'parcial';
+}
+/* cabezas que faltan liquidar de una categoría de WinCampo */
+function faltanDe(k, g) {
+  var L = IDX[k] && IDX[k][g.categoria];
+  return Math.max((g.cabezas || 0) - (L ? (L.cat.cabezas_liq || 0) : 0), 0);
 }
 
 /* ════════ 1 · INGRESOS ════════ */
@@ -648,11 +694,11 @@ function rIngresos() {
   filas.forEach(function (f) {
     var k = f.k, t = f.t;
     totCab += t.cabezas || 0; totKg += t.kg_ingreso || 0;
-    if (f.est !== 'liquidada') {
-      f.cs.forEach(function (g) {
-        if (!(IDX[k] && IDX[k][g.categoria])) { penCab += g.cabezas || 0; penKg += g.kg_ingreso || 0; }
-      });
-    }
+    // v15.74.9 · pendiente = cabezas que FALTAN (WinCampo − Σ liquidadas), no toda la tropa
+    f.cs.forEach(function (g) {
+      var falta = faltanDe(k, g);
+      if (falta > 0) { penCab += falta; penKg += falta * (g.kg_cab || 0); }
+    });
     var res = resumenLiqTropa(k);
     var selo = SEL.indexOf(k) >= 0;
     var S = SEM[k] || {estado: 'sin_liquidar', motivos: {}};
@@ -689,9 +735,8 @@ function rIngresos() {
       b += '<tr class="cat info"><td colspan="' + NCOL + '"><span class="muted">' + car + ' · ' + rem + '</span>' + nota + '</td></tr>';
     }
     // una fila por liquidación que toca la tropa, con las acciones de la liquidación
-    uniq((LIN[k] || []).map(function (x) { return x.o.id; })).forEach(function (id) {
-      var o = LIN[k].filter(function (x) { return x.o.id === id; })[0].o;
-      b += filaLiq(o, k, herr);
+    liqsDe(k).forEach(function (o, idx, arr) {
+      b += filaLiq(o, k, herr, idx + 1, arr.length);
       if (FORM && FORM.tipo === 'tropa' && FORM.liq_id === id && FORM.i == null && FORM.k === k) {
         b += filaForm(o, null, k);
       }
@@ -710,7 +755,11 @@ function rIngresos() {
         + '<td class="num">' + N(g.kg_ingreso) + '</td>'
         + '<td class="num">' + N(g.kg_cab, 1) + '</td>'
         + '<td>' + semDot(dot, mot.join(', ') || (xs.length ? 'coincide' : 'sin línea')) + '</td>'
-        + '<td>' + (L ? '<span class="tag ok">liquidada</span>' : '<span class="tag pen">pendiente</span>') + '</td>'
+        + '<td>' + (!L ? '<span class="tag pen">pendiente</span>'
+                    : (L.cat.cabezas_liq < (g.cabezas || 0)
+                        ? '<span class="tag par" title="' + N(L.cat.cabezas_liq) + ' de ' + N(g.cabezas) + ' cabezas liquidadas en ' + L.n_liq + ' liquidación(es)">'
+                          + N(L.cat.cabezas_liq) + '/' + N(g.cabezas) + ' cab</span>'
+                        : '<span class="tag ok">liquidada' + (L.n_liq > 1 ? ' ×' + L.n_liq : '') + '</span>')) + '</td>'
         + '<td class="num">' + (L && L.cat.precio_kg_cg != null ? M(L.cat.precio_kg_cg) : '—') + '</td>'
         + '<td class="num">' + (L && L.cat.desbaste_pct != null ? P(L.cat.desbaste_pct, 1) : '—') + '</td>'
         + '</tr>';
@@ -783,7 +832,21 @@ function motTags(mot) {
 }
 
 /* ── v15.74.5 · desplegable: fila de la liquidación y líneas con herramientas ── */
-function filaLiq(o, k, herr) {
+/* v15.74.9 · liquidaciones activas que tocan una tropa, ordenadas por fecha */
+function liqsDe(k) {
+  var vistos = {}, out = [];
+  (LIN[k] || []).forEach(function (x) { if (!vistos[x.o.id]) { vistos[x.o.id] = 1; out.push(x.o); } });
+  return out.sort(function (a, b) {
+    return String(a.fecha || '').localeCompare(String(b.fecha || '')) || String(a.id).localeCompare(String(b.id));
+  });
+}
+/* "30 Novillito · 20 Vaca": lo que una liquidación aporta a una tropa */
+function aporteTxt(o, k) {
+  return catsTxt((o.categorias || []).filter(function (c) { return (c.tropa_norm || normTropa(c.tropa)) === k; })
+    .map(function (c) { return {categoria: c.categoria, cabezas: c.cabezas_liq}; }));
+}
+
+function filaLiq(o, k, herr, nro, de) {
   var rev = o.estado === 'revisar';
   var acc = '';
   if (herr) {
@@ -796,8 +859,10 @@ function filaLiq(o, k, herr) {
       + '<button class="btn danger mini" onclick="anularLiq(\'' + q1(o.id) + '\')">anular</button>'
       + '</span>';
   }
-  return '<tr class="liqrow"><td colspan="5">liq. <b>' + esc(o.id) + '</b> · ' + fec(o.fecha) + ' · '
-    + esc(o.consignataria || '—') + ' · '
+  return '<tr class="liqrow"><td colspan="5">liq. <b>' + esc(o.id) + '</b>'
+    + (de > 1 ? ' <span class="tag exc" title="Esta tropa tiene ' + de + ' liquidaciones activas">' + nro + 'ª de ' + de + '</span>' : '')
+    + ' · ' + fec(o.fecha) + ' · ' + esc(o.consignataria || '—')
+    + ' · aporta <b>' + aporteTxt(o, k) + '</b> · '
     + '<span class="tag ' + (rev ? 'par' : (o.estado === 'importada_excel' ? 'exc' : 'ok')) + '">'
     + esc(o.estado || 'cargada') + '</span>'
     + (o.editado ? ' <span class="muted">editada ' + esc(String(o.editado).slice(0, 16).replace('T', ' ')) + '</span>' : '')
@@ -1033,6 +1098,7 @@ async function persistir(o, accion, detalle) {
   (o.historial = o.historial || []).push({ts: ahora, accion: accion, detalle: detalle});
   var tropas = uniq(o.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
   var idNuevo = liqId(tropas, o.fecha);
+  if (idNuevo !== idViejo) idNuevo = idLibre(idNuevo);   // v15.74.9 · sin pisar otra del mismo día
   var viejo = null;
   if (idNuevo !== idViejo) {
     viejo = clonLiq(idViejo);
@@ -1113,9 +1179,9 @@ function aplicarHash() {
 /* $/kg c/gastos y desbaste ponderados de lo YA liquidado de una tropa. */
 function resumenLiqTropa(k) {
   var num = 0, den = 0, dn = 0, dd = 0;
-  var m = IDX[k] || {};
-  Object.keys(m).forEach(function (cat) {
-    var c = m[cat].cat, kg = c.kg_liq || 0;
+  // v15.74.9 · sobre TODAS las líneas activas de la tropa (N liquidaciones)
+  (LIN[k] || []).forEach(function (x) {
+    var c = x.c, kg = c.kg_liq || 0;
     if (c.precio_kg_cg != null) { num += c.precio_kg_cg * kg; den += kg; }
     if (c.desbaste_pct != null) { dn += c.desbaste_pct * kg; dd += kg; }
   });
@@ -1144,11 +1210,16 @@ function nuevaOp(tropas, existente) {
     var cats = [];
     tropas.forEach(function (k) {
       catsDe(k).forEach(function (g) {
+        // v15.74.9 · si la tropa ya tiene liquidaciones activas se precarga lo
+        // que FALTA (WinCampo − Σ liquidadas), con kg al kg/cab real; una
+        // categoría ya completa va con 0 (editable igual, por si hay un ajuste)
+        var falta = (LIN[k] || []).length ? faltanDe(k, g) : (g.cabezas || 0);
+        var kgCab = g.kg_cab != null ? g.kg_cab : (g.cabezas ? (g.kg_ingreso || 0) / g.cabezas : 0);
         cats.push({
           tropa: g.tropa, tropa_norm: g.tropa_norm, hotelero: g.hotelero,
           categoria: g.categoria,
           cabezas_wc: g.cabezas, kg_wc: g.kg_ingreso,
-          cabezas_liq: g.cabezas, kg_liq: g.kg_ingreso,   // prefill: lo de WinCampo
+          cabezas_liq: falta, kg_liq: Math.round(falta * kgCab * 10) / 10,
           precio_modo: 'kg', precio_valor: null,
           // v15.74.7 · de dónde salió la categoría precargada (caravanas | remito)
           categorias_de: g.fuente || 'remito'
@@ -1314,31 +1385,44 @@ function rNueva() {
   var b = '', avisos = [];
   // v15.74.7 · por tropa: cabezas sin caravana (pueden ir a cualquier categoría)
   // y el total liquidado se valida contra el REMITO, no contra las caravanas
-  var scDe = {}, liqPorTropa = {};
+  var scDe = {}, liqPorTropa = {}, otrasTropa = {};
+  // v15.74.9 · lo que OTRAS liquidaciones activas ya cubren de cada tropa +
+  // categoría (sin contar la que se está editando): lo que se compara es la suma
+  var otrasDe = function (k, cat) {
+    return (LIN[k] || []).filter(function (x) { return x.c.categoria === cat && x.o.id !== OP.__editando; })
+      .reduce(function (t, x) { return t + (Number(x.c.cabezas_liq) || 0); }, 0);
+  };
   R.categorias.forEach(function (c) {
     var k = c.tropa_norm || normTropa(c.tropa), t = (ING.tropas || {})[k];
     scDe[k] = (t && t.fuente_categorias === 'caravanas') ? (t.cab_sin_caravana || 0) : 0;
     liqPorTropa[k] = (liqPorTropa[k] || 0) + (c.cabezas_liq || 0);
   });
+  Object.keys(liqPorTropa).forEach(function (k) {
+    otrasTropa[k] = catsDe(k).reduce(function (t, g) { return t + otrasDe(k, g.categoria); }, 0);
+  });
   R.categorias.forEach(function (c, i) {
     var kT = c.tropa_norm || normTropa(c.tropa), sc = scDe[kT] || 0;
-    var difCab = (c.cabezas_wc || 0) - (c.cabezas_liq || 0);
+    var otras = otrasDe(kT, c.categoria);
+    var objetivo = (c.cabezas_wc || 0) - otras;          // lo que falta cubrir con esta liquidación
+    var difCab = objetivo - (c.cabezas_liq || 0);
+    var vaciaFila = filaVacia(c);
     // con animales sin caravana, liquidar entre lo real y lo real + sc es normal
-    var cabOk = sc > 0 ? (difCab <= 0 && -difCab <= sc) : difCab === 0;
+    var cabOk = vaciaFila ? (objetivo <= 0) : (sc > 0 ? (difCab <= 0 && -difCab <= sc) : difCab === 0);
     var clsCab = !cabOk ? ' class="num cell-warn"' : ' class="num"';
     var desFuera = c.desbaste_pct != null && Math.abs(c.desbaste_pct) > 15;
     var clsDes = desFuera ? ' class="num cell-warn"' : ' class="num"';
     if (!cabOk) {
       avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: WinCampo dice '
-        + N(c.cabezas_wc) + ' cabezas' + (sc ? ' (+' + N(sc) + ' sin caravana en la tropa)' : '') + ' y se liquidan ' + N(c.cabezas_liq)
-        + ' (dif. ' + (difCab > 0 ? '+' : '') + N(difCab) + ').');
+        + N(c.cabezas_wc) + ' cabezas' + (sc ? ' (+' + N(sc) + ' sin caravana en la tropa)' : '')
+        + (otras ? ', otras liquidaciones ya cubren ' + N(otras) : '') + ' y acá se liquidan ' + N(c.cabezas_liq)
+        + (difCab > 0 ? ' (quedan ' + N(difCab) + ' sin liquidar).' : ' (' + N(-difCab) + ' de más).'));
     }
     if (desFuera) {
       avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: desbaste '
         + P(c.desbaste_pct, 1) + ', fuera de ±15 %.'
         + (difCab !== 0 ? ' Ojo: con las cabezas distintas, el desbaste no es comparable.' : ''));
     }
-    b += '<tr>'
+    b += '<tr' + (vaciaFila ? ' class="off" title="Categoría ya cubierta por otra liquidación: queda en 0 y no se guarda"' : '') + '>'
       + '<td>' + esc(c.tropa) + '</td><td>' + esc(c.categoria) + '</td>'
       + '<td class="num">' + N(c.cabezas_wc) + '</td>'
       + '<td class="num">' + N(c.kg_wc) + '</td>'
@@ -1377,24 +1461,31 @@ function rNueva() {
 
   // ── validaciones que impiden guardar ──
   var bloqueos = [];
-  var sinKg = R.categorias.filter(function (c) { return !c.kg_liq; });
+  // v15.74.9 · las filas vacías (0 cab · 0 kg: categoría ya cubierta por otra
+  // liquidación) no se guardan y no bloquean
+  var conDatos = R.categorias.filter(function (c) { return !filaVacia(c); });
+  if (!conDatos.length) bloqueos.push('No hay ninguna fila con cabezas para liquidar.');
+  var sinKg = conDatos.filter(function (c) { return !c.kg_liq; });
   if (sinKg.length) bloqueos.push(sinKg.length + ' fila(s) sin kg liquidados.');
-  var sinPrecio = R.categorias.filter(function (c) { return c.precio_valor == null; });
+  var sinPrecio = conDatos.filter(function (c) { return c.precio_valor == null; });
   if (sinPrecio.length) bloqueos.push(sinPrecio.length + ' fila(s) sin precio.');
   if (!OP.fecha) bloqueos.push('Falta la fecha.');
 
-  // una tropa+categoría no puede estar en dos liquidaciones activas
-  var choques = [];
-  R.categorias.forEach(function (c) {
-    var k = c.tropa_norm || normTropa(c.tropa);
-    var L = IDX[k] && IDX[k][c.categoria];
-    if (L && L.liq_id !== OP.__editando) {
-      choques.push(esc(c.tropa) + ' · ' + esc(c.categoria) + ' ya está en '
-        + '<a href="#" onclick="abrirLiq(\'' + esc(L.liq_id).replace(/'/g, "\\'")
-        + '\');return false">' + esc(L.liq_id) + '</a>');
-    }
+  // v15.74.9 · una tropa + categoría PUEDE estar en varias liquidaciones
+  // activas (parciales): ya no bloquea. Se avisa qué hay y qué falta.
+  var previas = [];
+  uniq(R.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); })).forEach(function (k) {
+    var ls = liqsDe(k).filter(function (o) { return o.id !== OP.__editando; });
+    if (!ls.length) return;
+    var t = (ING.tropas || {})[k] || {};
+    var faltan = catsDe(k).map(function (g) {
+      return {categoria: g.categoria, cabezas: Math.max((g.cabezas || 0) - otrasDe(k, g.categoria), 0)};
+    }).filter(function (x) { return x.cabezas > 0; });
+    previas.push('<b>' + esc(t.tropa || k) + '</b> ya tiene ' + ls.length + ' liquidación' + (ls.length === 1 ? '' : 'es') + ' ('
+      + ls.map(function (o) { return '<a href="#" onclick="abrirLiq(\'' + q1(o.id) + '\');return false">' + esc(o.id) + '</a> · ' + aporteTxt(o, k); }).join('; ')
+      + '): esta es la ' + (ls.length + 1) + 'ª — '
+      + (faltan.length ? 'se precargan los <b>' + catsTxt(faltan) + '</b> que faltan' : 'no falta nada por liquidar') + '.');
   });
-  if (choques.length) bloqueos.push('Ya liquidadas en otra operación: ' + choques.join(' · '));
 
   // v15.74.7 · por tropa: sin caravana, total vs remito y "usar categorías del remito"
   var tropasOp = uniq(R.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
@@ -1408,8 +1499,9 @@ function rNueva() {
       if (t.cab_sin_caravana > 0) {
         partes.push('<b>' + N(t.cab_sin_caravana) + ' cabezas sin caravana</b> en WinCampo — sumalas a la categoría que corresponda');
       }
-      if (liqPorTropa[k] !== t.cabezas) {
-        partes.push('se liquidan <b>' + N(liqPorTropa[k]) + '</b> de las <b>' + N(t.cabezas) + '</b> del remito');
+      if (liqPorTropa[k] + (otrasTropa[k] || 0) !== t.cabezas) {
+        partes.push('se liquidan <b>' + N(liqPorTropa[k]) + '</b>' + (otrasTropa[k] ? ' + ' + N(otrasTropa[k]) + ' en otras liquidaciones' : '')
+          + ' de las <b>' + N(t.cabezas) + '</b> del remito');
       }
       var yaRemito = t.remito && t.remito.length && t.remito.every(function (r) {
         return R.categorias.some(function (c) { return (c.tropa_norm || normTropa(c.tropa)) === k && c.categoria === r.categoria && c.cabezas_liq === r.cabezas; });
@@ -1425,6 +1517,7 @@ function rNueva() {
 
   var html = '';
   if (bloqueos.length) html += '<div class="aviso err">' + bloqueos.join('<br>') + '</div>';
+  if (previas.length)  html += '<div class="aviso">' + previas.join('<br>') + '</div>';
   if (avisos.length)   html += '<div class="aviso">' + avisos.join('<br>') + '</div>';
   if (infoTropas.length) html += '<div class="aviso info">' + infoTropas.join('<br>') + '</div>';
   if (!sbOn())         html += '<div class="aviso info">Sin base configurada: al guardar se '
@@ -1438,14 +1531,30 @@ function rNueva() {
     : (sbOn() ? 'Se guarda en la base.' : 'Se descarga el archivo.');
 }
 
+/* fila sin cabezas ni kg: categoría ya cubierta por otra liquidación */
+function filaVacia(c) { return !(Number(c.cabezas_liq) > 0) && !(Number(c.kg_liq) > 0); }
+
+/* v15.74.9 · dos liquidaciones de la misma tropa el mismo día no pueden
+   compartir id (el RPC hace upsert por id y el archivo lleva el id de nombre):
+   si ya existe una con ese id — activa o anulada — va con sufijo _2, _3… */
+function idLibre(base) {
+  var usados = {}; LIQ.forEach(function (o) { usados[o.id] = 1; });
+  if (!usados[base]) return base;
+  for (var n = 2; n < 100; n++) { if (!usados[base + '_' + n]) return base + '_' + n; }
+  return base + '_' + Date.now();
+}
 function opId() {
-  var tropas = uniq(OP.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
-  return liqId(tropas, OP.fecha);
+  var tropas = uniq(OP.categorias.filter(function (c) { return !filaVacia(c); })
+    .map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
+  return idLibre(liqId(tropas, OP.fecha));
 }
 
 async function guardarOp() {
   if (!OP) return;
   leerForm();
+  // v15.74.9 · las filas vacías (categoría ya cubierta) no se guardan
+  OP.categorias = OP.categorias.filter(function (c) { return !filaVacia(c); });
+  if (!OP.categorias.length) { toast('No hay ninguna fila con cabezas para liquidar.', 'err'); rNueva(); return; }
   var R = liqCalcular(OP);
   var snap = {
     id: OP.__editando || opId(),
@@ -1548,7 +1657,13 @@ function rLiqs() {
       + '<td>' + esc(o.nro_liquidacion || '—') + '</td>'
       + '<td>' + esc(o.consignataria || '—') + '</td>'
       + '<td title="' + esc(tropas.join(' · ')) + '">' + esc(tropas.slice(0, 2).join(' · '))
-        + (tropas.length > 2 ? ' +' + (tropas.length - 2) : '') + '</td>'
+        + (tropas.length > 2 ? ' +' + (tropas.length - 2) : '')
+        // v15.74.9 · "1ª de 2" cuando la tropa tiene varias liquidaciones activas
+        + (an ? '' : ks.map(function (k) {
+            var ls = liqsDe(k); if (ls.length < 2) return '';
+            var pos = ls.map(function (x) { return x.id; }).indexOf(o.id) + 1;
+            return ' <span class="tag exc" title="' + esc(k) + ': ' + ls.length + ' liquidaciones activas">' + pos + 'ª de ' + ls.length + '</span>';
+          }).join('')) + '</td>'
       + '<td class="num">' + N(T.cabezas_liq) + '</td>'
       + '<td class="num">' + N(T.kg_liq) + '</td>'
       + '<td class="num">' + M(T.importe_cg) + '</td>'
@@ -1650,7 +1765,7 @@ function importJSON(inp) {
 function exportCSV() {
   var L = liqsFiltradas();
   var cols = ['liq_id', 'fecha', 'consignataria', 'nro_liquidacion', 'estado', 'semaforo', 'motivos',
-              'fuente_categorias', 'cobertura_pct',
+              'fuente_categorias', 'cobertura_pct', 'n_liq',
               'tropa', 'categoria', 'categoria_liq_original', 'tropa_original',
               'hotelero', 'cabezas_wc', 'kg_wc', 'cabezas_liq', 'kg_liq', 'precio_modo',
               'precio_valor', 'precio_kg', 'importe', 'comision_cat', 'gastos_cat',
@@ -1665,7 +1780,8 @@ function exportCSV() {
         var v = ({liq_id: o.id, fecha: o.fecha, consignataria: o.consignataria,
                   nro_liquidacion: o.nro_liquidacion, estado: o.estado,
                   semaforo: S.estado, motivos: (S.motivos[c.categoria] || S.motivos['*'] || []).join(' '),
-                  fuente_categorias: T.fuente_categorias || '', cobertura_pct: T.cobertura_pct})[k];
+                  fuente_categorias: T.fuente_categorias || '', cobertura_pct: T.cobertura_pct,
+                  n_liq: (IDX[kT] && IDX[kT][c.categoria]) ? IDX[kT][c.categoria].n_liq : ''})[k];
         if (v === undefined) v = c[k];
         if (v === null || v === undefined) return '';
         // es-AR: coma decimal, y por eso el separador de columnas es ';'
