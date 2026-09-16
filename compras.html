@@ -302,7 +302,7 @@
 <script src="js/compras-calc.js?v=15747"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
-   compras.html — v15.74.7 · Módulo 12 · Compras y Liquidaciones
+   compras.html — v15.74.8 · Módulo 12 · Compras y Liquidaciones
    ────────────────────────────────────────────────────────────
    Lo que WinCampo dice que entró (compras_ingresos.json) contra lo que el
    consignatario liquidó (cargado a mano acá). De ese cruce sale el costo de
@@ -337,7 +337,7 @@
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.7';
+var VERSION = 'v15.74.8';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -1225,15 +1225,69 @@ function usarRemito(k) {
   rNueva();
 }
 
+/* v15.74.8 · Los inputs de la tabla comprometen el valor en `onchange` (al
+   salir del campo o con Enter), NO en `oninput`: rNueva() reconstruye el
+   tbody con innerHTML y cada tecla destruía el input que tenía el foco — sólo
+   se podía cargar kg con las flechitas del type=number (Nicolás, 16/09). */
+function catParse(v) {
+  var s = String(v == null ? '' : v).trim().replace(/\s/g, '');
+  if (!s) return null;
+  // es-AR: "1.545,5" → 1545.5 · "363,5" → 363.5 · "363.5" (sin coma) → 363.5
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+  var n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
 function catInput(i, campo, v) {
   if (!OP) return;
   var c = OP.categorias[i];
   if (campo === 'precio_modo') { c.precio_modo = v; }
-  else {
-    var n = parseFloat(String(v).replace(',', '.'));
-    c[campo] = isNaN(n) ? null : n;
-  }
+  else c[campo] = catParse(v);
   rNueva();
+}
+/* Preview en vivo mientras se tipea: recalcula sobre una copia de OP y sólo
+   pisa las celdas derivadas de ESA fila ($/kg, importe, $/kg c/g, $/cab c/g,
+   desbaste). Totales, avisos y botón Guardar se actualizan en onchange. */
+function catPreview(i, campo, v) {
+  if (!OP) return;
+  var copia = {}; for (var k in OP) copia[k] = OP[k];
+  copia.categorias = OP.categorias.map(function (c, j) {
+    var o = {}; for (var kk in c) o[kk] = c[kk];
+    if (j === i) o[campo] = catParse(v);
+    return o;
+  });
+  var c = liqCalcular(copia).categorias[i];
+  var tr = document.querySelectorAll('#t-nueva tbody tr')[i];
+  if (!tr) return;
+  var set = function (col, txt) { var td = tr.querySelector('[data-col="' + col + '"]'); if (td) td.textContent = txt; };
+  set('pkg', c.precio_kg == null ? '—' : M(c.precio_kg));
+  set('imp', M(c.importe));
+  set('com', M(c.comision_cat));
+  set('gas', M(c.gastos_cat));
+  var tdb = tr.querySelector('[data-col="pkgcg"]');
+  if (tdb) tdb.innerHTML = '<b>' + (c.precio_kg_cg == null ? '—' : M(c.precio_kg_cg)) + '</b>';
+  set('pcabcg', c.precio_cab_cg == null ? '—' : M(c.precio_cab_cg));
+  set('des', c.desbaste_pct == null ? '—' : P(c.desbaste_pct, 1));
+}
+/* Enter → compromete y baja al mismo campo de la fila siguiente, para cargar
+   los kg de todas las categorías de corrido. Tab funciona solo. */
+function catKey(e, i, campo) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  catInput(i, campo, e.target.value);         // re-renderiza la tabla
+  var sig = document.querySelector('#t-nueva input[data-i="' + (i + 1) + '"][data-campo="' + campo + '"]');
+  if (sig) { sig.focus(); sig.select(); }
+  else { var b = document.getElementById('btn-guardar'); if (b && !b.disabled) b.focus(); }
+}
+/* type="text" + inputmode="decimal" y no type="number": el number sólo acepta
+   la coma decimal si el idioma de Chrome es es-AR (en otro locale la ignora y
+   "1545,5" se vuelve 15455), y sus flechitas eran justamente lo incómodo. El
+   teclado numérico del celular sale igual con inputmode. */
+function catInputHtml(i, campo, valor, extra) {
+  return '<input class="mini"' + (extra || '') + ' type="text" inputmode="decimal" autocomplete="off" data-i="' + i + '" data-campo="' + campo
+    + '" value="' + (valor == null ? '' : String(Math.round(valor * 10000) / 10000).replace('.', ',')) + '"'
+    + ' oninput="catPreview(' + i + ',\'' + campo + '\',this.value)"'
+    + ' onchange="catInput(' + i + ',\'' + campo + '\',this.value)"'
+    + ' onkeydown="catKey(event,' + i + ',\'' + campo + '\')">';
 }
 
 function rNueva() {
@@ -1289,24 +1343,21 @@ function rNueva() {
       + '<td class="num">' + N(c.cabezas_wc) + '</td>'
       + '<td class="num">' + N(c.kg_wc) + '</td>'
       + '<td class="num">' + N(c.kg_wc_cab, 1) + '</td>'
-      + '<td' + clsCab + '><input class="mini" style="width:66px" type="number" step="1" value="'
-        + (c.cabezas_liq == null ? '' : c.cabezas_liq) + '" oninput="catInput(' + i + ',\'cabezas_liq\',this.value)"></td>'
-      + '<td class="num"><input class="mini" type="number" step="any" value="'
-        + (c.kg_liq == null ? '' : c.kg_liq) + '" oninput="catInput(' + i + ',\'kg_liq\',this.value)"></td>'
+      + '<td' + clsCab + '>' + catInputHtml(i, 'cabezas_liq', c.cabezas_liq, ' style="width:66px"') + '</td>'
+      + '<td class="num">' + catInputHtml(i, 'kg_liq', c.kg_liq, '') + '</td>'
       + '<td class="num"><select class="mini" onchange="catInput(' + i + ',\'precio_modo\',this.value)">'
         + ['kg', 'cab', 'total'].map(function (m) {
             return '<option value="' + m + '"' + (c.precio_modo === m ? ' selected' : '') + '>'
               + (m === 'kg' ? '$/kg' : m === 'cab' ? '$/cab' : 'total') + '</option>';
           }).join('') + '</select></td>'
-      + '<td class="num"><input class="mini" type="number" step="any" value="'
-        + (c.precio_valor == null ? '' : c.precio_valor) + '" oninput="catInput(' + i + ',\'precio_valor\',this.value)"></td>'
-      + '<td class="num">' + (c.precio_kg == null ? '—' : M(c.precio_kg)) + '</td>'
-      + '<td class="num">' + M(c.importe) + '</td>'
-      + '<td class="num">' + M(c.comision_cat) + '</td>'
-      + '<td class="num">' + M(c.gastos_cat) + '</td>'
-      + '<td class="num"><b>' + (c.precio_kg_cg == null ? '—' : M(c.precio_kg_cg)) + '</b></td>'
-      + '<td class="num">' + (c.precio_cab_cg == null ? '—' : M(c.precio_cab_cg)) + '</td>'
-      + '<td' + clsDes + '>' + (c.desbaste_pct == null ? '—' : P(c.desbaste_pct, 1)) + '</td>'
+      + '<td class="num">' + catInputHtml(i, 'precio_valor', c.precio_valor, '') + '</td>'
+      + '<td class="num" data-col="pkg">' + (c.precio_kg == null ? '—' : M(c.precio_kg)) + '</td>'
+      + '<td class="num" data-col="imp">' + M(c.importe) + '</td>'
+      + '<td class="num" data-col="com">' + M(c.comision_cat) + '</td>'
+      + '<td class="num" data-col="gas">' + M(c.gastos_cat) + '</td>'
+      + '<td class="num" data-col="pkgcg"><b>' + (c.precio_kg_cg == null ? '—' : M(c.precio_kg_cg)) + '</b></td>'
+      + '<td class="num" data-col="pcabcg">' + (c.precio_cab_cg == null ? '—' : M(c.precio_cab_cg)) + '</td>'
+      + '<td' + clsDes + ' data-col="des">' + (c.desbaste_pct == null ? '—' : P(c.desbaste_pct, 1)) + '</td>'
       + '</tr>';
   });
   document.querySelector('#t-nueva tbody').innerHTML = b;
