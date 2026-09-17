@@ -19,6 +19,6 @@
    el Informe PDF baja el JSON al disco (el mecanismo de v15.69 B).
 */
 window.PEGSA_SB = {
-  url:  "",   // https://xxxxxxxxxxxx.supabase.co
-  anon: ""    // eyJhbGciOi...
+  url:  "https://ulcircnpjkfsgmyjexpp.supabase.co",   // Project URL
+  anon: "sb_publishable_e2vdsFW4AvDZj3ckgClwMA_GLdvYDSc"    // clave publicable (pública por diseño)
 };
