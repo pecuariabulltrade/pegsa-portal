@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-17T19:07:00.774266",
+    "generado": "2026-09-17T20:07:05.629524",
     "archivo": "compras de hacienda.xlsx",
     "ventana_dias": 90,
     "desde": "2026-06-19",
@@ -17,7 +17,7 @@
       "excel": 133
     },
     "tropas_solo_liquidacion": 60,
-    "meses_repo_liquidacion": 77
+    "meses_repo_liquidacion": 76
   },
   "por_categoria": {
     "Vaca": {
@@ -1210,7 +1210,7 @@
     },
     "BULHUI270526": {
       "tropa": "BUL.HUI.27/05/26",
-      "precio_kg": 4456.26,
+      "precio_kg": 4939.82,
       "kg": 101960.3,
       "cabezas": 260,
       "comision": 0.03,
@@ -1270,16 +1270,16 @@
           "liq_desbaste_aceptado": false
         },
         "Novillito": {
-          "precio_kg": 3630.28,
-          "precio_kg_pond": 3630.28,
-          "precio_kg_cg": 3742.22,
+          "precio_kg": 4370.86,
+          "precio_kg_pond": 4370.86,
+          "precio_kg_cg": 4505.63,
           "precio_cab_cg": 1609153.96,
           "comision": 0.030834,
           "gastos": 0.0,
-          "kg": 6020.0,
-          "kg_liq": 6020.0,
+          "kg": 5000.0,
+          "kg_liq": 5000.0,
           "cab_liq": 14.0,
-          "desbaste_pct": null,
+          "desbaste_pct": -5.54,
           "filas": 1,
           "multiprecio": false,
           "fuente": "liquidacion",
@@ -4112,12 +4112,25 @@
           "fuente": "excel"
         },
         "Vaquillona": {
-          "precio_kg": 4056.75,
-          "precio_kg_pond": 4056.75,
-          "kg": 8825.0,
+          "precio_kg": 4194.76,
+          "precio_kg_pond": 4194.76,
+          "precio_kg_cg": 4324.99,
+          "precio_cab_cg": 1154771.52,
+          "comision": 0.031046,
+          "gastos": 0.0,
+          "kg": 5874.0,
+          "kg_liq": 5874.0,
+          "cab_liq": 22.0,
+          "desbaste_pct": 0.0,
           "filas": 1,
           "multiprecio": false,
-          "fuente": "excel"
+          "fuente": "liquidacion",
+          "liq_id": "PEGDES240326_2026-03-24",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
+          "liq_desbaste_aceptado": false
         },
         "Novillo": {
           "precio_kg": 4328.56,
@@ -4144,25 +4157,12 @@
           "fuente": "excel"
         },
         "Ternera": {
-          "precio_kg": 4194.76,
-          "precio_kg_pond": 4194.76,
-          "precio_kg_cg": 4324.99,
-          "precio_cab_cg": 1154771.52,
-          "comision": 0.031046,
-          "gastos": 0.0,
-          "kg": 5874.0,
-          "kg_liq": 5874.0,
-          "cab_liq": 22.0,
-          "desbaste_pct": null,
+          "precio_kg": 4472.44,
+          "precio_kg_pond": 4472.44,
+          "kg": 9879.0,
           "filas": 1,
           "multiprecio": false,
-          "fuente": "liquidacion",
-          "liq_id": "PEGDES240326_2026-03-24",
-          "liq_semaforo": "revisar",
-          "liq_motivos": "cat_sobrante",
-          "liq_semaforo_tropa": "revisar",
-          "liq_motivos_tropa": "Vaquillona: sin_linea · Ternera: cat_sobrante",
-          "liq_desbaste_aceptado": false
+          "fuente": "excel"
         },
         "Novillito": {
           "precio_kg": 5248.96,
@@ -4181,8 +4181,8 @@
           "liq_id": "PEGDES240326_2026-03-24",
           "liq_semaforo": "ok",
           "liq_motivos": null,
-          "liq_semaforo_tropa": "revisar",
-          "liq_motivos_tropa": "Vaquillona: sin_linea · Ternera: cat_sobrante",
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false
         }
       },
@@ -9354,8 +9354,8 @@
         "fuente": "liquidacion"
       },
       "2026-05": {
-        "precio_kg": 4619.39,
-        "kg": 37420.0,
+        "precio_kg": 4748.84,
+        "kg": 36400.0,
         "cabezas": 131,
         "fuente": "liquidacion"
       },
@@ -9496,10 +9496,10 @@
         "fuente": "liquidacion"
       },
       "2026-03": {
-        "precio_kg": 4194.76,
-        "kg": 5874.0,
-        "cabezas": 22,
-        "fuente": "liquidacion"
+        "precio_kg": 4472.44,
+        "kg": 9879.0,
+        "cabezas": 37,
+        "fuente": "excel"
       },
       "2026-04": {
         "precio_kg": 5884.84,
@@ -9816,9 +9816,9 @@
         "fuente": "liquidacion"
       },
       "2026-03": {
-        "precio_kg": 4354.76,
-        "kg": 26430.0,
-        "cabezas": 79,
+        "precio_kg": 4325.67,
+        "kg": 32304.0,
+        "cabezas": 101,
         "fuente": "liquidacion"
       },
       "2026-04": {

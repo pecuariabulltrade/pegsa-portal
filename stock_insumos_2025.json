@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-17T19:02:44.070519",
+    "generado": "2026-09-17T20:03:01.367838",
     "periodo": "2025",
     "tabla": "v_PB_StockInsumo",
     "registros": 7,
@@ -12,8 +12,8 @@
     "dias_registro_365": 364,
     "consumo_total_norm": 79763.0,
     "consumo_total_sin_ajuste": 73548.2,
-    "dias_totales": 186.1,
-    "dias_totales_sin_ajuste": 201.8,
+    "dias_totales": 188.1,
+    "dias_totales_sin_ajuste": 204.0,
     "ajuste_consumo": {
       "*": 1.1,
       "MAIZ GRANO": 1.05
@@ -34,24 +34,35 @@
     },
     {
       "nombre": "MAIZ GRANO",
-      "stock_kg": 6652554.6,
+      "stock_kg": 6747034.6,
       "consumo_diario_tc": 23938.7,
       "consumo_dia_norm": 22798.8,
       "ajuste_factor": 1.05,
       "consumo_3d_tc": 27095.0,
       "kg_dia_anio": 33610.5,
-      "dias_restantes": 277.9,
+      "dias_restantes": 281.8,
       "fuente": "normalizado_365"
     },
     {
       "nombre": "GLUTEN DE MAIZ",
-      "stock_kg": 408487.0,
+      "stock_kg": 443607.0,
       "consumo_diario_tc": 24830.9,
       "consumo_dia_norm": 22573.6,
       "ajuste_factor": 1.1,
       "consumo_3d_tc": 22940.0,
       "kg_dia_anio": 33278.5,
-      "dias_restantes": 16.5,
+      "dias_restantes": 17.9,
+      "fuente": "normalizado_365"
+    },
+    {
+      "nombre": "HARINA GERMEN",
+      "stock_kg": 37657.0,
+      "consumo_diario_tc": 8602.7,
+      "consumo_dia_norm": 7820.7,
+      "ajuste_factor": 1.1,
+      "consumo_3d_tc": 6050.0,
+      "kg_dia_anio": 11529.4,
+      "dias_restantes": 4.4,
       "fuente": "normalizado_365"
     },
     {
@@ -66,19 +77,8 @@
       "fuente": "normalizado_365"
     },
     {
-      "nombre": "HARINA GERMEN",
-      "stock_kg": 8627.0,
-      "consumo_diario_tc": 8602.7,
-      "consumo_dia_norm": 7820.7,
-      "ajuste_factor": 1.1,
-      "consumo_3d_tc": 6050.0,
-      "kg_dia_anio": 11529.4,
-      "dias_restantes": 1.0,
-      "fuente": "normalizado_365"
-    },
-    {
       "nombre": "DIESEL",
-      "stock_kg": 7570.0,
+      "stock_kg": 7481.0,
       "consumo_diario_tc": null,
       "consumo_dia_norm": null,
       "ajuste_factor": 1.1,
@@ -99,5 +99,5 @@
       "fuente": null
     }
   ],
-  "total_kg": 14843258.21
+  "total_kg": 15001799.21
 }
