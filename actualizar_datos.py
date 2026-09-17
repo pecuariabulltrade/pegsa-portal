@@ -7819,7 +7819,11 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
         t["cab_real"] = sum(c["cabezas"] for c in t["categorias_real"])
         t["cobertura_pct"] = (round(t["cab_real"] / t["cabezas"] * 100, 1)
                               if t["cabezas"] and por_car is not None else None)
-        t["cab_sin_caravana"] = max(t["cabezas"] - t["cab_real"], 0)
+        # v15.74.15 · diferencia del REMITO contra las caravanas (puede ser
+        # negativa). No es "sin caravana": el remito no manda sobre las cabezas.
+        # `cab_sin_caravana` queda como alias un tick más (compras.html publicado).
+        t["dif_remito"] = t["cabezas"] - t["cab_real"]
+        t["cab_sin_caravana"] = max(t["dif_remito"], 0)
         usa_car = bool(t["categorias_real"]) and (t["cobertura_pct"] or 0) >= COMPRAS_COB_MIN
         t["fuente_categorias"] = "caravanas" if usa_car else "remito"
         t["categorias"] = (sorted({c["categoria"] for c in t["categorias_real"]}) if usa_car
@@ -8062,18 +8066,19 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
 
     v15.74.7 · `grupos_wc` son las categorías EFECTIVAS de la tropa (las reales
     por caravana cuando la cobertura llega a COMPRAS_COB_MIN, si no las del
-    remito). opts trae `fuente_categorias`, `cab_remito`, `cab_sin_caravana`,
-    `cobertura_pct`, `remito_distinto`. Con caravanas y animales sin caravana,
-    una línea vale con real ≤ liq ≤ real + sin_caravana y la suma de la tropa
-    tiene que dar el remito. `avisos` son informativos: no bajan el semáforo."""
+    remito). opts trae `fuente_categorias`, `cobertura_pct`, `remito_distinto`
+    (`cab_remito` / `cab_sin_caravana` se aceptan y se ignoran).
+    v15.74.15 (decisión de Nicolás, 17/09/2026) · las cabezas se comparan
+    SOLO contra las reales por caravana, exactas: liq < real → parcial_x/y,
+    liq > real → cabezas_x≠y. El remito no manda (BUL.HUI.27/05/26: el remito
+    decía 37 y entraron 36; el animal 37 nunca existió). `avisos` son
+    informativos: no bajan el semáforo."""
     opts = opts or {}
     grupos_wc = grupos_wc or []
     lineas = lineas or []
     tol_kg  = opts.get("tol_kg_pct", LIQ_TOL_KG_PCT)
     tol_cab = opts.get("tol_cab", LIQ_TOL_CAB)
     fuente  = opts.get("fuente_categorias") or "remito"
-    cab_sc  = float(opts.get("cab_sin_caravana") or 0) if fuente == "caravanas" else 0.0
-    cab_rem = _liq_num(opts.get("cab_remito"))
     motivos, avisos = {}, []
 
     def add(cat, m):
@@ -8120,12 +8125,7 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
         if a["cab"] < cab_wc - tol_cab:
             add(cat, f"parcial_{a['cab']:g}/{cab_wc:g}")
             continue    # faltan animales: el kg/cab no es comparable
-        if cab_sc > 0:
-            # animales sin caravana: pueden estar en cualquier categoría
-            if a["cab"] > cab_wc + cab_sc + tol_cab:
-                add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}(+{cab_sc:g} sc)")
-                continue
-        elif a["cab"] > cab_wc + tol_cab:
+        if a["cab"] > cab_wc + tol_cab:
             add(cat, f"cabezas_{a['cab']:g}≠{cab_wc:g}")
             continue    # con cabezas distintas el kg/cab no es comparable
         # kg/cab de la categoría: el real de los animales si viene (`kg_cab`),
@@ -8139,24 +8139,8 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
                     avisos.append(f"desbaste_aceptado_{dif:.1f}%")   # informativo: no baja el color
                 else:
                     add(cat, f"kg_{dif:.1f}%")
-    if cab_sc > 0 and cab_rem:
-        tot = sum(a["cab"] for a in por_cat.values())
-        if tot < cab_rem - tol_cab:
-            add("*", f"parcial_{tot:g}/{cab_rem:g}")      # los sin caravana sin liquidar
-        elif tot > cab_rem + tol_cab:
-            add("*", f"total_{tot:g}≠{cab_rem:g}")
-        else:
-            # v15.74.14 · Σ liq = remito pero entraron menos animales (por
-            # caravana): el consignatario liquidó de más. NO es "sin caravana"
-            # (el animal no entró). Verde + aviso para reclamar; el costo del
-            # 07 sale por kg de WinCampo, así que no se pierde ni se duplica.
-            # Sólo si las cabezas por categoría cierran: con un cabezas_≠ /
-            # parcial / sin_linea el exceso no se puede atribuir.
-            cab_real = sum(_liq_num(g.get("cabezas")) or 0.0 for g in grupos_wc)
-            cab_ok = not any(m.startswith(("cabezas_", "parcial_", "sin_linea"))
-                             for ms in motivos.values() for m in ms)
-            if cab_ok and tot > cab_real + tol_cab:
-                avisos.append(f"liq_de_mas_{tot - cab_real:g}")
+    # v15.74.15 · ya no hay comparación del total contra el remito
+    # (parcial_*/total_* en `*`) ni aviso "liquidada de más" (v15.74.14).
     for cat in sorted(por_cat):
         if grupos_wc and cat not in wc_cats:
             add(cat, "cat_sobrante")
@@ -8208,8 +8192,6 @@ def _cl_semaforo_todas(carpeta_out, activas, log):
             "hotelero": hot,
             # v15.74.7 · categorías por caravana
             "fuente_categorias": t.get("fuente_categorias"),
-            "cab_remito": t.get("cabezas"),
-            "cab_sin_caravana": t.get("cab_sin_caravana"),
             "cobertura_pct": t.get("cobertura_pct"),
             "remito_distinto": t.get("remito_distinto"),
         })

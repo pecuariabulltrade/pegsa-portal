@@ -300,7 +300,7 @@
 </main>
 
 <script src="js/config-supabase.js?v=15742"></script>
-<script src="js/compras-calc.js?v=157414"></script>
+<script src="js/compras-calc.js?v=157415"></script>
 <script>
 /* ════════════════════════════════════════════════════════════
    compras.html — v15.74.11 · Módulo 12 · Compras y Liquidaciones
@@ -354,7 +354,7 @@
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.14';
+var VERSION = 'v15.74.15';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -638,8 +638,6 @@ function semDe(k) {
   return liqSemaforo(catsDe(k), lineas, {
     hotelero: hot,
     fuente_categorias: t ? t.fuente_categorias : null,
-    cab_remito: t ? t.cabezas : null,
-    cab_sin_caravana: t ? t.cab_sin_caravana : null,
     cobertura_pct: t ? t.cobertura_pct : null,
     remito_distinto: t ? t.remito_distinto : false
   });
@@ -650,33 +648,6 @@ function catsTxt(lista) {
 }
 function semDot(est, titulo) {
   return '<span class="sem ' + esc(est) + '" title="' + esc(titulo || SEM_LBL[est] || est) + '"></span>';
-}
-/* v15.74.14 · "liquidada de más": Σ liq = remito pero entraron menos animales
-   (por caravana). Por categoría, el exceso × $/cab c/gastos de esa línea es el
-   importe a reclamar. Devuelve null si el semáforo no trae el aviso. */
-function liqDeMas(k) {
-  var S = SEM[k] || {}, av = (S.avisos || []).filter(function (a) { return String(a).indexOf('liq_de_mas_') === 0; });
-  if (!av.length) return null;
-  var n = Number(String(av[0]).replace('liq_de_mas_', '')) || 0;
-  var real = {}; catsDe(k).forEach(function (g) { real[g.categoria] = (real[g.categoria] || 0) + (Number(g.cabezas) || 0); });
-  var liq = {}, pcab = {};
-  (LIN[k] || []).forEach(function (x) {
-    liq[x.c.categoria] = (liq[x.c.categoria] || 0) + (Number(x.c.cabezas_liq) || 0);
-    if (x.c.precio_cab_cg != null) pcab[x.c.categoria] = x.c.precio_cab_cg;
-  });
-  var det = [], imp = 0;
-  Object.keys(liq).forEach(function (cat) {
-    var ex = liq[cat] - (real[cat] || 0);
-    if (ex > 0) { det.push({cat: cat, n: ex, imp: ex * (pcab[cat] || 0)}); imp += ex * (pcab[cat] || 0); }
-  });
-  return {n: n, importe: imp, det: det};
-}
-function liqDeMasTag(k) {
-  var d = liqDeMas(k); if (!d) return '';
-  return ' <span class="tag exc" title="El consignatario liquidó ' + N(d.n) + ' cabeza' + (d.n === 1 ? '' : 's')
-    + ' más que las que entraron (por caravana): ' + esc(d.det.map(function (x) { return x.cat + ' ' + N(x.n) + ' × ' + M(x.imp / (x.n || 1)); }).join(' · '))
-    + '. Para reclamar. El costo del módulo 07 sale por kg de WinCampo: no se pierde ni se duplica.">liquidada de más · '
-    + N(d.n) + ' cab · ' + M(d.importe) + '</span>';
 }
 function semCelda(k) {
   var s = SEM[k] || {estado: 'sin_liquidar', motivos: {}};
@@ -854,7 +825,6 @@ function rIngresos() {
       + '<td>' + fec(t.fecha) + '</td>'
       + '<td><b>' + esc(t.tropa) + '</b>' + (t.sinWc ? ' <span class="tag par">sin ingreso WC</span>' : '')
       + (t.remito_distinto ? ' <span class="tag exc" title="Las categorías reales (por caravana) no son las del remito de ingreso">≠ remito</span>' : '')
-      + liqDeMasTag(k)
       + (t.fuente_categorias === 'remito' && t.cobertura_pct != null
           ? ' <span class="tag pen" title="Cobertura por caravana ' + N(t.cobertura_pct, 0) + ' %: se usan las categorías del remito">remito · ' + N(t.cobertura_pct, 0) + ' %</span>' : '')
       + '</td>'
@@ -880,7 +850,7 @@ function rIngresos() {
     if (t.categorias_real && t.categorias_real.length) {
       var cob = t.cobertura_pct != null ? N(t.cobertura_pct, 0) + ' %' : '—';
       var car = 'Por caravana: <b>' + catsTxt(t.categorias_real) + '</b> <span class="muted">(' + N(t.cab_real) + '/' + N(t.cabezas)
-        + (t.cab_sin_caravana ? ' · diferencia remito − caravanas ' + N(t.cab_sin_caravana) : ' · ' + cob) + ')</span>' + liqDeMasTag(k);
+        + (t.cab_real !== t.cabezas ? ' · remito decía ' + N(t.cabezas) : ' · ' + cob) + ')</span>';
       var rem = 'Remito: ' + (t.fuente_categorias === 'caravanas' ? catsTxt(t.remito) : '<b>' + catsTxt(t.remito) + '</b>');
       var nota = t.fuente_categorias === 'caravanas'
         ? (t.remito_distinto ? ' <span class="tag exc">≠ remito</span>' : ' <span class="tag ok">coincide</span>')
@@ -1604,9 +1574,9 @@ function rNueva() {
   }).join('') + '</tr>';
 
   var b = '', avisos = [];
-  // v15.74.7 · por tropa: cabezas sin caravana (pueden ir a cualquier categoría)
-  // y el total liquidado se valida contra el REMITO, no contra las caravanas
-  var scDe = {}, liqPorTropa = {}, otrasTropa = {};
+  // v15.74.15 · las cabezas se validan SOLO contra las reales por caravana
+  // (el remito no manda); el remito se muestra como dato
+  var liqPorTropa = {}, otrasTropa = {};
   // v15.74.9 · lo que OTRAS liquidaciones activas ya cubren de cada tropa +
   // categoría (sin contar la que se está editando): lo que se compara es la suma
   var otrasDe = function (k, cat) {
@@ -1614,27 +1584,25 @@ function rNueva() {
       .reduce(function (t, x) { return t + (Number(x.c.cabezas_liq) || 0); }, 0);
   };
   R.categorias.forEach(function (c) {
-    var k = c.tropa_norm || normTropa(c.tropa), t = (ING.tropas || {})[k];
-    scDe[k] = (t && t.fuente_categorias === 'caravanas') ? (t.cab_sin_caravana || 0) : 0;
+    var k = c.tropa_norm || normTropa(c.tropa);
     liqPorTropa[k] = (liqPorTropa[k] || 0) + (c.cabezas_liq || 0);
   });
   Object.keys(liqPorTropa).forEach(function (k) {
     otrasTropa[k] = catsDe(k).reduce(function (t, g) { return t + otrasDe(k, g.categoria); }, 0);
   });
   R.categorias.forEach(function (c, i) {
-    var kT = c.tropa_norm || normTropa(c.tropa), sc = scDe[kT] || 0;
+    var kT = c.tropa_norm || normTropa(c.tropa);
     var otras = otrasDe(kT, c.categoria);
     var objetivo = (c.cabezas_wc || 0) - otras;          // lo que falta cubrir con esta liquidación
     var difCab = objetivo - (c.cabezas_liq || 0);
     var vaciaFila = filaVacia(c);
-    // con diferencia remito − caravanas, liquidar entre lo real y lo real + sc es normal
-    var cabOk = vaciaFila ? (objetivo <= 0) : (sc > 0 ? (difCab <= 0 && -difCab <= sc) : difCab === 0);
+    var cabOk = vaciaFila ? (objetivo <= 0) : difCab === 0;   // exacto contra las reales
     var clsCab = !cabOk ? ' class="num cell-warn"' : ' class="num"';
     var desFuera = c.desbaste_pct != null && Math.abs(c.desbaste_pct) > 15;
     var clsDes = desFuera ? ' class="num cell-warn"' : ' class="num"';
     if (!cabOk) {
       avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: WinCampo dice '
-        + N(c.cabezas_wc) + ' cabezas' + (sc ? ' (el remito, ' + N(sc) + ' más)' : '')
+        + N(c.cabezas_wc) + ' cabezas
         + (otras ? ', otras liquidaciones ya cubren ' + N(otras) : '') + ' y acá se liquidan ' + N(c.cabezas_liq)
         + (difCab > 0 ? ' (quedan ' + N(difCab) + ' sin liquidar).' : ' (' + N(-difCab) + ' de más).'));
     }
@@ -1708,7 +1676,7 @@ function rNueva() {
       + (faltan.length ? 'se precargan los <b>' + catsTxt(faltan) + '</b> que faltan' : 'no falta nada por liquidar') + '.');
   });
 
-  // v15.74.7 · por tropa: sin caravana, total vs remito y "usar categorías del remito"
+  // v15.74.15 · por tropa: remito vs caravanas (informativo) y "usar categorías del remito"
   var tropasOp = uniq(R.categorias.map(function (c) { return c.tropa_norm || normTropa(c.tropa); }));
   var infoTropas = [];
   tropasOp.forEach(function (k) {
@@ -1717,22 +1685,21 @@ function rNueva() {
     if (t.fuente_categorias === 'caravanas') {
       partes.push('categorías <b>por caravana</b> (' + N(t.cab_real) + '/' + N(t.cabezas) + ')'
         + (t.remito_distinto ? ' · el remito decía ' + catsTxt(t.remito) : ''));
-      if (t.cab_sin_caravana > 0) {
-        // v15.74.14 · no es "sin caravana": el animal no entró
-        partes.push('<b>el remito dice ' + N(t.cab_sin_caravana) + ' más que los animales que entraron</b> (por caravana). '
-          + 'Si el consignatario liquidó es' + (t.cab_sin_caravana === 1 ? 'a' : 'as') + ' ' + N(t.cab_sin_caravana)
-          + ', cargalas igual: la tropa queda verde con la marca <i>liquidada de más</i> para reclamar. '
-          + 'El costo del módulo 07 sale por kg de WinCampo, así que no se pierde ni se duplica');
+      if (t.cab_real !== t.cabezas) {
+        // v15.74.15 · el remito no manda: se compara contra los animales reales
+        partes.push('el remito decía <b>' + N(t.cabezas) + '</b>; por caravana entraron <b>' + N(t.cab_real)
+          + '</b>. Se compara contra los ' + N(t.cab_real) + ' reales');
       }
-      if (liqPorTropa[k] + (otrasTropa[k] || 0) !== t.cabezas) {
+      if (liqPorTropa[k] + (otrasTropa[k] || 0) !== t.cab_real) {
         partes.push('se liquidan <b>' + N(liqPorTropa[k]) + '</b>' + (otrasTropa[k] ? ' + ' + N(otrasTropa[k]) + ' en otras liquidaciones' : '')
-          + ' de las <b>' + N(t.cabezas) + '</b> del remito');
+          + ' de las <b>' + N(t.cab_real) + '</b> reales');
       }
       var yaRemito = t.remito && t.remito.length && t.remito.every(function (r) {
         return R.categorias.some(function (c) { return (c.tropa_norm || normTropa(c.tropa)) === k && c.categoria === r.categoria && c.cabezas_liq === r.cabezas; });
       });
       if (!yaRemito) {
-        partes.push('<button class="btn sec mini" onclick="usarRemito(\'' + q1(k) + '\')">usar categorías del remito</button>');
+        partes.push('<button class="btn sec mini" onclick="usarRemito(\'' + q1(k) + '\')" '
+          + 'title="Copia las categorías y cabezas del remito de ingreso. Las cabezas se comparan igual contra las reales por caravana.">usar categorías del remito</button>');
       }
     } else if (t.cobertura_pct != null) {
       partes.push('categorías del <b>remito</b> (cobertura por caravana ' + N(t.cobertura_pct, 0) + ' %)');

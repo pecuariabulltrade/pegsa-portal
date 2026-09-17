@@ -203,10 +203,11 @@
 
   /* v15.74.7 · `gruposWc` son las categorías EFECTIVAS de la tropa: las reales
      por caravana (stock + egresos por animal) cuando la cobertura llega al 90 %,
-     si no las del remito. opts trae además fuente_categorias, cab_remito,
-     cab_sin_caravana, cobertura_pct y remito_distinto. Con caravanas y animales
-     sin caravana, una línea vale con real ≤ liq ≤ real + sin_caravana y la suma
-     de la tropa tiene que dar el remito. `avisos` (remito_distinto,
+     si no las del remito. opts trae además fuente_categorias, cobertura_pct y
+     remito_distinto (cab_remito / cab_sin_caravana se aceptan y se ignoran).
+     v15.74.15 (decisión de Nicolás) · las cabezas se comparan SOLO contra las
+     reales por caravana, exactas: liq < real → parcial_x/y, liq > real →
+     cabezas_x≠y. El remito no manda. `avisos` (remito_distinto,
      cobertura_x%) son informativos: no bajan el semáforo. */
   function liqSemaforo(gruposWc, lineas, opts) {
     opts = opts || {};
@@ -214,8 +215,6 @@
     var tolKg  = opts.tol_kg_pct != null ? opts.tol_kg_pct : LIQ_TOL_KG_PCT;
     var tolCab = opts.tol_cab != null ? opts.tol_cab : LIQ_TOL_CAB;
     var fuente = opts.fuente_categorias || 'remito';
-    var cabSc  = fuente === 'caravanas' ? (_num(opts.cab_sin_caravana) || 0) : 0;
-    var cabRem = _num(opts.cab_remito);
     var motivos = {}, avisos = [];
     function add(cat, m) { (motivos[cat] = motivos[cat] || []).push(m); }
 
@@ -253,10 +252,7 @@
         add(cat, 'parcial_' + String(a.cab) + '/' + String(cabWc));
         return;   // faltan animales: el kg/cab no es comparable
       }
-      if (cabSc > 0) {
-        // animales sin caravana: pueden estar en cualquier categoría
-        if (a.cab > cabWc + cabSc + tolCab) { add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc) + '(+' + String(cabSc) + ' sc)'); return; }
-      } else if (a.cab > cabWc + tolCab) {
+      if (a.cab > cabWc + tolCab) {
         add(cat, 'cabezas_' + String(a.cab) + '≠' + String(cabWc));
         return;   // con cabezas distintas el kg/cab no es comparable
       }
@@ -272,24 +268,8 @@
         }
       }
     });
-    if (cabSc > 0 && cabRem) {
-      var tot = 0; Object.keys(porCat).forEach(function (c) { tot += porCat[c].cab; });
-      if (tot < cabRem - tolCab) add('*', 'parcial_' + String(tot) + '/' + String(cabRem));   // los sin caravana sin liquidar
-      else if (tot > cabRem + tolCab) add('*', 'total_' + String(tot) + '≠' + String(cabRem));
-      else {
-        // v15.74.14 · Σ liq = remito pero entraron menos animales (por
-        // caravana): el consignatario liquidó de más. NO es "sin caravana" (el
-        // animal no entró). Verde + aviso para reclamar; el costo del 07 sale
-        // por kg de WinCampo, así que no se pierde ni se duplica.
-        // Sólo si las cabezas por categoría cierran: con un cabezas_≠ /
-        // parcial / sin_linea el exceso no se puede atribuir.
-        var cabReal = 0; gruposWc.forEach(function (g) { cabReal += _num(g.cabezas) || 0; });
-        var cabOk = !Object.keys(motivos).some(function (c) {
-          return motivos[c].some(function (m) { return /^(cabezas_|parcial_|sin_linea)/.test(m); });
-        });
-        if (cabOk && tot > cabReal + tolCab) avisos.push('liq_de_mas_' + String(tot - cabReal));
-      }
-    }
+    // v15.74.15 · ya no hay comparación del total contra el remito
+    // (parcial_*/total_* en '*') ni aviso "liquidada de más" (v15.74.14).
     Object.keys(porCat).sort().forEach(function (cat) {
       if (gruposWc.length && !wcCats[cat]) add(cat, 'cat_sobrante');
       if (porCat[cat].revisar) add(cat, 'estado_revisar');
