@@ -8267,6 +8267,12 @@ def _cl_agregar_lineas(lineas):
         "importe": imp, "importe_cg": imp_cg,
         "desbaste_pct": (_nu / _dn) if _dn else None,
         "hotelero": lineas[0]["c"].get("hotelero"),
+        # v15.74.12 · la aceptación de desbaste vale para la categoría sólo si
+        # TODAS sus líneas la tienen vigente (mismo criterio que liq_semaforo)
+        "desbaste_aceptado_vigente": all(
+            liq_desbaste_vigente(x["c"].get("desbaste_aceptado"),
+                                 float(x["c"].get("kg_liq") or 0), float(x["c"].get("cabezas_liq") or 0))
+            for x in lineas),
     }
 
 
@@ -8436,8 +8442,26 @@ def _pcr_merge_liquidaciones(salida, carpeta_out, log):
             n_nuevas += 1
         pc = t.setdefault("por_categoria", {})
         sem_k = sem_todas.get(k) or {}
+        sem_mot = sem_k.get("motivos") or {}
+        sem_avi = sem_k.get("avisos") or []
         for cat, L in cats.items():
             imp = L.get("importe") or 0.0
+            # v15.74.12 · el semáforo de la FILA es el de tropa + categoría: los
+            # motivos propios de la categoría más los de la tropa entera (`*`:
+            # total_x≠y, tropa_sin_ingreso). Una categoría que cierra queda verde
+            # aunque la tropa esté ámbar por otra. El de la tropa viaja aparte.
+            mot_cat = list(sem_mot.get(cat) or []) + list(sem_mot.get("*") or [])
+            est_tropa = sem_k.get("estado")
+            if est_tropa == "terceros":
+                est_cat = "terceros"
+            elif mot_cat:
+                est_cat = "revisar"
+            elif est_tropa in ("ok", "revisar"):
+                est_cat = "ok"
+            else:
+                est_cat = est_tropa
+            desb_ok = (bool(L.get("desbaste_aceptado_vigente")) and not mot_cat
+                       and any(str(a).startswith("desbaste_aceptado_") for a in sem_avi))
             # fracciones equivalentes sobre el importe s/gastos — es lo que el
             # módulo 07 espera en `comision` (una fracción, no un monto)
             com_fr = ((L.get("comision_cat") or 0.0) / imp) if imp else None
@@ -8456,8 +8480,12 @@ def _pcr_merge_liquidaciones(salida, carpeta_out, log):
                                    if L.get("desbaste_pct") is not None else None),
                 "filas":          1, "multiprecio": False,
                 "fuente":         "liquidacion", "liq_id": L.get("liq_id"),
-                "liq_semaforo":   sem_k.get("estado"),
-                "liq_motivos":    liq_motivos_txt(sem_k.get("motivos")) or None,
+                # v15.74.12 · por categoría (antes copiaba el de toda la tropa)
+                "liq_semaforo":   est_cat,
+                "liq_motivos":    ", ".join(mot_cat) or None,
+                "liq_semaforo_tropa": est_tropa,
+                "liq_motivos_tropa":  liq_motivos_txt(sem_mot) or None,
+                "liq_desbaste_aceptado": desb_ok,
             }
             n_liq += 1
 
@@ -9064,6 +9092,16 @@ def _rr_cat(c):
 # Confirmado con Nicolás el 14/09/2026. Las filas sin liquidación (fuente
 # "excel" o estimadas) NO pasan por acá: siguen con el cálculo de siempre.
 RR_COMPRA_POR_CABEZA = True
+
+# v15.74.12 · El Excel de compras DEJA de ser fuente de precio del módulo 07
+# (decisión de Nicolás, 14/09/2026): una fila se costea con su liquidación del
+# módulo 12 (precio + comisión + gastos, por cabeza) o queda estimada. El Excel
+# sigue alimentando la reposición mensual y los indicadores hasta que Compras
+# lo cubra. Las tropas propias (destete / traslados internos) no son compras y
+# nunca van a tener liquidación: se marcan aparte, precio = compañeras (gancho
+# hasta que Nicolás defina cómo valuar hacienda propia — NO inventar regla).
+RR_PRECIO_SOLO_LIQUIDACION = True
+RR_TROPAS_PROPIAS_RE = r"^(PEG|PEC)(DES|PDP|COL)"
 
 RR_DM_VENTANA_DIAS  = 30     # se busca la caravana en [fe − 30, fe + 1]
 RR_DM_DIAS_ADELANTE = 1
@@ -9953,6 +9991,23 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     if not por_tropa:
         log.warning("  ⚠ sin índice de compras por tropa, saltando resultado por remito")
         return None
+    # v15.74.12 · qué tropas conoce Compras (ingresos de WinCampo + liquidadas):
+    # una tropa que no está ahí no tiene ingreso de compra (destete / traslado /
+    # anterior a la ventana) y se distingue de la que está pero sin liquidar.
+    _cl_sem = ((_load("compras_liquidaciones.json") or {}).get("semaforo")) or {}
+    import re as _re
+    _re_propia = _re.compile(RR_TROPAS_PROPIAS_RE)
+
+    def _motivo_sin_precio(k_norm):
+        """Por qué una fila no tiene liquidación. Devuelve (fuente, motivo)."""
+        if _re_propia.match(k_norm or ""):
+            return "propio", "destete/traslado · sin compra"
+        s = _cl_sem.get(k_norm)
+        if s is None:
+            return "estimado", "sin_ingreso_compras"
+        if s.get("estado") == "terceros":
+            return "estimado", "terceros"
+        return "estimado", "sin_liquidacion"
 
     _pctpv = _load("pct_pv_mensual.json") or {}
     PCTPV  = {m: v.get("pct_pv_ajustado") for m, v in (_pctpv.get("meses") or {}).items()
@@ -10083,6 +10138,11 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     # ── Cálculo por remito ────────────────────────────────────
     remitos_out = {}
     sin_precio_global, con_precio_global = set(), set()
+    # v15.74.12 · resumen para meta.compras y el log
+    _mc = {"filas_liq": 0, "filas_ok": 0, "filas_revisar": 0, "filas_sin_liq": 0,
+           "filas_estimado": 0, "filas_propio": 0, "filas_excel": 0,
+           "cab_liq": 0, "cab_revisar": 0, "cab_sin_liq": 0, "cab_propio": 0, "cab_estimado": 0,
+           "motivos_estimado": {}}
     for rem in sorted({g["remito"] for g in grupos.values()}):
         filas_g = [g for g in grupos.values() if g["remito"] == rem]
 
@@ -10095,6 +10155,13 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             if not t:
                 return None, None, None
             pc = (t.get("por_categoria") or {}).get(g["cat"])
+            if RR_PRECIO_SOLO_LIQUIDACION:
+                # v15.74.12 · sin liquidación para esa tropa + categoría no hay
+                # precio: ni el del Excel ni el promedio de la tropa
+                if pc and pc.get("fuente") == "liquidacion" and pc.get("precio_kg"):
+                    com = pc["comision"] if pc.get("comision") is not None else t.get("comision")
+                    return pc["precio_kg"], com, pc
+                return None, None, None
             com = t.get("comision")
             if pc and pc.get("precio_kg"):
                 # la comisión de la liquidación es de la categoría, no de la tropa
@@ -10125,7 +10192,29 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             com_pct = com_tropa if com_tropa is not None else RR_COMISION_DEF
             # v15.74.3 · de dónde sale el precio de esta fila
             fuente = "estimado" if estimado else ((pc or {}).get("fuente") or "excel")
+            # v15.74.12 · "propio" = destete/traslado (nunca va a tener
+            # liquidación); "estimado" lleva el motivo (sin_liquidacion /
+            # sin_ingreso_compras / terceros). El Excel ya no aparece.
+            precio_motivo = None
+            if estimado:
+                fuente, precio_motivo = _motivo_sin_precio(_norm_tropa(g["tropa"]))
             gas_pct = float((pc or {}).get("gastos") or 0.0) if fuente == "liquidacion" else 0.0
+            _sem_f = (pc or {}).get("liq_semaforo") if fuente == "liquidacion" else None
+            if fuente == "liquidacion":
+                _mc["filas_liq"] += 1; _mc["cab_liq"] += g["cab"]
+                if _sem_f == "revisar":
+                    _mc["filas_revisar"] += 1; _mc["cab_revisar"] += g["cab"]
+                else:
+                    _mc["filas_ok"] += 1
+            elif fuente == "propio":
+                _mc["filas_propio"] += 1; _mc["cab_propio"] += g["cab"]
+            elif fuente == "excel":
+                _mc["filas_excel"] += 1
+            else:
+                _mc["filas_estimado"] += 1; _mc["cab_estimado"] += g["cab"]
+                if precio_motivo == "sin_liquidacion":
+                    _mc["filas_sin_liq"] += 1; _mc["cab_sin_liq"] += g["cab"]
+                _mc["motivos_estimado"][precio_motivo] = _mc["motivos_estimado"].get(precio_motivo, 0) + g["cab"]
 
             # Importe SIN gastos: es la base de la comisión y de los gastos, que
             # el módulo muestra como % del precio de lista. No cambia nunca.
@@ -10204,6 +10293,9 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                     "tropa": g["tropa"], "categoria": g["cat"], "cabezas": g["cab"],
                     "kg_ingreso": round(g["kgi"], 1),
                     "fecha_ingreso": fi.isoformat(), "estimado_a": round(p, 2),
+                    # v15.74.12 · para que el módulo distinga qué falta cargar
+                    "fuente_precio": fuente, "motivo": precio_motivo,
+                    "tropa_norm": _norm_tropa(g["tropa"]),
                 })
                 sin_precio_global.add(g["tropa"])
             else:
@@ -10233,12 +10325,19 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "dias": dtot,
                 "kg_ingreso": round(g["kgi"], 1), "kg_egreso": round(g["kge"], 1),
                 "precio_kg": round(p, 2), "estimado": estimado,
-                # v15.74.3 · "liquidacion" | "excel" | "estimado"
+                # v15.74.3 · "liquidacion" | "estimado" | "propio" (v15.74.12:
+                # el Excel ya no es fuente del 07)
                 "fuente_precio": fuente,
+                "precio_motivo": precio_motivo,
                 "liq_id": (pc or {}).get("liq_id"),
                 # v15.74.5 · color de la marca `liq.` + link a compras.html#tropa=
+                # v15.74.12 · por tropa + CATEGORÍA (sólo los motivos propios);
+                # el de la tropa entera queda informativo en *_tropa
                 "liq_semaforo": (pc or {}).get("liq_semaforo"),
                 "liq_motivos": (pc or {}).get("liq_motivos"),
+                "liq_semaforo_tropa": (pc or {}).get("liq_semaforo_tropa"),
+                "liq_motivos_tropa": (pc or {}).get("liq_motivos_tropa"),
+                "liq_desbaste_aceptado": bool((pc or {}).get("liq_desbaste_aceptado")),
                 "tropa_norm": _norm_tropa(g["tropa"]),
                 "precio_kg_cg": (pc or {}).get("precio_kg_cg"),
                 "precio_cab_cg": (pc or {}).get("precio_cab_cg"),
@@ -10340,9 +10439,14 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "pv_fallback": PV_FALLBACK,
             "tasas_mortandad": MORT_PCT,
             "datamars": meta_dm,
+            # v15.74.12 · de dónde salen los precios de compra
+            "compras": dict(_mc, precio="precio_cab_cg (precio + comisión + gastos)",
+                            solo_liquidacion=RR_PRECIO_SOLO_LIQUIDACION,
+                            tropas_propias_re=RR_TROPAS_PROPIAS_RE),
             "fuentes": {
                 "egresos": "WinCampo lst_egresos_hacienda (MOTIVO=VENTA, NRO_TRANSACCION=remito)",
-                "compras": "compras de hacienda.xlsx -> precios_compra_real.json (por_tropa)",
+                "compras": ("Compras y Liquidaciones (modulo 12) -> precios_compra_real.json "
+                            "(por_tropa, fuente=liquidacion, precio_cab_cg); el Excel no se usa"),
                 "racion":  "preico de racion feelot.xlsx",
                 "pct_pv":  "pct_pv_mensual.json (pct_pv_ajustado, limites 2-3%)",
                 "mortandad": f"muertes_{periodo}.json (tasa por grupo)",
@@ -10355,6 +10459,12 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     guardar(salida, carpeta_out, "resultado_remitos.json")
     log.info(f"  ✓ Resultado por remito: {len(remitos_out)} remitos desde {RR_DESDE} · "
              f"{n_venta} egresos de venta · cobertura {salida['meta']['cobertura_global_pct']}%")
+    log.info(f"  ✓ Resultado remitos · precios: {_mc['filas_liq']} liquidación (c/gastos, "
+             f"{_mc['filas_revisar']} a revisar por su categoría) · {_mc['filas_estimado']} estimadas "
+             f"({_mc['cab_sin_liq']} cab sin liquidación · "
+             f"{_mc['motivos_estimado'].get('terceros', 0)} cab de terceros · "
+             f"{_mc['motivos_estimado'].get('sin_ingreso_compras', 0)} cab sin ingreso en Compras) · "
+             f"{_mc['filas_propio']} destete/traslado ({_mc['cab_propio']} cab) · Excel: no se usa")
     if meta_dm.get("activo"):
         log.info(f"    Datamars (ventana {meta_dm['ventana_dias']}d): "
                  f"{meta_dm['remitos_verificados']} remitos verificados · "

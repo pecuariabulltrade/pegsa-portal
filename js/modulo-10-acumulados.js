@@ -401,6 +401,12 @@ function rvRender() {
     return;
   }
 
+  // v15.74.12 · avisos de Compras y Liquidaciones sumados sobre el tramo A
+  // (tropa · categoría únicas, con el semáforo guardado en cada snapshot)
+  if (typeof remAvisosComprasHTML === 'function') {
+    h += remAvisosComprasHTML(dA.rows.map(function (x) { return x.f; }), 'del tramo', false);
+  }
+
   // ── 1 · acumulado del período ──
   var kpi = function (lbl, valA, subA, valB, delta, big) {
     return '<div style="' + S.CARD + (big ? ';background:var(--ink)' : '') + '">'

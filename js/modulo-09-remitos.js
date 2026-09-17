@@ -34,14 +34,22 @@
    PNG lleva sólo el anillo y la leyenda se arma en HTML a 8,5 px.
 
    v15.74.3 · El precio de compra puede venir de una LIQUIDACIÓN cargada en el
-   módulo 12, del Excel de compras, o estar estimado con las compañeras del
-   remito. Cada fila dice de dónde salió (`liq.` / `excel` / `est.`) y aparece
+   módulo 12, del Excel de compras (hasta v15.74.12), o estar estimado con las
+   compañeras del remito. Cada fila dice de dónde salió y aparece
    el rubro `gastos` de compra, que hasta ahora no existía: es 0 en todo lo que
    no tenga liquidación, así que los remitos de siempre dan el mismo número.
 
    v15.74.5 · La marca `liq.` toma el color del semáforo estricto del módulo
    12 (categoría + cabezas + kg ±8 %): verde cierra, ámbar linkea a
    compras.html#tropa=… para acomodarla. El costeo no cambia.
+
+   v15.74.12 · El precio de compra sale SOLO del módulo 12 (Compras y
+   Liquidaciones): precio + comisión + gastos por cabeza. El Excel de compras
+   ya no es fuente. El semáforo es por tropa + CATEGORÍA (una categoría que
+   cierra queda verde aunque la tropa esté ámbar por otra) y las
+   inconsistencias van en un aviso explícito arriba de la tabla y en el PDF,
+   no sólo en el tooltip del chip. Sin liquidación → estimado al promedio de
+   las compañeras (con link para cargarla); destete/traslado → "propio".
 */
 
 var _remData = null;
@@ -783,6 +791,9 @@ function remInformePDF() {
           + '<div style="font-size:9px;color:#8a827a;margin-top:3px">comprando y alimentando a precios de hoy</div></div>')
     + '</div>';
 
+  // 5b · v15.74.12 · Avisos de Compras y Liquidaciones, debajo de las tarjetas
+  h += remAvisosComprasHTML(r.filas, esGrupo ? 'de este grupo' : 'de este remito', true);
+
   // 6 · Detalle por tropa — v15.73.1. Las 13 columnas, como antes de v15.73:
   // el % MS y los montos de compra / alimento / estr+san son lo que Nicolás
   // mira en el informe. La torta ya no va acá (v15.73.2: está arriba, junto
@@ -806,7 +817,7 @@ function remInformePDF() {
         + '<td>' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
         + '<td>' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
         + '<td>' + f.dias + '</td>'
-        + '<td>' + _remN(f.precio_kg) + ' ' + remFuenteInfo(f).lbl + '</td>'
+        + '<td>' + _remN(f.precio_kg_cg != null ? f.precio_kg_cg : f.precio_kg) + ' ' + remFuenteInfo(f).lbl + '</td>'
         + '<td>' + _remM(f.costo_compra) + '</td>'
         + '<td>' + _remN(f.kg_ms) + '</td>'
         + '<td>' + _remN(f.pct_ms, 2) + (f.acotado ? ' lim' : '') + '</td>'
@@ -820,7 +831,7 @@ function remInformePDF() {
       + '<td>' + _remN(I.kg_prom_ingreso) + '</td>'
       + '<td>' + _remN(I.kg_prom_salida) + '</td>'
       + '<td>' + _remN(I.estadia_prom) + '</td>'
-      + '<td>' + _remN(I.precio_prom_pagado) + '</td>'
+      + '<td>' + _remN(I.precio_prom_pagado_cg != null ? I.precio_prom_pagado_cg : I.precio_prom_pagado) + '</td>'
       + '<td>' + _remM(C.compra) + '</td>'
       + '<td>' + _remN(r.kg_ms) + '</td>'
       + '<td>' + _remN(I.pct_ms, 2) + '</td>'
@@ -830,21 +841,24 @@ function remInformePDF() {
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.3 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.12 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
                     + (RPc.manualMs ? ' y MS $ ' + _remN(RPc.precioMs, 2) : '') : '')
     + (V.comVenta ? ' · comisión de venta ' + _remN(V.comPct, 1) + ' %' : '')
-    + (nSin ? ' · ' + nSin + ' tropa(s) sin precio estimadas al promedio de las compañeras' : '')
-    // v15.74.3 · cuántas filas costean con liquidación y cuántas con el Excel
+    // v15.74.12 · de dónde salen los precios de compra (el Excel ya no)
     + (function () {
-        var n = {liquidacion: 0, excel: 0, estimado: 0};
+        var n = {liquidacion: 0, revisar: 0, estimado: 0, propio: 0};
         (r.filas || []).forEach(function (f) {
-          n[f.fuente_precio || (f.estimado ? 'estimado' : 'excel')]++;
+          var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
+          if (fu === 'liquidacion') { n.liquidacion++; if (f.liq_semaforo === 'revisar') n.revisar++; }
+          else if (fu === 'propio') n.propio++;
+          else if (fu === 'estimado') n.estimado++;
         });
-        return ' · precios: ' + n.liquidacion + ' de liquidación · ' + n.excel
-             + ' del Excel · ' + n.estimado + ' estimados'
+        return ' · precios de compra: Compras y Liquidaciones (precio + comisión + gastos, por cabeza; $/kg compra = c/gastos) · '
+             + n.liquidacion + ' filas · ' + n.revisar + ' a revisar · ' + n.estimado + ' sin liquidación · '
+             + n.propio + ' destete/traslado'
              + ((C.gastos || 0) ? ' · gastos de compra ' + _remM(C.gastos) : '');
       })()
     // v15.68: el origen de los sin caravana es un supuesto, y va dicho.
@@ -869,7 +883,7 @@ function remSCEstado(r) {
   var VI = ((r || {}).verificacion || {}).imputado || {};
   var m = remSCCtx();
   // El bloque `imputado` del pipeline puede traer precio_kg en null cuando la
-  // tropa imputada no está en el Excel de compras. En ese caso el prefill sale
+  // tropa imputada no tiene liquidación en Compras. En ese caso el prefill sale
   // de la fila imputada, que es el valor que el motor terminó usando (el
   // promedio estimado de las compañeras del remito).
   var fi = (r && r.filas || []).filter(function (f) { return f.imputado; })[0] || {};
@@ -937,11 +951,15 @@ function remSnapshot(r) {
       fecha_ingreso: f.fecha_ingreso || null,
       precio_kg: f.precio_kg, estimado: !!f.estimado,
       // v15.74.3 · de dónde salió el precio, y lo efectivamente pagado
-      fuente_precio: f.fuente_precio || (f.estimado ? 'estimado' : 'excel'),
+      fuente_precio: f.fuente_precio || (f.estimado ? 'estimado' : null),
+      precio_motivo: f.precio_motivo || null,                 // v15.74.12
       liq_id: f.liq_id || null,
       // v15.74.5 · semáforo de la liquidación (módulo 12) al momento del informe
+      // v15.74.12 · por tropa + categoría; el de la tropa entera va aparte
       liq_semaforo: f.liq_semaforo || null,
       liq_motivos: f.liq_motivos || null,
+      liq_semaforo_tropa: f.liq_semaforo_tropa || null,
+      liq_desbaste_aceptado: !!f.liq_desbaste_aceptado,
       tropa_norm: f.tropa_norm || null,
       precio_kg_cg: f.precio_kg_cg != null ? f.precio_kg_cg : null,
       precio_cab_cg: f.precio_cab_cg != null ? f.precio_cab_cg : null,
@@ -1427,39 +1445,155 @@ function _remTortaBloquePDF(r) {
       }).join('') + '</ul></div>';
 }
 
+/* v15.74.12 · Motivo del semáforo de Compras en texto corto para la UI:
+   'kg_15.0%' → 'kg 15,0 %', 'parcial_3/5' → 'parcial 3/5', … Los códigos son
+   los de liq_semaforo (compras-calc.js / actualizar_datos.py). */
+function remMotivoTxt(m) {
+  m = String(m || '').trim();
+  var mm;
+  if ((mm = m.match(/^kg_([\d.]+)%$/))) return 'kg ' + _remN(parseFloat(mm[1]), 1) + ' %';
+  if ((mm = m.match(/^desbaste_aceptado_([\d.]+)%$/))) return 'desbaste aceptado ' + _remN(parseFloat(mm[1]), 1) + ' %';
+  var T = {sin_linea: 'sin línea en la liquidación', estado_revisar: 'liquidación sin confirmar',
+           cat_sobrante: 'categoría que WinCampo no tiene', tropa_sin_ingreso: 'tropa sin ingreso en WinCampo',
+           remito_distinto: 'remito distinto'};
+  if (T[m]) return T[m];
+  return m.replace(/^(parcial|cabezas|total|cobertura)_/, '$1 ');
+}
+function remMotivosTxt(s) {
+  return String(s || '').split(/\s*[,·]\s*/).filter(Boolean).map(remMotivoTxt).join(', ');
+}
+function remLinkCompras(f) {
+  return 'compras.html#tropa=' + encodeURIComponent(f.tropa_norm || f.tropa || '');
+}
+
 /* v15.74.3 · De dónde salió el precio de compra de una fila.
-   'liq.'   — hay una liquidación cargada en el módulo 12: es lo que se pagó.
-   'excel'  — del Excel de compras (compras de hacienda.xlsx), como siempre.
-   'est.'   — no hay precio para esa tropa: se estimó con las compañeras del
-              mismo remito. Es el chip 'est' que ya existía.
+   'liq.'   — hay una liquidación cargada en el módulo 12: es lo que se pagó
+              (precio + comisión + gastos, por cabeza).
+   'est.'   — no hay liquidación para esa tropa + categoría: se estimó con las
+              compañeras del mismo remito. `precio_motivo` dice por qué.
+   'propio' — destete / traslado interno: no es una compra, nunca va a tener
+              liquidación (v15.74.12). También estimado a las compañeras.
+   v15.74.12 · el semáforo es el de tropa + CATEGORÍA: verde si la categoría
+   cierra aunque la tropa esté ámbar por otra; el tooltip lleva sólo los
+   motivos propios. El Excel de compras dejó de ser fuente.
    Se devuelve la etiqueta corta y el texto largo para el tooltip. */
 function remFuenteInfo(f) {
-  var fu = f.fuente_precio || (f.estimado ? 'estimado' : 'excel');
+  var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
+  var cat = remCatNombre(f.categoria || '');
   if (fu === 'liquidacion') {
-    // v15.74.5 · la marca toma el color del semáforo de la tropa (módulo 12):
-    // verde = liquidación que cierra con WinCampo; ámbar = a revisar. El kg es
-    // un aviso, no un bloqueo: la fila se costea igual.
     var sem = f.liq_semaforo || 'ok';
-    var det = 'Precio de la liquidación ' + (f.liq_id || '—') + '.'
-            + (f.precio_kg_cg ? ' Con gastos: $ ' + _remN(f.precio_kg_cg) + '/kg.' : '')
-            + (f.desbaste_pct != null ? ' Desbaste ' + _remN(f.desbaste_pct, 1) + ' %.' : '');
+    var det = cat + ' · liquidación ' + (f.liq_id || '—')
+            + (f.precio_cab_cg ? ' · $/cab c/gastos ' + _remN(f.precio_cab_cg) : '')
+            + (f.precio_kg_cg ? ' · $/kg c/gastos ' + _remN(f.precio_kg_cg) : '')
+            + (f.desbaste_pct != null ? ' · desbaste ' + _remN(f.desbaste_pct, 1) + ' %' : '');
     if (sem === 'revisar' || sem === 'sin_liquidar') {
       return {lbl: 'liq.', color: sem === 'revisar' ? '#7a5c14' : '#c0392b',
               bg: sem === 'revisar' ? 'rgba(184,146,42,.15)' : 'rgba(192,57,43,.12)',
-              link: 'compras.html#tropa=' + encodeURIComponent(f.tropa_norm || f.tropa || ''),
-              det: det + ' Liquidación a revisar en Compras'
-                   + (f.liq_motivos ? ' (' + f.liq_motivos + ')' : '') + ' — click para abrirla.'};
+              link: remLinkCompras(f),
+              det: det + ' · INCONSISTENCIA EN COMPRAS' + (f.liq_motivos ? ': ' + remMotivosTxt(f.liq_motivos) : '')
+                   + ' — click para abrirla.'};
     }
+    if (f.liq_desbaste_aceptado) det += ' · desbaste aceptado en Compras';
+    if (f.liq_semaforo_tropa === 'revisar') det += ' · (otra categoría de la tropa está a revisar; ésta cierra)';
     return {lbl: 'liq.', color: '#27613d', bg: 'rgba(39,97,61,.12)', det: det};
   }
-  if (fu === 'estimado') {
-    return {lbl: 'est.', color: '#7a5c14', bg: 'rgba(184,146,42,.15)',
-            det: 'Sin precio para esta tropa: se estimó con el promedio ponderado '
-                 + 'de las compañeras del mismo remito.'};
+  if (fu === 'propio') {
+    return {lbl: 'propio', color: 'rgba(26,22,18,.55)', bg: 'rgba(26,22,18,.07)',
+            det: cat + ' · destete / traslado interno: no es una compra y no tiene liquidación. '
+                 + 'Precio estimado con el promedio ponderado de las compañeras del remito.'};
   }
-  return {lbl: 'excel', color: '#2d6a8a', bg: 'rgba(45,106,138,.12)',
-          det: 'Precio del Excel de compras (compras de hacienda.xlsx). '
-               + 'Cuando se cargue la liquidación en el módulo 12, manda esa.'};
+  if (fu === 'estimado' || f.estimado) {
+    var mo = f.precio_motivo || 'sin_liquidacion';
+    var txt = mo === 'terceros'
+      ? cat + ' · tropa de terceros sin liquidación cargada.'
+      : mo === 'sin_ingreso_compras'
+        ? cat + ' · tropa que Compras no tiene (sin ingreso de compra en la ventana).'
+        : cat + ' · sin liquidación en Compras para esta tropa y categoría — click para cargarla.';
+    return {lbl: 'est.', color: '#7a5c14', bg: 'rgba(184,146,42,.15)',
+            link: mo === 'sin_liquidacion' ? remLinkCompras(f) : undefined,
+            det: txt + ' Se estimó con el promedio ponderado de las compañeras del mismo remito.'};
+  }
+  return {lbl: '—', color: 'rgba(26,22,18,.55)', bg: 'rgba(26,22,18,.07)',
+          det: 'Origen del precio no informado (informe anterior a v15.74.3).'};
+}
+
+/* v15.74.12 · Avisos de Compras y Liquidaciones sobre un conjunto de filas
+   (un remito, un grupo, o un tramo de Resultados acumulados): tropa · categoría
+   únicas, con las cabezas sumadas. Devuelve listas ordenadas por cabezas. */
+function remAvisosCompras(filas) {
+  var A = {revisar: {}, sinLiq: {}, terceros: {}, sinIng: {}, propio: {}};
+  (filas || []).forEach(function (f) {
+    var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
+    var dst = null;
+    if (fu === 'liquidacion') { if (f.liq_semaforo === 'revisar') dst = A.revisar; }
+    else if (fu === 'propio') dst = A.propio;
+    else if (fu === 'estimado') {
+      var mo = f.precio_motivo || 'sin_liquidacion';
+      dst = mo === 'terceros' ? A.terceros : mo === 'sin_ingreso_compras' ? A.sinIng : A.sinLiq;
+    }
+    if (!dst) return;
+    var k = (f.tropa || '') + ' · ' + (f.categoria || '');
+    var e = dst[k] || (dst[k] = {tropa: f.tropa, tropa_norm: f.tropa_norm || '', categoria: f.categoria,
+                                 cab: 0, motivos: f.liq_motivos || ''});
+    e.cab += f.cabezas || 0;
+  });
+  var L = function (o) {
+    return Object.keys(o).map(function (k) { return o[k]; }).sort(function (a, b) { return b.cab - a.cab; });
+  };
+  var out = {revisar: L(A.revisar), sinLiq: L(A.sinLiq), terceros: L(A.terceros), sinIng: L(A.sinIng), propio: L(A.propio)};
+  out.vacio = !out.revisar.length && !out.sinLiq.length && !out.terceros.length && !out.sinIng.length && !out.propio.length;
+  return out;
+}
+
+/* v15.74.12 · El bloque de avisos, en HTML. `que` = 'de este remito' /
+   'de este grupo' / 'del tramo'. `pdf` = sin links y en la letra del informe. */
+function remAvisosComprasHTML(filas, que, pdf) {
+  var A = remAvisosCompras(filas);
+  if (A.vacio) return '';
+  var cabs = function (L) { return L.reduce(function (s, e) { return s + e.cab; }, 0); };
+  var pl = function (n) { return n + ' cabeza' + (n === 1 ? '' : 's'); };
+  var lnk = function (e, txt) {
+    return pdf ? txt : '<a href="' + remLinkCompras(e) + '" target="_blank" '
+      + 'style="color:inherit;text-decoration:underline">' + txt + '</a>';
+  };
+  var item = function (e, conLink, conMot) {
+    var t = e.tropa + ' · ' + remCatNombre(e.categoria);
+    return (conLink ? lnk(e, t) : t) + ' (' + e.cab + ' cab'
+      + (conMot && e.motivos ? ' · ' + remMotivosTxt(e.motivos) : '') + ')';
+  };
+  var lineas = [];
+  if (A.revisar.length) {
+    lineas.push('&#9888; Compras y Liquidaciones: <strong>' + pl(cabs(A.revisar)) + '</strong> ' + que
+      + ' tienen una inconsistencia en su categoría: '
+      + A.revisar.map(function (e) { return item(e, true, true); }).join(', ') + '.');
+  }
+  if (A.sinLiq.length) {
+    lineas.push('<strong>' + pl(cabs(A.sinLiq)) + ' sin liquidación</strong> ('
+      + A.sinLiq.map(function (e) { return item(e, true, false); }).join(', ')
+      + ') — se costean al promedio de las compañeras'
+      + (pdf ? '.' : ' · <a href="compras.html" target="_blank" style="color:inherit;text-decoration:underline">cargarla en Compras</a>.'));
+  }
+  if (A.terceros.length) {
+    lineas.push(pl(cabs(A.terceros)) + ' de terceros sin liquidación ('
+      + A.terceros.map(function (e) { return item(e, false, false); }).join(', ') + ') — promedio de las compañeras.');
+  }
+  if (A.sinIng.length) {
+    lineas.push(pl(cabs(A.sinIng)) + ' de tropas que Compras no tiene ('
+      + A.sinIng.map(function (e) { return item(e, false, false); }).join(', ') + ') — promedio de las compañeras.');
+  }
+  if (A.propio.length) {
+    lineas.push('<span style="opacity:.7">' + pl(cabs(A.propio)) + ' de destete/traslado (sin compra): '
+      + A.propio.map(function (e) { return item(e, false, false); }).join(', ') + '.</span>');
+  }
+  var aviso = A.revisar.length || A.sinLiq.length;   // ámbar; el resto es informativo
+  if (pdf) {
+    return '<div style="border:1px solid ' + (aviso ? '#b8922a' : '#d8d6ce') + ';background:' + (aviso ? '#fdf6e3' : '#f6f5f2')
+      + ';color:' + (aviso ? '#7a5c14' : '#6b6560') + ';padding:5px 8px;margin:6px 0 8px;font-size:8.5px;line-height:1.5">'
+      + lineas.join('<br>') + '</div>';
+  }
+  return '<div style="background:' + (aviso ? '#fdf6e3' : '#f6f5f2') + ';border:1px solid ' + (aviso ? 'var(--gold)' : '#d8d6ce')
+    + ';border-radius:2px;padding:10px 14px;margin:0 0 14px;font-family:\'DM Mono\',monospace;font-size:12px;'
+    + 'color:' + (aviso ? '#7a5c14' : 'rgba(26,22,18,.6)') + ';line-height:1.6">' + lineas.join('<br>') + '</div>';
 }
 
 function renderRemitos(soloResultado) {
@@ -1712,6 +1846,9 @@ function renderRemitos(soloResultado) {
       + 'style="cursor:pointer;color:var(--gold);text-decoration:underline">ver Fantasmas</a></div>';
   }
 
+  // ── v15.74.12 · Avisos de Compras y Liquidaciones (por tropa · categoría) ──
+  h += remAvisosComprasHTML(r.filas, esGrupo ? 'de este grupo' : 'de este remito', false);
+
   // Carga manual del origen de los sin caravana (mismo patrón que reposición).
   if (VER.sc) {
     h += '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:12px 16px;'
@@ -1784,10 +1921,12 @@ function renderRemitos(soloResultado) {
       + mAcot.map(function (m) { return m + ': ' + _remN(r.meses_pv_acotados[m], 2) + ' %'; }).join(' · ') + '.</div>';
   }
   if ((r.tropas_sin_precio || []).length) {
+    // v15.74.12 · el detalle (qué tropa · categoría, con link) va en el aviso
+    // de Compras de arriba; acá queda sólo el número al que se estimó.
     var kgSin = r.tropas_sin_precio.reduce(function (a, t) { return a + t.kg_ingreso; }, 0);
-    h += '<div style="' + WARN + '"><strong>⚠ ' + r.tropas_sin_precio.length + ' tropas sin precio de compra</strong> — '
+    h += '<div style="' + SUB + ';margin:-6px 0 14px">' + r.tropas_sin_precio.length + ' fila(s) sin liquidación · '
       + _remN(kgSin) + ' kg estimados al promedio de las compañeras: <strong>$ ' + _remN(r.precio_estimado)
-      + '/kg</strong>. Cobertura real: <strong>' + _remN(r.cobertura_pct, 1) + ' %</strong>.</div>';
+      + '/kg</strong> · cobertura real ' + _remN(r.cobertura_pct, 1) + ' %.</div>';
   }
 
   // ── Resultado ──
@@ -1893,6 +2032,17 @@ function renderRemitos(soloResultado) {
       + 'text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-left:5px;cursor:' + (I.link ? 'pointer' : 'help') + ';'
       + 'background:' + I.bg + ';color:' + I.color + '">' + I.lbl + (I.link ? ' ⚠' : '') + '</' + tag + '>';
   };
+  // v15.74.12 · la columna $/kg compra muestra el c/gastos (precio + comisión +
+  // gastos por kg de ingreso), que es lo que se paga; el desglose va en el tooltip
+  var pkgCell = function (f) {
+    var cg = f.precio_kg_cg != null ? f.precio_kg_cg : null;
+    var tip = cg != null
+      ? 'precio $ ' + _remN(f.precio_kg) + '/kg · comisión ' + _remN(f.comision_pct, 1) + ' % · gastos '
+        + _remN(f.gastos_pct || 0, 1) + ' % → $ ' + _remN(cg) + '/kg c/gastos'
+        + (f.precio_cab_cg ? ' ($ ' + _remN(f.precio_cab_cg) + '/cab)' : '')
+      : 'estimado al promedio de las compañeras: $ ' + _remN(f.precio_kg) + '/kg + comisión ' + _remN(f.comision_pct, 1) + ' %';
+    return '<span title="' + tip + '">' + _remN(cg != null ? cg : f.precio_kg) + '</span>';
+  };
   var COLS_COSTO = ['Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'];
   var nIzq = esGrupo ? 3 : 2;   // remito · tropa · cat van alineadas a la izquierda
   h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
@@ -1948,7 +2098,7 @@ function renderRemitos(soloResultado) {
       + '<td style="' + td + '" title="' + _remN(f.kg_ingreso) + ' kg de ingreso en la fila">' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
       + '<td style="' + td + '" title="' + _remN(f.kg_egreso) + ' kg de salida en la fila">' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
       + '<td style="' + td + '">' + f.dias + '</td>'
-      + '<td style="' + td + '">' + _remN(f.precio_kg) + fuChip(f) + '</td>'
+      + '<td style="' + td + '">' + pkgCell(f) + fuChip(f) + '</td>'
       + (_remDetCostos
           ? '<td style="' + td + '">' + _remM(f.costo_compra) + '</td>'
             + '<td style="' + td + '">' + _remN(f.kg_ms) + '</td>'
@@ -1969,7 +2119,8 @@ function renderRemitos(soloResultado) {
     + '<td style="' + tf + '" title="' + _remN(r.kg_ingreso) + ' kg de ingreso en total">' + _remN(I.kg_prom_ingreso) + '</td>'
     + '<td style="' + tf + '" title="' + _remN(r.kg_egreso) + ' kg de salida en total">' + _remN(I.kg_prom_salida) + '</td>'
     + '<td style="' + tf + '">' + _remN(I.estadia_prom) + '</td>'
-    + '<td style="' + tf + '">' + _remN(I.precio_prom_pagado) + '</td>'
+    + '<td style="' + tf + '" title="precio + comisión + gastos por kg de ingreso">'
+    + _remN(I.precio_prom_pagado_cg != null ? I.precio_prom_pagado_cg : I.precio_prom_pagado) + '</td>'
     + (_remDetCostos
         ? '<td style="' + tf + '">' + _remM(C.compra) + '</td>'
           + '<td style="' + tf + '">' + _remN(r.kg_ms) + '</td>'
@@ -1979,18 +2130,23 @@ function renderRemitos(soloResultado) {
         : '')
     + '</tr></tfoot></table>';
 
-  // ── Tropas para completar en el Excel ──
+  // ── Filas sin liquidación (v15.74.12: antes "para completar en el Excel") ──
   if ((r.tropas_sin_precio || []).length) {
-    h += '<div style="' + H2 + '">Tropas para completar en el Excel</div>';
-    h += '<div style="' + SUB + '">Agregalas en <code>compras de hacienda.xlsx</code> · hoja OK</div>';
+    h += '<div style="' + H2 + '">Filas sin liquidación</div>';
+    h += '<div style="' + SUB + '">Se cargan en <a href="compras.html" target="_blank" style="color:var(--gold);text-decoration:underline">'
+      + 'Compras y Liquidaciones</a> · las de destete/traslado no son compras y quedan al promedio</div>';
     h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace"><thead><tr>'
-      + ['Tropa', 'Cat', 'Cab', 'Kg entrada', 'Fecha ingreso', 'Estimado a'].map(function (t, i) {
-        return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i < 2 ? 'left' : 'right') + '">' + t + '</th>';
+      + ['Tropa', 'Cat', 'Motivo', 'Cab', 'Kg entrada', 'Fecha ingreso', 'Estimado a'].map(function (t, i) {
+        return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i < 3 ? 'left' : 'right') + '">' + t + '</th>';
       }).join('') + '</tr></thead><tbody>';
+    var MOT = {sin_liquidacion: 'sin liquidación', terceros: 'terceros', sin_ingreso_compras: 'sin ingreso en Compras'};
     r.tropas_sin_precio.slice().sort(function (a, b) { return b.kg_ingreso - a.kg_ingreso; }).forEach(function (t) {
       var td = 'padding:8px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:13px';
-      h += '<tr><td style="' + td + ';text-align:left">' + t.tropa + '</td>'
+      var mo = t.fuente_precio === 'propio' ? 'destete/traslado' : (MOT[t.motivo] || t.motivo || 'sin liquidación');
+      h += '<tr><td style="' + td + ';text-align:left">'
+        + (t.motivo === 'sin_liquidacion' ? '<a href="' + remLinkCompras(t) + '" target="_blank" style="color:inherit;text-decoration:underline">' + t.tropa + '</a>' : t.tropa) + '</td>'
         + '<td style="' + td + ';text-align:left">' + t.categoria + '</td>'
+        + '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.55)">' + mo + '</td>'
         + '<td style="' + td + '">' + t.cabezas + '</td>'
         + '<td style="' + td + '">' + _remN(t.kg_ingreso) + '</td>'
         + '<td style="' + td + '">' + t.fecha_ingreso.split('-').reverse().join('/') + '</td>'
@@ -2003,7 +2159,19 @@ function renderRemitos(soloResultado) {
   h += '<div style="' + SUB + ';margin-top:22px;line-height:1.7">'
     + 'Parámetros del modelo · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' % sobre el %PV base'
     + ' · límites de consumo MS ' + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %'
-    + ' · comisión por tropa desde el Excel (fallback ' + Math.round(meta.comision_default * 100) + ' %)'
+    + ' · precios de compra: <strong>Compras y Liquidaciones</strong> (precio + comisión + gastos, por cabeza)'
+    + (function () {
+        // v15.74.12 · cuántas filas de este remito/grupo vienen de cada lado
+        var n = {liquidacion: 0, revisar: 0, estimado: 0, propio: 0};
+        (r.filas || []).forEach(function (f) {
+          var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
+          if (fu === 'liquidacion') { n.liquidacion++; if (f.liq_semaforo === 'revisar') n.revisar++; }
+          else if (fu === 'propio') n.propio++;
+          else if (fu === 'estimado') n.estimado++;
+        });
+        return ' · ' + n.liquidacion + ' filas · ' + n.revisar + ' a revisar · ' + n.estimado + ' sin liquidación · ' + n.propio + ' destete/traslado';
+      })()
+    + ' · sin liquidación: promedio de las compañeras + comisión ' + Math.round(meta.comision_default * 100) + ' %'
     + ' · %PV mensual ajustado ÷0,92 de <code>pct_pv_mensual.json</code>'
     + ' · mortandad: tasa del portal por grupo × costo de compra.'
     + '<br>La edición fina de estos parámetros sigue en el prototipo standalone.'
