@@ -9103,6 +9103,18 @@ RR_COMPRA_POR_CABEZA = True
 RR_PRECIO_SOLO_LIQUIDACION = True
 RR_TROPAS_PROPIAS_RE = r"^(PEG|PEC)(DES|PDP|COL)"
 
+# v15.74.13 · Precio de MERCADO INTERNO (decisión de Nicolás, 17/09/2026): la
+# hacienda propia (destete / traslado) y la que no tiene liquidación (terceros,
+# sin liquidar, sin ingreso en Compras) se valúa al promedio ponderado por kg,
+# CON comisión y gastos, de esa categoría en las liquidaciones de los 60 días
+# anteriores a la fecha de ingreso de la fila al Haras. Es por KG de ingreso
+# (un ternero de destete de 200 kg no vale lo que uno comprado de 320), no por
+# cabeza como las filas liquidadas. Si en 60 días no hay ninguna liquidación de
+# la categoría se amplía a 120 y se marca; si tampoco, queda el promedio de las
+# compañeras del remito (único caso que sigue siendo "estimado").
+RR_MERCADO_DIAS     = 60
+RR_MERCADO_DIAS_MAX = 120
+
 RR_DM_VENTANA_DIAS  = 30     # se busca la caravana en [fe − 30, fe + 1]
 RR_DM_DIAS_ADELANTE = 1
 RR_DM_DIAS_SALIDA   = 3      # lectura a ±3 días del egreso = la pesada de salida
@@ -9999,15 +10011,54 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     _re_propia = _re.compile(RR_TROPAS_PROPIAS_RE)
 
     def _motivo_sin_precio(k_norm):
-        """Por qué una fila no tiene liquidación. Devuelve (fuente, motivo)."""
+        """Por qué una fila no tiene liquidación. Devuelve el ORIGEN (código):
+        propio / sin_ingreso_compras / terceros / sin_liquidacion."""
         if _re_propia.match(k_norm or ""):
-            return "propio", "destete/traslado · sin compra"
+            return "propio"
         s = _cl_sem.get(k_norm)
         if s is None:
-            return "estimado", "sin_ingreso_compras"
+            return "sin_ingreso_compras"
         if s.get("estado") == "terceros":
-            return "estimado", "terceros"
-        return "estimado", "sin_liquidacion"
+            return "terceros"
+        return "sin_liquidacion"
+
+    _ORIGEN_TXT = {"propio": "destete/traslado", "sin_liquidacion": "sin liquidación",
+                   "terceros": "terceros", "sin_ingreso_compras": "sin ingreso en Compras"}
+
+    # v15.74.13 · líneas activas de TODAS las liquidaciones (cualquier hotelero:
+    # es el precio de la categoría, no de la tropa), por categoría y fecha
+    _mkt = {}
+    for _o in ((_load("compras_liquidaciones.json") or {}).get("liquidaciones") or []):
+        if str(_o.get("estado") or "").lower() == "anulada":
+            continue
+        try:    # `_d` se define más abajo; la fecha de la liquidación es ISO
+            _f = _date.fromisoformat(str(_o.get("fecha") or "")[:10])
+        except ValueError:
+            continue
+        for _c in (_o.get("categorias") or []):
+            _kg = float(_c.get("kg_liq") or 0)
+            _imp = _c.get("importe_cg")
+            if not _c.get("categoria") or _kg <= 0 or _imp is None:
+                continue
+            _mkt.setdefault(_c["categoria"], []).append(
+                (_f, _kg, float(_imp), float(_c.get("cabezas_liq") or 0), _o.get("id")))
+
+    def _precio_mercado_interno(categoria, fi):
+        """Promedio ponderado por kg (c/gastos) de `categoria` liquidada en
+        [fi − RR_MERCADO_DIAS, fi]; si no hay ninguna, [fi − RR_MERCADO_DIAS_MAX, fi].
+        Devuelve dict o None."""
+        lineas = _mkt.get(categoria) or []
+        if not lineas or fi is None:
+            return None
+        for dias in (RR_MERCADO_DIAS, RR_MERCADO_DIAS_MAX):
+            desde = fi - _td(days=dias)
+            sel = [l for l in lineas if desde <= l[0] <= fi]
+            kg = sum(l[1] for l in sel)
+            if sel and kg > 0:
+                return {"precio_kg_cg": sum(l[2] for l in sel) / kg, "kg": kg,
+                        "cab": sum(l[3] for l in sel), "n_liq": len({l[4] for l in sel}),
+                        "dias": dias, "desde": desde.isoformat(), "hasta": fi.isoformat()}
+        return None
 
     _pctpv = _load("pct_pv_mensual.json") or {}
     PCTPV  = {m: v.get("pct_pv_ajustado") for m, v in (_pctpv.get("meses") or {}).items()
@@ -10142,7 +10193,12 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     _mc = {"filas_liq": 0, "filas_ok": 0, "filas_revisar": 0, "filas_sin_liq": 0,
            "filas_estimado": 0, "filas_propio": 0, "filas_excel": 0,
            "cab_liq": 0, "cab_revisar": 0, "cab_sin_liq": 0, "cab_propio": 0, "cab_estimado": 0,
-           "motivos_estimado": {}}
+           "motivos_estimado": {},
+           # v15.74.13 · mercado interno. `filas_estimado` queda sólo para el
+           # fallback (sin mercado a 120 d); `por_origen` abre cada motivo.
+           "filas_mercado": 0, "cab_mercado": 0, "filas_mercado_120": 0, "cab_mercado_120": 0,
+           "mercado_dias": RR_MERCADO_DIAS, "mercado_dias_max": RR_MERCADO_DIAS_MAX,
+           "por_origen": {}}
     for rem in sorted({g["remito"] for g in grupos.values()}):
         filas_g = [g for g in grupos.values() if g["remito"] == rem]
 
@@ -10192,12 +10248,26 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             com_pct = com_tropa if com_tropa is not None else RR_COMISION_DEF
             # v15.74.3 · de dónde sale el precio de esta fila
             fuente = "estimado" if estimado else ((pc or {}).get("fuente") or "excel")
-            # v15.74.12 · "propio" = destete/traslado (nunca va a tener
-            # liquidación); "estimado" lleva el motivo (sin_liquidacion /
-            # sin_ingreso_compras / terceros). El Excel ya no aparece.
-            precio_motivo = None
+            # v15.74.12 · `precio_origen` (código) dice por qué no hay
+            # liquidación: propio (destete/traslado) / sin_liquidacion /
+            # terceros / sin_ingreso_compras. `precio_motivo` es el texto.
+            # v15.74.13 · sin liquidación la fila se valúa a MERCADO INTERNO
+            # (promedio c/gastos de la categoría en los 60 d previos al ingreso,
+            # por kg); "estimado" queda sólo si tampoco hay mercado a 120 d.
+            precio_origen = precio_motivo = None
+            mercado = None
             if estimado:
-                fuente, precio_motivo = _motivo_sin_precio(_norm_tropa(g["tropa"]))
+                precio_origen = _motivo_sin_precio(_norm_tropa(g["tropa"]))
+                mercado = _precio_mercado_interno(g["cat"], g["fi"])
+                if mercado:
+                    fuente = "mercado"
+                    p = mercado["precio_kg_cg"]
+                    com_pct = 0.0          # el precio de mercado ya trae comisión y gastos
+                    precio_motivo = (f"{_ORIGEN_TXT[precio_origen]} · mercado {mercado['dias']}d "
+                                     f"{g['cat']} ({mercado['n_liq']} liq · {p:,.0f} $/kg)")
+                else:
+                    precio_motivo = (f"{_ORIGEN_TXT[precio_origen]} · sin mercado "
+                                     f"{RR_MERCADO_DIAS_MAX}d · compañeras")
             gas_pct = float((pc or {}).get("gastos") or 0.0) if fuente == "liquidacion" else 0.0
             _sem_f = (pc or {}).get("liq_semaforo") if fuente == "liquidacion" else None
             if fuente == "liquidacion":
@@ -10206,15 +10276,23 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                     _mc["filas_revisar"] += 1; _mc["cab_revisar"] += g["cab"]
                 else:
                     _mc["filas_ok"] += 1
-            elif fuente == "propio":
-                _mc["filas_propio"] += 1; _mc["cab_propio"] += g["cab"]
             elif fuente == "excel":
                 _mc["filas_excel"] += 1
             else:
-                _mc["filas_estimado"] += 1; _mc["cab_estimado"] += g["cab"]
-                if precio_motivo == "sin_liquidacion":
+                _po = _mc["por_origen"].setdefault(precio_origen, {"filas": 0, "cab": 0, "mercado": 0,
+                                                                    "mercado_120": 0, "estimado": 0})
+                _po["filas"] += 1; _po["cab"] += g["cab"]
+                if precio_origen == "propio":
+                    _mc["filas_propio"] += 1; _mc["cab_propio"] += g["cab"]
+                if precio_origen == "sin_liquidacion":
                     _mc["filas_sin_liq"] += 1; _mc["cab_sin_liq"] += g["cab"]
-                _mc["motivos_estimado"][precio_motivo] = _mc["motivos_estimado"].get(precio_motivo, 0) + g["cab"]
+                if fuente == "mercado":
+                    _mc["filas_mercado"] += 1; _mc["cab_mercado"] += g["cab"]; _po["mercado"] += g["cab"]
+                    if mercado["dias"] > RR_MERCADO_DIAS:
+                        _mc["filas_mercado_120"] += 1; _mc["cab_mercado_120"] += g["cab"]; _po["mercado_120"] += g["cab"]
+                else:
+                    _mc["filas_estimado"] += 1; _mc["cab_estimado"] += g["cab"]; _po["estimado"] += g["cab"]
+                    _mc["motivos_estimado"][precio_origen] = _mc["motivos_estimado"].get(precio_origen, 0) + g["cab"]
 
             # Importe SIN gastos: es la base de la comisión y de los gastos, que
             # el módulo muestra como % del precio de lista. No cambia nunca.
@@ -10294,7 +10372,8 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                     "kg_ingreso": round(g["kgi"], 1),
                     "fecha_ingreso": fi.isoformat(), "estimado_a": round(p, 2),
                     # v15.74.12 · para que el módulo distinga qué falta cargar
-                    "fuente_precio": fuente, "motivo": precio_motivo,
+                    # v15.74.13 · `motivo` es texto; `origen` el código
+                    "fuente_precio": fuente, "motivo": precio_motivo, "origen": precio_origen,
                     "tropa_norm": _norm_tropa(g["tropa"]),
                 })
                 sin_precio_global.add(g["tropa"])
@@ -10325,10 +10404,19 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "dias": dtot,
                 "kg_ingreso": round(g["kgi"], 1), "kg_egreso": round(g["kge"], 1),
                 "precio_kg": round(p, 2), "estimado": estimado,
-                # v15.74.3 · "liquidacion" | "estimado" | "propio" (v15.74.12:
-                # el Excel ya no es fuente del 07)
+                # v15.74.3 · "liquidacion" | "mercado" | "estimado" (v15.74.12:
+                # el Excel ya no es fuente del 07; v15.74.13: "propio" pasó a
+                # ser un origen y la fuente es "mercado" o "estimado")
                 "fuente_precio": fuente,
+                "precio_origen": precio_origen,
                 "precio_motivo": precio_motivo,
+                # v15.74.13 · detalle del precio de mercado interno (None si no aplica)
+                "mercado": ({"dias": mercado["dias"], "n_liq": mercado["n_liq"],
+                             "cab": mercado["cab"], "kg": round(mercado["kg"], 1),
+                             "desde": mercado["desde"], "hasta": mercado["hasta"],
+                             "precio_kg_cg": round(mercado["precio_kg_cg"], 2)} if mercado else None),
+                "mercado_dias": mercado["dias"] if mercado else None,
+                "mercado_n_liq": mercado["n_liq"] if mercado else None,
                 "liq_id": (pc or {}).get("liq_id"),
                 # v15.74.5 · color de la marca `liq.` + link a compras.html#tropa=
                 # v15.74.12 · por tropa + CATEGORÍA (sólo los motivos propios);
@@ -10339,7 +10427,8 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "liq_motivos_tropa": (pc or {}).get("liq_motivos_tropa"),
                 "liq_desbaste_aceptado": bool((pc or {}).get("liq_desbaste_aceptado")),
                 "tropa_norm": _norm_tropa(g["tropa"]),
-                "precio_kg_cg": (pc or {}).get("precio_kg_cg"),
+                # v15.74.13 · a mercado, el $/kg ya es c/gastos (comisión y gastos = 0)
+                "precio_kg_cg": (round(p, 2) if fuente == "mercado" else (pc or {}).get("precio_kg_cg")),
                 "precio_cab_cg": (pc or {}).get("precio_cab_cg"),
                 "desbaste_pct": (pc or {}).get("desbaste_pct"),
                 "comision_pct": round(com_pct * 100, 2),
@@ -10442,7 +10531,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             # v15.74.12 · de dónde salen los precios de compra
             "compras": dict(_mc, precio="precio_cab_cg (precio + comisión + gastos)",
                             solo_liquidacion=RR_PRECIO_SOLO_LIQUIDACION,
-                            tropas_propias_re=RR_TROPAS_PROPIAS_RE),
+                            tropas_propias_re=RR_TROPAS_PROPIAS_RE,
+                            mercado=("sin liquidación: promedio ponderado por kg c/gastos de la "
+                                     f"categoría liquidada en los {RR_MERCADO_DIAS} d previos al "
+                                     f"ingreso (hasta {RR_MERCADO_DIAS_MAX} d); si no, compañeras")),
             "fuentes": {
                 "egresos": "WinCampo lst_egresos_hacienda (MOTIVO=VENTA, NRO_TRANSACCION=remito)",
                 "compras": ("Compras y Liquidaciones (modulo 12) -> precios_compra_real.json "
@@ -10460,11 +10552,14 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     log.info(f"  ✓ Resultado por remito: {len(remitos_out)} remitos desde {RR_DESDE} · "
              f"{n_venta} egresos de venta · cobertura {salida['meta']['cobertura_global_pct']}%")
     log.info(f"  ✓ Resultado remitos · precios: {_mc['filas_liq']} liquidación (c/gastos, "
-             f"{_mc['filas_revisar']} a revisar por su categoría) · {_mc['filas_estimado']} estimadas "
-             f"({_mc['cab_sin_liq']} cab sin liquidación · "
-             f"{_mc['motivos_estimado'].get('terceros', 0)} cab de terceros · "
-             f"{_mc['motivos_estimado'].get('sin_ingreso_compras', 0)} cab sin ingreso en Compras) · "
-             f"{_mc['filas_propio']} destete/traslado ({_mc['cab_propio']} cab) · Excel: no se usa")
+             f"{_mc['filas_revisar']} a revisar por su categoría) · "
+             f"{_mc['filas_mercado']} a mercado interno {RR_MERCADO_DIAS}d ({_mc['cab_mercado']} cab, "
+             f"{_mc['cab_mercado_120']} a {RR_MERCADO_DIAS_MAX}d) · "
+             f"{_mc['filas_estimado']} sin mercado → compañeras ({_mc['cab_estimado']} cab) · "
+             f"orígenes: {_mc['cab_propio']} cab destete/traslado · {_mc['cab_sin_liq']} sin liquidación · "
+             f"{(_mc['por_origen'].get('terceros') or {}).get('cab', 0)} terceros · "
+             f"{(_mc['por_origen'].get('sin_ingreso_compras') or {}).get('cab', 0)} sin ingreso en Compras "
+             f"· Excel: no se usa")
     if meta_dm.get("activo"):
         log.info(f"    Datamars (ventana {meta_dm['ventana_dias']}d): "
                  f"{meta_dm['remitos_verificados']} remitos verificados · "

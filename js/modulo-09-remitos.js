@@ -50,6 +50,14 @@
    inconsistencias van en un aviso explícito arriba de la tabla y en el PDF,
    no sólo en el tooltip del chip. Sin liquidación → estimado al promedio de
    las compañeras (con link para cargarla); destete/traslado → "propio".
+
+   v15.74.13 · Lo que no tiene liquidación (destete/traslado, terceros, sin
+   liquidar, sin ingreso en Compras) se valúa a PRECIO DE MERCADO INTERNO:
+   promedio ponderado por kg, c/gastos, de esa categoría liquidada en los 60 d
+   previos al ingreso de la fila al Haras (120 d si no hay; si tampoco, el
+   promedio de las compañeras, único caso que sigue siendo `est.`). Chip
+   `mercado`. `precio_origen` (código) dice por qué no hay liquidación;
+   `precio_motivo` es el texto.
 */
 
 var _remData = null;
@@ -810,7 +818,7 @@ function remInformePDF() {
     filasPDF.forEach(function (f) {
       h += '<tr>'
         + (esGrupo ? '<td style="text-align:left;color:#8a827a">' + f.remito + '</td>' : '')
-        + '<td class="trp" style="text-align:left">' + f.tropa + (f.sc_tipo ? ' *' : '') + (f.estimado ? ' (est)' : '') + '</td>'
+        + '<td class="trp" style="text-align:left">' + f.tropa + (f.sc_tipo ? ' *' : '') + (f.estimado && f.fuente_precio !== 'mercado' ? ' (est)' : '') + '</td>'
         + '<td style="text-align:left">' + remCatNombre(f.categoria) + '</td>'
         + '<td>' + f.cabezas + '</td>'
         + '<td>' + (f.fecha_ingreso ? f.fecha_ingreso.split('-').reverse().join('/') : '—') + '</td>'
@@ -841,7 +849,7 @@ function remInformePDF() {
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.12 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.13 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -849,16 +857,17 @@ function remInformePDF() {
     + (V.comVenta ? ' · comisión de venta ' + _remN(V.comPct, 1) + ' %' : '')
     // v15.74.12 · de dónde salen los precios de compra (el Excel ya no)
     + (function () {
-        var n = {liquidacion: 0, revisar: 0, estimado: 0, propio: 0};
+        var n = {liquidacion: 0, revisar: 0, mercado: 0, estimado: 0};
         (r.filas || []).forEach(function (f) {
           var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
           if (fu === 'liquidacion') { n.liquidacion++; if (f.liq_semaforo === 'revisar') n.revisar++; }
-          else if (fu === 'propio') n.propio++;
-          else if (fu === 'estimado') n.estimado++;
+          else if (fu === 'mercado') n.mercado++;
+          else if (fu === 'propio' || fu === 'estimado') n.estimado++;
         });
         return ' · precios de compra: Compras y Liquidaciones (precio + comisión + gastos, por cabeza; $/kg compra = c/gastos) · '
-             + n.liquidacion + ' filas · ' + n.revisar + ' a revisar · ' + n.estimado + ' sin liquidación · '
-             + n.propio + ' destete/traslado'
+             + n.liquidacion + ' filas con liquidación · ' + n.revisar + ' a revisar · ' + n.mercado
+             + ' a mercado interno 60 d (promedio c/gastos de la categoría liquidada antes del ingreso, por kg) · '
+             + n.estimado + ' sin mercado (compañeras)'
              + ((C.gastos || 0) ? ' · gastos de compra ' + _remM(C.gastos) : '');
       })()
     // v15.68: el origen de los sin caravana es un supuesto, y va dicho.
@@ -952,7 +961,10 @@ function remSnapshot(r) {
       precio_kg: f.precio_kg, estimado: !!f.estimado,
       // v15.74.3 · de dónde salió el precio, y lo efectivamente pagado
       fuente_precio: f.fuente_precio || (f.estimado ? 'estimado' : null),
-      precio_motivo: f.precio_motivo || null,                 // v15.74.12
+      precio_motivo: f.precio_motivo || null,                 // v15.74.12 (texto desde v15.74.13)
+      precio_origen: f.precio_origen || null,                 // v15.74.13
+      mercado_dias: f.mercado_dias != null ? f.mercado_dias : null,
+      mercado_n_liq: f.mercado_n_liq != null ? f.mercado_n_liq : null,
       liq_id: f.liq_id || null,
       // v15.74.5 · semáforo de la liquidación (módulo 12) al momento del informe
       // v15.74.12 · por tropa + categoría; el de la tropa entera va aparte
@@ -1465,6 +1477,20 @@ function remMotivosTxt(s) {
 function remLinkCompras(f) {
   return 'compras.html#tropa=' + encodeURIComponent(f.tropa_norm || f.tropa || '');
 }
+/* v15.74.13 · por qué la fila no tiene liquidación (código). En los snapshots
+   v15.74.12 el código viajaba en precio_motivo y 'propio' era la fuente. */
+function remPrecioOrigen(f) {
+  if (f.precio_origen) return f.precio_origen;
+  var fu = f.fuente_precio || '';
+  if (fu === 'propio') return 'propio';
+  var mo = f.precio_motivo || '';
+  if (mo === 'terceros' || mo === 'sin_ingreso_compras' || mo === 'sin_liquidacion') return mo;
+  if (/^destete/.test(mo)) return 'propio';
+  if (/^terceros/.test(mo)) return 'terceros';
+  if (/^sin ingreso/.test(mo)) return 'sin_ingreso_compras';
+  return 'sin_liquidacion';
+}
+function remFec(iso) { return iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—'; }
 
 /* v15.74.3 · De dónde salió el precio de compra de una fila.
    'liq.'   — hay una liquidación cargada en el módulo 12: es lo que se pagó
@@ -1497,21 +1523,30 @@ function remFuenteInfo(f) {
     if (f.liq_semaforo_tropa === 'revisar') det += ' · (otra categoría de la tropa está a revisar; ésta cierra)';
     return {lbl: 'liq.', color: '#27613d', bg: 'rgba(39,97,61,.12)', det: det};
   }
-  if (fu === 'propio') {
-    return {lbl: 'propio', color: 'rgba(26,22,18,.55)', bg: 'rgba(26,22,18,.07)',
-            det: cat + ' · destete / traslado interno: no es una compra y no tiene liquidación. '
-                 + 'Precio estimado con el promedio ponderado de las compañeras del remito.'};
+  var ORI = {propio: 'destete / traslado interno: no es una compra y no tiene liquidación',
+             terceros: 'tropa de terceros sin liquidación cargada',
+             sin_ingreso_compras: 'tropa que Compras no tiene (sin ingreso de compra en la ventana)',
+             sin_liquidacion: 'sin liquidación en Compras para esta tropa y categoría'};
+  var mo = remPrecioOrigen(f);
+  if (fu === 'mercado') {
+    // v15.74.13 · precio de mercado interno de PEGSA para la categoría
+    var M = f.mercado || {dias: f.mercado_dias, n_liq: f.mercado_n_liq};
+    return {lbl: 'mercado', color: '#2d6a8a', bg: 'rgba(45,106,138,.12)',
+            link: mo === 'sin_liquidacion' ? remLinkCompras(f) : undefined,
+            det: cat + ' · ' + ORI[mo] + '. Precio de mercado interno: promedio ponderado c/gastos de '
+                 + cat + ' liquidado' + (M.desde ? ' entre ' + remFec(M.desde) + ' y ' + remFec(M.hasta) : ' en los ' + (M.dias || 60) + ' d previos al ingreso')
+                 + ' (' + (M.n_liq || '—') + ' liquidaci' + (M.n_liq === 1 ? 'ón' : 'ones') + (M.cab ? ' · ' + _remN(M.cab) + ' cab' : '') + ')'
+                 + ' · $ ' + _remN(f.precio_kg_cg != null ? f.precio_kg_cg : f.precio_kg) + '/kg × kg de ingreso'
+                 + (M.dias > 60 ? ' · ventana ampliada a ' + M.dias + ' d' : '')
+                 + (mo === 'sin_liquidacion' ? ' — click para cargar la liquidación real.' : '.')};
   }
-  if (fu === 'estimado' || f.estimado) {
-    var mo = f.precio_motivo || 'sin_liquidacion';
-    var txt = mo === 'terceros'
-      ? cat + ' · tropa de terceros sin liquidación cargada.'
-      : mo === 'sin_ingreso_compras'
-        ? cat + ' · tropa que Compras no tiene (sin ingreso de compra en la ventana).'
-        : cat + ' · sin liquidación en Compras para esta tropa y categoría — click para cargarla.';
+  if (fu === 'propio' || fu === 'estimado' || f.estimado) {
+    var esFallback = /sin mercado/.test(f.precio_motivo || '');
     return {lbl: 'est.', color: '#7a5c14', bg: 'rgba(184,146,42,.15)',
             link: mo === 'sin_liquidacion' ? remLinkCompras(f) : undefined,
-            det: txt + ' Se estimó con el promedio ponderado de las compañeras del mismo remito.'};
+            det: cat + ' · ' + ORI[mo] + (esFallback ? ' · sin liquidaciones de ' + cat + ' en los 120 d previos al ingreso' : '')
+                 + (mo === 'sin_liquidacion' ? ' — click para cargarla.' : '.')
+                 + ' Se estimó con el promedio ponderado de las compañeras del mismo remito.'};
   }
   return {lbl: '—', color: 'rgba(26,22,18,.55)', bg: 'rgba(26,22,18,.07)',
           det: 'Origen del precio no informado (informe anterior a v15.74.3).'};
@@ -1526,16 +1561,20 @@ function remAvisosCompras(filas) {
     var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
     var dst = null;
     if (fu === 'liquidacion') { if (f.liq_semaforo === 'revisar') dst = A.revisar; }
-    else if (fu === 'propio') dst = A.propio;
-    else if (fu === 'estimado') {
-      var mo = f.precio_motivo || 'sin_liquidacion';
-      dst = mo === 'terceros' ? A.terceros : mo === 'sin_ingreso_compras' ? A.sinIng : A.sinLiq;
+    else if (fu === 'mercado' || fu === 'propio' || fu === 'estimado') {
+      // v15.74.13 · se agrupa por el ORIGEN (por qué no hay liquidación); la
+      // fuente (mercado / compañeras) se cuenta adentro de cada entrada
+      var mo = remPrecioOrigen(f);
+      dst = mo === 'propio' ? A.propio : mo === 'terceros' ? A.terceros : mo === 'sin_ingreso_compras' ? A.sinIng : A.sinLiq;
     }
     if (!dst) return;
     var k = (f.tropa || '') + ' · ' + (f.categoria || '');
     var e = dst[k] || (dst[k] = {tropa: f.tropa, tropa_norm: f.tropa_norm || '', categoria: f.categoria,
-                                 cab: 0, motivos: f.liq_motivos || ''});
+                                 cab: 0, motivos: f.liq_motivos || '', mercado: 0, mercado120: 0, comp: 0, viejo: 0});
     e.cab += f.cabezas || 0;
+    if (fu === 'mercado') { e.mercado += f.cabezas || 0; if ((f.mercado_dias || 0) > 60) e.mercado120 += f.cabezas || 0; }
+    else if (f.precio_origen) e.comp += f.cabezas || 0;     // fallback: sin mercado a 120 d
+    else e.viejo += f.cabezas || 0;                           // snapshot anterior a v15.74.13
   });
   var L = function (o) {
     return Object.keys(o).map(function (k) { return o[k]; }).sort(function (a, b) { return b.cab - a.cab; });
@@ -1558,8 +1597,20 @@ function remAvisosComprasHTML(filas, que, pdf) {
   };
   var item = function (e, conLink, conMot) {
     var t = e.tropa + ' · ' + remCatNombre(e.categoria);
+    // v15.74.13 · la excepción va dicha: ventana ampliada o sin mercado
+    var ex = e.mercado120 ? ' · mercado 120 d' : '';
+    if (e.comp) ex += ' · ' + (e.comp === e.cab ? 'sin mercado 120 d, compañeras' : e.comp + ' cab sin mercado, compañeras');
     return (conLink ? lnk(e, t) : t) + ' (' + e.cab + ' cab'
-      + (conMot && e.motivos ? ' · ' + remMotivosTxt(e.motivos) : '') + ')';
+      + (conMot && e.motivos ? ' · ' + remMotivosTxt(e.motivos) : '') + ex + ')';
+  };
+  // v15.74.13 · cómo se valuó cada grupo: a mercado interno, a compañeras, o mezcla
+  var val = function (L) {
+    var m = L.reduce(function (s, e) { return s + e.mercado; }, 0), c = L.reduce(function (s, e) { return s + e.comp; }, 0);
+    var v = L.reduce(function (s, e) { return s + e.viejo; }, 0);
+    if (m && !c && !v) return 'valuadas a precio de mercado interno 60 d';
+    if (c && !m && !v) return 'sin mercado interno a 120 d: promedio de las compañeras';
+    if (m && (c || v)) return m + ' cab a precio de mercado interno 60 d · ' + (c + v) + ' cab al promedio de las compañeras';
+    return 'promedio de las compañeras';
   };
   var lineas = [];
   if (A.revisar.length) {
@@ -1570,20 +1621,20 @@ function remAvisosComprasHTML(filas, que, pdf) {
   if (A.sinLiq.length) {
     lineas.push('<strong>' + pl(cabs(A.sinLiq)) + ' sin liquidación</strong> ('
       + A.sinLiq.map(function (e) { return item(e, true, false); }).join(', ')
-      + ') — se costean al promedio de las compañeras'
+      + ') — ' + val(A.sinLiq) + ' hasta que se cargue la real'
       + (pdf ? '.' : ' · <a href="compras.html" target="_blank" style="color:inherit;text-decoration:underline">cargarla en Compras</a>.'));
   }
   if (A.terceros.length) {
     lineas.push(pl(cabs(A.terceros)) + ' de terceros sin liquidación ('
-      + A.terceros.map(function (e) { return item(e, false, false); }).join(', ') + ') — promedio de las compañeras.');
+      + A.terceros.map(function (e) { return item(e, false, false); }).join(', ') + ') — ' + val(A.terceros) + '.');
   }
   if (A.sinIng.length) {
     lineas.push(pl(cabs(A.sinIng)) + ' de tropas que Compras no tiene ('
-      + A.sinIng.map(function (e) { return item(e, false, false); }).join(', ') + ') — promedio de las compañeras.');
+      + A.sinIng.map(function (e) { return item(e, false, false); }).join(', ') + ') — ' + val(A.sinIng) + '.');
   }
   if (A.propio.length) {
     lineas.push('<span style="opacity:.7">' + pl(cabs(A.propio)) + ' de destete/traslado (sin compra): '
-      + A.propio.map(function (e) { return item(e, false, false); }).join(', ') + '.</span>');
+      + A.propio.map(function (e) { return item(e, false, false); }).join(', ') + ' — ' + val(A.propio) + '.</span>');
   }
   var aviso = A.revisar.length || A.sinLiq.length;   // ámbar; el resto es informativo
   if (pdf) {
@@ -2036,7 +2087,10 @@ function renderRemitos(soloResultado) {
   // gastos por kg de ingreso), que es lo que se paga; el desglose va en el tooltip
   var pkgCell = function (f) {
     var cg = f.precio_kg_cg != null ? f.precio_kg_cg : null;
-    var tip = cg != null
+    var tip = f.fuente_precio === 'mercado'
+      ? 'mercado interno ' + ((f.mercado || {}).dias || f.mercado_dias || 60) + ' d ' + remCatNombre(f.categoria) + ': $ ' + _remN(cg != null ? cg : f.precio_kg)
+        + '/kg c/gastos × ' + _remN(f.kg_ingreso) + ' kg de ingreso (' + ((f.mercado || {}).n_liq || f.mercado_n_liq || '—') + ' liq)'
+      : cg != null
       ? 'precio $ ' + _remN(f.precio_kg) + '/kg · comisión ' + _remN(f.comision_pct, 1) + ' % · gastos '
         + _remN(f.gastos_pct || 0, 1) + ' % → $ ' + _remN(cg) + '/kg c/gastos'
         + (f.precio_cab_cg ? ' ($ ' + _remN(f.precio_cab_cg) + '/cab)' : '')
@@ -2089,7 +2143,7 @@ function renderRemitos(soloResultado) {
     h += '<tr' + (f.sc_tipo ? ' style="background:#fdf6f4"' : (f.estimado ? ' style="background:#fffbf0"' : '')) + '>'
       + (esGrupo ? '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.5)">' + f.remito + '</td>' : '')
       + '<td style="' + td + ';text-align:left">' + f.tropa + (f.sc_tipo ? tagSC : tagAnt)
-      + (f.estimado ? tag + 'est</span>' : '') + '</td>'
+      + (f.estimado && f.fuente_precio !== 'mercado' ? tag + 'est</span>' : '') + '</td>'
       + '<td style="' + td + ';text-align:left">' + catChip(f.categoria) + '</td>'
       + '<td style="' + td + '">' + f.cabezas + '</td>'
       + '<td style="' + td + '">' + f.fecha_ingreso.split('-').reverse().join('/') + '</td>'
@@ -2134,7 +2188,7 @@ function renderRemitos(soloResultado) {
   if ((r.tropas_sin_precio || []).length) {
     h += '<div style="' + H2 + '">Filas sin liquidación</div>';
     h += '<div style="' + SUB + '">Se cargan en <a href="compras.html" target="_blank" style="color:var(--gold);text-decoration:underline">'
-      + 'Compras y Liquidaciones</a> · las de destete/traslado no son compras y quedan al promedio</div>';
+      + 'Compras y Liquidaciones</a> · sin liquidación se valúan a precio de mercado interno 60 d (la real manda cuando se carga)</div>';
     h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace"><thead><tr>'
       + ['Tropa', 'Cat', 'Motivo', 'Cab', 'Kg entrada', 'Fecha ingreso', 'Estimado a'].map(function (t, i) {
         return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i < 3 ? 'left' : 'right') + '">' + t + '</th>';
@@ -2143,8 +2197,9 @@ function renderRemitos(soloResultado) {
     r.tropas_sin_precio.slice().sort(function (a, b) { return b.kg_ingreso - a.kg_ingreso; }).forEach(function (t) {
       var td = 'padding:8px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:13px';
       var mo = t.fuente_precio === 'propio' ? 'destete/traslado' : (MOT[t.motivo] || t.motivo || 'sin liquidación');
+      var ori = remPrecioOrigen({precio_origen: t.origen, fuente_precio: t.fuente_precio, precio_motivo: t.motivo});
       h += '<tr><td style="' + td + ';text-align:left">'
-        + (t.motivo === 'sin_liquidacion' ? '<a href="' + remLinkCompras(t) + '" target="_blank" style="color:inherit;text-decoration:underline">' + t.tropa + '</a>' : t.tropa) + '</td>'
+        + (ori === 'sin_liquidacion' ? '<a href="' + remLinkCompras(t) + '" target="_blank" style="color:inherit;text-decoration:underline">' + t.tropa + '</a>' : t.tropa) + '</td>'
         + '<td style="' + td + ';text-align:left">' + t.categoria + '</td>'
         + '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.55)">' + mo + '</td>'
         + '<td style="' + td + '">' + t.cabezas + '</td>'
@@ -2162,14 +2217,15 @@ function renderRemitos(soloResultado) {
     + ' · precios de compra: <strong>Compras y Liquidaciones</strong> (precio + comisión + gastos, por cabeza)'
     + (function () {
         // v15.74.12 · cuántas filas de este remito/grupo vienen de cada lado
-        var n = {liquidacion: 0, revisar: 0, estimado: 0, propio: 0};
+        var n = {liquidacion: 0, revisar: 0, mercado: 0, estimado: 0};
         (r.filas || []).forEach(function (f) {
           var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
           if (fu === 'liquidacion') { n.liquidacion++; if (f.liq_semaforo === 'revisar') n.revisar++; }
-          else if (fu === 'propio') n.propio++;
-          else if (fu === 'estimado') n.estimado++;
+          else if (fu === 'mercado') n.mercado++;
+          else if (fu === 'propio' || fu === 'estimado') n.estimado++;
         });
-        return ' · ' + n.liquidacion + ' filas · ' + n.revisar + ' a revisar · ' + n.estimado + ' sin liquidación · ' + n.propio + ' destete/traslado';
+        return ' · ' + n.liquidacion + ' filas con liquidación · ' + n.revisar + ' a revisar · ' + n.mercado
+             + ' a mercado interno 60 d · ' + n.estimado + ' sin mercado (compañeras)';
       })()
     + ' · sin liquidación: promedio de las compañeras + comisión ' + Math.round(meta.comision_default * 100) + ' %'
     + ' · %PV mensual ajustado ÷0,92 de <code>pct_pv_mensual.json</code>'
