@@ -276,6 +276,19 @@
       var tot = 0; Object.keys(porCat).forEach(function (c) { tot += porCat[c].cab; });
       if (tot < cabRem - tolCab) add('*', 'parcial_' + String(tot) + '/' + String(cabRem));   // los sin caravana sin liquidar
       else if (tot > cabRem + tolCab) add('*', 'total_' + String(tot) + '≠' + String(cabRem));
+      else {
+        // v15.74.14 · Σ liq = remito pero entraron menos animales (por
+        // caravana): el consignatario liquidó de más. NO es "sin caravana" (el
+        // animal no entró). Verde + aviso para reclamar; el costo del 07 sale
+        // por kg de WinCampo, así que no se pierde ni se duplica.
+        // Sólo si las cabezas por categoría cierran: con un cabezas_≠ /
+        // parcial / sin_linea el exceso no se puede atribuir.
+        var cabReal = 0; gruposWc.forEach(function (g) { cabReal += _num(g.cabezas) || 0; });
+        var cabOk = !Object.keys(motivos).some(function (c) {
+          return motivos[c].some(function (m) { return /^(cabezas_|parcial_|sin_linea)/.test(m); });
+        });
+        if (cabOk && tot > cabReal + tolCab) avisos.push('liq_de_mas_' + String(tot - cabReal));
+      }
     }
     Object.keys(porCat).sort().forEach(function (cat) {
       if (gruposWc.length && !wcCats[cat]) add(cat, 'cat_sobrante');

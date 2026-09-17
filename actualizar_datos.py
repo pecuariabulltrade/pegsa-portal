@@ -8145,6 +8145,18 @@ def liq_semaforo(grupos_wc, lineas, opts=None):
             add("*", f"parcial_{tot:g}/{cab_rem:g}")      # los sin caravana sin liquidar
         elif tot > cab_rem + tol_cab:
             add("*", f"total_{tot:g}≠{cab_rem:g}")
+        else:
+            # v15.74.14 · Σ liq = remito pero entraron menos animales (por
+            # caravana): el consignatario liquidó de más. NO es "sin caravana"
+            # (el animal no entró). Verde + aviso para reclamar; el costo del
+            # 07 sale por kg de WinCampo, así que no se pierde ni se duplica.
+            # Sólo si las cabezas por categoría cierran: con un cabezas_≠ /
+            # parcial / sin_linea el exceso no se puede atribuir.
+            cab_real = sum(_liq_num(g.get("cabezas")) or 0.0 for g in grupos_wc)
+            cab_ok = not any(m.startswith(("cabezas_", "parcial_", "sin_linea"))
+                             for ms in motivos.values() for m in ms)
+            if cab_ok and tot > cab_real + tol_cab:
+                avisos.append(f"liq_de_mas_{tot - cab_real:g}")
     for cat in sorted(por_cat):
         if grupos_wc and cat not in wc_cats:
             add(cat, "cat_sobrante")
@@ -9091,7 +9103,13 @@ def _rr_cat(c):
 #           siempre.
 # Confirmado con Nicolás el 14/09/2026. Las filas sin liquidación (fuente
 # "excel" o estimadas) NO pasan por acá: siguen con el cálculo de siempre.
-RR_COMPRA_POR_CABEZA = True
+# v15.74.14 · decisión de Nicolás (17/09/2026): por kg de WinCampo × $/kg
+# liquidado c/gastos. Al 07 no le interesan ni las cabezas ni los kg que
+# liquidó el papel (BUL.HUI.27/05/26: el consignatario liquidó 23 terneras y
+# entraron 22 — por cabeza el animal que no llegó se perdía): sólo el precio
+# que surge de esa carga, por tropa + categoría. Cuando se quiera la fórmula
+# con desbaste (kg_liq × $/kg ÷ kg_wc), va en la rama de abajo.
+RR_COMPRA_POR_CABEZA = False
 
 # v15.74.12 · El Excel de compras DEJA de ser fuente de precio del módulo 07
 # (decisión de Nicolás, 14/09/2026): una fila se costea con su liquidación del
@@ -10306,6 +10324,13 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 # es el resto: si no, comisión y gastos se contarían dos veces.
                 c_all = g["cab"] * pc["precio_cab_cg"]
                 c = max(c_all - com_fila - gas_fila, 0.0)
+            elif fuente == "liquidacion" and (pc or {}).get("precio_kg_cg"):
+                # v15.74.14 · kg de ingreso de WinCampo × $/kg liquidado c/gastos.
+                # `precio_kg_cg` = importe_cg ÷ kg_liq de la línea, que es
+                # precio_kg × (1 + com + gastos) salvo redondeo; se toma directo
+                # para que Σ costo_compra_cg = Σ kgi × precio_kg_cg exacto.
+                c_all = g["kgi"] * pc["precio_kg_cg"]
+                c = max(c_all - com_fila - gas_fila, 0.0)
             else:
                 c = base_sg
             c_all = c + com_fila + gas_fila
@@ -10529,7 +10554,11 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "tasas_mortandad": MORT_PCT,
             "datamars": meta_dm,
             # v15.74.12 · de dónde salen los precios de compra
-            "compras": dict(_mc, precio="precio_cab_cg (precio + comisión + gastos)",
+            "compras": dict(_mc,
+                            precio=("cabezas × precio_cab_cg (liquidado + comisión + gastos)"
+                                    if RR_COMPRA_POR_CABEZA else
+                                    "kg_ingreso WinCampo × precio_kg_cg (liquidado + comisión + gastos)"),
+                            por_cabeza=RR_COMPRA_POR_CABEZA,
                             solo_liquidacion=RR_PRECIO_SOLO_LIQUIDACION,
                             tropas_propias_re=RR_TROPAS_PROPIAS_RE,
                             mercado=("sin liquidación: promedio ponderado por kg c/gastos de la "
@@ -10538,7 +10567,7 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "fuentes": {
                 "egresos": "WinCampo lst_egresos_hacienda (MOTIVO=VENTA, NRO_TRANSACCION=remito)",
                 "compras": ("Compras y Liquidaciones (modulo 12) -> precios_compra_real.json "
-                            "(por_tropa, fuente=liquidacion, precio_cab_cg); el Excel no se usa"),
+                            "(por_tropa, fuente=liquidacion, kg_ingreso WC x precio_kg_cg); el Excel no se usa"),
                 "racion":  "preico de racion feelot.xlsx",
                 "pct_pv":  "pct_pv_mensual.json (pct_pv_ajustado, limites 2-3%)",
                 "mortandad": f"muertes_{periodo}.json (tasa por grupo)",

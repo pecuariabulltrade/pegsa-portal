@@ -58,6 +58,12 @@
    promedio de las compañeras, único caso que sigue siendo `est.`). Chip
    `mercado`. `precio_origen` (código) dice por qué no hay liquidación;
    `precio_motivo` es el texto.
+
+   v15.74.14 · Decisión de Nicolás: el costo de una fila liquidada es **kg de
+   ingreso de WinCampo × $/kg liquidado c/gastos** (precio + comisión +
+   gastos). Ya no se costea por cabeza: al 07 no le importan las cabezas ni
+   los kg que liquidó el papel, sólo el precio por tropa + categoría.
+   `precio_cab_cg` sigue en la fila como dato.
 */
 
 var _remData = null;
@@ -849,7 +855,7 @@ function remInformePDF() {
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.13 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.14 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -864,7 +870,7 @@ function remInformePDF() {
           else if (fu === 'mercado') n.mercado++;
           else if (fu === 'propio' || fu === 'estimado') n.estimado++;
         });
-        return ' · precios de compra: Compras y Liquidaciones (precio + comisión + gastos, por cabeza; $/kg compra = c/gastos) · '
+        return ' · precios de compra: Compras y Liquidaciones (kg de ingreso WinCampo × $/kg liquidado c/gastos) · '
              + n.liquidacion + ' filas con liquidación · ' + n.revisar + ' a revisar · ' + n.mercado
              + ' a mercado interno 60 d (promedio c/gastos de la categoría liquidada antes del ingreso, por kg) · '
              + n.estimado + ' sin mercado (compañeras)'
@@ -1493,8 +1499,8 @@ function remPrecioOrigen(f) {
 function remFec(iso) { return iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—'; }
 
 /* v15.74.3 · De dónde salió el precio de compra de una fila.
-   'liq.'   — hay una liquidación cargada en el módulo 12: es lo que se pagó
-              (precio + comisión + gastos, por cabeza).
+   'liq.'   — hay una liquidación cargada en el módulo 12: kg de ingreso de
+              WinCampo × $/kg liquidado c/gastos (precio + comisión + gastos).
    'est.'   — no hay liquidación para esa tropa + categoría: se estimó con las
               compañeras del mismo remito. `precio_motivo` dice por qué.
    'propio' — destete / traslado interno: no es una compra, nunca va a tener
@@ -1509,8 +1515,8 @@ function remFuenteInfo(f) {
   if (fu === 'liquidacion') {
     var sem = f.liq_semaforo || 'ok';
     var det = cat + ' · liquidación ' + (f.liq_id || '—')
-            + (f.precio_cab_cg ? ' · $/cab c/gastos ' + _remN(f.precio_cab_cg) : '')
-            + (f.precio_kg_cg ? ' · $/kg c/gastos ' + _remN(f.precio_kg_cg) : '')
+            + (f.precio_kg_cg ? ' · $/kg liquidado c/gastos ' + _remN(f.precio_kg_cg) + ' × ' + _remN(f.kg_ingreso) + ' kg de ingreso WinCampo' : '')
+            + (f.precio_cab_cg ? ' · ($/cab liquidado ' + _remN(f.precio_cab_cg) + ')' : '')
             + (f.desbaste_pct != null ? ' · desbaste ' + _remN(f.desbaste_pct, 1) + ' %' : '');
     if (sem === 'revisar' || sem === 'sin_liquidar') {
       return {lbl: 'liq.', color: sem === 'revisar' ? '#7a5c14' : '#c0392b',
@@ -2085,15 +2091,16 @@ function renderRemitos(soloResultado) {
   };
   // v15.74.12 · la columna $/kg compra muestra el c/gastos (precio + comisión +
   // gastos por kg de ingreso), que es lo que se paga; el desglose va en el tooltip
+  // v15.74.14 · costo de la fila = kg de ingreso WinCampo × ese $/kg
   var pkgCell = function (f) {
     var cg = f.precio_kg_cg != null ? f.precio_kg_cg : null;
     var tip = f.fuente_precio === 'mercado'
       ? 'mercado interno ' + ((f.mercado || {}).dias || f.mercado_dias || 60) + ' d ' + remCatNombre(f.categoria) + ': $ ' + _remN(cg != null ? cg : f.precio_kg)
         + '/kg c/gastos × ' + _remN(f.kg_ingreso) + ' kg de ingreso (' + ((f.mercado || {}).n_liq || f.mercado_n_liq || '—') + ' liq)'
       : cg != null
-      ? 'precio $ ' + _remN(f.precio_kg) + '/kg · comisión ' + _remN(f.comision_pct, 1) + ' % · gastos '
-        + _remN(f.gastos_pct || 0, 1) + ' % → $ ' + _remN(cg) + '/kg c/gastos'
-        + (f.precio_cab_cg ? ' ($ ' + _remN(f.precio_cab_cg) + '/cab)' : '')
+      ? 'kg de ingreso WinCampo × $/kg liquidado c/gastos: precio $ ' + _remN(f.precio_kg) + '/kg · comisión ' + _remN(f.comision_pct, 1) + ' % · gastos '
+        + _remN(f.gastos_pct || 0, 1) + ' % → $ ' + _remN(cg) + '/kg × ' + _remN(f.kg_ingreso) + ' kg'
+        + (f.precio_cab_cg ? ' ($/cab liquidado ' + _remN(f.precio_cab_cg) + ', informativo)' : '')
       : 'estimado al promedio de las compañeras: $ ' + _remN(f.precio_kg) + '/kg + comisión ' + _remN(f.comision_pct, 1) + ' %';
     return '<span title="' + tip + '">' + _remN(cg != null ? cg : f.precio_kg) + '</span>';
   };
@@ -2214,7 +2221,7 @@ function renderRemitos(soloResultado) {
   h += '<div style="' + SUB + ';margin-top:22px;line-height:1.7">'
     + 'Parámetros del modelo · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' % sobre el %PV base'
     + ' · límites de consumo MS ' + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %'
-    + ' · precios de compra: <strong>Compras y Liquidaciones</strong> (precio + comisión + gastos, por cabeza)'
+    + ' · precios de compra: <strong>Compras y Liquidaciones</strong> (kg de ingreso WinCampo × $/kg liquidado c/gastos)'
     + (function () {
         // v15.74.12 · cuántas filas de este remito/grupo vienen de cada lado
         var n = {liquidacion: 0, revisar: 0, mercado: 0, estimado: 0};
