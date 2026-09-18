@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-09-18T12:07:32.819445",
+    "generado": "2026-09-18T13:06:56.499512",
     "desde": "2024-01-09",
-    "hasta": "2026-09-09",
+    "hasta": "2026-09-16",
     "dias": 983,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-09-18",
-    "n_tropas": 566,
-    "n_grupos": 962,
+    "n_tropas": 567,
+    "n_grupos": 963,
     "excluidas": 174,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 566,
+      "caravanas": 567,
       "remito": 0,
       "distintas_al_remito": 162,
       "cob_min": 90,
@@ -24841,6 +24841,48 @@
       "vendidas_imputadas": 0,
       "muertas": 1
     },
+    "PEGVIL160926": {
+      "tropa": "PEG.VIL.16/09/2026",
+      "hotelero": "PEGSA",
+      "fecha": "2026-09-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "cabezas": 28,
+      "kg_ingreso": 6620.0,
+      "categorias": [
+        "Ternera"
+      ],
+      "kg_cab": 236.4,
+      "categorias_remito": [
+        "Ternera"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternera",
+          "cabezas": 28,
+          "kg_ingreso": 6620.0,
+          "kg_cab": 236.4
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Ternera",
+          "cabezas": 28,
+          "kg_ingreso": 6620.0,
+          "kg_cab": 236.4
+        }
+      ],
+      "cab_real": 28,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 28,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
     "PEGVIL170626": {
       "tropa": "PEG.VIL.17/06/26",
       "hotelero": "PEGSA",
@@ -45657,6 +45699,24 @@
       "cabezas": 38,
       "kg_ingreso": 14934.0,
       "kg_cab": 393.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.VIL.16/09/2026",
+      "tropa_norm": "PEGVIL160926",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-09-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "origen": "CAMPO",
+      "localidad": "GENERAL VILLEGAS",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 28,
+      "kg_ingreso": 6620.0,
+      "kg_cab": 236.4,
       "fuente": "caravanas"
     }
   ]
