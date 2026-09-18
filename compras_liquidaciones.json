@@ -1,16 +1,16 @@
 {
   "meta": {
-    "generado": "2026-09-18T16:06:33.801994",
+    "generado": "2026-09-18T17:07:37.610113",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 145,
+    "n_supabase": 146,
     "n_archivos": 143,
     "n_liquidaciones": 143,
-    "n_anuladas": 2,
+    "n_anuladas": 3,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 159,
-      "revisar": 2,
+      "ok": 160,
+      "revisar": 1,
       "sin_liquidar": 290,
       "terceros": 116,
       "tol_kg_pct": 8,
@@ -4108,57 +4108,81 @@
       }
     },
     {
-      "id": "DARUTE170626_2026-06-17",
+      "id": "DARUTE170626_2026-06-17_2",
       "fecha": "2026-06-17",
       "consignataria": "DARWASH SA",
       "proveedor": "UTE DARWASH SILVIO FER.",
-      "nro_liquidacion": "2026-06-17  feria darwash (Carlos Casares) (Las Taperas).xlsx",
-      "archivo": "2026-06-17  feria darwash (Carlos Casares) (Las Taperas).xlsx",
+      "nro_liquidacion": "2026-06-17 feria darwash",
+      "archivo": "2026-06-17 feria darwash",
       "comision_modo": "pct",
       "comision_valor": 0.02,
-      "gastos_monto": 0,
-      "observaciones": "importado de Excel: comision y gastos juntos en un solo %",
-      "estado": "importada_excel",
-      "generado": "2026-09-18T15:29:02.088Z",
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-09-18T19:36:55.014Z",
       "version_portal": "v15.74.15",
       "categorias": [
         {
-          "kg_wc": 10860,
+          "kg_wc": 2012.5,
           "tropa": "DAR.UTE.17/06/26",
-          "kg_liq": 10860,
-          "importe": 38682099.9876,
+          "kg_liq": 2013,
+          "importe": 6902099.919,
           "hotelero": "LAS TAPERAS",
           "categoria": "Vaca",
-          "kg_wc_cab": 402.22222222222223,
-          "precio_kg": 3561.88766,
-          "cabezas_wc": 27,
+          "kg_wc_cab": 402.5,
+          "precio_kg": 3428.763,
+          "cabezas_wc": 5,
           "gastos_cat": 0.0,
-          "importe_cg": 39455741.987352,
-          "kg_liq_cab": 402.22222222222223,
+          "importe_cg": 7040141.9173799995,
+          "kg_liq_cab": 402.6,
           "tropa_norm": "DARUTE170626",
-          "cabezas_liq": 27,
+          "cabezas_liq": 5,
           "precio_modo": "kg",
-          "comision_cat": 773641.999752,
-          "desbaste_pct": 0.0,
-          "precio_kg_cg": 3633.1254132,
-          "precio_valor": 3561.88766,
-          "precio_cab_cg": 1461323.7773093332
+          "comision_cat": 138041.99838,
+          "desbaste_pct": 0.024838549428719013,
+          "precio_kg_cg": 3497.33826,
+          "precio_valor": 3428.763,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1408028.3834759998
+        },
+        {
+          "kg_wc": 8831.6,
+          "tropa": "DAR.UTE.17/06/26",
+          "kg_liq": 8570,
+          "importe": 31779999.879,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Vaquillona",
+          "kg_wc_cab": 401.43636363636364,
+          "precio_kg": 3708.2847,
+          "cabezas_wc": 22,
+          "gastos_cat": 0.0,
+          "importe_cg": 32415599.87658,
+          "kg_liq_cab": 389.54545454545456,
+          "tropa_norm": "DARUTE170626",
+          "cabezas_liq": 22,
+          "precio_modo": "kg",
+          "comision_cat": 635599.9975800001,
+          "desbaste_pct": -3.0525087514585727,
+          "precio_kg_cg": 3782.450394,
+          "precio_valor": 3708.2847,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1473436.3580263637
         }
       ],
       "total": {
         "cabezas_liq": 27.0,
-        "kg_liq": 10860.0,
+        "kg_liq": 10583.0,
         "cabezas_wc": 27.0,
-        "kg_wc": 10860.0,
-        "importe": 38682099.9876,
-        "comision": 773641.999752,
+        "kg_wc": 10844.1,
+        "importe": 38682099.798,
+        "comision": 773641.9959600001,
         "gastos": 0.0,
-        "importe_cg": 39455741.987352,
-        "precio_kg": 3561.88766,
-        "precio_kg_cg": 3633.1254132,
-        "precio_cab_cg": 1461323.7773093332,
+        "importe_cg": 39455741.79396,
+        "precio_kg": 3655.1166775016536,
+        "precio_kg_cg": 3728.2190110516863,
+        "precio_cab_cg": 1461323.7701466666,
         "recargo_pct": 2.0000000000000018,
-        "desbaste_pct": 0.0,
+        "desbaste_pct": -2.4671643201360633,
         "cabezas_dif": 0.0
       }
     },
@@ -14696,22 +14720,42 @@
     },
     "DARUTE170626": {
       "Vaca": {
-        "liq_id": "DARUTE170626_2026-06-17",
+        "liq_id": "DARUTE170626_2026-06-17_2",
         "fecha": "2026-06-17",
         "liq_ids": [
-          "DARUTE170626_2026-06-17"
+          "DARUTE170626_2026-06-17_2"
         ],
         "n_liq": 1,
-        "cabezas_liq": 27.0,
-        "kg_liq": 10860.0,
-        "precio_kg": 3561.88766,
-        "precio_kg_cg": 3633.1254132,
-        "precio_cab_cg": 1461323.7773093332,
-        "comision_cat": 773641.999752,
+        "cabezas_liq": 5.0,
+        "kg_liq": 2013.0,
+        "precio_kg": 3428.763,
+        "precio_kg_cg": 3497.33826,
+        "precio_cab_cg": 1408028.3834759998,
+        "comision_cat": 138041.99838,
         "gastos_cat": 0.0,
-        "importe": 38682099.9876,
-        "importe_cg": 39455741.987352,
-        "desbaste_pct": 0.0,
+        "importe": 6902099.919,
+        "importe_cg": 7040141.9173799995,
+        "desbaste_pct": 0.024838549428719013,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      },
+      "Vaquillona": {
+        "liq_id": "DARUTE170626_2026-06-17_2",
+        "fecha": "2026-06-17",
+        "liq_ids": [
+          "DARUTE170626_2026-06-17_2"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 22.0,
+        "kg_liq": 8570.0,
+        "precio_kg": 3708.2847,
+        "precio_kg_cg": 3782.450394,
+        "precio_cab_cg": 1473436.3580263637,
+        "comision_cat": 635599.9975800001,
+        "gastos_cat": 0.0,
+        "importe": 31779999.879,
+        "importe_cg": 32415599.87658,
+        "desbaste_pct": -3.0525087514585727,
         "hotelero": "LAS TAPERAS",
         "desbaste_aceptado_vigente": false
       }
@@ -19935,15 +19979,8 @@
       ]
     },
     "DARUTE170626": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "cabezas_27≠5"
-        ],
-        "Vaquillona": [
-          "sin_linea"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": [
         "remito_distinto"
       ]

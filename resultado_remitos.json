@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-18T16:06:37.655332",
+    "generado": "2026-09-18T17:07:41.504497",
     "desde": "2026-07-01",
     "remitos": 88,
     "egresos_venta": 2808,
@@ -37,16 +37,16 @@
       "cab_total": 2808
     },
     "compras": {
-      "filas_liq": 1144,
-      "filas_ok": 1143,
-      "filas_revisar": 1,
-      "filas_sin_liq": 35,
+      "filas_liq": 1145,
+      "filas_ok": 1145,
+      "filas_revisar": 0,
+      "filas_sin_liq": 34,
       "filas_estimado": 40,
       "filas_propio": 88,
       "filas_excel": 0,
-      "cab_liq": 2449,
-      "cab_revisar": 1,
-      "cab_sin_liq": 97,
+      "cab_liq": 2450,
+      "cab_revisar": 0,
+      "cab_sin_liq": 96,
       "cab_propio": 183,
       "cab_estimado": 102,
       "motivos_estimado": {
@@ -55,17 +55,17 @@
         "propio": 3,
         "sin_ingreso_compras": 1
       },
-      "filas_mercado": 102,
-      "cab_mercado": 257,
+      "filas_mercado": 101,
+      "cab_mercado": 256,
       "filas_mercado_120": 0,
       "cab_mercado_120": 0,
       "mercado_dias": 60,
       "mercado_dias_max": 120,
       "por_origen": {
         "sin_liquidacion": {
-          "filas": 35,
-          "cab": 97,
-          "mercado": 1,
+          "filas": 34,
+          "cab": 96,
+          "mercado": 0,
           "mercado_120": 0,
           "estimado": 96
         },
@@ -4903,19 +4903,19 @@
           "dias": 15,
           "kg_ingreso": 612.5,
           "kg_egreso": 342.8,
-          "precio_kg": 3174.55,
+          "precio_kg": 3165.59,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "terceros",
-          "precio_motivo": "terceros · mercado 60d Vaca (18 liq · 3,175 $/kg)",
+          "precio_motivo": "terceros · mercado 60d Vaca (18 liq · 3,166 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 18,
-            "cab": 1019.0,
-            "kg": 492349.8,
+            "cab": 997.0,
+            "kg": 483502.8,
             "desde": "2026-04-24",
             "hasta": "2026-06-23",
-            "precio_kg_cg": 3174.55
+            "precio_kg_cg": 3165.59
           },
           "mercado_dias": 60,
           "mercado_n_liq": 18,
@@ -4926,14 +4926,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "TAPENR230626",
-          "precio_kg_cg": 3174.55,
+          "precio_kg_cg": 3165.59,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1944251.58,
-          "costo_compra_cg": 1944251.58,
+          "costo_compra": 1938766.31,
+          "costo_compra_cg": 1938766.31,
           "gastos_compra": 0.0,
           "kg_ms": 186.3,
           "pct_ms": 2.6,
@@ -4941,7 +4941,7 @@
           "alimento": 64139.98,
           "estructura": 6750.0,
           "sanidad": 7630.0,
-          "mortandad": 34802.1
+          "mortandad": 34703.92
         },
         {
           "origen": "confirmado",
@@ -4964,7 +4964,7 @@
           "dias": 21,
           "kg_ingreso": 576.8,
           "kg_egreso": 447.1,
-          "precio_kg": 3561.89,
+          "precio_kg": 3428.76,
           "estimado": false,
           "fuente_precio": "liquidacion",
           "precio_origen": null,
@@ -4972,21 +4972,21 @@
           "mercado": null,
           "mercado_dias": null,
           "mercado_n_liq": null,
-          "liq_id": "DARUTE170626_2026-06-17",
-          "liq_semaforo": "revisar",
-          "liq_motivos": "cabezas_27≠5",
-          "liq_semaforo_tropa": "revisar",
-          "liq_motivos_tropa": "Vaca: cabezas_27≠5 · Vaquillona: sin_linea",
+          "liq_id": "DARUTE170626_2026-06-17_2",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "DARUTE170626",
-          "precio_kg_cg": 3633.13,
-          "precio_cab_cg": 1461323.78,
-          "desbaste_pct": 0.0,
+          "precio_kg_cg": 3497.34,
+          "precio_cab_cg": 1408028.38,
+          "desbaste_pct": 0.02,
           "comision_pct": 2.0,
-          "comision": 41091.39,
+          "comision": 39555.55,
           "gastos_pct": 0.0,
-          "costo_compra": 2054570.66,
-          "costo_compra_cg": 2095662.05,
+          "costo_compra": 1977780.11,
+          "costo_compra_cg": 2017335.66,
           "gastos_compra": 0.0,
           "kg_ms": 279.5,
           "pct_ms": 2.6,
@@ -4994,7 +4994,7 @@
           "alimento": 95779.7,
           "estructura": 9450.0,
           "sanidad": 7630.0,
-          "mortandad": 37512.35
+          "mortandad": 36110.31
         }
       ],
       "cabezas": 34,
@@ -5006,15 +5006,15 @@
       "fecha_egreso": "2026-07-08",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 57646017.48,
-        "comision": 1688701.5,
+        "compra": 57563741.67,
+        "comision": 1687165.65,
         "gastos": 0.0,
         "alimento": 2908111.88,
         "estructura": 289800.0,
         "sanidad": 259420.0,
-        "mortandad": 1062091.47,
-        "total": 63854142.32,
-        "por_kg_vendido": 4223.15
+        "mortandad": 1060591.24,
+        "total": 63768830.44,
+        "por_kg_vendido": 4217.51
       },
       "indicadores": {
         "kg_prom_ingreso": 566.7,
@@ -5024,8 +5024,8 @@
         "pct_ms": 2.6,
         "conversion_ms": null,
         "costo_kg_producido": null,
-        "precio_prom_pagado": 2991.8,
-        "precio_prom_pagado_cg": 3079.45
+        "precio_prom_pagado": 2987.53,
+        "precio_prom_pagado_cg": 3075.1
       },
       "reposicion": {
         "precio_kg": 3804.71,
@@ -5071,14 +5071,14 @@
           "cabezas": 1,
           "kg_ingreso": 612.5,
           "fecha_ingreso": "2026-06-23",
-          "estimado_a": 3174.55,
+          "estimado_a": 3165.59,
           "fuente_precio": "mercado",
-          "motivo": "terceros · mercado 60d Vaca (18 liq · 3,175 $/kg)",
+          "motivo": "terceros · mercado 60d Vaca (18 liq · 3,166 $/kg)",
           "origen": "terceros",
           "tropa_norm": "TAPENR230626"
         }
       ],
-      "precio_estimado": 2985.8,
+      "precio_estimado": 2981.68,
       "meses_pv_acotados": {
         "2026-06": 1.92,
         "2026-07": 1.76
@@ -31247,19 +31247,19 @@
           "dias": 46,
           "kg_ingreso": 10136.3,
           "kg_egreso": 10772.3,
-          "precio_kg": 3174.55,
+          "precio_kg": 3165.59,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "terceros",
-          "precio_motivo": "terceros · mercado 60d Vaca (18 liq · 3,175 $/kg)",
+          "precio_motivo": "terceros · mercado 60d Vaca (18 liq · 3,166 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 18,
-            "cab": 1019.0,
-            "kg": 492349.8,
+            "cab": 997.0,
+            "kg": 483502.8,
             "desde": "2026-04-24",
             "hasta": "2026-06-23",
-            "precio_kg_cg": 3174.55
+            "precio_kg_cg": 3165.59
           },
           "mercado_dias": 60,
           "mercado_n_liq": 18,
@@ -31270,14 +31270,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "TAPENR230626",
-          "precio_kg_cg": 3174.55,
+          "precio_kg_cg": 3165.59,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 32178101.65,
-          "costo_compra_cg": 32178101.65,
+          "costo_compra": 32087318.45,
+          "costo_compra_cg": 32087318.45,
           "gastos_compra": 0.0,
           "kg_ms": 12571.6,
           "pct_ms": 2.61,
@@ -31285,7 +31285,7 @@
           "alimento": 4430505.15,
           "estructura": 579600.0,
           "sanidad": 213640.0,
-          "mortandad": 575988.02
+          "mortandad": 574363.0
         },
         {
           "origen": "confirmado",
@@ -31308,19 +31308,19 @@
           "dias": 46,
           "kg_ingreso": 1448.0,
           "kg_egreso": 1484.3,
-          "precio_kg": 3174.55,
+          "precio_kg": 3165.59,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "terceros",
-          "precio_motivo": "terceros · mercado 60d Vaca (18 liq · 3,175 $/kg)",
+          "precio_motivo": "terceros · mercado 60d Vaca (18 liq · 3,166 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 18,
-            "cab": 1019.0,
-            "kg": 492349.8,
+            "cab": 997.0,
+            "kg": 483502.8,
             "desde": "2026-04-24",
             "hasta": "2026-06-23",
-            "precio_kg_cg": 3174.55
+            "precio_kg_cg": 3165.59
           },
           "mercado_dias": 60,
           "mercado_n_liq": 18,
@@ -31331,14 +31331,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "TAPENR230626",
-          "precio_kg_cg": 3174.55,
+          "precio_kg_cg": 3165.59,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 4596871.66,
-          "costo_compra_cg": 4596871.66,
+          "costo_compra": 4583902.64,
+          "costo_compra_cg": 4583902.64,
           "gastos_compra": 0.0,
           "kg_ms": 1763.0,
           "pct_ms": 2.61,
@@ -31346,7 +31346,7 @@
           "alimento": 621233.99,
           "estructura": 82800.0,
           "sanidad": 30520.0,
-          "mortandad": 82284.0
+          "mortandad": 82051.86
         },
         {
           "origen": "confirmado",
@@ -31369,37 +31369,29 @@
           "dias": 52,
           "kg_ingreso": 530.2,
           "kg_egreso": 443.4,
-          "precio_kg": 4088.18,
-          "estimado": true,
-          "fuente_precio": "mercado",
-          "precio_origen": "sin_liquidacion",
-          "precio_motivo": "sin liquidación · mercado 60d Vaquillona (5 liq · 4,088 $/kg)",
-          "mercado": {
-            "dias": 60,
-            "n_liq": 5,
-            "cab": 240.0,
-            "kg": 91030.0,
-            "desde": "2026-04-18",
-            "hasta": "2026-06-17",
-            "precio_kg_cg": 4088.18
-          },
-          "mercado_dias": 60,
-          "mercado_n_liq": 5,
-          "liq_id": null,
-          "liq_semaforo": null,
+          "precio_kg": 3708.28,
+          "estimado": false,
+          "fuente_precio": "liquidacion",
+          "precio_origen": null,
+          "precio_motivo": null,
+          "mercado": null,
+          "mercado_dias": null,
+          "mercado_n_liq": null,
+          "liq_id": "DARUTE170626_2026-06-17_2",
+          "liq_semaforo": "ok",
           "liq_motivos": null,
-          "liq_semaforo_tropa": null,
+          "liq_semaforo_tropa": "ok",
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "DARUTE170626",
-          "precio_kg_cg": 4088.18,
-          "precio_cab_cg": null,
-          "desbaste_pct": null,
-          "comision_pct": 0.0,
-          "comision": 0.0,
+          "precio_kg_cg": 3782.45,
+          "precio_cab_cg": 1473436.36,
+          "desbaste_pct": -3.05,
+          "comision_pct": 2.0,
+          "comision": 39320.38,
           "gastos_pct": 0.0,
-          "costo_compra": 2167428.43,
-          "costo_compra_cg": 2167428.43,
+          "costo_compra": 1966021.14,
+          "costo_compra_cg": 2005341.52,
           "gastos_compra": 0.0,
           "kg_ms": 508.5,
           "pct_ms": 2.01,
@@ -31407,7 +31399,7 @@
           "alimento": 178083.98,
           "estructura": 23400.0,
           "sanidad": 7630.0,
-          "mortandad": 16949.29
+          "mortandad": 15681.77
         }
       ],
       "cabezas": 33,
@@ -31419,15 +31411,15 @@
       "fecha_egreso": "2026-08-08",
       "comprador": "COTO CENTRO INETGRAL DE COMERCIALIZACION SA",
       "costos": {
-        "compra": 38942401.75,
-        "comision": 0.0,
+        "compra": 38637242.22,
+        "comision": 39320.38,
         "gastos": 0.0,
         "alimento": 5229823.12,
         "estructura": 685800.0,
         "sanidad": 251790.0,
-        "mortandad": 675221.31,
-        "total": 45785036.18,
-        "por_kg_vendido": 3605.12
+        "mortandad": 672096.63,
+        "total": 45516072.35,
+        "por_kg_vendido": 3583.95
       },
       "indicadores": {
         "kg_prom_ingreso": 367.1,
@@ -31437,20 +31429,20 @@
         "pct_ms": 2.59,
         "conversion_ms": 25.35,
         "costo_kg_producido": 10533.58,
-        "precio_prom_pagado": 3214.53,
-        "precio_prom_pagado_cg": 3214.53
+        "precio_prom_pagado": 3189.34,
+        "precio_prom_pagado_cg": 3192.59
       },
       "reposicion": {
-        "precio_kg": 0.0,
+        "precio_kg": 3708.28,
         "fuente_precio": "prom. histórico del remito",
         "precio_kg_ms": 355.56,
         "mes_ms": "2026-07",
-        "compra": 0.0,
-        "comision": 0.0,
+        "compra": 44923920.98,
+        "comision": 1347717.63,
         "alimento": 5277561.17,
-        "mortandad": 0.0,
-        "total": 6215151.17,
-        "por_kg_vendido": 489.38
+        "mortandad": 784320.72,
+        "total": 53271110.49,
+        "por_kg_vendido": 4194.58
       },
       "verificacion": {
         "estado": "verificado",
@@ -31476,7 +31468,7 @@
         "pesadas_sin_eid_ventana": 53,
         "dias_datamars_prom": null
       },
-      "cobertura_pct": 0.0,
+      "cobertura_pct": 4.4,
       "tropas_sin_precio": [
         {
           "tropa": "TAP.ENR.23/06/26",
@@ -31484,9 +31476,9 @@
           "cabezas": 28,
           "kg_ingreso": 10136.3,
           "fecha_ingreso": "2026-06-23",
-          "estimado_a": 3174.55,
+          "estimado_a": 3165.59,
           "fuente_precio": "mercado",
-          "motivo": "terceros · mercado 60d Vaca (18 liq · 3,175 $/kg)",
+          "motivo": "terceros · mercado 60d Vaca (18 liq · 3,166 $/kg)",
           "origen": "terceros",
           "tropa_norm": "TAPENR230626"
         },
@@ -31496,26 +31488,14 @@
           "cabezas": 4,
           "kg_ingreso": 1448.0,
           "fecha_ingreso": "2026-06-23",
-          "estimado_a": 3174.55,
+          "estimado_a": 3165.59,
           "fuente_precio": "mercado",
-          "motivo": "terceros · mercado 60d Vaca (18 liq · 3,175 $/kg)",
+          "motivo": "terceros · mercado 60d Vaca (18 liq · 3,166 $/kg)",
           "origen": "terceros",
           "tropa_norm": "TAPENR230626"
-        },
-        {
-          "tropa": "DAR.UTE.17/06/26",
-          "categoria": "Vaquillona",
-          "cabezas": 1,
-          "kg_ingreso": 530.2,
-          "fecha_ingreso": "2026-06-17",
-          "estimado_a": 4088.18,
-          "fuente_precio": "mercado",
-          "motivo": "sin liquidación · mercado 60d Vaquillona (5 liq · 4,088 $/kg)",
-          "origen": "sin_liquidacion",
-          "tropa_norm": "DARUTE170626"
         }
       ],
-      "precio_estimado": 0.0,
+      "precio_estimado": 3708.28,
       "meses_pv_acotados": {
         "2026-06": 1.92,
         "2026-07": 1.76
@@ -35136,22 +35116,22 @@
           "dias": 49,
           "kg_ingreso": 311.0,
           "kg_egreso": 628.9,
-          "precio_kg": 4626.16,
+          "precio_kg": 4572.97,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "mercado": {
             "dias": 60,
-            "n_liq": 7,
-            "cab": 411.0,
-            "kg": 127375.0,
+            "n_liq": 8,
+            "cab": 433.0,
+            "kg": 135945.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 4626.16
+            "precio_kg_cg": 4572.97
           },
           "mercado_dias": 60,
-          "mercado_n_liq": 7,
+          "mercado_n_liq": 8,
           "liq_id": null,
           "liq_semaforo": null,
           "liq_motivos": null,
@@ -35159,14 +35139,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 4626.16,
+          "precio_kg_cg": 4572.97,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1438734.24,
-          "costo_compra_cg": 1438734.24,
+          "costo_compra": 1422192.98,
+          "costo_compra_cg": 1422192.98,
           "gastos_compra": 0.0,
           "kg_ms": 467.0,
           "pct_ms": 2.03,
@@ -35174,7 +35154,7 @@
           "alimento": 165815.57,
           "estructura": 22050.0,
           "sanidad": 7630.0,
-          "mortandad": 11250.9
+          "mortandad": 11121.55
         }
       ],
       "cabezas": 29,
@@ -35186,15 +35166,15 @@
       "fecha_egreso": "2026-08-17",
       "comprador": "SOC. IMP. EXPORTADORA LA ANONIMA",
       "costos": {
-        "compra": 46469205.76,
+        "compra": 46452664.5,
         "comision": 1222345.28,
         "gastos": 0.0,
         "alimento": 15592590.23,
         "estructura": 1159679.0,
         "sanidad": 221008.0,
-        "mortandad": 839176.32,
-        "total": 65504004.59,
-        "por_kg_vendido": 3271.92
+        "mortandad": 839046.97,
+        "total": 65487333.98,
+        "por_kg_vendido": 3271.09
       },
       "indicadores": {
         "kg_prom_ingreso": 505.2,
@@ -35204,8 +35184,8 @@
         "pct_ms": 2.63,
         "conversion_ms": 8.38,
         "costo_kg_producido": 3161.28,
-        "precio_prom_pagado": 3171.76,
-        "precio_prom_pagado_cg": 3255.19
+        "precio_prom_pagado": 3170.63,
+        "precio_prom_pagado_cg": 3254.06
       },
       "reposicion": {
         "precio_kg": 3140.22,
@@ -35251,9 +35231,9 @@
           "cabezas": 1,
           "kg_ingreso": 311.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 4626.16,
+          "estimado_a": 4572.97,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         }
@@ -38277,19 +38257,19 @@
           "dias": 52,
           "kg_ingreso": 568.0,
           "kg_egreso": 694.9,
-          "precio_kg": 3166.19,
+          "precio_kg": 3156.73,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 17,
-            "cab": 983.0,
-            "kg": 474741.0,
+            "cab": 961.0,
+            "kg": 465894.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 3166.19
+            "precio_kg_cg": 3156.73
           },
           "mercado_dias": 60,
           "mercado_n_liq": 17,
@@ -38300,14 +38280,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 3166.19,
+          "precio_kg_cg": 3156.73,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1798393.13,
-          "costo_compra_cg": 1798393.13,
+          "costo_compra": 1793023.5,
+          "costo_compra_cg": 1793023.5,
           "gastos_compra": 0.0,
           "kg_ms": 865.3,
           "pct_ms": 2.64,
@@ -38315,7 +38295,7 @@
           "alimento": 307129.13,
           "estructura": 23400.0,
           "sanidad": 7630.0,
-          "mortandad": 32191.24
+          "mortandad": 32095.12
         },
         {
           "origen": "confirmado",
@@ -38751,15 +38731,15 @@
       "fecha_egreso": "2026-08-20",
       "comprador": "FRIMSA SA",
       "costos": {
-        "compra": 46615422.1,
+        "compra": 46610052.48,
         "comision": 1125340.24,
         "gastos": 0.0,
         "alimento": 21436086.22,
         "estructura": 1622332.0,
         "sanidad": 230308.0,
-        "mortandad": 836314.55,
-        "total": 71865803.11,
-        "por_kg_vendido": 3851.34
+        "mortandad": 836218.43,
+        "total": 71860337.36,
+        "por_kg_vendido": 3851.04
       },
       "indicadores": {
         "kg_prom_ingreso": 501.6,
@@ -38769,8 +38749,8 @@
         "pct_ms": 2.66,
         "conversion_ms": 17.17,
         "costo_kg_producido": 6448.41,
-        "precio_prom_pagado": 3097.69,
-        "precio_prom_pagado_cg": 3172.48
+        "precio_prom_pagado": 3097.34,
+        "precio_prom_pagado_cg": 3172.12
       },
       "reposicion": {
         "precio_kg": 3095.01,
@@ -38816,9 +38796,9 @@
           "cabezas": 1,
           "kg_ingreso": 568.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3166.19,
+          "estimado_a": 3156.73,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         }
@@ -62173,19 +62153,19 @@
           "dias": 70,
           "kg_ingreso": 1548.0,
           "kg_egreso": 1893.0,
-          "precio_kg": 3166.19,
+          "precio_kg": 3156.73,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 17,
-            "cab": 983.0,
-            "kg": 474741.0,
+            "cab": 961.0,
+            "kg": 465894.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 3166.19
+            "precio_kg_cg": 3156.73
           },
           "mercado_dias": 60,
           "mercado_n_liq": 17,
@@ -62196,14 +62176,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 3166.19,
+          "precio_kg_cg": 3156.73,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 4901254.51,
-          "costo_compra_cg": 4901254.51,
+          "costo_compra": 4886620.39,
+          "costo_compra_cg": 4886620.39,
           "gastos_compra": 0.0,
           "kg_ms": 3181.7,
           "pct_ms": 2.64,
@@ -62211,7 +62191,7 @@
           "alimento": 1129772.6,
           "estructura": 126000.0,
           "sanidad": 30520.0,
-          "mortandad": 87732.46
+          "mortandad": 87470.5
         },
         {
           "origen": "confirmado",
@@ -62393,22 +62373,22 @@
           "dias": 70,
           "kg_ingreso": 831.0,
           "kg_egreso": 1029.2,
-          "precio_kg": 4626.16,
+          "precio_kg": 4572.97,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "mercado": {
             "dias": 60,
-            "n_liq": 7,
-            "cab": 411.0,
-            "kg": 127375.0,
+            "n_liq": 8,
+            "cab": 433.0,
+            "kg": 135945.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 4626.16
+            "precio_kg_cg": 4572.97
           },
           "mercado_dias": 60,
-          "mercado_n_liq": 7,
+          "mercado_n_liq": 8,
           "liq_id": null,
           "liq_semaforo": null,
           "liq_motivos": null,
@@ -62416,14 +62396,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 4626.16,
+          "precio_kg_cg": 4572.97,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 3844334.89,
-          "costo_compra_cg": 3844334.89,
+          "costo_compra": 3800136.23,
+          "costo_compra_cg": 3800136.23,
           "gastos_compra": 0.0,
           "kg_ms": 1323.2,
           "pct_ms": 2.03,
@@ -62431,7 +62411,7 @@
           "alimento": 469848.89,
           "estructura": 63000.0,
           "sanidad": 15260.0,
-          "mortandad": 30062.7
+          "mortandad": 29717.07
         },
         {
           "origen": "confirmado",
@@ -63458,15 +63438,15 @@
       "fecha_egreso": "2026-09-07",
       "comprador": "MILLAN SA",
       "costos": {
-        "compra": 43718319.36,
+        "compra": 43659486.58,
         "comision": 888102.8,
         "gastos": 0.0,
         "alimento": 21806845.2,
         "estructura": 2061213.0,
         "sanidad": 261212.0,
-        "mortandad": 714960.16,
-        "total": 69450652.52,
-        "por_kg_vendido": 3919.35
+        "mortandad": 714352.58,
+        "total": 69391212.16,
+        "por_kg_vendido": 3916.0
       },
       "indicadores": {
         "kg_prom_ingreso": 406.4,
@@ -63476,8 +63456,8 @@
         "pct_ms": 2.59,
         "conversion_ms": 16.06,
         "costo_kg_producido": 6183.92,
-        "precio_prom_pagado": 3163.87,
-        "precio_prom_pagado_cg": 3228.14
+        "precio_prom_pagado": 3159.61,
+        "precio_prom_pagado_cg": 3223.88
       },
       "reposicion": {
         "precio_kg": 3040.22,
@@ -63518,9 +63498,9 @@
           "cabezas": 4,
           "kg_ingreso": 1548.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3166.19,
+          "estimado_a": 3156.73,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         },
@@ -63530,9 +63510,9 @@
           "cabezas": 2,
           "kg_ingreso": 831.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 4626.16,
+          "estimado_a": 4572.97,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         },
@@ -65622,19 +65602,19 @@
           "dias": 70,
           "kg_ingreso": 450.0,
           "kg_egreso": 416.6,
-          "precio_kg": 3166.19,
+          "precio_kg": 3156.73,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 17,
-            "cab": 983.0,
-            "kg": 474741.0,
+            "cab": 961.0,
+            "kg": 465894.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 3166.19
+            "precio_kg_cg": 3156.73
           },
           "mercado_dias": 60,
           "mercado_n_liq": 17,
@@ -65645,14 +65625,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 3166.19,
+          "precio_kg_cg": 3156.73,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1424783.29,
-          "costo_compra_cg": 1424783.29,
+          "costo_compra": 1420529.18,
+          "costo_compra_cg": 1420529.18,
           "gastos_compra": 0.0,
           "kg_ms": 800.7,
           "pct_ms": 2.64,
@@ -65660,7 +65640,7 @@
           "alimento": 284257.86,
           "estructura": 31500.0,
           "sanidad": 7630.0,
-          "mortandad": 25503.62
+          "mortandad": 25427.47
         },
         {
           "origen": "confirmado",
@@ -66149,15 +66129,15 @@
       "fecha_egreso": "2026-09-07",
       "comprador": "SOCIEDAD ANONIMA CARNES  PAMPEANA",
       "costos": {
-        "compra": 47685234.44,
+        "compra": 47680980.33,
         "comision": 1266475.19,
         "gastos": 0.0,
         "alimento": 24678852.01,
         "estructura": 2078125.0,
         "sanidad": 245822.0,
-        "mortandad": 876235.6,
-        "total": 76830744.24,
-        "por_kg_vendido": 4944.06
+        "mortandad": 876159.45,
+        "total": 76826413.99,
+        "por_kg_vendido": 4943.78
       },
       "indicadores": {
         "kg_prom_ingreso": 484.9,
@@ -66167,8 +66147,8 @@
         "pct_ms": 2.72,
         "conversion_ms": 2904.04,
         "costo_kg_producido": 1105313.1,
-        "precio_prom_pagado": 3073.38,
-        "precio_prom_pagado_cg": 3155.0
+        "precio_prom_pagado": 3073.1,
+        "precio_prom_pagado_cg": 3154.73
       },
       "reposicion": {
         "precio_kg": 3804.71,
@@ -66214,9 +66194,9 @@
           "cabezas": 1,
           "kg_ingreso": 450.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3166.19,
+          "estimado_a": 3156.73,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         }
@@ -68082,19 +68062,19 @@
           "dias": 71,
           "kg_ingreso": 447.0,
           "kg_egreso": 572.2,
-          "precio_kg": 3166.19,
+          "precio_kg": 3156.73,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 17,
-            "cab": 983.0,
-            "kg": 474741.0,
+            "cab": 961.0,
+            "kg": 465894.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 3166.19
+            "precio_kg_cg": 3156.73
           },
           "mercado_dias": 60,
           "mercado_n_liq": 17,
@@ -68105,14 +68085,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 3166.19,
+          "precio_kg_cg": 3156.73,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1415284.73,
-          "costo_compra_cg": 1415284.73,
+          "costo_compra": 1411058.99,
+          "costo_compra_cg": 1411058.99,
           "gastos_compra": 0.0,
           "kg_ms": 955.7,
           "pct_ms": 2.64,
@@ -68120,7 +68100,7 @@
           "alimento": 339384.37,
           "estructura": 31950.0,
           "sanidad": 7630.0,
-          "mortandad": 25333.6
+          "mortandad": 25257.96
         },
         {
           "origen": "confirmado",
@@ -68397,15 +68377,15 @@
       "fecha_egreso": "2026-09-08",
       "comprador": "SOCIEDAD ANONIMA CARNES  PAMPEANA",
       "costos": {
-        "compra": 42581965.13,
+        "compra": 42577739.39,
         "comision": 1018828.04,
         "gastos": 0.0,
         "alimento": 22978687.89,
         "estructura": 1926096.0,
         "sanidad": 245568.0,
-        "mortandad": 780454.2,
-        "total": 69531599.26,
-        "por_kg_vendido": 3795.4
+        "mortandad": 780378.56,
+        "total": 69527297.88,
+        "por_kg_vendido": 3795.16
       },
       "indicadores": {
         "kg_prom_ingreso": 444.0,
@@ -68415,8 +68395,8 @@
         "pct_ms": 2.69,
         "conversion_ms": 16.05,
         "costo_kg_producido": 6117.8,
-        "precio_prom_pagado": 2996.84,
-        "precio_prom_pagado_cg": 3068.54
+        "precio_prom_pagado": 2996.54,
+        "precio_prom_pagado_cg": 3068.24
       },
       "reposicion": {
         "precio_kg": 3804.71,
@@ -68462,9 +68442,9 @@
           "cabezas": 1,
           "kg_ingreso": 447.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3166.19,
+          "estimado_a": 3156.73,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         }
@@ -69716,22 +69696,22 @@
           "dias": 71,
           "kg_ingreso": 482.0,
           "kg_egreso": 670.0,
-          "precio_kg": 4626.16,
+          "precio_kg": 4572.97,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "mercado": {
             "dias": 60,
-            "n_liq": 7,
-            "cab": 411.0,
-            "kg": 127375.0,
+            "n_liq": 8,
+            "cab": 433.0,
+            "kg": 135945.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 4626.16
+            "precio_kg_cg": 4572.97
           },
           "mercado_dias": 60,
-          "mercado_n_liq": 7,
+          "mercado_n_liq": 8,
           "liq_id": null,
           "liq_semaforo": null,
           "liq_motivos": null,
@@ -69739,14 +69719,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 4626.16,
+          "precio_kg_cg": 4572.97,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 2229806.76,
-          "costo_compra_cg": 2229806.76,
+          "costo_compra": 2204170.47,
+          "costo_compra_cg": 2204170.47,
           "gastos_compra": 0.0,
           "kg_ms": 831.2,
           "pct_ms": 2.03,
@@ -69754,7 +69734,7 @@
           "alimento": 295166.6,
           "estructura": 31950.0,
           "sanidad": 7630.0,
-          "mortandad": 17437.09
+          "mortandad": 17236.61
         },
         {
           "origen": "confirmado",
@@ -70296,15 +70276,15 @@
       "fecha_egreso": "2026-09-08",
       "comprador": "TRASLADO A FERIA",
       "costos": {
-        "compra": 41944694.43,
+        "compra": 41919058.14,
         "comision": 1124821.68,
         "gastos": 0.0,
         "alimento": 21522005.26,
         "estructura": 1943376.0,
         "sanidad": 260182.0,
-        "mortandad": 718572.3,
-        "total": 67513651.67,
-        "por_kg_vendido": 3421.7
+        "mortandad": 718371.83,
+        "total": 67487814.91,
+        "por_kg_vendido": 3420.4
       },
       "indicadores": {
         "kg_prom_ingreso": 401.2,
@@ -70314,8 +70294,8 @@
         "pct_ms": 2.65,
         "conversion_ms": 10.13,
         "costo_kg_producido": 3896.17,
-        "precio_prom_pagado": 3074.78,
-        "precio_prom_pagado_cg": 3157.23
+        "precio_prom_pagado": 3072.9,
+        "precio_prom_pagado_cg": 3155.35
       },
       "reposicion": {
         "precio_kg": 3017.95,
@@ -70361,9 +70341,9 @@
           "cabezas": 1,
           "kg_ingreso": 482.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 4626.16,
+          "estimado_a": 4572.97,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         }
@@ -70885,19 +70865,19 @@
           "dias": 71,
           "kg_ingreso": 474.0,
           "kg_egreso": 650.0,
-          "precio_kg": 3166.19,
+          "precio_kg": 3156.73,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 17,
-            "cab": 983.0,
-            "kg": 474741.0,
+            "cab": 961.0,
+            "kg": 465894.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 3166.19
+            "precio_kg_cg": 3156.73
           },
           "mercado_dias": 60,
           "mercado_n_liq": 17,
@@ -70908,14 +70888,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 3166.19,
+          "precio_kg_cg": 3156.73,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1500771.73,
-          "costo_compra_cg": 1500771.73,
+          "costo_compra": 1496290.74,
+          "costo_compra_cg": 1496290.74,
           "gastos_compra": 0.0,
           "kg_ms": 1054.2,
           "pct_ms": 2.64,
@@ -70923,7 +70903,7 @@
           "alimento": 374373.0,
           "estructura": 31950.0,
           "sanidad": 7630.0,
-          "mortandad": 26863.81
+          "mortandad": 26783.6
         },
         {
           "origen": "confirmado",
@@ -71370,22 +71350,22 @@
           "dias": 71,
           "kg_ingreso": 364.0,
           "kg_egreso": 536.0,
-          "precio_kg": 4626.16,
+          "precio_kg": 4572.97,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "mercado": {
             "dias": 60,
-            "n_liq": 7,
-            "cab": 411.0,
-            "kg": 127375.0,
+            "n_liq": 8,
+            "cab": 433.0,
+            "kg": 135945.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 4626.16
+            "precio_kg_cg": 4572.97
           },
           "mercado_dias": 60,
-          "mercado_n_liq": 7,
+          "mercado_n_liq": 8,
           "liq_id": null,
           "liq_semaforo": null,
           "liq_motivos": null,
@@ -71393,14 +71373,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 4626.16,
+          "precio_kg_cg": 4572.97,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1683920.46,
-          "costo_compra_cg": 1683920.46,
+          "costo_compra": 1664560.27,
+          "costo_compra_cg": 1664560.27,
           "gastos_compra": 0.0,
           "kg_ms": 649.4,
           "pct_ms": 2.03,
@@ -71408,7 +71388,7 @@
           "alimento": 230643.48,
           "estructura": 31950.0,
           "sanidad": 7630.0,
-          "mortandad": 13168.26
+          "mortandad": 13016.86
         },
         {
           "origen": "confirmado",
@@ -71640,15 +71620,15 @@
       "fecha_egreso": "2026-09-08",
       "comprador": "TRASLADO A FERIA",
       "costos": {
-        "compra": 41813428.92,
+        "compra": 41789587.74,
         "comision": 875392.28,
         "gastos": 1261.67,
         "alimento": 22810563.84,
         "estructura": 2066878.0,
         "sanidad": 245950.0,
-        "mortandad": 644661.88,
-        "total": 68458136.58,
-        "por_kg_vendido": 3680.15
+        "mortandad": 644430.27,
+        "total": 68434063.8,
+        "por_kg_vendido": 3678.86
       },
       "indicadores": {
         "kg_prom_ingreso": 397.0,
@@ -71658,8 +71638,8 @@
         "pct_ms": 2.51,
         "conversion_ms": 11.11,
         "costo_kg_producido": 4259.77,
-        "precio_prom_pagado": 3291.32,
-        "precio_prom_pagado_cg": 3360.32
+        "precio_prom_pagado": 3289.44,
+        "precio_prom_pagado_cg": 3358.44
       },
       "reposicion": {
         "precio_kg": 3188.04,
@@ -71717,9 +71697,9 @@
           "cabezas": 1,
           "kg_ingreso": 474.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3166.19,
+          "estimado_a": 3156.73,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         },
@@ -71729,9 +71709,9 @@
           "cabezas": 1,
           "kg_ingreso": 364.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 4626.16,
+          "estimado_a": 4572.97,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaquillona (7 liq · 4,626 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaquillona (8 liq · 4,573 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         },
@@ -75081,19 +75061,19 @@
           "dias": 72,
           "kg_ingreso": 429.0,
           "kg_egreso": 550.7,
-          "precio_kg": 3166.19,
+          "precio_kg": 3156.73,
           "estimado": true,
           "fuente_precio": "mercado",
           "precio_origen": "propio",
-          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "precio_motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 17,
-            "cab": 983.0,
-            "kg": 474741.0,
+            "cab": 961.0,
+            "kg": 465894.0,
             "desde": "2026-04-30",
             "hasta": "2026-06-29",
-            "precio_kg_cg": 3166.19
+            "precio_kg_cg": 3156.73
           },
           "mercado_dias": 60,
           "mercado_n_liq": 17,
@@ -75104,14 +75084,14 @@
           "liq_motivos_tropa": null,
           "liq_desbaste_aceptado": false,
           "tropa_norm": "PEGDES290626",
-          "precio_kg_cg": 3166.19,
+          "precio_kg_cg": 3156.73,
           "precio_cab_cg": null,
           "desbaste_pct": null,
           "comision_pct": 0.0,
           "comision": 0.0,
           "gastos_pct": 0.0,
-          "costo_compra": 1358293.4,
-          "costo_compra_cg": 1358293.4,
+          "costo_compra": 1354237.82,
+          "costo_compra_cg": 1354237.82,
           "gastos_compra": 0.0,
           "kg_ms": 931.4,
           "pct_ms": 2.64,
@@ -75119,7 +75099,7 @@
           "alimento": 330764.61,
           "estructura": 32400.0,
           "sanidad": 7630.0,
-          "mortandad": 24313.45
+          "mortandad": 24240.86
         },
         {
           "origen": "confirmado",
@@ -75502,15 +75482,15 @@
       "fecha_egreso": "2026-09-09",
       "comprador": "SOCIEDAD ANONIMA CARNES  PAMPEANA",
       "costos": {
-        "compra": 49324688.88,
+        "compra": 49320633.3,
         "comision": 1285353.93,
         "gastos": 1246.96,
         "alimento": 17833126.03,
         "estructura": 1532096.0,
         "sanidad": 251124.0,
-        "mortandad": 884565.8,
-        "total": 71112201.6,
-        "por_kg_vendido": 3750.64
+        "mortandad": 884493.21,
+        "total": 71108073.43,
+        "por_kg_vendido": 3750.42
       },
       "indicadores": {
         "kg_prom_ingreso": 473.2,
@@ -75520,8 +75500,8 @@
         "pct_ms": 2.67,
         "conversion_ms": 15.27,
         "costo_kg_producido": 5865.23,
-        "precio_prom_pagado": 3158.7,
-        "precio_prom_pagado_cg": 3241.09
+        "precio_prom_pagado": 3158.44,
+        "precio_prom_pagado_cg": 3240.83
       },
       "reposicion": {
         "precio_kg": 3158.49,
@@ -75567,9 +75547,9 @@
           "cabezas": 1,
           "kg_ingreso": 429.0,
           "fecha_ingreso": "2026-06-29",
-          "estimado_a": 3166.19,
+          "estimado_a": 3156.73,
           "fuente_precio": "mercado",
-          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,166 $/kg)",
+          "motivo": "destete/traslado · mercado 60d Vaca (17 liq · 3,157 $/kg)",
           "origen": "propio",
           "tropa_norm": "PEGDES290626"
         }
