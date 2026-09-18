@@ -1602,7 +1602,7 @@ function rNueva() {
     var clsDes = desFuera ? ' class="num cell-warn"' : ' class="num"';
     if (!cabOk) {
       avisos.push('<b>' + esc(c.tropa) + ' · ' + esc(c.categoria) + '</b>: WinCampo dice '
-        + N(c.cabezas_wc) + ' cabezas
+        + N(c.cabezas_wc) + ' cabezas'
         + (otras ? ', otras liquidaciones ya cubren ' + N(otras) : '') + ' y acá se liquidan ' + N(c.cabezas_liq)
         + (difCab > 0 ? ' (quedan ' + N(difCab) + ' sin liquidar).' : ' (' + N(-difCab) + ' de más).'));
     }
