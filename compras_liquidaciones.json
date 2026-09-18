@@ -1,18 +1,18 @@
 {
   "meta": {
-    "generado": "2026-09-18T11:06:50.193467",
+    "generado": "2026-09-18T12:07:32.121005",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 143,
+    "n_supabase": 145,
     "n_archivos": 143,
-    "n_liquidaciones": 141,
+    "n_liquidaciones": 143,
     "n_anuladas": 2,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 148,
-      "revisar": 11,
-      "sin_liquidar": 290,
-      "terceros": 117,
+      "ok": 153,
+      "revisar": 8,
+      "sin_liquidar": 289,
+      "terceros": 116,
       "tol_kg_pct": 8,
       "tol_cab": 0
     }
@@ -4240,6 +4240,62 @@
       }
     },
     {
+      "id": "LTAVIL190826_2026-08-19",
+      "fecha": "2026-08-19",
+      "consignataria": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "nro_liquidacion": "0013-0000809",
+      "archivo": "2026-08-19 compra villegas",
+      "comision_modo": "pct",
+      "comision_valor": null,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-09-18T14:51:03.960Z",
+      "version_portal": "v15.74.15",
+      "categorias": [
+        {
+          "kg_wc": 3002,
+          "tropa": "LTA.VIL.19/08/2026",
+          "kg_liq": 3680,
+          "importe": 11040000.0,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Vaca",
+          "kg_wc_cab": 750.5,
+          "precio_kg": 3000.0,
+          "cabezas_wc": 4,
+          "gastos_cat": 0.0,
+          "importe_cg": 11040000.0,
+          "kg_liq_cab": 920.0,
+          "tropa_norm": "LTAVIL190826",
+          "cabezas_liq": 4,
+          "precio_modo": "kg",
+          "comision_cat": 0.0,
+          "desbaste_pct": 18.42391304347826,
+          "precio_kg_cg": 3000.0,
+          "precio_valor": 3000,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 2760000.0
+        }
+      ],
+      "total": {
+        "cabezas_liq": 4.0,
+        "kg_liq": 3680.0,
+        "cabezas_wc": 4.0,
+        "kg_wc": 3002.0,
+        "importe": 11040000.0,
+        "comision": 0.0,
+        "gastos": 0.0,
+        "importe_cg": 11040000.0,
+        "precio_kg": 3000.0,
+        "precio_kg_cg": 3000.0,
+        "precio_cab_cg": 2760000.0,
+        "recargo_pct": 0.0,
+        "desbaste_pct": 18.42391304347826,
+        "cabezas_dif": 0.0
+      }
+    },
+    {
       "id": "LTPLCT260626_2026-06-26",
       "fecha": "2026-06-26",
       "consignataria": "DARWASH SA",
@@ -5840,31 +5896,31 @@
       "comision_valor": 0.02,
       "gastos_monto": 0,
       "observaciones": "importado de Excel: comision y gastos juntos en un solo % · agosto: Nicolás confirma desde el sub-portal",
-      "estado": "revisar",
-      "generado": "2026-09-15T13:27:53.833525",
-      "version_portal": "v15.74.1",
+      "estado": "cargada",
+      "generado": "2026-09-18T14:52:44.597Z",
+      "version_portal": "v15.74.15",
       "categorias": [
         {
+          "kg_wc": 57880,
           "tropa": "PEG.ANI.21/08/2026",
-          "tropa_norm": "PEGANI210826",
+          "kg_liq": 56744,
+          "importe": 357487200.0,
           "hotelero": "PEGSA",
           "categoria": "Ternero",
-          "cabezas_wc": 300,
-          "kg_wc": 57880.0,
-          "cabezas_liq": 300,
-          "kg_liq": 56744.0,
-          "precio_modo": "kg",
-          "precio_valor": 6300.0,
-          "importe": 357487200.0,
+          "kg_wc_cab": 192.93333333333334,
           "precio_kg": 6300.0,
-          "comision_cat": 7149744.0,
+          "cabezas_wc": 300,
           "gastos_cat": 0.0,
           "importe_cg": 364636944.0,
-          "precio_kg_cg": 6426.0,
-          "precio_cab_cg": 1215456.48,
-          "desbaste_pct": -2.0019737769632004,
           "kg_liq_cab": 189.14666666666668,
-          "kg_wc_cab": 192.93333333333334
+          "tropa_norm": "PEGANI210826",
+          "cabezas_liq": 300,
+          "precio_modo": "kg",
+          "comision_cat": 7149744.0,
+          "desbaste_pct": -2.0019737769632004,
+          "precio_kg_cg": 6426.0,
+          "precio_valor": 6300,
+          "precio_cab_cg": 1215456.48
         }
       ],
       "total": {
@@ -5882,7 +5938,15 @@
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": -2.0019737769632004,
         "cabezas_dif": 0.0
-      }
+      },
+      "editado": "2026-09-18T14:52:44.597Z",
+      "historial": [
+        {
+          "ts": "2026-09-18T14:52:44.597Z",
+          "accion": "confirmar",
+          "detalle": "revisar → cargada"
+        }
+      ]
     },
     {
       "id": "PEGDAR050826_2026-08-06",
@@ -5895,31 +5959,31 @@
       "comision_valor": 0.02,
       "gastos_monto": 0,
       "observaciones": "importado de Excel: comision y gastos juntos en un solo % · agosto: Nicolás confirma desde el sub-portal",
-      "estado": "revisar",
-      "generado": "2026-09-17T22:00:31.984Z",
-      "version_portal": "v15.74.11",
+      "estado": "cargada",
+      "generado": "2026-09-18T14:10:09.659Z",
+      "version_portal": "v15.74.15",
       "categorias": [
         {
           "kg_wc": 3108,
           "tropa": "PEG.DAR.05/08/2026",
-          "kg_liq": 2333.65,
-          "importe": 7605761.161040013,
+          "kg_liq": 3059,
+          "importe": 11012400.0,
           "hotelero": "PEGSA",
           "categoria": "Vaca",
           "kg_wc_cab": 621.6,
-          "precio_kg": 3259.169610284324,
+          "precio_kg": 3600.0,
           "cabezas_wc": 5,
           "gastos_cat": 0.0,
-          "importe_cg": 7757876.384260813,
-          "kg_liq_cab": 466.73,
+          "importe_cg": 11232648.0,
+          "kg_liq_cab": 611.8,
           "tropa_norm": "PEGDAR050826",
           "cabezas_liq": 5,
           "precio_modo": "kg",
-          "comision_cat": 152115.22322080025,
-          "desbaste_pct": -33.18192531013648,
-          "precio_kg_cg": 3324.35300249001,
-          "precio_valor": 3259.169610284324,
-          "precio_cab_cg": 1551575.2768521626,
+          "comision_cat": 220248.0,
+          "desbaste_pct": -1.6018306636155717,
+          "precio_kg_cg": 3672.0,
+          "precio_valor": 3600,
+          "precio_cab_cg": 2246529.6,
           "desbaste_aceptado": {
             "por": "portal",
             "fecha": "2026-09-17",
@@ -5931,26 +5995,26 @@
       ],
       "total": {
         "cabezas_liq": 5.0,
-        "kg_liq": 2333.65,
+        "kg_liq": 3059.0,
         "cabezas_wc": 5.0,
         "kg_wc": 3108.0,
-        "importe": 7605761.161040013,
-        "comision": 152115.22322080025,
+        "importe": 11012400.0,
+        "comision": 220248.0,
         "gastos": 0.0,
-        "importe_cg": 7757876.384260813,
-        "precio_kg": 3259.169610284324,
-        "precio_kg_cg": 3324.35300249001,
-        "precio_cab_cg": 1551575.2768521626,
+        "importe_cg": 11232648.0,
+        "precio_kg": 3600.0,
+        "precio_kg_cg": 3672.0,
+        "precio_cab_cg": 2246529.6,
         "recargo_pct": 2.0000000000000018,
-        "desbaste_pct": -33.18192531013648,
+        "desbaste_pct": -1.6018306636155717,
         "cabezas_dif": 0.0
       },
-      "editado": "2026-09-17T22:00:31.984Z",
+      "editado": "2026-09-18T14:10:09.659Z",
       "historial": [
         {
-          "ts": "2026-09-17T22:00:31.984Z",
-          "accion": "aceptar_desbaste",
-          "detalle": "PEG.DAR.05/08/2026 · Vaca · 33,2 % (466,7 vs 621,6 kg/cab)"
+          "ts": "2026-09-18T14:10:09.659Z",
+          "accion": "confirmar",
+          "detalle": "revisar → cargada"
         }
       ]
     },
@@ -5965,115 +6029,135 @@
       "comision_valor": 0.02,
       "gastos_monto": 0,
       "observaciones": "importado de Excel: comision y gastos juntos en un solo % · agosto: Nicolás confirma desde el sub-portal",
-      "estado": "revisar",
-      "generado": "2026-09-15T13:27:53.833421",
-      "version_portal": "v15.74.1",
+      "estado": "cargada",
+      "generado": "2026-09-18T14:53:38.579Z",
+      "version_portal": "v15.74.15",
       "categorias": [
         {
+          "kg_wc": 596,
           "tropa": "PEG.DAR.07/08/2026",
-          "tropa_norm": "PEGDAR070826",
+          "kg_liq": 365,
+          "importe": 1850550.0,
           "hotelero": "PEGSA",
           "categoria": "Novillo",
-          "cabezas_wc": 1,
-          "kg_wc": 596.0,
-          "cabezas_liq": 1,
-          "kg_liq": 365.0,
-          "precio_modo": "kg",
-          "precio_valor": 5070.0,
-          "importe": 1850550.0,
+          "kg_wc_cab": 596.0,
           "precio_kg": 5070.0,
-          "comision_cat": 37011.0,
+          "cabezas_wc": 1,
           "gastos_cat": 0.0,
           "importe_cg": 1887561.0,
-          "precio_kg_cg": 5171.4,
-          "precio_cab_cg": 1887561.0,
-          "desbaste_pct": -63.287671232876704,
           "kg_liq_cab": 365.0,
-          "kg_wc_cab": 596.0
+          "tropa_norm": "PEGDAR070826",
+          "cabezas_liq": 1,
+          "precio_modo": "kg",
+          "comision_cat": 37011.0,
+          "desbaste_pct": -63.287671232876704,
+          "precio_kg_cg": 5171.4,
+          "precio_valor": 5070,
+          "precio_cab_cg": 1887561.0,
+          "desbaste_aceptado": {
+            "por": "portal",
+            "fecha": "2026-09-18",
+            "dif_pct": 63.3,
+            "kg_wc_cab": 595.9,
+            "kg_liq_cab": 365
+          }
         },
         {
+          "kg_wc": 11003,
           "tropa": "PEG.DAR.07/08/2026",
-          "tropa_norm": "PEGDAR070826",
+          "kg_liq": 11435,
+          "importe": 64646500.0,
           "hotelero": "PEGSA",
           "categoria": "Ternera",
-          "cabezas_wc": 59,
-          "kg_wc": 11003.0,
-          "cabezas_liq": 59,
-          "kg_liq": 11435.0,
-          "precio_modo": "kg",
-          "precio_valor": 5653.388718845649,
-          "importe": 64646500.0,
+          "kg_wc_cab": 186.4915254237288,
           "precio_kg": 5653.388718845649,
-          "comision_cat": 1292930.0,
+          "cabezas_wc": 59,
           "gastos_cat": 0.0,
           "importe_cg": 65939430.0,
-          "precio_kg_cg": 5766.456493222562,
-          "precio_cab_cg": 1117617.4576271186,
-          "desbaste_pct": 3.7778749453432563,
           "kg_liq_cab": 193.8135593220339,
-          "kg_wc_cab": 186.4915254237288
+          "tropa_norm": "PEGDAR070826",
+          "cabezas_liq": 59,
+          "precio_modo": "kg",
+          "comision_cat": 1292930.0,
+          "desbaste_pct": 3.7778749453432563,
+          "precio_kg_cg": 5766.456493222562,
+          "precio_valor": 5653.388718845649,
+          "precio_cab_cg": 1117617.4576271186
         },
         {
+          "kg_wc": 23021,
           "tropa": "PEG.DAR.07/08/2026",
-          "tropa_norm": "PEGDAR070826",
+          "kg_liq": 22425,
+          "importe": 138489999.99999997,
           "hotelero": "PEGSA",
           "categoria": "Ternero",
-          "cabezas_wc": 107,
-          "kg_wc": 23021.0,
-          "cabezas_liq": 107,
-          "kg_liq": 22425.0,
-          "precio_modo": "kg",
-          "precio_valor": 6175.696767001114,
-          "importe": 138489999.99999997,
+          "kg_wc_cab": 215.14953271028037,
           "precio_kg": 6175.696767001114,
-          "comision_cat": 2769799.9999999995,
+          "cabezas_wc": 107,
           "gastos_cat": 0.0,
           "importe_cg": 141259799.99999997,
-          "precio_kg_cg": 6299.210702341135,
-          "precio_cab_cg": 1320185.0467289716,
-          "desbaste_pct": -2.6577480490523975,
           "kg_liq_cab": 209.57943925233644,
-          "kg_wc_cab": 215.14953271028037
+          "tropa_norm": "PEGDAR070826",
+          "cabezas_liq": 107,
+          "precio_modo": "kg",
+          "comision_cat": 2769799.9999999995,
+          "desbaste_pct": -2.6577480490523975,
+          "precio_kg_cg": 6299.210702341135,
+          "precio_valor": 6175.696767001114,
+          "precio_cab_cg": 1320185.0467289716
         },
         {
+          "kg_wc": 14844,
           "tropa": "PEG.DAR.07/08/2026",
-          "tropa_norm": "PEGDAR070826",
+          "kg_liq": 14210,
+          "importe": 45270199.526999995,
           "hotelero": "PEGSA",
           "categoria": "Vaca",
+          "kg_wc_cab": 463.875,
+          "precio_kg": 3185.7987,
           "cabezas_wc": 32,
-          "kg_wc": 14844.0,
-          "cabezas_liq": 32,
-          "kg_liq": 14935.35,
-          "precio_modo": "kg",
-          "precio_valor": 3259.169610284324,
-          "importe": 48676838.83895998,
-          "precio_kg": 3259.169610284324,
-          "comision_cat": 973536.7767791996,
           "gastos_cat": 0.0,
-          "importe_cg": 49650375.615739174,
-          "precio_kg_cg": 3324.35300249001,
-          "precio_cab_cg": 1551574.2379918492,
-          "desbaste_pct": 0.6116361518143222,
-          "kg_liq_cab": 466.7296875,
-          "kg_wc_cab": 463.875
+          "importe_cg": 46175603.51753999,
+          "kg_liq_cab": 444.0625,
+          "tropa_norm": "PEGDAR070826",
+          "cabezas_liq": 32,
+          "precio_modo": "kg",
+          "comision_cat": 905403.9905399999,
+          "desbaste_pct": -4.461646727656579,
+          "precio_kg_cg": 3249.5146739999996,
+          "precio_valor": 3185.7987,
+          "precio_cab_cg": 1442987.6099231248
         }
       ],
       "total": {
         "cabezas_liq": 199.0,
-        "kg_liq": 49160.35,
+        "kg_liq": 48435.0,
         "cabezas_wc": 199.0,
         "kg_wc": 49464.0,
-        "importe": 253663888.83895993,
-        "comision": 5073277.776779199,
+        "importe": 250257249.52699995,
+        "comision": 5005144.99054,
         "gastos": 0.0,
-        "importe_cg": 258737166.61573914,
-        "precio_kg": 5159.928455329548,
-        "precio_kg_cg": 5263.1270244361385,
-        "precio_cab_cg": 1300186.766913262,
+        "importe_cg": 255262394.51753995,
+        "precio_kg": 5166.867957613295,
+        "precio_kg_cg": 5270.205316765561,
+        "precio_cab_cg": 1282725.600590653,
         "recargo_pct": 2.0000000000000018,
-        "desbaste_pct": -0.6176725755613993,
+        "desbaste_pct": -2.12449674821926,
         "cabezas_dif": 0.0
-      }
+      },
+      "editado": "2026-09-18T14:53:38.579Z",
+      "historial": [
+        {
+          "ts": "2026-09-18T14:15:13.128Z",
+          "accion": "confirmar",
+          "detalle": "revisar → cargada"
+        },
+        {
+          "ts": "2026-09-18T14:53:38.579Z",
+          "accion": "aceptar_desbaste",
+          "detalle": "PEG.DAR.07/08/2026 · Novillo · 63,3 % (365,0 vs 595,9 kg/cab)"
+        }
+      ]
     },
     {
       "id": "PEGDAR110226-PEGDAR120226_2026-02-12",
@@ -11074,122 +11158,129 @@
       "nro_liquidacion": "2026-08-18 Compra UTE Darwash (PEGSA) .xlsx",
       "archivo": "2026-08-18 Compra UTE Darwash (PEGSA) .xlsx",
       "comision_modo": "pct",
-      "comision_valor": 0.029084,
-      "gastos_monto": 0,
+      "comision_valor": 0.02592896331,
+      "gastos_monto": 352875,
       "observaciones": "importado de Excel: comision y gastos juntos en un solo % · recargo no uniforme en la operacion (2 valores), se guardo el ponderado por importe · agosto: Nicolás confirma desde el sub-portal",
-      "estado": "revisar",
-      "generado": "2026-09-15T13:27:53.833478",
-      "version_portal": "v15.74.1",
+      "estado": "cargada",
+      "generado": "2026-09-18T14:53:51.086Z",
+      "version_portal": "v15.74.15",
       "categorias": [
         {
+          "kg_wc": 2193.8,
           "tropa": "PEG.UTE.18/08/2026",
-          "tropa_norm": "PEGUTE180826",
+          "kg_liq": 2365,
+          "importe": 11160000.0,
           "hotelero": "PEGSA",
           "categoria": "Novillito",
-          "cabezas_wc": 9,
-          "kg_wc": 2193.8,
-          "cabezas_liq": 9,
-          "kg_liq": 2365.0,
-          "precio_modo": "kg",
-          "precio_valor": 4718.816067653277,
-          "importe": 11160000.0,
+          "kg_wc_cab": 243.7555555555556,
           "precio_kg": 4718.816067653277,
-          "comision_cat": 324577.44,
-          "gastos_cat": 0.0,
-          "importe_cg": 11484577.44,
-          "precio_kg_cg": 4856.0581141649045,
-          "precio_cab_cg": 1276064.16,
-          "desbaste_pct": 7.238900634249457,
+          "cabezas_wc": 9,
+          "gastos_cat": 36166.820151679305,
+          "importe_cg": 11485534.050691279,
           "kg_liq_cab": 262.77777777777777,
-          "kg_wc_cab": 243.7555555555556
+          "tropa_norm": "PEGUTE180826",
+          "cabezas_liq": 9,
+          "precio_modo": "kg",
+          "comision_cat": 289367.2305396,
+          "desbaste_pct": 7.238900634249457,
+          "precio_kg_cg": 4856.462600715128,
+          "precio_valor": 4718.816067653277,
+          "precio_cab_cg": 1276170.4500768087
         },
         {
+          "kg_wc": 8805.3,
           "tropa": "PEG.UTE.18/08/2026",
-          "tropa_norm": "PEGUTE180826",
+          "kg_liq": 8605,
+          "importe": 49610000.0,
           "hotelero": "PEGSA",
           "categoria": "Ternera",
-          "cabezas_wc": 49,
-          "kg_wc": 8805.3,
-          "cabezas_liq": 49,
-          "kg_liq": 8605.0,
-          "precio_modo": "kg",
-          "precio_valor": 5765.252760023242,
-          "importe": 49610000.0,
+          "kg_wc_cab": 179.7,
           "precio_kg": 5765.252760023242,
-          "comision_cat": 1442857.24,
-          "gastos_cat": 0.0,
-          "importe_cg": 51052857.24,
-          "precio_kg_cg": 5932.929371295759,
-          "precio_cab_cg": 1041895.0457142858,
-          "desbaste_pct": -2.3277164439279407,
+          "cabezas_wc": 49,
+          "gastos_cat": 131592.17226435535,
+          "importe_cg": 51027928.04207345,
           "kg_liq_cab": 175.6122448979592,
-          "kg_wc_cab": 179.7
+          "tropa_norm": "PEGUTE180826",
+          "cabezas_liq": 49,
+          "precio_modo": "kg",
+          "comision_cat": 1286335.8698091,
+          "desbaste_pct": -2.3277164439279407,
+          "precio_kg_cg": 5930.032311687792,
+          "precio_valor": 5765.252760023242,
+          "precio_cab_cg": 1041386.2865729276
         },
         {
+          "kg_wc": 2854.9,
           "tropa": "PEG.UTE.18/08/2026",
-          "tropa_norm": "PEGUTE180826",
+          "kg_liq": 2790,
+          "importe": 16700000.0,
           "hotelero": "PEGSA",
           "categoria": "Ternero",
-          "cabezas_wc": 14,
-          "kg_wc": 2854.9,
-          "cabezas_liq": 14,
-          "kg_liq": 2790.0,
-          "precio_modo": "kg",
-          "precio_valor": 5985.663082437276,
-          "importe": 16700000.0,
+          "kg_wc_cab": 203.92142857142858,
           "precio_kg": 5985.663082437276,
-          "comision_cat": 485702.8,
-          "gastos_cat": 0.0,
-          "importe_cg": 17185702.8,
-          "precio_kg_cg": 6159.750107526882,
-          "precio_cab_cg": 1227550.2,
-          "desbaste_pct": -2.3261648745519787,
+          "cabezas_wc": 14,
+          "gastos_cat": 42666.14301191766,
+          "importe_cg": 17175679.830288917,
           "kg_liq_cab": 199.28571428571428,
-          "kg_wc_cab": 203.92142857142858
+          "tropa_norm": "PEGUTE180826",
+          "cabezas_liq": 14,
+          "precio_modo": "kg",
+          "comision_cat": 433013.687277,
+          "desbaste_pct": -2.3261648745519787,
+          "precio_kg_cg": 6156.157645264845,
+          "precio_valor": 5985.663082437276,
+          "precio_cab_cg": 1226834.2735920656
         },
         {
+          "kg_wc": 4545.1,
           "tropa": "PEG.UTE.18/08/2026",
-          "tropa_norm": "PEGUTE180826",
+          "kg_liq": 4980,
+          "importe": 18296799.999999996,
           "hotelero": "PEGSA",
           "categoria": "Vaca",
-          "cabezas_wc": 12,
-          "kg_wc": 4545.1,
-          "cabezas_liq": 12,
-          "kg_liq": 4980.0,
-          "precio_modo": "kg",
-          "precio_valor": 3674.056224899598,
-          "importe": 18296799.999999996,
+          "kg_wc_cab": 378.7583333333334,
           "precio_kg": 3674.056224899598,
-          "comision_cat": 532144.1311999998,
-          "gastos_cat": 0.0,
-          "importe_cg": 18828944.131199997,
-          "precio_kg_cg": 3780.912476144578,
-          "precio_cab_cg": 1569078.6775999998,
-          "desbaste_pct": 8.732931726907617,
+          "cabezas_wc": 12,
+          "gastos_cat": 76156.77139761647,
+          "importe_cg": 18847373.82728802,
           "kg_liq_cab": 415.0,
-          "kg_wc_cab": 378.7583333333334
+          "tropa_norm": "PEGUTE180826",
+          "cabezas_liq": 12,
+          "precio_modo": "kg",
+          "comision_cat": 474417.05589040794,
+          "desbaste_pct": 8.732931726907617,
+          "precio_kg_cg": 3784.613218330928,
+          "precio_valor": 3674.056224899598,
+          "precio_cab_cg": 1570614.485607335
         },
         {
+          "kg_wc": 4021.1,
           "tropa": "PEG.UTE.18/08/2026",
-          "tropa_norm": "PEGUTE180826",
+          "kg_liq": 4335,
+          "importe": 16074000.000000002,
           "hotelero": "PEGSA",
           "categoria": "Vaquillona",
-          "cabezas_wc": 11,
-          "kg_wc": 4021.1,
-          "cabezas_liq": 11,
-          "kg_liq": 4335.0,
-          "precio_modo": "kg",
-          "precio_valor": 3707.958477508651,
-          "importe": 16074000.000000002,
+          "kg_wc_cab": 365.55454545454546,
           "precio_kg": 3707.958477508651,
-          "comision_cat": 467496.216,
-          "gastos_cat": 0.0,
-          "importe_cg": 16541496.216000002,
-          "precio_kg_cg": 3815.8007418685124,
-          "precio_cab_cg": 1503772.3832727275,
-          "desbaste_pct": 7.241061130334479,
+          "cabezas_wc": 11,
+          "gastos_cat": 66293.0931744312,
+          "importe_cg": 16557075.249419373,
           "kg_liq_cab": 394.09090909090907,
-          "kg_wc_cab": 365.55454545454546
+          "tropa_norm": "PEGUTE180826",
+          "cabezas_liq": 11,
+          "precio_modo": "kg",
+          "comision_cat": 416782.15624494007,
+          "desbaste_pct": 7.241061130334479,
+          "precio_kg_cg": 3819.3945212040076,
+          "precio_valor": 3707.958477508651,
+          "precio_cab_cg": 1505188.6590381248,
+          "desbaste_aceptado": {
+            "por": "portal",
+            "fecha": "2026-09-18",
+            "dif_pct": 19.3,
+            "kg_wc_cab": 317.9,
+            "kg_liq_cab": 394.09
+          }
         }
       ],
       "total": {
@@ -11198,16 +11289,29 @@
         "cabezas_wc": 95.0,
         "kg_wc": 22420.2,
         "importe": 111840800.0,
-        "comision": 3252777.8271999997,
-        "gastos": 0.0,
-        "importe_cg": 115093577.8272,
+        "comision": 2899915.999761048,
+        "gastos": 352874.99999999994,
+        "importe_cg": 115093590.99976104,
         "precio_kg": 4846.838569880823,
-        "precio_kg_cg": 4987.804022847237,
-        "precio_cab_cg": 1211511.3455494735,
-        "recargo_pct": 2.9083999999999888,
+        "precio_kg_cg": 4987.804593705788,
+        "precio_cab_cg": 1211511.484208011,
+        "recargo_pct": 2.908411777956732,
         "desbaste_pct": 2.83770314192849,
         "cabezas_dif": 0.0
-      }
+      },
+      "editado": "2026-09-18T14:53:51.086Z",
+      "historial": [
+        {
+          "ts": "2026-09-18T14:19:10.571Z",
+          "accion": "confirmar",
+          "detalle": "revisar → cargada"
+        },
+        {
+          "ts": "2026-09-18T14:53:51.086Z",
+          "accion": "aceptar_desbaste",
+          "detalle": "PEG.UTE.18/08/2026 · Vaquillona · 19,3 % (394,1 vs 317,9 kg/cab)"
+        }
+      ]
     },
     {
       "id": "PEGUTE190626_2026-06-19",
@@ -11579,6 +11683,135 @@
         "desbaste_pct": 0.0,
         "cabezas_dif": 0.0
       }
+    },
+    {
+      "id": "PEGVIL190826_2026-08-19",
+      "fecha": "2026-08-19",
+      "consignataria": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "nro_liquidacion": "0013-0000806/805",
+      "archivo": "2026-08-19 Compra Villegas pegsa",
+      "comision_modo": "pct",
+      "comision_valor": 0.02,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-09-18T14:34:17.737Z",
+      "version_portal": "v15.74.15",
+      "categorias": [
+        {
+          "kg_wc": 2051,
+          "tropa": "PEG.VIL.19/08/2026",
+          "kg_liq": 2335,
+          "importe": 13439999.881000001,
+          "hotelero": "PEGSA",
+          "categoria": "Ternera",
+          "kg_wc_cab": 170.91666666666666,
+          "precio_kg": 5755.8886,
+          "cabezas_wc": 12,
+          "gastos_cat": 0.0,
+          "importe_cg": 13708799.87862,
+          "kg_liq_cab": 194.58333333333334,
+          "tropa_norm": "PEGVIL190826",
+          "cabezas_liq": 12,
+          "precio_modo": "kg",
+          "comision_cat": 268799.99762000004,
+          "desbaste_pct": 12.16274089935761,
+          "precio_kg_cg": 5871.006372,
+          "precio_valor": 5755.8886,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1142399.989885,
+          "desbaste_aceptado": {
+            "por": "portal",
+            "fecha": "2026-09-18",
+            "dif_pct": 12.2,
+            "kg_wc_cab": 170.9,
+            "kg_liq_cab": 194.58
+          }
+        },
+        {
+          "kg_wc": 3428,
+          "tropa": "PEG.VIL.19/08/2026",
+          "kg_liq": 3845,
+          "importe": 24679999.932,
+          "hotelero": "PEGSA",
+          "categoria": "Ternero",
+          "kg_wc_cab": 171.4,
+          "precio_kg": 6418.7256,
+          "cabezas_wc": 20,
+          "gastos_cat": 0.0,
+          "importe_cg": 25173599.93064,
+          "kg_liq_cab": 192.25,
+          "tropa_norm": "PEGVIL190826",
+          "cabezas_liq": 20,
+          "precio_modo": "kg",
+          "comision_cat": 493599.99864,
+          "desbaste_pct": 10.84525357607282,
+          "precio_kg_cg": 6547.100112,
+          "precio_valor": 6418.7256,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1258679.9965320001,
+          "desbaste_aceptado": {
+            "por": "portal",
+            "fecha": "2026-09-18",
+            "dif_pct": 10.8,
+            "kg_wc_cab": 171.4,
+            "kg_liq_cab": 192.25
+          }
+        },
+        {
+          "kg_wc": 19994.6,
+          "tropa": "PEG.VIL.19/08/2026",
+          "kg_liq": 21380,
+          "importe": 75061799.822,
+          "hotelero": "PEGSA",
+          "categoria": "Vaca",
+          "kg_wc_cab": 464.9906976744186,
+          "precio_kg": 3510.8419,
+          "cabezas_wc": 43,
+          "gastos_cat": 0.0,
+          "importe_cg": 76563035.81843999,
+          "kg_liq_cab": 497.2093023255814,
+          "tropa_norm": "PEGVIL190826",
+          "cabezas_liq": 43,
+          "precio_modo": "kg",
+          "comision_cat": 1501235.99644,
+          "desbaste_pct": 6.479887745556601,
+          "precio_kg_cg": 3581.0587379999997,
+          "precio_valor": 3510.8419,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1780535.7167079067
+        }
+      ],
+      "total": {
+        "cabezas_liq": 75.0,
+        "kg_liq": 27560.0,
+        "cabezas_wc": 75.0,
+        "kg_wc": 25473.6,
+        "importe": 113181799.63499999,
+        "comision": 2263635.9927,
+        "gastos": 0.0,
+        "importe_cg": 115445435.62769999,
+        "precio_kg": 4106.741641328012,
+        "precio_kg_cg": 4188.876474154571,
+        "precio_cab_cg": 1539272.475036,
+        "recargo_pct": 2.0000000000000018,
+        "desbaste_pct": 7.57039187227867,
+        "cabezas_dif": 0.0
+      },
+      "editado": "2026-09-18T14:34:17.737Z",
+      "historial": [
+        {
+          "ts": "2026-09-18T14:34:15.049Z",
+          "accion": "aceptar_desbaste",
+          "detalle": "PEG.VIL.19/08/2026 · Ternera · 12,2 % (194,6 vs 170,9 kg/cab)"
+        },
+        {
+          "ts": "2026-09-18T14:34:17.737Z",
+          "accion": "aceptar_desbaste",
+          "detalle": "PEG.VIL.19/08/2026 · Ternero · 10,8 % (192,3 vs 171,4 kg/cab)"
+        }
+      ]
     },
     {
       "id": "PEGVIL200226_2026-02-20",
@@ -12000,7 +12233,7 @@
       "gastos_monto": 0,
       "observaciones": "importado de Excel: comision y gastos juntos en un solo % · agosto: Nicolás confirma desde el sub-portal",
       "estado": "cargada",
-      "generado": "2026-09-18T11:47:53.861Z",
+      "generado": "2026-09-18T14:10:19.676Z",
       "version_portal": "v15.74.15",
       "categorias": [
         {
@@ -12041,15 +12274,7 @@
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": 7.997382198952881,
         "cabezas_dif": 0.0
-      },
-      "editado": "2026-09-18T11:47:53.861Z",
-      "historial": [
-        {
-          "ts": "2026-09-18T11:47:53.861Z",
-          "accion": "confirmar",
-          "detalle": "revisar → cargada"
-        }
-      ]
+      }
     },
     {
       "id": "SAGDAR130526_2026-05-14",
@@ -14531,6 +14756,28 @@
         "desbaste_aceptado_vigente": false
       }
     },
+    "LTAVIL190826": {
+      "Vaca": {
+        "liq_id": "LTAVIL190826_2026-08-19",
+        "fecha": "2026-08-19",
+        "liq_ids": [
+          "LTAVIL190826_2026-08-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 4.0,
+        "kg_liq": 3680.0,
+        "precio_kg": 3000.0,
+        "precio_kg_cg": 3000.0,
+        "precio_cab_cg": 2760000.0,
+        "comision_cat": 0.0,
+        "gastos_cat": 0.0,
+        "importe": 11040000.0,
+        "importe_cg": 11040000.0,
+        "desbaste_pct": 18.42391304347826,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      }
+    },
     "LTPLCT260626": {
       "Vaquillona": {
         "liq_id": "LTPLCT260626_2026-06-26",
@@ -15430,17 +15677,17 @@
         ],
         "n_liq": 1,
         "cabezas_liq": 5.0,
-        "kg_liq": 2333.65,
-        "precio_kg": 3259.169610284324,
-        "precio_kg_cg": 3324.35300249001,
-        "precio_cab_cg": 1551575.2768521626,
-        "comision_cat": 152115.22322080025,
+        "kg_liq": 3059.0,
+        "precio_kg": 3600.0,
+        "precio_kg_cg": 3672.0,
+        "precio_cab_cg": 2246529.6,
+        "comision_cat": 220248.0,
         "gastos_cat": 0.0,
-        "importe": 7605761.161040013,
-        "importe_cg": 7757876.384260813,
-        "desbaste_pct": -33.18192531013648,
+        "importe": 11012400.0,
+        "importe_cg": 11232648.0,
+        "desbaste_pct": -1.6018306636155717,
         "hotelero": "PEGSA",
-        "desbaste_aceptado_vigente": true
+        "desbaste_aceptado_vigente": false
       }
     },
     "PEGDAR070826": {
@@ -15462,7 +15709,7 @@
         "importe_cg": 1887561.0,
         "desbaste_pct": -63.287671232876704,
         "hotelero": "PEGSA",
-        "desbaste_aceptado_vigente": false
+        "desbaste_aceptado_vigente": true
       },
       "Ternera": {
         "liq_id": "PEGDAR070826_2026-08-07",
@@ -15512,15 +15759,15 @@
         ],
         "n_liq": 1,
         "cabezas_liq": 32.0,
-        "kg_liq": 14935.35,
-        "precio_kg": 3259.169610284324,
-        "precio_kg_cg": 3324.35300249001,
-        "precio_cab_cg": 1551574.2379918492,
-        "comision_cat": 973536.7767791996,
+        "kg_liq": 14210.0,
+        "precio_kg": 3185.7987,
+        "precio_kg_cg": 3249.5146739999996,
+        "precio_cab_cg": 1442987.6099231248,
+        "comision_cat": 905403.9905399999,
         "gastos_cat": 0.0,
-        "importe": 48676838.83895998,
-        "importe_cg": 49650375.615739174,
-        "desbaste_pct": 0.6116361518143222,
+        "importe": 45270199.526999995,
+        "importe_cg": 46175603.51753999,
+        "desbaste_pct": -4.461646727656579,
         "hotelero": "PEGSA",
         "desbaste_aceptado_vigente": false
       }
@@ -18056,12 +18303,12 @@
         "cabezas_liq": 9.0,
         "kg_liq": 2365.0,
         "precio_kg": 4718.816067653277,
-        "precio_kg_cg": 4856.0581141649045,
-        "precio_cab_cg": 1276064.16,
-        "comision_cat": 324577.44,
-        "gastos_cat": 0.0,
+        "precio_kg_cg": 4856.462600715128,
+        "precio_cab_cg": 1276170.4500768087,
+        "comision_cat": 289367.2305396,
+        "gastos_cat": 36166.820151679305,
         "importe": 11160000.0,
-        "importe_cg": 11484577.44,
+        "importe_cg": 11485534.050691279,
         "desbaste_pct": 7.238900634249456,
         "hotelero": "PEGSA",
         "desbaste_aceptado_vigente": false
@@ -18076,12 +18323,12 @@
         "cabezas_liq": 49.0,
         "kg_liq": 8605.0,
         "precio_kg": 5765.252760023242,
-        "precio_kg_cg": 5932.929371295759,
-        "precio_cab_cg": 1041895.0457142858,
-        "comision_cat": 1442857.24,
-        "gastos_cat": 0.0,
+        "precio_kg_cg": 5930.032311687792,
+        "precio_cab_cg": 1041386.2865729276,
+        "comision_cat": 1286335.8698091,
+        "gastos_cat": 131592.17226435535,
         "importe": 49610000.0,
-        "importe_cg": 51052857.24,
+        "importe_cg": 51027928.04207345,
         "desbaste_pct": -2.3277164439279407,
         "hotelero": "PEGSA",
         "desbaste_aceptado_vigente": false
@@ -18096,12 +18343,12 @@
         "cabezas_liq": 14.0,
         "kg_liq": 2790.0,
         "precio_kg": 5985.663082437276,
-        "precio_kg_cg": 6159.750107526882,
-        "precio_cab_cg": 1227550.2,
-        "comision_cat": 485702.8,
-        "gastos_cat": 0.0,
+        "precio_kg_cg": 6156.157645264845,
+        "precio_cab_cg": 1226834.2735920656,
+        "comision_cat": 433013.687277,
+        "gastos_cat": 42666.14301191766,
         "importe": 16700000.0,
-        "importe_cg": 17185702.8,
+        "importe_cg": 17175679.830288917,
         "desbaste_pct": -2.3261648745519787,
         "hotelero": "PEGSA",
         "desbaste_aceptado_vigente": false
@@ -18116,12 +18363,12 @@
         "cabezas_liq": 12.0,
         "kg_liq": 4980.0,
         "precio_kg": 3674.0562248995975,
-        "precio_kg_cg": 3780.912476144578,
-        "precio_cab_cg": 1569078.6775999998,
-        "comision_cat": 532144.1311999998,
-        "gastos_cat": 0.0,
+        "precio_kg_cg": 3784.613218330928,
+        "precio_cab_cg": 1570614.485607335,
+        "comision_cat": 474417.05589040794,
+        "gastos_cat": 76156.77139761647,
         "importe": 18296799.999999996,
-        "importe_cg": 18828944.131199997,
+        "importe_cg": 18847373.82728802,
         "desbaste_pct": 8.732931726907617,
         "hotelero": "PEGSA",
         "desbaste_aceptado_vigente": false
@@ -18136,15 +18383,15 @@
         "cabezas_liq": 11.0,
         "kg_liq": 4335.0,
         "precio_kg": 3707.958477508651,
-        "precio_kg_cg": 3815.8007418685124,
-        "precio_cab_cg": 1503772.3832727275,
-        "comision_cat": 467496.216,
-        "gastos_cat": 0.0,
+        "precio_kg_cg": 3819.3945212040076,
+        "precio_cab_cg": 1505188.6590381248,
+        "comision_cat": 416782.15624494007,
+        "gastos_cat": 66293.0931744312,
         "importe": 16074000.000000002,
-        "importe_cg": 16541496.216000002,
+        "importe_cg": 16557075.249419373,
         "desbaste_pct": 7.241061130334479,
         "hotelero": "PEGSA",
-        "desbaste_aceptado_vigente": false
+        "desbaste_aceptado_vigente": true
       }
     },
     "PEGUTE190626": {
@@ -18313,6 +18560,68 @@
         "importe": 32022900.0,
         "importe_cg": 32663358.0,
         "desbaste_pct": 0.0,
+        "hotelero": "PEGSA",
+        "desbaste_aceptado_vigente": false
+      }
+    },
+    "PEGVIL190826": {
+      "Ternera": {
+        "liq_id": "PEGVIL190826_2026-08-19",
+        "fecha": "2026-08-19",
+        "liq_ids": [
+          "PEGVIL190826_2026-08-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 12.0,
+        "kg_liq": 2335.0,
+        "precio_kg": 5755.8886,
+        "precio_kg_cg": 5871.006372,
+        "precio_cab_cg": 1142399.989885,
+        "comision_cat": 268799.99762000004,
+        "gastos_cat": 0.0,
+        "importe": 13439999.881000001,
+        "importe_cg": 13708799.87862,
+        "desbaste_pct": 12.16274089935761,
+        "hotelero": "PEGSA",
+        "desbaste_aceptado_vigente": true
+      },
+      "Ternero": {
+        "liq_id": "PEGVIL190826_2026-08-19",
+        "fecha": "2026-08-19",
+        "liq_ids": [
+          "PEGVIL190826_2026-08-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 20.0,
+        "kg_liq": 3845.0,
+        "precio_kg": 6418.7256,
+        "precio_kg_cg": 6547.100112,
+        "precio_cab_cg": 1258679.9965320001,
+        "comision_cat": 493599.99864,
+        "gastos_cat": 0.0,
+        "importe": 24679999.932,
+        "importe_cg": 25173599.93064,
+        "desbaste_pct": 10.84525357607282,
+        "hotelero": "PEGSA",
+        "desbaste_aceptado_vigente": true
+      },
+      "Vaca": {
+        "liq_id": "PEGVIL190826_2026-08-19",
+        "fecha": "2026-08-19",
+        "liq_ids": [
+          "PEGVIL190826_2026-08-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 43.0,
+        "kg_liq": 21380.0,
+        "precio_kg": 3510.8419,
+        "precio_kg_cg": 3581.0587379999997,
+        "precio_cab_cg": 1780535.7167079067,
+        "comision_cat": 1501235.99644,
+        "gastos_cat": 0.0,
+        "importe": 75061799.822,
+        "importe_cg": 76563035.81843999,
+        "desbaste_pct": 6.479887745556602,
         "hotelero": "PEGSA",
         "desbaste_aceptado_vigente": false
       }
@@ -19721,8 +20030,12 @@
       "avisos": []
     },
     "LTAVIL190826": {
-      "estado": "terceros",
-      "motivos": {},
+      "estado": "revisar",
+      "motivos": {
+        "Vaca": [
+          "kg_18.4%"
+        ]
+      },
       "avisos": []
     },
     "LTPDAR091225": {
@@ -19913,12 +20226,8 @@
       "avisos": []
     },
     "PEGANI210826": {
-      "estado": "revisar",
-      "motivos": {
-        "Ternero": [
-          "estado_revisar"
-        ]
-      },
+      "estado": "ok",
+      "motivos": {},
       "avisos": []
     },
     "PEGARI010824": {
@@ -20101,15 +20410,9 @@
       ]
     },
     "PEGDAR050826": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaca": [
-          "estado_revisar"
-        ]
-      },
-      "avisos": [
-        "desbaste_aceptado_33.2%"
-      ]
+      "estado": "ok",
+      "motivos": {},
+      "avisos": []
     },
     "PEGDAR060323": {
       "estado": "sin_liquidar",
@@ -20129,23 +20432,11 @@
       "avisos": []
     },
     "PEGDAR070826": {
-      "estado": "revisar",
-      "motivos": {
-        "Novillo": [
-          "kg_63.3%",
-          "estado_revisar"
-        ],
-        "Ternera": [
-          "estado_revisar"
-        ],
-        "Ternero": [
-          "estado_revisar"
-        ],
-        "Vaca": [
-          "estado_revisar"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "desbaste_aceptado_63.3%"
+      ]
     },
     "PEGDAR071124": {
       "estado": "sin_liquidar",
@@ -21523,26 +21814,11 @@
       "avisos": []
     },
     "PEGUTE180826": {
-      "estado": "revisar",
-      "motivos": {
-        "Vaquillona": [
-          "kg_19.3%",
-          "estado_revisar"
-        ],
-        "Novillito": [
-          "estado_revisar"
-        ],
-        "Ternera": [
-          "estado_revisar"
-        ],
-        "Ternero": [
-          "estado_revisar"
-        ],
-        "Vaca": [
-          "estado_revisar"
-        ]
-      },
-      "avisos": []
+      "estado": "ok",
+      "motivos": {},
+      "avisos": [
+        "desbaste_aceptado_19.3%"
+      ]
     },
     "PEGUTE190626": {
       "estado": "ok",
@@ -21591,9 +21867,12 @@
       "avisos": []
     },
     "PEGVIL190826": {
-      "estado": "sin_liquidar",
+      "estado": "ok",
       "motivos": {},
-      "avisos": []
+      "avisos": [
+        "desbaste_aceptado_12.2%",
+        "desbaste_aceptado_10.8%"
+      ]
     },
     "PEGVIL200226": {
       "estado": "ok",
