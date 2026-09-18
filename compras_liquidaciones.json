@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-18T08:06:33.459185",
+    "generado": "2026-09-18T09:06:39.797440",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
     "n_supabase": 143,
@@ -11993,37 +11993,37 @@
       "fecha": "2026-08-07",
       "consignataria": "DARWASH SA",
       "proveedor": "DARWASH SA",
-      "nro_liquidacion": "2026-08-05 Compra Darwash (SAGUAIPE).xlsx",
+      "nro_liquidacion": "0011-00009680",
       "archivo": "2026-08-05 Compra Darwash (SAGUAIPE).xlsx",
       "comision_modo": "pct",
       "comision_valor": 0.02,
       "gastos_monto": 0,
       "observaciones": "importado de Excel: comision y gastos juntos en un solo % · agosto: Nicolás confirma desde el sub-portal",
-      "estado": "revisar",
-      "generado": "2026-09-15T13:27:53.833458",
-      "version_portal": "v15.74.1",
+      "estado": "cargada",
+      "generado": "2026-09-18T11:47:53.861Z",
+      "version_portal": "v15.74.15",
       "categorias": [
         {
+          "kg_wc": 14058,
           "tropa": "SAG.DAR.07/08/2026",
-          "tropa_norm": "SAGDAR070826",
+          "kg_liq": 15280,
+          "importe": 58750000.0,
           "hotelero": "EL SAGUAIPE SAS",
           "categoria": "Vaca",
-          "cabezas_wc": 37,
-          "kg_wc": 14058.0,
-          "cabezas_liq": 37,
-          "kg_liq": 15280.0,
-          "precio_modo": "kg",
-          "precio_valor": 3844.895287958115,
-          "importe": 58750000.0,
+          "kg_wc_cab": 379.94594594594594,
           "precio_kg": 3844.895287958115,
-          "comision_cat": 1175000.0,
+          "cabezas_wc": 37,
           "gastos_cat": 0.0,
           "importe_cg": 59925000.0,
-          "precio_kg_cg": 3921.7931937172775,
-          "precio_cab_cg": 1619594.5945945946,
-          "desbaste_pct": 7.997382198952881,
           "kg_liq_cab": 412.97297297297297,
-          "kg_wc_cab": 379.94594594594594
+          "tropa_norm": "SAGDAR070826",
+          "cabezas_liq": 37,
+          "precio_modo": "kg",
+          "comision_cat": 1175000.0,
+          "desbaste_pct": 7.997382198952881,
+          "precio_kg_cg": 3921.7931937172775,
+          "precio_valor": 3844.895287958115,
+          "precio_cab_cg": 1619594.5945945946
         }
       ],
       "total": {
@@ -12041,7 +12041,15 @@
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": 7.997382198952881,
         "cabezas_dif": 0.0
-      }
+      },
+      "editado": "2026-09-18T11:47:53.861Z",
+      "historial": [
+        {
+          "ts": "2026-09-18T11:47:53.861Z",
+          "accion": "confirmar",
+          "detalle": "revisar → cargada"
+        }
+      ]
     },
     {
       "id": "SAGDAR130526_2026-05-14",
@@ -21649,8 +21657,7 @@
       "estado": "revisar",
       "motivos": {
         "Vaca": [
-          "kg_8.0%",
-          "estado_revisar"
+          "kg_8.0%"
         ]
       },
       "avisos": []
