@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-09-19T11:07:22.640128",
+    "generado": "2026-09-19T12:07:07.968168",
     "desde": "2024-01-09",
     "hasta": "2026-09-17",
     "dias": 984,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-09-19",
-    "n_tropas": 568,
-    "n_grupos": 967,
+    "n_tropas": 569,
+    "n_grupos": 970,
     "excluidas": 176,
     "excluidas_por": [
       "destete",
@@ -15,9 +15,9 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 568,
+      "caravanas": 569,
       "remito": 0,
-      "distintas_al_remito": 162,
+      "distintas_al_remito": 163,
       "cob_min": 90,
       "sin_datos_caravana": false
     },
@@ -25800,6 +25800,69 @@
       "vendidas_imputadas": 0,
       "muertas": 0
     },
+    "SAGVIL160926": {
+      "tropa": "SAG.VIL.16/09/2026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha": "2026-09-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "cabezas": 38,
+      "kg_ingreso": 13588.0,
+      "categorias": [
+        "Ternera",
+        "Ternero",
+        "Vaca"
+      ],
+      "kg_cab": 357.6,
+      "categorias_remito": [
+        "Ternero",
+        "Vaca"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 15,
+          "kg_ingreso": 1350.0,
+          "kg_cab": 90.0
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 23,
+          "kg_ingreso": 12238.0,
+          "kg_cab": 532.1
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaca",
+          "cabezas": 23,
+          "kg_ingreso": 12246.4,
+          "kg_cab": 532.5
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 9,
+          "kg_ingreso": 804.6,
+          "kg_cab": 89.4
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 6,
+          "kg_ingreso": 536.4,
+          "kg_cab": 89.4
+        }
+      ],
+      "cab_real": 38,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": true,
+      "en_stock": 38,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
     "TAPDAR020924": {
       "tropa": "TAP.DAR.02/09/24",
       "hotelero": "LAS TAPERAS",
@@ -45801,6 +45864,60 @@
       "cabezas": 28,
       "kg_ingreso": 6620.0,
       "kg_cab": 236.4,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.VIL.16/09/2026",
+      "tropa_norm": "SAGVIL160926",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-09-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "GENERAL VILLEGAS",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 6,
+      "kg_ingreso": 536.4,
+      "kg_cab": 89.4,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.VIL.16/09/2026",
+      "tropa_norm": "SAGVIL160926",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-09-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "GENERAL VILLEGAS",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 9,
+      "kg_ingreso": 804.6,
+      "kg_cab": 89.4,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.VIL.16/09/2026",
+      "tropa_norm": "SAGVIL160926",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-09-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "GENERAL VILLEGAS",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Vaca",
+      "categoria_sigla": "VA",
+      "cabezas": 23,
+      "kg_ingreso": 12246.4,
+      "kg_cab": 532.5,
       "fuente": "caravanas"
     },
     {
