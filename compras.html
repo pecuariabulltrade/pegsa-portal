@@ -133,6 +133,14 @@
   tr.tropa.hl td{box-shadow:inset 0 0 0 2px var(--accent-bright)}
   .linea{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;padding:1px 0}
   .linea .id{font-family:var(--mono);font-size:10.5px;color:var(--mutedc)}
+
+/* v15.74.16 · filtros del resumen */
+#tab-resumen tbody tr.fl{cursor:pointer}
+#tab-resumen tbody tr.fl:hover{background:#f5f2ea}
+#tab-resumen tbody tr.fsel{background:#f3e8c8;box-shadow:inset 3px 0 0 #b8922a}
+#res-filtros{margin:2px 0 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fchip{background:#1a1612;color:#d4a84b;border-radius:2px;padding:4px 10px;font-size:11px;cursor:pointer;letter-spacing:.04em}
+.fchip.flimpia{background:transparent;color:#8a827a;border:1px solid #e3e1da}
 </style>
 </head>
 <body>
@@ -274,6 +282,7 @@
 <!-- ══════════════ 4 · RESUMEN ══════════════ -->
 <section id="tab-resumen" class="hide">
   <div class="kpis" id="kpis-res"></div>
+  <div id="res-filtros"></div>
   <div class="card">
     <h2>$/kg con gastos por categoría, mes a mes</h2>
     <div class="muted">Ponderado por kg liquidado. Sólo liquidaciones activas.</div>
@@ -351,10 +360,16 @@
    (categoría y cabezas cierran), Nicolás lo acepta por línea o por tropa;
    queda `desbaste_aceptado` en la línea, el semáforo lo respeta mientras los
    kg no cambien (caduca solo) y la tropa pasa a verde. No cambia el costeo.
+
+   v15.74.16 · Filtros cruzados en RESUMEN: tocar una fila (categoría /
+   consignataria / mes / propietario) o una barra del gráfico filtra KPIs,
+   gráfico y las cuatro tablas a la vez; chips arriba muestran lo activo y
+   se destapan tocando de nuevo o con "limpiar todo". El Informe PDF sale
+   sobre lo filtrado y lo dice en la cabecera.
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.15';
+var VERSION = 'v15.74.16';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -365,6 +380,7 @@ var SEL  = [];               // tropas_norm elegidas para liquidar
 var OP   = null;             // operación en edición
 var FUENTE = 'archivo';
 var CH_MES = null;
+var RFIL = {cat: null, cons: null, mes: null, prop: null};   // filtros del resumen (v15.74.16)
 var SEM_ORD = {sin_liquidar: 0, revisar: 0, ok: 1, terceros: 2};   // rojos y ámbar arriba
 var SEM_LBL = {ok: 'verde', revisar: 'a revisar', sin_liquidar: 'sin liquidar', terceros: 'terceros'};
 
@@ -2012,6 +2028,29 @@ function filasActivas() {
   return out;
 }
 
+/* v15.74.16 · filtros cruzados: toca una fila (categoria / consignataria /
+   mes / propietario) o una barra del grafico y TODO el resumen se filtra.
+   Cada tabla se arma con los filtros de las OTRAS dimensiones, para poder
+   cambiar la seleccion sin destaparla antes. */
+function filasFiltradas(excepto) {
+  return filasActivas().filter(function (f) {
+    if (RFIL.cat  && excepto !== 'cat'  && f.c.categoria     !== RFIL.cat)  return false;
+    if (RFIL.cons && excepto !== 'cons' && f.o.consignataria !== RFIL.cons) return false;
+    if (RFIL.mes  && excepto !== 'mes'  && f.mes             !== RFIL.mes)  return false;
+    if (RFIL.prop && excepto !== 'prop' && f.c.hotelero      !== RFIL.prop) return false;
+    return true;
+  });
+}
+function filtrar(dim, val) {
+  val = decodeURIComponent(val);
+  RFIL[dim] = (RFIL[dim] === val) ? null : val;
+  rResumen();
+}
+function limpiarFiltros() {
+  RFIL = {cat: null, cons: null, mes: null, prop: null};
+  rResumen();
+}
+
 function agrupar(filas, key) {
   var m = {};
   filas.forEach(function (f) {
@@ -2033,7 +2072,7 @@ function agrupar(filas, key) {
   });
 }
 
-function tablaRes(id, titulo, grupos) {
+function tablaRes(id, titulo, grupos, dim) {
   var COLS = [titulo, 'Cab', 'Kg liq.', 'Importe c/g', '$/kg s/g', '$/kg c/g', 'Com+gastos', 'Desbaste'];
   document.querySelector('#' + id + ' thead').innerHTML = '<tr>' + COLS.map(function (c, i) {
     return '<th' + (i ? ' class="num"' : '') + '>' + c + '</th>';
@@ -2041,7 +2080,13 @@ function tablaRes(id, titulo, grupos) {
   var b = '', T = {cab: 0, kg: 0, imp: 0, impcg: 0, dn: 0, dd: 0};
   grupos.forEach(function (g) {
     T.cab += g.cab; T.kg += g.kg; T.imp += g.imp; T.impcg += g.impcg; T.dn += g.dn; T.dd += g.dd;
-    b += '<tr><td>' + esc(g.k) + '</td>'
+    var atr = '';
+    if (dim) {
+      atr = ' class="fl' + (RFIL[dim] === g.k ? ' fsel' : '') + '"'
+          + ' onclick="filtrar(\'' + dim + '\',\'' + encodeURIComponent(g.k) + '\')"'
+          + ' title="Tocar para filtrar / destapar"';
+    }
+    b += '<tr' + atr + '><td>' + esc(g.k) + '</td>'
       + '<td class="num">' + N(g.cab) + '</td>'
       + '<td class="num">' + N(g.kg) + '</td>'
       + '<td class="num">' + M(g.impcg) + '</td>'
@@ -2065,13 +2110,25 @@ var CAT_COLOR = {Vaca: '#1a1612', Vaquillona: '#b8922a', Novillo: '#2d6a8a',
                  Novillito: '#d4a84b', Ternero: '#27613d', Ternera: '#8a827a', Toro: '#c0392b'};
 
 function rResumen() {
-  var F = filasActivas();
+  var F = filasFiltradas();
+  var NOM = {cat: 'Categoría', cons: 'Consignataria', mes: 'Mes', prop: 'Propietario'};
+  var chips = '';
+  Object.keys(RFIL).forEach(function (k) {
+    if (!RFIL[k]) return;
+    chips += '<span class="fchip" onclick="filtrar(\'' + k + '\',\'' + encodeURIComponent(RFIL[k]) + '\')">'
+           + NOM[k] + ': ' + esc(RFIL[k]) + ' ✕</span>';
+  });
+  document.getElementById('res-filtros').innerHTML = chips
+    ? chips + '<span class="fchip flimpia" onclick="limpiarFiltros()">limpiar todo</span>'
+    : '<span class="muted" style="font-size:11px">Tocá una fila de las tablas o una barra del gráfico para filtrar todo el resumen; tocala de nuevo para sacar el filtro.</span>';
+  var _vis = {};
+  F.forEach(function (f) { var i = LIQ.indexOf(f.o); if (i >= 0) _vis[i] = 1; });
+  var nliq = Object.keys(_vis).length;
   var T = agrupar(F, function () { return 'todo'; })[0]
        || {cab: 0, kg: 0, imp: 0, impcg: 0, pkg: null, pkgcg: null, rec: null, des: null};
   document.getElementById('kpis-res').innerHTML =
     '<div class="kpi"><div class="lbl">Cabezas liquidadas</div><div class="v">' + N(T.cab) + '</div>'
-      + '<div class="d">' + LIQ.filter(function (o) { return String(o.estado || '').toLowerCase() !== 'anulada'; }).length
-      + ' liquidaciones</div></div>'
+      + '<div class="d">' + nliq + ' liquidaciones</div></div>'
     + '<div class="kpi"><div class="lbl">Kg liquidados</div><div class="v">' + N(T.kg) + '</div>'
       + '<div class="d">' + N(T.cab ? T.kg / T.cab : null, 1) + ' kg/cab</div></div>'
     + '<div class="kpi"><div class="lbl">Importe con gastos</div><div class="v">' + M(T.impcg) + '</div>'
@@ -2082,10 +2139,10 @@ function rResumen() {
       + (T.pkgcg == null ? '—' : M(T.pkgcg)) + '</div>'
       + '<div class="d">desbaste ponderado ' + (T.des == null ? '—' : P(T.des, 1)) + '</div></div>';
 
-  tablaRes('t-cat',  'Categoría',     agrupar(F, function (f) { return f.c.categoria; }));
-  tablaRes('t-cons', 'Consignataria', agrupar(F, function (f) { return f.o.consignataria; }));
-  tablaRes('t-mes',  'Mes',           agrupar(F, function (f) { return f.mes; }));
-  tablaRes('t-prop', 'Propietario',   agrupar(F, function (f) { return f.c.hotelero; }));
+  tablaRes('t-cat',  'Categoría',     agrupar(filasFiltradas('cat'),  function (f) { return f.c.categoria; }),     'cat');
+  tablaRes('t-cons', 'Consignataria', agrupar(filasFiltradas('cons'), function (f) { return f.o.consignataria; }), 'cons');
+  tablaRes('t-mes',  'Mes',           agrupar(filasFiltradas('mes'),  function (f) { return f.mes; }),             'mes');
+  tablaRes('t-prop', 'Propietario',   agrupar(filasFiltradas('prop'), function (f) { return f.c.hotelero; }),      'prop');
   graficoMes(F);
 }
 
@@ -2119,6 +2176,14 @@ function graficoMes(F) {
     data: {labels: meses, datasets: ds},
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
+      onClick: function (ev, els) {
+        if (!els || !els.length) return;
+        var m   = CH_MES.data.labels[els[0].index];
+        var cat = CH_MES.data.datasets[els[0].datasetIndex].label;
+        if (RFIL.mes === m && RFIL.cat === cat) { RFIL.mes = null; RFIL.cat = null; }
+        else { RFIL.mes = m; RFIL.cat = cat; }
+        rResumen();
+      },
       scales: {
         y: {beginAtZero: false, ticks: {callback: function (v) { return '$ ' + N(v); },
             font: {family: 'JetBrains Mono', size: 11}}},
@@ -2136,7 +2201,10 @@ function graficoMes(F) {
 
 /* ════════ INFORME PDF ════════ */
 function informePDF() {
-  var F = filasActivas();
+  var F = filasFiltradas();
+  var NOMF = {cat: 'Categoría', cons: 'Consignataria', mes: 'Mes', prop: 'Propietario'};
+  var filtrosTxt = Object.keys(RFIL).filter(function (k) { return RFIL[k]; })
+    .map(function (k) { return NOMF[k] + ': ' + RFIL[k]; }).join(' · ');
   var T = agrupar(F, function () { return 'todo'; })[0];
   if (!T) { toast('No hay liquidaciones para informar.', 'err'); return; }
   var img = '';
@@ -2185,11 +2253,15 @@ function informePDF() {
     + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8px;color:#8a827a;line-height:1.55}'
     + '</style></head><body>';
 
+  var _visP = {};
+  F.forEach(function (f) { var i = LIQ.indexOf(f.o); if (i >= 0) _visP[i] = 1; });
   h += '<div class="hd"><div><div class="n">PEGSA &amp; Bulltrade · Compras y Liquidaciones</div>'
     + '<div class="t" style="font-size:24px;line-height:1.1">Resumen de compras</div>'
     + '<div style="font-size:9.5px;color:#6b6560;margin-top:3px">'
-    + LIQ.filter(function (o) { return String(o.estado || '').toLowerCase() !== 'anulada'; }).length
-    + ' liquidaciones · ' + N(T.cab) + ' cabezas · ' + N(T.kg) + ' kg · sin IVA</div></div>'
+    + Object.keys(_visP).length
+    + ' liquidaciones · ' + N(T.cab) + ' cabezas · ' + N(T.kg) + ' kg · sin IVA</div>'
+    + (filtrosTxt ? '<div style="font-size:9px;color:#b8922a;margin-top:2px">FILTRADO — ' + esc(filtrosTxt) + '</div>' : '')
+    + '</div>'
     + '<div style="text-align:right"><div class="n">Importe con gastos</div>'
     + '<div class="t" style="font-size:20px">' + M(T.impcg) + '</div>'
     + '<div style="font-size:9px;color:#8a827a">' + (T.pkgcg == null ? '—' : M(T.pkgcg)) + ' / kg</div></div></div>';
