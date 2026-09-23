@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-23T19:07:56.731571",
+    "generado": "2026-09-23T20:07:54.176200",
     "archivo": "compras de hacienda.xlsx",
     "ventana_dias": 90,
     "desde": "2026-06-25",
@@ -13,11 +13,11 @@
     },
     "fuente": "liquidaciones+excel",
     "por_fuente": {
-      "liquidacion": 307,
+      "liquidacion": 309,
       "excel": 133
     },
-    "tropas_solo_liquidacion": 63,
-    "meses_repo_liquidacion": 77
+    "tropas_solo_liquidacion": 64,
+    "meses_repo_liquidacion": 79
   },
   "por_categoria": {
     "Vaca": {
@@ -6941,6 +6941,59 @@
       },
       "fuente": "liquidacion"
     },
+    "BULFRH180926": {
+      "tropa": "BULFRH180926",
+      "precio_kg": 3753.42,
+      "kg": 0.0,
+      "cabezas": 0,
+      "comision": null,
+      "filas": 0,
+      "por_categoria": {
+        "Novillo": {
+          "precio_kg": 4143.25,
+          "precio_kg_pond": 4143.25,
+          "precio_kg_cg": 4269.82,
+          "precio_cab_cg": 2048909.91,
+          "comision": 0.03,
+          "gastos": 0.000548,
+          "kg": 34070.0,
+          "kg_liq": 34070.0,
+          "cab_liq": 71.0,
+          "desbaste_pct": -3.6,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "BULFRH180926_2026-09-18",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
+          "liq_desbaste_aceptado": false
+        },
+        "Vaca": {
+          "precio_kg": 3474.92,
+          "precio_kg_pond": 3474.92,
+          "precio_kg_cg": 3581.44,
+          "precio_cab_cg": 1817007.38,
+          "comision": 0.03,
+          "gastos": 0.000654,
+          "kg": 47690.0,
+          "kg_liq": 47690.0,
+          "cab_liq": 94.0,
+          "desbaste_pct": -4.22,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "BULFRH180926_2026-09-18",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
+          "liq_desbaste_aceptado": false
+        }
+      },
+      "fuente": "liquidacion"
+    },
     "BULFRH190926": {
       "tropa": "BULFRH190926",
       "precio_kg": 5469.13,
@@ -9615,6 +9668,12 @@
         "kg": 48145.0,
         "cabezas": 102,
         "fuente": "liquidacion"
+      },
+      "2026-09": {
+        "precio_kg": 4143.25,
+        "kg": 34070.0,
+        "cabezas": 71,
+        "fuente": "liquidacion"
       }
     },
     "Ternera": {
@@ -9934,6 +9993,12 @@
         "precio_kg": 3804.71,
         "kg": 104594.0,
         "cabezas": 234,
+        "fuente": "liquidacion"
+      },
+      "2026-09": {
+        "precio_kg": 3474.92,
+        "kg": 47690.0,
+        "cabezas": 94,
         "fuente": "liquidacion"
       }
     },

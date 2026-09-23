@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-09-23T19:07:57.399679",
+    "generado": "2026-09-23T20:07:54.842629",
     "desde": "2024-01-09",
     "hasta": "2026-09-19",
     "dias": 988,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-09-23",
-    "n_tropas": 572,
-    "n_grupos": 976,
+    "n_tropas": 573,
+    "n_grupos": 979,
     "excluidas": 176,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 572,
+      "caravanas": 573,
       "remito": 0,
       "distintas_al_remito": 163,
       "cob_min": 90,
@@ -10053,7 +10053,7 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 44,
-      "vendidas": 58,
+      "vendidas": 57,
       "vendidas_imputadas": 0,
       "muertas": 1
     },
@@ -10697,7 +10697,7 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 1,
-      "vendidas": 4,
+      "vendidas": 3,
       "vendidas_imputadas": 0,
       "muertas": 2
     },
@@ -26086,6 +26086,76 @@
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 1
+    },
+    "TAPDAR090926": {
+      "tropa": "TAP.DAR.09/09/2026",
+      "hotelero": "LAS TAPERAS",
+      "fecha": "2026-09-09",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 18,
+      "kg_ingreso": 4230.0,
+      "categorias": [
+        "Ternera",
+        "Vaca",
+        "Vaquillona"
+      ],
+      "kg_cab": 235.0,
+      "categorias_remito": [
+        "Ternera",
+        "Vaca",
+        "Vaquillona"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternera",
+          "cabezas": 5,
+          "kg_ingreso": 760.0,
+          "kg_cab": 152.0
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 3,
+          "kg_ingreso": 967.0,
+          "kg_cab": 322.3
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 10,
+          "kg_ingreso": 2503.0,
+          "kg_cab": 250.3
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 10,
+          "kg_ingreso": 2503.2,
+          "kg_cab": 250.3
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 5,
+          "kg_ingreso": 759.9,
+          "kg_cab": 152.0
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 3,
+          "kg_ingreso": 966.9,
+          "kg_cab": 322.3
+        }
+      ],
+      "cab_real": 18,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 18,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
     },
     "TAPDAR100925": {
       "tropa": "TAP.DAR.10/09/25",
@@ -46068,6 +46138,60 @@
       "cabezas": 38,
       "kg_ingreso": 14934.0,
       "kg_cab": 393.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "TAP.DAR.09/09/2026",
+      "tropa_norm": "TAPDAR090926",
+      "hotelero": "LAS TAPERAS",
+      "fecha_ingreso": "2026-09-09",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 3,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 5,
+      "kg_ingreso": 759.9,
+      "kg_cab": 152.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "TAP.DAR.09/09/2026",
+      "tropa_norm": "TAPDAR090926",
+      "hotelero": "LAS TAPERAS",
+      "fecha_ingreso": "2026-09-09",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 3,
+      "categoria": "Vaca",
+      "categoria_sigla": "VA",
+      "cabezas": 3,
+      "kg_ingreso": 966.9,
+      "kg_cab": 322.3,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "TAP.DAR.09/09/2026",
+      "tropa_norm": "TAPDAR090926",
+      "hotelero": "LAS TAPERAS",
+      "fecha_ingreso": "2026-09-09",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 3,
+      "categoria": "Vaquillona",
+      "categoria_sigla": "VQ",
+      "cabezas": 10,
+      "kg_ingreso": 2503.2,
+      "kg_cab": 250.3,
       "fuente": "caravanas"
     },
     {
