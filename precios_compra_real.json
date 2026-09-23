@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-23T18:06:43.983348",
+    "generado": "2026-09-23T19:07:56.731571",
     "archivo": "compras de hacienda.xlsx",
     "ventana_dias": 90,
     "desde": "2026-06-25",
@@ -13,11 +13,11 @@
     },
     "fuente": "liquidaciones+excel",
     "por_fuente": {
-      "liquidacion": 306,
+      "liquidacion": 307,
       "excel": 133
     },
-    "tropas_solo_liquidacion": 62,
-    "meses_repo_liquidacion": 76
+    "tropas_solo_liquidacion": 63,
+    "meses_repo_liquidacion": 77
   },
   "por_categoria": {
     "Vaca": {
@@ -6941,6 +6941,38 @@
       },
       "fuente": "liquidacion"
     },
+    "BULFRH190926": {
+      "tropa": "BULFRH190926",
+      "precio_kg": 5469.13,
+      "kg": 0.0,
+      "cabezas": 0,
+      "comision": null,
+      "filas": 0,
+      "por_categoria": {
+        "Novillito": {
+          "precio_kg": 5469.13,
+          "precio_kg_pond": 5469.13,
+          "precio_kg_cg": 5637.04,
+          "precio_cab_cg": 1627389.22,
+          "comision": 0.03,
+          "gastos": 0.000702,
+          "kg": 13280.0,
+          "kg_liq": 13280.0,
+          "cab_liq": 46.0,
+          "desbaste_pct": -0.11,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "BULFRH190926_2026-09-19",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
+          "liq_desbaste_aceptado": false
+        }
+      },
+      "fuente": "liquidacion"
+    },
     "BULGGA190925": {
       "tropa": "BULGGA190925",
       "precio_kg": 2595.76,
@@ -9496,6 +9528,12 @@
         "precio_kg": 4718.82,
         "kg": 2365.0,
         "cabezas": 9,
+        "fuente": "liquidacion"
+      },
+      "2026-09": {
+        "precio_kg": 5469.13,
+        "kg": 13280.0,
+        "cabezas": 46,
         "fuente": "liquidacion"
       }
     },

@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generado": "2026-09-23T18:06:43.914927",
+    "generado": "2026-09-23T19:07:56.664641",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 146,
+    "n_supabase": 147,
     "n_archivos": 143,
-    "n_liquidaciones": 143,
+    "n_liquidaciones": 144,
     "n_anuladas": 3,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 161,
+      "ok": 162,
       "revisar": 0,
-      "sin_liquidar": 293,
+      "sin_liquidar": 292,
       "terceros": 117,
       "tol_kg_pct": 8,
       "tol_cab": 0
@@ -1892,6 +1892,62 @@
         "precio_cab_cg": 1723671.677419355,
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": 0.7408238859580186,
+        "cabezas_dif": 0.0
+      }
+    },
+    {
+      "id": "BULFRH190926_2026-09-19",
+      "fecha": "2026-09-19",
+      "consignataria": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "FERIA RODEO HUINCA S.R.L",
+      "nro_liquidacion": "0004-000012500",
+      "archivo": "2026-09-18 feria rodeos",
+      "comision_modo": "pct",
+      "comision_valor": 0.03,
+      "gastos_monto": 51004.17,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-09-23T22:05:07.446Z",
+      "version_portal": "v15.74.16",
+      "categorias": [
+        {
+          "kg_wc": 13294,
+          "tropa": "BUL.FRH.19/09/2026",
+          "kg_liq": 13280,
+          "importe": 72630000.0528,
+          "hotelero": "PEGSA",
+          "categoria": "Novillito",
+          "kg_wc_cab": 289.0,
+          "precio_kg": 5469.12651,
+          "cabezas_wc": 46,
+          "gastos_cat": 51004.17,
+          "importe_cg": 74859904.224384,
+          "kg_liq_cab": 288.69565217391306,
+          "tropa_norm": "BULFRH190926",
+          "cabezas_liq": 46,
+          "precio_modo": "kg",
+          "comision_cat": 2178900.001584,
+          "desbaste_pct": -0.10542168674698195,
+          "precio_kg_cg": 5637.040980751807,
+          "precio_valor": 5469.12651,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1627389.2222692173
+        }
+      ],
+      "total": {
+        "cabezas_liq": 46.0,
+        "kg_liq": 13280.0,
+        "cabezas_wc": 46.0,
+        "kg_wc": 13294.0,
+        "importe": 72630000.0528,
+        "comision": 2178900.001584,
+        "gastos": 51004.17,
+        "importe_cg": 74859904.224384,
+        "precio_kg": 5469.12651,
+        "precio_kg_cg": 5637.040980751807,
+        "precio_cab_cg": 1627389.2222692173,
+        "recargo_pct": 3.0702246591806537,
+        "desbaste_pct": -0.10542168674698195,
         "cabezas_dif": 0.0
       }
     },
@@ -13580,6 +13636,28 @@
         "desbaste_aceptado_vigente": false
       }
     },
+    "BULFRH190926": {
+      "Novillito": {
+        "liq_id": "BULFRH190926_2026-09-19",
+        "fecha": "2026-09-19",
+        "liq_ids": [
+          "BULFRH190926_2026-09-19"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 46.0,
+        "kg_liq": 13280.0,
+        "precio_kg": 5469.12651,
+        "precio_kg_cg": 5637.040980751807,
+        "precio_cab_cg": 1627389.2222692173,
+        "comision_cat": 2178900.001584,
+        "gastos_cat": 51004.17,
+        "importe": 72630000.0528,
+        "importe_cg": 74859904.224384,
+        "desbaste_pct": -0.10542168674698195,
+        "hotelero": "PEGSA",
+        "desbaste_aceptado_vigente": false
+      }
+    },
     "BULGGA190925": {
       "Vaca": {
         "liq_id": "BULGGA190925_2025-09-19",
@@ -19496,7 +19574,7 @@
       "avisos": []
     },
     "BULFRH190926": {
-      "estado": "sin_liquidar",
+      "estado": "ok",
       "motivos": {},
       "avisos": []
     },
