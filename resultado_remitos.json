@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-24T10:07:56.845890",
+    "generado": "2026-09-24T11:07:22.874080",
     "desde": "2026-07-01",
     "remitos": 100,
     "egresos_venta": 3227,
@@ -40,13 +40,13 @@
       "filas_liq": 1276,
       "filas_ok": 1276,
       "filas_revisar": 0,
-      "filas_sin_liq": 38,
+      "filas_sin_liq": 39,
       "filas_estimado": 42,
       "filas_propio": 101,
       "filas_excel": 0,
       "cab_liq": 2719,
       "cab_revisar": 0,
-      "cab_sin_liq": 107,
+      "cab_sin_liq": 158,
       "cab_propio": 236,
       "cab_estimado": 106,
       "motivos_estimado": {
@@ -63,9 +63,9 @@
       "mercado_dias_max": 120,
       "por_origen": {
         "sin_liquidacion": {
-          "filas": 38,
-          "cab": 107,
-          "mercado": 7,
+          "filas": 39,
+          "cab": 158,
+          "mercado": 58,
           "mercado_120": 0,
           "estimado": 100
         },
@@ -77,9 +77,9 @@
           "estimado": 3
         },
         "sin_ingreso_compras": {
-          "filas": 8,
-          "cab": 60,
-          "mercado": 59,
+          "filas": 7,
+          "cab": 9,
+          "mercado": 8,
           "mercado_120": 0,
           "estimado": 1
         },
@@ -83468,8 +83468,8 @@
           "precio_kg": 5247.92,
           "estimado": true,
           "fuente_precio": "mercado",
-          "precio_origen": "sin_ingreso_compras",
-          "precio_motivo": "sin ingreso en Compras · mercado 60d Vaquillona (7 liq · 5,248 $/kg)",
+          "precio_origen": "sin_liquidacion",
+          "precio_motivo": "sin liquidación · mercado 60d Vaquillona (7 liq · 5,248 $/kg)",
           "mercado": {
             "dias": 60,
             "n_liq": 7,
@@ -83577,8 +83577,8 @@
           "fecha_ingreso": "2026-09-10",
           "estimado_a": 5247.92,
           "fuente_precio": "mercado",
-          "motivo": "sin ingreso en Compras · mercado 60d Vaquillona (7 liq · 5,248 $/kg)",
-          "origen": "sin_ingreso_compras",
+          "motivo": "sin liquidación · mercado 60d Vaquillona (7 liq · 5,248 $/kg)",
+          "origen": "sin_liquidacion",
           "tropa_norm": "PEGDAR100926"
         }
       ],
