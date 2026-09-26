@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-25T20:03:28.528981",
+    "generado": "2026-09-25T21:03:42.363615",
     "periodo": "2025",
     "tabla": "v_PB_StockInsumo",
     "registros": 7,
@@ -12,8 +12,8 @@
     "dias_registro_365": 364,
     "consumo_total_norm": 82077.5,
     "consumo_total_sin_ajuste": 75683.7,
-    "dias_totales": 179.4,
-    "dias_totales_sin_ajuste": 194.5,
+    "dias_totales": 180.0,
+    "dias_totales_sin_ajuste": 195.3,
     "ajuste_consumo": {
       "*": 1.1,
       "MAIZ GRANO": 1.05
@@ -45,13 +45,24 @@
     },
     {
       "nombre": "GLUTEN DE MAIZ",
-      "stock_kg": 460416.0,
+      "stock_kg": 494956.0,
       "consumo_diario_tc": 25565.3,
       "consumo_dia_norm": 23241.2,
       "ajuste_factor": 1.1,
       "consumo_3d_tc": 29780.0,
       "kg_dia_anio": 33082.5,
-      "dias_restantes": 18.0,
+      "dias_restantes": 19.4,
+      "fuente": "normalizado_365"
+    },
+    {
+      "nombre": "NUCLEO CONC 5% LDB",
+      "stock_kg": 38207.0,
+      "consumo_diario_tc": 3387.8,
+      "consumo_dia_norm": 3079.9,
+      "ajuste_factor": 1.1,
+      "consumo_3d_tc": 4133.3,
+      "kg_dia_anio": 4384.0,
+      "dias_restantes": 11.3,
       "fuente": "normalizado_365"
     },
     {
@@ -66,19 +77,8 @@
       "fuente": "normalizado_365"
     },
     {
-      "nombre": "NUCLEO CONC 5% LDB",
-      "stock_kg": 17807.0,
-      "consumo_diario_tc": 3387.8,
-      "consumo_dia_norm": 3079.9,
-      "ajuste_factor": 1.1,
-      "consumo_3d_tc": 4133.3,
-      "kg_dia_anio": 4384.0,
-      "dias_restantes": 5.3,
-      "fuente": "normalizado_365"
-    },
-    {
       "nombre": "DIESEL",
-      "stock_kg": 3418.0,
+      "stock_kg": 2898.0,
       "consumo_diario_tc": null,
       "consumo_dia_norm": null,
       "ajuste_factor": 1.1,
@@ -99,5 +99,5 @@
       "fuente": null
     }
   ],
-  "total_kg": 14723316.21
+  "total_kg": 14777736.21
 }
