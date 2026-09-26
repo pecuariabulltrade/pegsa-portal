@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-09-26T18:03:07.196726",
+    "generado": "2026-09-26T19:03:13.397556",
     "periodo": "2025",
     "tabla": "v_PB_StockInsumo",
     "registros": 7,
@@ -12,8 +12,8 @@
     "dias_registro_365": 363,
     "consumo_total_norm": 82369.9,
     "consumo_total_sin_ajuste": 75953.5,
-    "dias_totales": 179.4,
-    "dias_totales_sin_ajuste": 194.6,
+    "dias_totales": 180.4,
+    "dias_totales_sin_ajuste": 195.6,
     "ajuste_consumo": {
       "*": 1.1,
       "MAIZ GRANO": 1.05
@@ -34,24 +34,35 @@
     },
     {
       "nombre": "MAIZ GRANO",
-      "stock_kg": 6599405.6,
+      "stock_kg": 6626605.6,
       "consumo_diario_tc": 24757.3,
       "consumo_dia_norm": 23578.4,
       "ajuste_factor": 1.05,
       "consumo_3d_tc": 33053.3,
       "kg_dia_anio": 33419.4,
-      "dias_restantes": 266.6,
+      "dias_restantes": 267.7,
       "fuente": "normalizado_365"
     },
     {
       "nombre": "GLUTEN DE MAIZ",
-      "stock_kg": 494956.0,
+      "stock_kg": 520656.0,
       "consumo_diario_tc": 25657.5,
       "consumo_dia_norm": 23325.0,
       "ajuste_factor": 1.1,
       "consumo_3d_tc": 29780.0,
       "kg_dia_anio": 33060.3,
-      "dias_restantes": 19.3,
+      "dias_restantes": 20.3,
+      "fuente": "normalizado_365"
+    },
+    {
+      "nombre": "HARINA GERMEN",
+      "stock_kg": 52570.0,
+      "consumo_diario_tc": 8828.3,
+      "consumo_dia_norm": 8025.8,
+      "ajuste_factor": 1.1,
+      "consumo_3d_tc": 6533.3,
+      "kg_dia_anio": 11375.5,
+      "dias_restantes": 6.0,
       "fuente": "normalizado_365"
     },
     {
@@ -63,17 +74,6 @@
       "consumo_3d_tc": 4133.3,
       "kg_dia_anio": 4382.1,
       "dias_restantes": 11.2,
-      "fuente": "normalizado_365"
-    },
-    {
-      "nombre": "HARINA GERMEN",
-      "stock_kg": 26110.0,
-      "consumo_diario_tc": 8828.3,
-      "consumo_dia_norm": 8025.8,
-      "ajuste_factor": 1.1,
-      "consumo_3d_tc": 6533.3,
-      "kg_dia_anio": 11375.5,
-      "dias_restantes": 3.0,
       "fuente": "normalizado_365"
     },
     {
@@ -99,5 +99,5 @@
       "fuente": null
     }
   ],
-  "total_kg": 14777192.21
+  "total_kg": 14856552.21
 }
