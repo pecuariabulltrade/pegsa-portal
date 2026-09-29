@@ -6,6 +6,12 @@
 <title>Análisis de Costos · PEGSA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- v15.76: el JSON contable se pide recién en cargar(), ~1.500 líneas más
+     abajo. Con el preload arranca junto con el HTML. El `crossorigin` NO es
+     decorativo: sin él el preload queda en modo no-cors, no matchea el fetch()
+     (que es cors) y el archivo se baja DOS veces. El href tiene que ser idéntico
+     al de RUTA_DATOS, ?v= incluido. -->
+<link rel="preload" as="fetch" href="analisis_costos_datos.json?v=1576" crossorigin>
 <!-- v15.61.1: Playfair Display (titulos del portal) en lugar de Lora. Inter y
      JetBrains Mono ya coincidian con el portal y se mantienen. -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -539,9 +545,13 @@
 
 <script>
 // ============ datos: JSON agregado publicado junto al portal ============
-const RUTA_DATOS='analisis_costos_datos.json';
-const RUTA_OPERATIVOS='analisis_costos_operativos.json'; // {"2025-01":{"alim":kg,"cab":n},...}
-const RUTA_MAG='valuacion_historica.json';   // v15.61.5: $/kg novillo MAG mensual
+// v15.76: cache buster comun a los tres. GitHub Pages cachea los .json unos
+// minutos; con ?v= atado a la version del modulo, un deploy nuevo no puede
+// quedar leyendo el JSON viejo.
+const V_MOD='1576';
+const RUTA_DATOS='analisis_costos_datos.json?v='+V_MOD;
+const RUTA_OPERATIVOS='analisis_costos_operativos.json?v='+V_MOD; // {"2025-01":{"alim":kg,"cab":n},...}
+const RUTA_MAG='valuacion_historica.json?v='+V_MOD;   // v15.61.5: $/kg novillo MAG mensual
 let MAG={}, BACKFILL=null;
 let META={exportado:''};
 
@@ -588,11 +598,38 @@ let EJS=[];    // ejercicios presentes, orden asc
 let U='$', NODO=null, CUENTA=null, ORDEN='cod';
 function resetNodo(){NODO=null;CUENTA=null;}
 
+/* v15.76: lee el body por chunks para poder mostrar cuanto lleva bajado. Si el
+   navegador no da ReadableStream (o el body ya se consumio), cae a .json(). */
+async function leerJSONconProgreso(rsp){
+  const el=$('carga');
+  if(!rsp.body||!rsp.body.getReader)return rsp.json();
+  try{
+    const rd=rsp.body.getReader(), trozos=[]; let n=0;
+    for(;;){
+      const {done,value}=await rd.read();
+      if(done)break;
+      trozos.push(value); n+=value.length;
+      if(el)el.innerHTML='<div class="sp"></div><div class="muted">Bajando la tabla depurada… '
+        +Math.round(n/1024).toLocaleString('es-AR')+' KB</div>';
+    }
+    const buf=new Uint8Array(n); let o=0;
+    for(const t of trozos){buf.set(t,o);o+=t.length;}
+    if(el)el.innerHTML='<div class="sp"></div><div class="muted">Descomprimiendo y leyendo la tabla depurada…</div>';
+    return JSON.parse(new TextDecoder('utf-8').decode(buf));
+  }catch(e){
+    return rsp.json();
+  }
+}
+
 async function cargar(){
   const ejercicioDe=m=>{const y=+m.slice(0,4),mm=+m.slice(5,7);const a=mm>=5?y:y-1;return a+'/'+(a+1);};
   const rsp=await fetch(RUTA_DATOS);
   if(!rsp.ok){$('carga').innerHTML='<div class="muted">No pude leer '+RUTA_DATOS+' ('+rsp.status+')</div>';return;}
-  const J=await rsp.json();
+  // v15.76: mientras baja, decir cuanto lleva bajado en vez de un spinner mudo.
+  // Sin porcentaje A PROPOSITO: GitHub Pages sirve gzip, asi que Content-Length
+  // es el tamano COMPRIMIDO (41 KB) y el stream entrega los bytes YA
+  // descomprimidos (553 KB) -- dividir uno por otro da 1.300 %.
+  const J=await leerJSONconProgreso(rsp);
   META={exportado:J.generado||''};
   DATA=J.filas.map(r=>({
     emp:r.e, fecha:r.m+'-15', mes:r.m, ej:ejercicioDe(r.m),

@@ -419,6 +419,17 @@ function sbInit(user){
         el.style.display = 'none';
       }
     });
+
+    // v15.76 · si tiene el 07, se va pidiendo su índice mientras mira el home,
+    // así al hacer clic ya está en caché. Va por remIndice() y no por un
+    // <link rel="preload">: la promesa cacheada es la misma que usa
+    // cargarRemitos(), así que no hay riesgo de que el preload no matchee el
+    // fetch y el archivo se baje dos veces. Se hace en idle para no competir
+    // con los ~25 JSON del home.
+    if (modules.indexOf('remitos') >= 0 && typeof remPrefetchIndex === 'function') {
+      var ric = window.requestIdleCallback || function (f) { return setTimeout(f, 1200); };
+      ric(function () { remPrefetchIndex(); });
+    }
   }
   sbShow();
 }

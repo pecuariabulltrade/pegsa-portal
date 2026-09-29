@@ -64,6 +64,11 @@
    gastos). Ya no se costea por cabeza: al 07 no le importan las cabezas ni
    los kg que liquidó el papel, sólo el precio por tropa + categoría.
    `precio_cab_cg` sigue en la fila como dato.
+
+   v15.76 · CARGA LIVIANA. El módulo ya no baja `resultado_remitos.json` entero
+   al abrirse: baja `resultado_remitos_index.json` (todo menos las `filas`) y
+   las filas del remito elegido, una por archivo. Los números no cambian — ver
+   el bloque de comentario arriba de `remIndice()`.
 */
 
 var _remData = null;
@@ -133,6 +138,125 @@ var _remN = function (n, d) {
   return Number(n).toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 
+/* ════════════════════════════════════════════════════════════
+   v15.76 · CARGA LIVIANA
+   ────────────────────────────────────────────────────────────
+   Abrir el módulo bajaba `resultado_remitos.json` entero (3,2 MB en disco,
+   274 KB por la red — GitHub Pages sirve gzip) sólo para pintar la lista, el
+   selector y los KPIs del último remito. Las 1.575 filas de 51 campos son el
+   89 % del peso y se miran de a un remito.
+
+   Ahora baja `resultado_remitos_index.json` (209 KB / 32 KB gzip: meta + todo
+   menos `filas` + `n_filas`) y las filas del remito que se elige, una por
+   archivo (`resultado_remitos/<nro>.json`, 17 KB / 2,5 KB gzip el mediano).
+
+   ⚠ Las filas se HIDRATAN sobre el mismo objeto `_remData.remitos[nro]`, así
+   que todo lo de abajo (remConsolidar, remAplicarSC, el PDF, el snapshot, la
+   torta, los avisos de Compras, el detalle por tropa) sigue leyendo `r.filas`
+   igual que antes y da los mismos números. La única regla nueva: renderRemitos
+   no pinta el cuerpo hasta tener las filas del remito/grupo elegido.
+   ════════════════════════════════════════════════════════════ */
+var _remFilas     = {};    // nro -> filas ya bajadas
+var _remFilasProm = {};    // nro -> promesa en vuelo (no pedir dos veces)
+var _remIdxProm   = null;  // promesa del índice (la comparte el prefetch del home)
+var _remCompleto  = false; // true si hubo que caer al archivo completo
+
+/* Índice. Si todavía no existe (el tick que lo publica no corrió), cae al
+   archivo completo: ése trae las `filas` adentro, así que la hidratación
+   queda en no-op y el módulo funciona exactamente como antes. */
+function remIndice() {
+  if (_remIdxProm) return _remIdxProm;
+  _remIdxProm = fetch(STOCK_SB + '/resultado_remitos_index.json', {}, {})
+    .then(function (r) {
+      if (r.ok) return r.json();
+      if (r.status !== 404) throw new Error('HTTP ' + r.status);
+      _remCompleto = true;
+      return fetch(STOCK_SB + '/resultado_remitos.json', {}, {}).then(function (r2) {
+        if (!r2.ok) throw new Error('HTTP ' + r2.status);
+        return r2.json();
+      });
+    })
+    .catch(function (e) { _remIdxProm = null; throw e; });   // que se pueda reintentar
+  return _remIdxProm;
+}
+
+/* Lo llama el home al entrar (core-home.js) si el usuario tiene el 07: para
+   cuando hace clic, el índice ya está. Se traga el error a propósito — si
+   falla, cargarRemitos lo vuelve a pedir y ahí sí avisa. */
+function remPrefetchIndex() { remIndice().catch(function () {}); }
+
+/* Filas de UN remito, con caché en memoria. Devuelve siempre una promesa. */
+function remFilas(nro) {
+  if (_remFilas[nro]) return Promise.resolve(_remFilas[nro]);
+  var R = (_remData && _remData.remitos) || {};
+  if (R[nro] && R[nro].filas) {            // fallback al completo: ya están
+    _remFilas[nro] = R[nro].filas;
+    return Promise.resolve(_remFilas[nro]);
+  }
+  if (_remFilasProm[nro]) return _remFilasProm[nro];
+  _remFilasProm[nro] = fetch(STOCK_SB + '/resultado_remitos/' + nro + '.json', {}, {})
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (j) {
+      var filas = (j && j.filas) || [];
+      _remFilas[nro] = filas;
+      var RR = (_remData && _remData.remitos) || {};
+      if (RR[nro]) RR[nro].filas = filas;
+      return filas;
+    })
+    .catch(function (e) { delete _remFilasProm[nro]; throw e; });
+  return _remFilasProm[nro];
+}
+
+/* Qué remitos hacen falta para pintar lo que está elegido, y todavía no están. */
+function remIdsFaltantes() {
+  var R = (_remData && _remData.remitos) || {};
+  var ids = (_remModo === 'grupo' && _remGrupo.length >= 2) ? _remGrupo.slice() : [_remSel];
+  return ids.filter(function (id) { return id && R[id] && !R[id].filas; });
+}
+
+/* Skeleton de una línea. Si ya hay un remito pintado (cambio de remito, o sumar
+   uno al grupo) NO se borra: la línea se agrega arriba y el contenido viejo
+   queda a la vista hasta que llegan las filas nuevas. */
+function remSkeleton(el, n) {
+  var vieja = document.getElementById('remSkel');
+  if (vieja && vieja.parentNode) vieja.parentNode.removeChild(vieja);
+  var d = document.createElement('div');
+  d.id = 'remSkel';
+  d.style.cssText = 'font-family:\'DM Mono\',monospace;font-size:12px;color:rgba(26,22,18,.5);'
+    + 'background:#faf8f4;border:1px solid var(--border);border-radius:2px;'
+    + 'padding:10px 14px;margin:0 0 12px';
+  d.textContent = n > 1 ? 'Cargando el detalle de ' + n + ' remitos…'
+                        : 'Cargando el detalle del remito…';
+  if (el.firstChild) el.insertBefore(d, el.firstChild); else el.appendChild(d);
+}
+
+/* Fantasmas e historial de ventas: se bajan DESPUÉS de mostrar el remito, no
+   bloquean nada. Al llegar se re-renderiza, salvo que Nicolás esté tipeando la
+   venta (re-pintar le comería el foco del input). */
+function remExtras() {
+  var pend = [];
+  if (!_remFant) pend.push(
+    fetch(STOCK_SB + '/fantasmas.json', {}, {})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) _remFant = j; })
+      .catch(function () { _remFant = null; }));   // el módulo funciona igual sin fantasmas
+  if (!_remHist) pend.push(
+    fetch(STOCK_SB + '/resultados_ventas.json', {}, {})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) _remHist = j; })
+      .catch(function () { _remHist = null; }));
+  if (!pend.length) return;
+  Promise.all(pend).then(function () {
+    var a = document.activeElement;
+    var cont = document.getElementById('remContent');
+    if (a && cont && cont.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;
+    if (_remData) renderRemitos();
+  });
+}
+
 async function cargarRemitos() {
   if (_remData) { renderRemitos(); return; }
   var loading = document.getElementById('remLoading');
@@ -140,27 +264,18 @@ async function cargarRemitos() {
   if (loading) loading.style.display = 'block';
   if (content) content.style.display = 'none';
   try {
-    var resp = await fetch(STOCK_SB + '/resultado_remitos.json', {}, {});
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    _remData = await resp.json();
-    try {
-      var rf = await fetch(STOCK_SB + '/fantasmas.json', {}, {});
-      if (rf.ok) _remFant = await rf.json();
-    } catch (e) { _remFant = null; }   // el modulo funciona igual sin fantasmas
-    try {
-      var rh = await fetch(STOCK_SB + '/resultados_ventas.json', {}, {});
-      if (rh.ok) _remHist = await rh.json();
-    } catch (e) { _remHist = null; }
+    _remData = await remIndice();
     if (loading) loading.style.display = 'none';
     if (content) content.style.display = 'block';
-    renderRemitos();
+    renderRemitos();     // pinta, y de paso dispara la bajada de las filas
+    remExtras();
   } catch (e) {
     // Degradación: el módulo avisa y no rompe el resto del portal.
     if (loading) loading.innerHTML =
       '<div style="padding:60px;text-align:center">'
       + '<div style="font-size:28px">&#9888;</div>'
-      + '<div style="font-family:\'DM Mono\',monospace;font-size:14px;margin-top:12px;opacity:.6">No se encontró resultado_remitos.json</div>'
-      + '<div style="font-family:\'DM Mono\',monospace;font-size:12px;margin-top:8px;opacity:.4">Lo genera el pipeline en cada tick, con las ventas desde 2026-07-01</div>'
+      + '<div style="font-family:\'DM Mono\',monospace;font-size:14px;margin-top:12px;opacity:.6">No se encontró resultado_remitos_index.json ni resultado_remitos.json</div>'
+      + '<div style="font-family:\'DM Mono\',monospace;font-size:12px;margin-top:8px;opacity:.4">Los genera el pipeline en cada tick, con las ventas desde 2026-07-01</div>'
       + '</div>';
   }
 }
@@ -1666,6 +1781,31 @@ function renderRemitos(soloResultado) {
   // v15.62: en modo grupo (>=2 remitos) se trabaja sobre el consolidado, que
   // tiene la misma forma que un remito suelto — nada de abajo se ramifica.
   _remGrupo = _remGrupo.filter(function (id) { return !!remitos[id]; });
+
+  // v15.76 · portón de las filas. Todo lo de acá para abajo lee `r.filas`, que
+  // ahora viene de su propio archivo. Si falta alguna, se deja lo que ya esté
+  // pintado + una línea de skeleton y se vuelve a entrar cuando llegan. Es el
+  // ÚNICO lugar que espera: ni remConsolidar ni el PDF ni el snapshot cambian.
+  var faltan = remIdsFaltantes();
+  if (faltan.length) {
+    remSkeleton(el, faltan.length);
+    Promise.all(faltan.map(remFilas))
+      .then(function () { renderRemitos(soloResultado); })
+      .catch(function (e) {
+        var d = document.getElementById('remSkel');
+        if (d) {
+          d.style.background = '#fdf1ef';
+          d.style.borderColor = '#c0392b';
+          d.style.color = '#a3311f';
+          d.textContent = 'No pude bajar el detalle del remito (' + e.message + '). '
+            + 'Lo publica el pipeline en resultado_remitos\\ en cada tick.';
+        }
+      });
+    return;
+  }
+  var d0 = document.getElementById('remSkel');
+  if (d0 && d0.parentNode) d0.parentNode.removeChild(d0);
+
   var esGrupo = _remModo === 'grupo' && _remGrupo.length >= 2;
   var r = remActual();
   var meta = _remData.meta || {};
