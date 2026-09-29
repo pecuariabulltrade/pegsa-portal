@@ -1866,7 +1866,13 @@ def guardar(datos, carpeta, nombre):
     fd, tmp_path = tempfile.mkstemp(dir=dest, suffix='.tmp', prefix=nombre+'_')
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(limpiar_nan(datos), f, ensure_ascii=False, indent=2, default=str)
+            # v15.76: COMPACTO (sin indent). Ningun .bat/script del portal lee
+            # estos JSON a mano ni les hace findstr -- se verifico -- y los
+            # unicos que Nicolas abre a ojo son las liquidaciones de
+            # datos\compras_liquidaciones\, que no pasan por guardar().
+            # Ahorra ~35 % en todos los archivos del portal.
+            json.dump(limpiar_nan(datos), f, ensure_ascii=False,
+                      indent=None, separators=(",", ":"), default=str)
         # Rename atómico: reemplaza el destino de forma segura
         os.replace(tmp_path, ruta)
     except Exception:
@@ -5018,6 +5024,20 @@ def main():
                 _shutil.copy2(str(_json), str(_dst))
                 _copiados += 1
             log.info(f"  ✓ {_copiados} JSON copiados a repo")
+
+            # v15.76: la carpeta resultado_remitos\ (un JSON de filas por
+            # remito). El glob de arriba NO entra en subcarpetas. Va acá y no
+            # sólo en el .bat AUTO porque el .bat MANUAL no copia JSONs: se
+            # apoya justamente en este bloque.
+            _sub = Path(carpeta) / RR_DIRNAME
+            if _sub.is_dir():
+                _dst_sub = _repo / RR_DIRNAME
+                _dst_sub.mkdir(parents=True, exist_ok=True)
+                _nsub = 0
+                for _f in _sub.glob("*.json"):
+                    _shutil.copy2(str(_f), str(_dst_sub / _f.name))
+                    _nsub += 1
+                log.info(f"  ✓ {_nsub} JSON de {RR_DIRNAME} copiados a repo")
 
             # 2) Commit + push
             subprocess.run(["git", "-C", str(_repo), "add", "-A"],
@@ -9970,6 +9990,72 @@ def generar_fantasmas(carpeta_out, periodo, egresos_data, log=None, stock_data=N
     return salida
 
 
+# ═════════════════════════════════════════════════════════════
+# v15.76 · resultado_remitos PARTIDO en indice + detalle
+# ═════════════════════════════════════════════════════════════
+# El modulo 07 bajaba el archivo completo al abrirse solo para pintar la lista,
+# el selector y los KPIs del ultimo remito: las 1.575 filas de 51 campos son el
+# 89 % del peso y se usan de a un remito. Ahora:
+#   resultado_remitos_index.json   meta + todo menos `filas` + n_filas
+#   resultado_remitos\<nro>.json   {nro, filas}
+# OJO con los tamanos: en disco son 3,2 MB / 209 KB / 1-33 KB, pero GitHub
+# Pages sirve gzip, asi que POR LA RED son 274 KB / 32 KB / 2,5 KB. La mejora
+# real al abrir el 07 es ~332 KB -> ~35 KB (8x), no 3,2 MB -> 227 KB.
+# El archivo COMPLETO se sigue publicando igual: lo leen la auditoria de este
+# mismo script, `precios_compra_real`/compras y Cowork para verificar.
+RR_DIRNAME = "resultado_remitos"
+
+
+def _rr_guardar_particionado(salida, carpeta_out, log):
+    """Escribe el indice y un archivo de filas por remito.
+
+    Los detalles se reescriben SOLO si su contenido cambio (md5): si no, el
+    commit horario del bot traeria los 111 archivos tocados en cada tick.
+    """
+    import hashlib
+    import tempfile
+    remitos = salida.get("remitos") or {}
+
+    idx = {}
+    for nro, r in remitos.items():
+        sin_filas = {k: v for k, v in r.items() if k != "filas"}
+        sin_filas["n_filas"] = len(r.get("filas") or [])
+        idx[nro] = sin_filas
+    guardar({"meta": salida.get("meta"), "remitos": idx},
+            carpeta_out, "resultado_remitos_index.json")
+
+    dest = Path(carpeta_out) / RR_DIRNAME
+    dest.mkdir(parents=True, exist_ok=True)
+    escritos, iguales = 0, 0
+    for nro, r in remitos.items():
+        blob = json.dumps(limpiar_nan({"nro": nro, "filas": r.get("filas") or []}),
+                          ensure_ascii=False, indent=None,
+                          separators=(",", ":"), default=str).encode("utf-8")
+        ruta = dest / f"{nro}.json"
+        if ruta.exists():
+            try:
+                if hashlib.md5(ruta.read_bytes()).digest() == hashlib.md5(blob).digest():
+                    iguales += 1
+                    continue
+            except Exception:
+                pass
+        # Atomico: el frontend los pide en vivo, no puede leer uno a medio escribir.
+        fd, tmp = tempfile.mkstemp(dir=dest, prefix=str(nro) + "_", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(blob)
+            os.replace(tmp, ruta)
+        except Exception:
+            try:
+                os.unlink(tmp)
+            except Exception:
+                pass
+            raise
+        escritos += 1
+    log.info(f"  ✓ Resultado remitos · partido: index ({len(idx)} remitos) + "
+             f"detalle en {RR_DIRNAME} ({escritos} reescritos, {iguales} sin cambios)")
+
+
 def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     """v15.59: resultado económico por remito de venta.
 
@@ -10560,6 +10646,8 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
         "remitos": remitos_out,
     }
     guardar(salida, carpeta_out, "resultado_remitos.json")
+    # v15.76: el 07 baja el indice y las filas del remito que elige, no esto.
+    _rr_guardar_particionado(salida, carpeta_out, log)
     log.info(f"  ✓ Resultado por remito: {len(remitos_out)} remitos desde {RR_DESDE} · "
              f"{n_venta} egresos de venta · cobertura {salida['meta']['cobertura_global_pct']}%")
     log.info(f"  ✓ Resultado remitos · precios: {_mc['filas_liq']} liquidación (c/gastos, "
