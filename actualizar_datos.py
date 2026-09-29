@@ -4929,6 +4929,23 @@ def main():
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["resultado_remitos"] = {"ok": False, "error": str(e)}
 
+    # ── GASOIL REPARTIDO POR MAQUINA (v15.77) ──────────────────
+    # Solo publica los litros; la distribucion contable la hace el portal de
+    # costos. Si WinCampo no responde, queda el JSON anterior.
+    separador("Gasoil repartido por maquina")
+    try:
+        _gs = generar_gasoil_repartido(carpeta, log)
+        resumen["modulos"]["gasoil_repartido"] = {
+            "ok":       _gs is not None,
+            "entregas": _gs["meta"]["n_entregas"] if _gs else 0,
+            "litros":   _gs["meta"]["litros_total"] if _gs else 0,
+            "maquinas": _gs["meta"]["n_maquinas"] if _gs else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_gasoil_repartido falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["gasoil_repartido"] = {"ok": False, "error": str(e)}
+
     # ── CARAVANAS FANTASMA (v15.69) ────────────────────────────
     # Va después del cruce: reusa la cache de Datamars y el stock de este tick.
     separador("Caravanas fantasma")
@@ -9823,6 +9840,173 @@ def generar_resultados_ventas(carpeta_out, log=None):
 # tick siguiente ya no están en stock con ese EID y desaparecen solas de la
 # lista: no hay nada que marcar a mano.
 RR_FANT_MIN_DIAS = 7   # si ingresó hace <= 7 días, la lectura es su pesada de ingreso
+
+
+# ════════════════════════════════════════════════════════════════
+# v15.77 · LITROS DE GASOIL REPARTIDOS POR MAQUINA (WinCampo)
+# ════════════════════════════════════════════════════════════════
+# Nicolas quiere que el gasto contable de combustible (Physis, cuenta
+# 0402020101, imputado casi todo al centro 0903001 "Maquinarias Varias") se
+# distribuya entre las maquinas segun los litros que realmente se entregaron
+# en el campo. La distribucion la hace el PORTAL DE COSTOS (otro proyecto);
+# aca solo se publican los litros como un JSON mas del tick.
+#
+# Los nombres de maquina van TAL CUAL los escribe WinCampo, con espacios
+# dobles incluidos ('MERCEDEZ  BENZ CYR147 (TERCERO)'): la tabla de
+# equivalencias maquina -> centro de costo vive en el portal de costos y
+# necesita el texto exacto. Normalizar aca romperia el match del otro lado.
+GASOIL_DESDE    = "2025-01-01"   # el JSON contable arranca en 2024-12
+GASOIL_INSUMO   = "DIESEL"       # COD_INSUMO 99; el reporte trae el nombre
+GASOIL_CACHE    = "wincampo_cache"
+GASOIL_MAX_DET  = 2000           # mas que esto: el detalle no se publica
+
+
+def generar_gasoil_repartido(carpeta_out, log=None):
+    """Publica gasoil_repartido.json (litros por mes y por maquina).
+
+    Cache por anio en datos\\wincampo_cache\\insumo_repartido_<anio>.json: los
+    anios cerrados no se vuelven a pedir, solo el corriente. Si el endpoint
+    falla, NO se cae el tick: warning y queda el JSON anterior (mismo patron
+    que fantasmas.json).
+
+    Devuelve el dict publicado o None.
+    """
+    if log is None:
+        log = logging.getLogger("gasoil")
+    from datetime import date as _date
+    hoy = _date.today()
+    anio_hoy = hoy.year
+    ruta_out = Path(carpeta_out) / "gasoil_repartido.json"
+    cache_dir = Path(carpeta_out) / GASOIL_CACHE
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        from wincampo_source import WinCampoAPI
+        wc = WinCampoAPI()
+        filas, desde_real = [], GASOIL_DESDE
+        for anio in range(int(GASOIL_DESDE[:4]), anio_hoy + 1):
+            cache = cache_dir / f"insumo_repartido_{anio}.json"
+            if anio < anio_hoy and cache.exists():
+                try:
+                    filas += json.loads(cache.read_text(encoding="utf-8"))
+                    log.info(f"  · {anio}: desde cache ({cache.name})")
+                    continue
+                except Exception as e:
+                    log.warning(f"  ⚠ cache {cache.name} ilegible ({e}), se vuelve a pedir")
+            d1 = max(f"{anio}-01-01", GASOIL_DESDE)
+            d2 = min(f"{anio}-12-31", hoy.isoformat())
+            # Sin cap de rango: verificado que 638 d en una llamada dan lo
+            # mismo que mes a mes (ver fetch_insumo_repartido).
+            fs = wc.fetch_insumo_repartido(d1, d2)
+            filas += fs
+            try:
+                cache.write_text(json.dumps(fs, ensure_ascii=False,
+                                            separators=(",", ":")), encoding="utf-8")
+            except Exception as e:
+                log.warning(f"  ⚠ no pude cachear {cache.name}: {e}")
+    except Exception as e:
+        log.warning(f"  ⚠ gasoil repartido: WinCampo no respondio ({e}); "
+                    f"queda el JSON anterior")
+        return None
+
+    raw_keys = sorted({k for f in filas for k in f})
+
+    def _lt(v):
+        try:
+            return float(str(v or 0).replace(",", "."))
+        except (TypeError, ValueError):
+            return 0.0
+
+    por_mes, entregas, maquinas = {}, [], {}
+    n_diesel = 0
+    for f in filas:
+        if str(f.get("INSUMO") or "").strip().upper() != GASOIL_INSUMO:
+            continue
+        # COD_INSUMO no viene en este reporte; si algun dia viene, respetarlo.
+        cod = str(f.get("COD_INSUMO") or "").strip()
+        if cod and cod != "99":
+            continue
+        fecha = str(f.get("FECHA") or "")[:10]
+        if not fecha or fecha < GASOIL_DESDE:
+            continue
+        n_diesel += 1
+        litros = _lt(f.get("CANTIDAD"))
+        maq = str(f.get("DESC_VEHICULO") or "").strip()
+        mes = fecha[:7]
+        m = por_mes.setdefault(mes, {"litros": 0.0, "n": 0, "por_maquina": {},
+                                     "sin_maquina": {"litros": 0.0, "n": 0}})
+        m["litros"] += litros
+        m["n"] += 1
+        # Sin maquina: nombre vacio o el placeholder de WinCampo. NO se pierden.
+        if not maq or maq.upper() in ("SIN MAQUINA", "SIN VEHICULO", "-"):
+            m["sin_maquina"]["litros"] += litros
+            m["sin_maquina"]["n"] += 1
+        else:
+            d = m["por_maquina"].setdefault(maq, {"litros": 0.0, "n": 0})
+            d["litros"] += litros
+            d["n"] += 1
+            mm = maquinas.setdefault(maq, {"litros": 0.0, "n": 0})
+            mm["litros"] += litros
+            mm["n"] += 1
+        entregas.append({"fecha": fecha, "litros": round(litros, 2), "maquina": maq,
+                         "sector": str(f.get("SECTOR") or "").strip() or None,
+                         "personal": str(f.get("PERSONAL") or "").strip() or None,
+                         "deposito": str(f.get("COD_DEPOSITO") or "").strip() or None,
+                         "obs": str(f.get("OBSERVACIONES") or "").strip() or None})
+
+    for m in por_mes.values():
+        m["litros"] = round(m["litros"], 2)
+        m["sin_maquina"]["litros"] = round(m["sin_maquina"]["litros"], 2)
+        for d in m["por_maquina"].values():
+            d["litros"] = round(d["litros"], 2)
+
+    entregas.sort(key=lambda x: (x["fecha"], x["maquina"]))
+    meses = sorted(por_mes)
+    salida = {
+        "meta": {
+            "generado":    datetime.now().isoformat(),
+            "fuente":      "wincampo movimiento_insumo (reporte_elegido=egreso_combustible)",
+            "insumo":      GASOIL_INSUMO,
+            "cod_insumo":  "99",
+            "desde":       GASOIL_DESDE,
+            "hasta":       hoy.isoformat(),
+            "meses":       meses,
+            "n_entregas":  n_diesel,
+            "litros_total": round(sum(v["litros"] for v in por_mes.values()), 2),
+            "n_maquinas":  len(maquinas),
+            # Para que el portal de costos pueda armar/auditar su tabla de
+            # equivalencias: nombre exacto + litros + entregas, de mayor a menor.
+            "maquinas":    dict(sorted(
+                ((k, {"litros": round(v["litros"], 2), "n": v["n"]})
+                 for k, v in maquinas.items()), key=lambda x: -x[1]["litros"])),
+            "raw_keys":    raw_keys,
+            "detalle_publicado": len(entregas) <= GASOIL_MAX_DET,
+        },
+        "por_mes": {k: por_mes[k] for k in meses},
+    }
+    if len(entregas) <= GASOIL_MAX_DET:
+        salida["entregas"] = entregas
+    else:
+        # Demasiado detalle para publicarlo: queda al lado, sin subir al repo
+        # (el .bat copia datos\*.json, asi que este va a una subcarpeta).
+        try:
+            det = cache_dir / "gasoil_repartido_detalle.json"
+            det.write_text(json.dumps({"entregas": entregas}, ensure_ascii=False,
+                                      separators=(",", ":")), encoding="utf-8")
+            log.info(f"  · detalle ({len(entregas)} entregas) en {det.name}, no se publica")
+        except Exception as e:
+            log.warning(f"  ⚠ no pude guardar el detalle: {e}")
+
+    guardar(salida, carpeta_out, "gasoil_repartido.json")
+    _suma_mes = round(sum(v["litros"] for v in por_mes.values()), 2)
+    _suma_ent = round(sum(e["litros"] for e in entregas), 2)
+    if abs(_suma_mes - _suma_ent) > 0.01:
+        log.warning(f"  ⚠ gasoil: por_mes suma {_suma_mes} pero entregas {_suma_ent}")
+    _sm = round(sum(v["sin_maquina"]["litros"] for v in por_mes.values()), 2)
+    log.info(f"  ✓ Gasoil repartido: {n_diesel} entregas · {_suma_mes:,.0f} L · "
+             f"{len(maquinas)} maquinas · {len(meses)} meses ({meses[0] if meses else '-'} "
+             f"a {meses[-1] if meses else '-'}) · sin maquina {_sm:,.0f} L")
+    return salida
 
 
 def generar_fantasmas(carpeta_out, periodo, egresos_data, log=None, stock_data=None):

@@ -682,3 +682,81 @@ class WinCampoAPI:
             "EGRESO":             f("EGRESO"),
             "PRODUCCION":         f("PRODUCCION"),
         }
+
+    # ════════════════════════════════════════════════════════════════
+    #  TABLA 6 — Insumo repartido / egreso de combustible (v15.77)
+    # ════════════════════════════════════════════════════════════════
+    def fetch_insumo_repartido(self, fecha_desde, fecha_hasta):
+        """Litros de combustible entregados en el campo, por maquina.
+
+        DESCUBRIMIENTO DEL ENDPOINT (2026-09-29). La ruta del front
+        `#/lst_insumo_repartido` **NO** existe en la API: pegarle a
+        `api/lst_insumo_repartido` devuelve
+        `{"message": "The route api/lst_insumo_repartido could not be found."}`
+        con cualquier combinacion de parametros (probadas 14 variantes del
+        nombre). El nombre real salio del bundle de la SPA:
+
+            https://elgarabi.wincampo.com/js/app.<hash>.js
+              -> la ruta `lst_insumo_repartido` tiene name:"mov_insumo" y su
+                 componente es el modulo 54159, que vive en el chunk 4074
+            https://elgarabi.wincampo.com/js/4074.<hash>.js
+              -> listar(e){ ... baseURL + "movimiento_insumo" ... }
+
+        Es `GET api/movimiento_insumo` y los `reporte_elegido` validos son
+        `movimiento_insumos`, `totalizado_mes`, `egreso_combustible` y
+        `egreso_insumos`. Con un `reporte_elegido` que no este en esa lista
+        devuelve HTTP 500 `Undefined variable $listaJson` (no 4xx: parece un
+        bug real y es solo el parametro mal).
+
+        Shape verificado (`reporte_elegido=egreso_combustible`):
+            {"movimiento_insumo": {"detalle": [
+                {"INSUMO": "DIESEL", "FECHA": "2026-08-01 00:00:00.000",
+                 "PERSONAL": "ADMINISTRADOR", "DESC_VEHICULO": "JONH DEERE 3550",
+                 "SECTOR": "MAQUINARIAS", "HORAS": ".00", "KM": ".00",
+                 "CANTIDAD": "20.0000", "OBSERVACIONES": "...",
+                 "COD_DEPOSITO": "1"}, ...]}}
+
+        `DESC_VEHICULO` es el nombre de la maquina TAL CUAL lo escribe
+        WinCampo (con espacios dobles incluidos: 'MERCEDEZ  BENZ CYR147
+        (TERCERO)'). NO normalizarlo: la tabla de equivalencias maquina ->
+        centro de costo vive en el portal de costos y necesita el texto exacto
+        (ella normaliza para comparar).
+
+        SIN cap de rango, a diferencia de `lst_egresos_hacienda` (500 d):
+        verificado el 2026-09-29 que una sola llamada de 638 dias
+        (2025-01-01 a 2026-09-30) devuelve exactamente lo mismo que 21
+        llamadas mes a mes — 2.002 filas y 180.810,00 L en los dos casos.
+
+        Args:
+            fecha_desde, fecha_hasta: ISO (`YYYY-MM-DD`). Se mandan compactas.
+
+        Returns:
+            list[dict] con las filas CRUDAS de `detalle` (todos los insumos que
+            devuelva el reporte; el filtro de DIESEL lo hace el pipeline).
+        """
+        params = {
+            "reporte_elegido":   "egreso_combustible",
+            "fecha_desde":       str(fecha_desde).replace("-", ""),
+            "fecha_hasta":       str(fecha_hasta).replace("-", ""),
+            # El front los manda siempre, vacios = sin filtrar. Omitirlos
+            # tambien anda, pero se replica la llamada del front tal cual.
+            "id_insumo":         "",
+            "id_deposito":       "",
+            "id_rubro":          "",
+            "id_vehiculo":       "",
+            "agrupado_sino":     "N",
+            "agrupado_deposito": "N",
+            "tc_ms":             "",
+        }
+        data = self._get("movimiento_insumo", params=params)
+        raiz = data.get("movimiento_insumo") if isinstance(data, dict) else None
+        if isinstance(raiz, dict):
+            filas = raiz.get("detalle")
+        else:
+            filas = raiz
+        if not isinstance(filas, list):
+            raise RuntimeError(
+                "Insumo repartido: response sin movimiento_insumo.detalle lista. "
+                f"Keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
+        log.info(f"Insumo repartido: {len(filas)} entregas ({fecha_desde} a {fecha_hasta})")
+        return filas
