@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-09-30T09:09:56.691310",
+    "generado": "2026-09-30T10:10:33.827381",
     "desde": "2024-01-09",
     "hasta": "2026-09-29",
     "dias": 995,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-09-30",
     "n_tropas": 577,
-    "n_grupos": 986,
+    "n_grupos": 987,
     "excluidas": 176,
     "excluidas_por": [
       "destete",
@@ -2699,38 +2699,52 @@
       "fecha": "2026-09-28",
       "consignatario": "DARWASH SA",
       "proveedor": "DARWASH SA",
-      "cabezas": 77,
-      "kg_ingreso": 41125.0,
+      "cabezas": 153,
+      "kg_ingreso": 76347.0,
       "categorias": [
+        "Ternero",
         "Vaca"
       ],
-      "kg_cab": 534.1,
+      "kg_cab": 499.0,
       "categorias_remito": [
+        "Ternero",
         "Vaca"
       ],
       "remito": [
         {
+          "categoria": "Ternero",
+          "cabezas": 3,
+          "kg_ingreso": 491.0,
+          "kg_cab": 163.7
+        },
+        {
           "categoria": "Vaca",
-          "cabezas": 77,
-          "kg_ingreso": 41125.0,
-          "kg_cab": 534.1
+          "cabezas": 150,
+          "kg_ingreso": 75856.0,
+          "kg_cab": 505.7
         }
       ],
       "categorias_real": [
         {
           "categoria": "Vaca",
-          "cabezas": 77,
-          "kg_ingreso": 41125.0,
-          "kg_cab": 534.1
+          "cabezas": 150,
+          "kg_ingreso": 75854.6,
+          "kg_cab": 505.7
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 3,
+          "kg_ingreso": 492.0,
+          "kg_cab": 164.0
         }
       ],
-      "cab_real": 77,
+      "cab_real": 153,
       "cobertura_pct": 100.0,
       "dif_remito": 0,
       "cab_sin_caravana": 0,
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
-      "en_stock": 77,
+      "en_stock": 153,
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 0
@@ -46623,12 +46637,30 @@
       "origen": "FERIAS Y REMATES",
       "localidad": "WASHINGTON",
       "destino_compra": "CONSUMO",
-      "camiones": 1,
+      "camiones": 2,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 3,
+      "kg_ingreso": 492.0,
+      "kg_cab": 164.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "BUL.DAR.23/09/2026",
+      "tropa_norm": "BULDAR230926",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-09-28",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
       "categoria": "Vaca",
       "categoria_sigla": "VA",
-      "cabezas": 77,
-      "kg_ingreso": 41125.0,
-      "kg_cab": 534.1,
+      "cabezas": 150,
+      "kg_ingreso": 75854.6,
+      "kg_cab": 505.7,
       "fuente": "caravanas"
     },
     {
