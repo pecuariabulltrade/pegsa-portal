@@ -1,21 +1,21 @@
 {
   "meta": {
-    "generado": "2026-09-30T10:10:33.827381",
+    "generado": "2026-09-30T11:10:39.820406",
     "desde": "2024-01-09",
     "hasta": "2026-09-29",
     "dias": 995,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-09-30",
-    "n_tropas": 577,
-    "n_grupos": 987,
-    "excluidas": 176,
+    "n_tropas": 578,
+    "n_grupos": 988,
+    "excluidas": 177,
     "excluidas_por": [
       "destete",
       "traslado"
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 577,
+      "caravanas": 578,
       "remito": 0,
       "distintas_al_remito": 164,
       "cob_min": 90,
@@ -25900,7 +25900,7 @@
       "cab_sin_caravana": 0,
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
-      "en_stock": 37,
+      "en_stock": 36,
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 0
@@ -26734,6 +26734,48 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 0,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
+    "TAPDAR230926": {
+      "tropa": "TAP.DAR.23/09/2026",
+      "hotelero": "LAS TAPERAS",
+      "fecha": "2026-09-28",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 30,
+      "kg_ingreso": 8995.0,
+      "categorias": [
+        "Ternero"
+      ],
+      "kg_cab": 299.8,
+      "categorias_remito": [
+        "Ternero"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 30,
+          "kg_ingreso": 8995.0,
+          "kg_cab": 299.8
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 30,
+          "kg_ingreso": 8971.9,
+          "kg_cab": 299.1
+        }
+      ],
+      "cab_real": 30,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 30,
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 0
@@ -46661,6 +46703,24 @@
       "cabezas": 150,
       "kg_ingreso": 75854.6,
       "kg_cab": 505.7,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "TAP.DAR.23/09/2026",
+      "tropa_norm": "TAPDAR230926",
+      "hotelero": "LAS TAPERAS",
+      "fecha_ingreso": "2026-09-28",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 30,
+      "kg_ingreso": 8971.9,
+      "kg_cab": 299.1,
       "fuente": "caravanas"
     },
     {
