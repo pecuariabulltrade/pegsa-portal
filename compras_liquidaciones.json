@@ -1,15 +1,15 @@
 {
   "meta": {
-    "generado": "2026-10-01T21:10:47.026520",
+    "generado": "2026-10-01T22:11:18.539232",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 148,
+    "n_supabase": 149,
     "n_archivos": 143,
-    "n_liquidaciones": 145,
+    "n_liquidaciones": 146,
     "n_anuladas": 3,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 163,
+      "ok": 164,
       "revisar": 0,
       "sin_liquidar": 294,
       "terceros": 121,
@@ -1241,6 +1241,85 @@
           "detalle": "BUL.DAR.21/11/25 · Vaquillona · 13,1 % (290,0 vs 328,1 kg/cab)"
         }
       ]
+    },
+    {
+      "id": "BULDAR230926_2026-09-28",
+      "fecha": "2026-09-28",
+      "consignataria": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "nro_liquidacion": "11-9915/9914",
+      "archivo": "2026-09-24 Compra Darwash (BULLTRADE)",
+      "comision_modo": "pct",
+      "comision_valor": 0.03,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-10-02T00:23:26.880Z",
+      "version_portal": "v15.74.16",
+      "categorias": [
+        {
+          "kg_wc": 492,
+          "tropa": "BUL.DAR.23/09/2026",
+          "kg_liq": 465,
+          "importe": 2370000.003,
+          "hotelero": "PEGSA",
+          "categoria": "Ternero",
+          "kg_wc_cab": 164.0,
+          "precio_kg": 5096.7742,
+          "cabezas_wc": 3,
+          "gastos_cat": 0.0,
+          "importe_cg": 2441100.0030900002,
+          "kg_liq_cab": 155.0,
+          "tropa_norm": "BULDAR230926",
+          "cabezas_liq": 3,
+          "precio_modo": "kg",
+          "comision_cat": 71100.00009,
+          "desbaste_pct": -5.806451612903226,
+          "precio_kg_cg": 5249.677426,
+          "precio_valor": 5096.7742,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 813700.00103
+        },
+        {
+          "kg_wc": 75854.6,
+          "tropa": "BUL.DAR.23/09/2026",
+          "kg_liq": 75855,
+          "importe": 245792899.60875002,
+          "hotelero": "PEGSA",
+          "categoria": "Vaca",
+          "kg_wc_cab": 505.69733333333335,
+          "precio_kg": 3240.29925,
+          "cabezas_wc": 150,
+          "gastos_cat": 0.0,
+          "importe_cg": 253166686.59701252,
+          "kg_liq_cab": 505.7,
+          "tropa_norm": "BULDAR230926",
+          "cabezas_liq": 150,
+          "precio_modo": "kg",
+          "comision_cat": 7373786.988262501,
+          "desbaste_pct": 0.0005273218640778137,
+          "precio_kg_cg": 3337.5082275000004,
+          "precio_valor": 3240.29925,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1687777.9106467501
+        }
+      ],
+      "total": {
+        "cabezas_liq": 153.0,
+        "kg_liq": 76320.0,
+        "cabezas_wc": 153.0,
+        "kg_wc": 76346.6,
+        "importe": 248162899.61175,
+        "comision": 7444886.988352501,
+        "gastos": 0.0,
+        "importe_cg": 255607786.6001025,
+        "precio_kg": 3251.610319860456,
+        "precio_kg_cg": 3349.15862945627,
+        "precio_cab_cg": 1670639.1281052453,
+        "recargo_pct": 3.0000000000000027,
+        "desbaste_pct": -0.03485324947589593,
+        "cabezas_dif": 0.0
+      }
     },
     {
       "id": "BULDAR251125_2025-11-25",
@@ -13417,6 +13496,48 @@
         "desbaste_aceptado_vigente": true
       }
     },
+    "BULDAR230926": {
+      "Ternero": {
+        "liq_id": "BULDAR230926_2026-09-28",
+        "fecha": "2026-09-28",
+        "liq_ids": [
+          "BULDAR230926_2026-09-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 3.0,
+        "kg_liq": 465.0,
+        "precio_kg": 5096.7742,
+        "precio_kg_cg": 5249.677426,
+        "precio_cab_cg": 813700.00103,
+        "comision_cat": 71100.00009,
+        "gastos_cat": 0.0,
+        "importe": 2370000.003,
+        "importe_cg": 2441100.0030900002,
+        "desbaste_pct": -5.806451612903226,
+        "hotelero": "PEGSA",
+        "desbaste_aceptado_vigente": false
+      },
+      "Vaca": {
+        "liq_id": "BULDAR230926_2026-09-28",
+        "fecha": "2026-09-28",
+        "liq_ids": [
+          "BULDAR230926_2026-09-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 150.0,
+        "kg_liq": 75855.0,
+        "precio_kg": 3240.29925,
+        "precio_kg_cg": 3337.5082275000004,
+        "precio_cab_cg": 1687777.9106467501,
+        "comision_cat": 7373786.988262501,
+        "gastos_cat": 0.0,
+        "importe": 245792899.60875002,
+        "importe_cg": 253166686.59701252,
+        "desbaste_pct": 0.0005273218640778137,
+        "hotelero": "PEGSA",
+        "desbaste_aceptado_vigente": false
+      }
+    },
     "BULDAR251125": {
       "Ternero": {
         "liq_id": "BULDAR251125_2025-11-25",
@@ -19544,7 +19665,7 @@
       ]
     },
     "BULDAR230926": {
-      "estado": "sin_liquidar",
+      "estado": "ok",
       "motivos": {},
       "avisos": []
     },
@@ -20958,6 +21079,11 @@
       "avisos": []
     },
     "PEGDAR230725": {
+      "estado": "sin_liquidar",
+      "motivos": {},
+      "avisos": []
+    },
+    "PEGDAR230926": {
       "estado": "sin_liquidar",
       "motivos": {},
       "avisos": []
