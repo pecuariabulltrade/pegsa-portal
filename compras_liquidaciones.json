@@ -1,18 +1,18 @@
 {
   "meta": {
-    "generado": "2026-10-02T20:09:55.972647",
+    "generado": "2026-10-02T21:09:58.986525",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 149,
+    "n_supabase": 151,
     "n_archivos": 143,
-    "n_liquidaciones": 146,
+    "n_liquidaciones": 148,
     "n_anuladas": 3,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 164,
-      "revisar": 0,
+      "ok": 165,
+      "revisar": 1,
       "sin_liquidar": 294,
-      "terceros": 121,
+      "terceros": 119,
       "tol_kg_pct": 8,
       "tol_cab": 0
     }
@@ -4397,6 +4397,62 @@
         "precio_cab_cg": 1461323.7701466666,
         "recargo_pct": 2.0000000000000018,
         "desbaste_pct": -2.4671643201360633,
+        "cabezas_dif": 0.0
+      }
+    },
+    {
+      "id": "LTAHUI010926_2026-09-01",
+      "fecha": "2026-09-01",
+      "consignataria": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "BORELLO DANIEL",
+      "nro_liquidacion": "0004-0012385",
+      "archivo": "2026-09-01 FRH las taperas",
+      "comision_modo": "pct",
+      "comision_valor": 0.02,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-10-02T23:49:47.372Z",
+      "version_portal": "v15.74.16",
+      "categorias": [
+        {
+          "kg_wc": 18800,
+          "tropa": "LTA.HUI.01/09/2026",
+          "kg_liq": 17610,
+          "importe": 75723000.0,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Novillo",
+          "kg_wc_cab": 587.5,
+          "precio_kg": 4300.0,
+          "cabezas_wc": 32,
+          "gastos_cat": 0.0,
+          "importe_cg": 77237460.0,
+          "kg_liq_cab": 550.3125,
+          "tropa_norm": "LTAHUI010926",
+          "cabezas_liq": 32,
+          "precio_modo": "kg",
+          "comision_cat": 1514460.0,
+          "desbaste_pct": -6.757524134014764,
+          "precio_kg_cg": 4386.0,
+          "precio_valor": 4300,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 2413670.625
+        }
+      ],
+      "total": {
+        "cabezas_liq": 32.0,
+        "kg_liq": 17610.0,
+        "cabezas_wc": 32.0,
+        "kg_wc": 18800.0,
+        "importe": 75723000.0,
+        "comision": 1514460.0,
+        "gastos": 0.0,
+        "importe_cg": 77237460.0,
+        "precio_kg": 4300.0,
+        "precio_kg_cg": 4386.0,
+        "precio_cab_cg": 2413670.625,
+        "recargo_pct": 2.0000000000000018,
+        "desbaste_pct": -6.757524134014764,
         "cabezas_dif": 0.0
       }
     },
@@ -12649,6 +12705,108 @@
       ]
     },
     {
+      "id": "TAPDAR090926_2026-09-09",
+      "fecha": "2026-09-09",
+      "consignataria": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "nro_liquidacion": "0011-009870",
+      "archivo": "2026-09-09 Compra Darwash",
+      "comision_modo": "monto",
+      "comision_valor": 560430,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-10-02T23:54:38.045Z",
+      "version_portal": "v15.74.16",
+      "categorias": [
+        {
+          "kg_wc": 759.9,
+          "tropa": "TAP.DAR.09/09/2026",
+          "kg_liq": 760,
+          "importe": 3718404.88,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Ternera",
+          "kg_wc_cab": 151.98,
+          "precio_kg": 4892.638,
+          "cabezas_wc": 5,
+          "gastos_cat": 0.0,
+          "importe_cg": 3812636.472920354,
+          "kg_liq_cab": 152.0,
+          "tropa_norm": "TAPDAR090926",
+          "cabezas_liq": 5,
+          "precio_modo": "kg",
+          "comision_cat": 94231.59292035399,
+          "desbaste_pct": 0.013157894736848839,
+          "precio_kg_cg": 5016.626938053098,
+          "precio_valor": 4892.638,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 762527.2945840708
+        },
+        {
+          "kg_wc": 966.9,
+          "tropa": "TAP.DAR.09/09/2026",
+          "kg_liq": 1260,
+          "importe": 4096499.9922,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Vaca",
+          "kg_wc_cab": 322.3,
+          "precio_kg": 3251.19047,
+          "cabezas_wc": 3,
+          "gastos_cat": 0.0,
+          "importe_cg": 4252726.054146903,
+          "kg_liq_cab": 420.0,
+          "tropa_norm": "TAPDAR090926",
+          "cabezas_liq": 3,
+          "precio_modo": "kg",
+          "comision_cat": 156226.06194690266,
+          "desbaste_pct": 23.26190476190476,
+          "precio_kg_cg": 3375.179408053097,
+          "precio_valor": 3251.19047,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1417575.351382301
+        },
+        {
+          "kg_wc": 2503.2,
+          "tropa": "TAP.DAR.09/09/2026",
+          "kg_liq": 2500,
+          "importe": 12231595.0,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Vaquillona",
+          "kg_wc_cab": 250.32,
+          "precio_kg": 4892.638,
+          "cabezas_wc": 10,
+          "gastos_cat": 0.0,
+          "importe_cg": 12541567.345132744,
+          "kg_liq_cab": 250.0,
+          "tropa_norm": "TAPDAR090926",
+          "cabezas_liq": 10,
+          "precio_modo": "kg",
+          "comision_cat": 309972.34513274336,
+          "desbaste_pct": -0.12799999999999728,
+          "precio_kg_cg": 5016.626938053098,
+          "precio_valor": 4892.638,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1254156.7345132744
+        }
+      ],
+      "total": {
+        "cabezas_liq": 18.0,
+        "kg_liq": 4520.0,
+        "cabezas_wc": 18.0,
+        "kg_wc": 4230.0,
+        "importe": 20046499.8722,
+        "comision": 560430.0,
+        "gastos": 0.0,
+        "importe_cg": 20606929.8722,
+        "precio_kg": 4435.06634340708,
+        "precio_kg_cg": 4559.055281460177,
+        "precio_cab_cg": 1144829.4373444444,
+        "recargo_pct": 2.7956501313089133,
+        "desbaste_pct": 6.415929203539824,
+        "cabezas_dif": 0.0
+      }
+    },
+    {
       "id": "TAPFDW240925_2025-09-24",
       "fecha": "2025-09-24",
       "consignataria": "DARWASH SA",
@@ -15100,6 +15258,28 @@
         "importe": 31779999.879,
         "importe_cg": 32415599.87658,
         "desbaste_pct": -3.0525087514585727,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      }
+    },
+    "LTAHUI010926": {
+      "Novillo": {
+        "liq_id": "LTAHUI010926_2026-09-01",
+        "fecha": "2026-09-01",
+        "liq_ids": [
+          "LTAHUI010926_2026-09-01"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 32.0,
+        "kg_liq": 17610.0,
+        "precio_kg": 4300.0,
+        "precio_kg_cg": 4386.0,
+        "precio_cab_cg": 2413670.625,
+        "comision_cat": 1514460.0,
+        "gastos_cat": 0.0,
+        "importe": 75723000.0,
+        "importe_cg": 77237460.0,
+        "desbaste_pct": -6.757524134014764,
         "hotelero": "LAS TAPERAS",
         "desbaste_aceptado_vigente": false
       }
@@ -19272,6 +19452,68 @@
         "desbaste_aceptado_vigente": false
       }
     },
+    "TAPDAR090926": {
+      "Ternera": {
+        "liq_id": "TAPDAR090926_2026-09-09",
+        "fecha": "2026-09-09",
+        "liq_ids": [
+          "TAPDAR090926_2026-09-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 5.0,
+        "kg_liq": 760.0,
+        "precio_kg": 4892.638,
+        "precio_kg_cg": 5016.626938053098,
+        "precio_cab_cg": 762527.2945840708,
+        "comision_cat": 94231.59292035399,
+        "gastos_cat": 0.0,
+        "importe": 3718404.88,
+        "importe_cg": 3812636.472920354,
+        "desbaste_pct": 0.013157894736848839,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      },
+      "Vaca": {
+        "liq_id": "TAPDAR090926_2026-09-09",
+        "fecha": "2026-09-09",
+        "liq_ids": [
+          "TAPDAR090926_2026-09-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 3.0,
+        "kg_liq": 1260.0,
+        "precio_kg": 3251.19047,
+        "precio_kg_cg": 3375.179408053097,
+        "precio_cab_cg": 1417575.351382301,
+        "comision_cat": 156226.06194690266,
+        "gastos_cat": 0.0,
+        "importe": 4096499.9922,
+        "importe_cg": 4252726.054146903,
+        "desbaste_pct": 23.26190476190476,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      },
+      "Vaquillona": {
+        "liq_id": "TAPDAR090926_2026-09-09",
+        "fecha": "2026-09-09",
+        "liq_ids": [
+          "TAPDAR090926_2026-09-09"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 10.0,
+        "kg_liq": 2500.0,
+        "precio_kg": 4892.638,
+        "precio_kg_cg": 5016.626938053098,
+        "precio_cab_cg": 1254156.7345132744,
+        "comision_cat": 309972.34513274336,
+        "gastos_cat": 0.0,
+        "importe": 12231595.0,
+        "importe_cg": 12541567.345132744,
+        "desbaste_pct": -0.12799999999999728,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      }
+    },
     "TAPFDW240925": {
       "Novillo": {
         "liq_id": "TAPFDW240925_2025-09-24",
@@ -20421,7 +20663,7 @@
       "avisos": []
     },
     "LTAHUI010926": {
-      "estado": "terceros",
+      "estado": "ok",
       "motivos": {},
       "avisos": []
     },
@@ -22367,8 +22609,12 @@
       "avisos": []
     },
     "TAPDAR090926": {
-      "estado": "terceros",
-      "motivos": {},
+      "estado": "revisar",
+      "motivos": {
+        "Vaca": [
+          "kg_23.3%"
+        ]
+      },
       "avisos": []
     },
     "TAPDAR100925": {

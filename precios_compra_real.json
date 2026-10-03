@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generado": "2026-10-02T20:09:56.046345",
+    "generado": "2026-10-02T21:09:59.081563",
     "archivo": "compras de hacienda.xlsx",
     "ventana_dias": 90,
     "desde": "2026-07-04",
@@ -13,11 +13,11 @@
     },
     "fuente": "liquidaciones+excel",
     "por_fuente": {
-      "liquidacion": 311,
+      "liquidacion": 315,
       "excel": 133
     },
-    "tropas_solo_liquidacion": 65,
-    "meses_repo_liquidacion": 80
+    "tropas_solo_liquidacion": 67,
+    "meses_repo_liquidacion": 82
   },
   "por_categoria": {
     "Vaca": {
@@ -7345,6 +7345,38 @@
       },
       "fuente": "liquidacion"
     },
+    "LTAHUI010926": {
+      "tropa": "LTAHUI010926",
+      "precio_kg": 4300.0,
+      "kg": 0.0,
+      "cabezas": 0,
+      "comision": null,
+      "filas": 0,
+      "por_categoria": {
+        "Novillo": {
+          "precio_kg": 4300.0,
+          "precio_kg_pond": 4300.0,
+          "precio_kg_cg": 4386.0,
+          "precio_cab_cg": 2413670.62,
+          "comision": 0.02,
+          "gastos": 0.0,
+          "kg": 17610.0,
+          "kg_liq": 17610.0,
+          "cab_liq": 32.0,
+          "desbaste_pct": -6.76,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "LTAHUI010926_2026-09-01",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "ok",
+          "liq_motivos_tropa": null,
+          "liq_desbaste_aceptado": false
+        }
+      },
+      "fuente": "liquidacion"
+    },
     "LTAVIL190826": {
       "tropa": "LTAVIL190826",
       "precio_kg": 3680.0,
@@ -9467,6 +9499,80 @@
       },
       "fuente": "liquidacion"
     },
+    "TAPDAR090926": {
+      "tropa": "TAPDAR090926",
+      "precio_kg": 4435.07,
+      "kg": 0.0,
+      "cabezas": 0,
+      "comision": null,
+      "filas": 0,
+      "por_categoria": {
+        "Ternera": {
+          "precio_kg": 4892.64,
+          "precio_kg_pond": 4892.64,
+          "precio_kg_cg": 5016.63,
+          "precio_cab_cg": 762527.29,
+          "comision": 0.025342,
+          "gastos": 0.0,
+          "kg": 760.0,
+          "kg_liq": 760.0,
+          "cab_liq": 5.0,
+          "desbaste_pct": 0.01,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "TAPDAR090926_2026-09-09",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "revisar",
+          "liq_motivos_tropa": "Vaca: kg_23.3%",
+          "liq_desbaste_aceptado": false
+        },
+        "Vaca": {
+          "precio_kg": 3251.19,
+          "precio_kg_pond": 3251.19,
+          "precio_kg_cg": 3375.18,
+          "precio_cab_cg": 1417575.35,
+          "comision": 0.038136,
+          "gastos": 0.0,
+          "kg": 1260.0,
+          "kg_liq": 1260.0,
+          "cab_liq": 3.0,
+          "desbaste_pct": 23.26,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "TAPDAR090926_2026-09-09",
+          "liq_semaforo": "revisar",
+          "liq_motivos": "kg_23.3%",
+          "liq_semaforo_tropa": "revisar",
+          "liq_motivos_tropa": "Vaca: kg_23.3%",
+          "liq_desbaste_aceptado": false
+        },
+        "Vaquillona": {
+          "precio_kg": 4892.64,
+          "precio_kg_pond": 4892.64,
+          "precio_kg_cg": 5016.63,
+          "precio_cab_cg": 1254156.73,
+          "comision": 0.025342,
+          "gastos": 0.0,
+          "kg": 2500.0,
+          "kg_liq": 2500.0,
+          "cab_liq": 10.0,
+          "desbaste_pct": -0.13,
+          "filas": 1,
+          "multiprecio": false,
+          "fuente": "liquidacion",
+          "liq_id": "TAPDAR090926_2026-09-09",
+          "liq_semaforo": "ok",
+          "liq_motivos": null,
+          "liq_semaforo_tropa": "revisar",
+          "liq_motivos_tropa": "Vaca: kg_23.3%",
+          "liq_desbaste_aceptado": false
+        }
+      },
+      "fuente": "liquidacion"
+    },
     "TAPFDW240925": {
       "tropa": "TAPFDW240925",
       "precio_kg": 5060.0,
@@ -9723,9 +9829,9 @@
         "fuente": "liquidacion"
       },
       "2026-09": {
-        "precio_kg": 4143.25,
-        "kg": 34070.0,
-        "cabezas": 71,
+        "precio_kg": 4196.66,
+        "kg": 51680.0,
+        "cabezas": 103,
         "fuente": "liquidacion"
       }
     },
@@ -9806,6 +9912,12 @@
         "precio_kg": 5545.16,
         "kg": 26105.0,
         "cabezas": 131,
+        "fuente": "liquidacion"
+      },
+      "2026-09": {
+        "precio_kg": 4892.64,
+        "kg": 760.0,
+        "cabezas": 5,
         "fuente": "liquidacion"
       }
     },
@@ -10055,9 +10167,9 @@
         "fuente": "liquidacion"
       },
       "2026-09": {
-        "precio_kg": 3330.86,
-        "kg": 123545.0,
-        "cabezas": 244,
+        "precio_kg": 3330.06,
+        "kg": 124805.0,
+        "cabezas": 247,
         "fuente": "liquidacion"
       }
     },
@@ -10138,6 +10250,12 @@
         "precio_kg": 4061.63,
         "kg": 47375.0,
         "cabezas": 111,
+        "fuente": "liquidacion"
+      },
+      "2026-09": {
+        "precio_kg": 4892.64,
+        "kg": 2500.0,
+        "cabezas": 10,
         "fuente": "liquidacion"
       }
     }
