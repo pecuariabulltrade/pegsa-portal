@@ -9642,6 +9642,132 @@ def _rv_leer_supabase(carpeta_out, log):
     return out, None
 
 
+# ── v15.79 · ORIGEN DEL INGRESO Y kg MS POR FILA (informe acumulado) ──
+# Nicolás (05/10/2026): "un top 10 de orígenes con mejor resultado y categoría,
+# pero el origen según lo que dice el INGRESO, no el número de tropa: si el
+# ingreso es de Darwash → Darwash; así achicamos y acumulamos".
+#
+# Cada fila de cada venta se cruza con `compras_ingresos.json` (generado antes
+# en el mismo tick) por la MISMA clave que usa el módulo 12:
+# `_norm_tropa(tropa_norm or tropa)` → `PEG.DAR.18/12/25` = `PEGDAR181225`.
+# Ojo: `tropa_norm` viene vacío en los snapshots viejos (v15.69.1), por eso se
+# cae a `tropa`; cruzar sólo por `tropa_norm` pierde ~60 filas.
+RV_ALIAS_ORIGEN = "origenes_alias.json"      # en datos\, {"VARIANTE": "GRUPO"}
+RV_CAMPOS_PROPIOS = {"DES": "El Descanso", "PDP": "Coloradito", "COL": "Coloradito"}
+# sufijos legales que se sacan del final (después de pasar puntos a espacios)
+_RV_SUFIJOS = ("S A C I F", "SACIF", "S A S", "SAS", "S A C", "SAC", "S R L", "SRL",
+               "R L", "S A", "SA", "Y CIA")
+
+
+def _rv_norm_origen(s):
+    """Proveedor del ingreso → texto para agrupar. Junta variantes de escritura,
+    no inventa grupos (eso es el alias manual):
+    `FERIA RODEO HUINCA S.R.L.` = `FERIA RODEO HUINCA S.R.L`,
+    `SOC. RURAL DE CARLOS CASARES` = `SOCIEDAD  RURAL DE  CARLOS  CASARES`."""
+    import re
+    import unicodedata
+    s = unicodedata.normalize("NFD", str(s or "").upper())
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = " ".join(s.replace(".", " ").replace(",", " ").split())
+    s = re.sub(r"\bSOCIEDAD ANONIMA\b", "", s)
+    s = re.sub(r"\bSOCIEDAD RURAL\b", "SOC RURAL", s)
+    s = re.sub(r"\bSOC RURAL DE\b", "SOC RURAL", s)
+    s = " ".join(s.split())
+    cambio = True
+    while cambio:                       # "XX S A Y CIA" saca los dos
+        cambio = False
+        for suf in _RV_SUFIJOS:
+            if s.endswith(" " + suf):
+                s = s[: -len(suf) - 1].strip()
+                cambio = True
+    return s
+
+
+def _rv_token_tropa(clave):
+    """`PEGELD230826` → `ELD`: el código del medio, para nombrar lo que no cruza."""
+    import re
+    m = re.match(r"^[A-Z]+", clave or "")
+    letras = m.group(0) if m else ""
+    for pre in ("BULL", "PEG", "PEC", "BUL", "UGM", "DAR"):
+        if letras.startswith(pre) and len(letras) > len(pre):
+            return letras[len(pre):]
+    return letras or (clave or "?")
+
+
+def _rv_enriquecer_filas(lista, carpeta_out, log):
+    """Agrega a cada fila `origen_ing`, `proveedor`, `consignatario` y, si el
+    snapshot no la trae, `kg_ms` estimada (`kg_ms_estimado: True`). Sólo toca el
+    JSON publicado: los snapshots de Supabase y los archivos quedan como están.
+    Devuelve el bloque `meta.origenes`. Nunca levanta excepción."""
+    import re
+    m = {"n_filas": 0, "n_cruzadas": 0, "n_propias": 0, "n_sin_ingreso": 0,
+         "cab_cruzadas": 0, "cab_propias": 0, "cab_sin_ingreso": 0,
+         "alias_aplicados": 0, "kg_ms_estimadas": 0, "sin_ingreso": {}, "compras": "ok"}
+    tropas = {}
+    try:
+        with (Path(carpeta_out) / "compras_ingresos.json").open(encoding="utf-8") as fh:
+            tropas = json.load(fh).get("tropas") or {}
+    except Exception as e:
+        m["compras"] = f"no pude leer compras_ingresos.json ({type(e).__name__})"
+        log.warning(f"  ⚠ Resultados de ventas: {m['compras']} — sin origen del ingreso")
+    alias = {}
+    try:
+        pa = Path(carpeta_out) / RV_ALIAS_ORIGEN
+        if pa.exists():
+            with pa.open(encoding="utf-8") as fh:
+                raw = json.load(fh) or {}
+            # las claves también se normalizan: el alias se escribe como se lee
+            alias = {_rv_norm_origen(k): str(v).strip() for k, v in raw.items()
+                     if not str(k).startswith("_") and str(v).strip()}
+    except Exception as e:
+        log.warning(f"  ⚠ Resultados de ventas: {RV_ALIAS_ORIGEN} ilegible ({e}) — sin alias")
+    re_prop = re.compile(RR_TROPAS_PROPIAS_RE)
+
+    for v in lista:
+        filas = v.get("filas") or []
+        al_tot = sum((f.get("alimento") or 0) for f in filas)
+        kgms_v = v.get("kg_ms") or 0
+        for f in filas:
+            m["n_filas"] += 1
+            cab = f.get("cabezas") or 0
+            clave = _norm_tropa(f.get("tropa_norm") or f.get("tropa"))
+            t = tropas.get(clave)
+            if t:
+                f["proveedor"] = t.get("proveedor")
+                f["consignatario"] = t.get("consignatario")
+                o = _rv_norm_origen(t.get("proveedor")) or "SIN PROVEEDOR"
+                m["n_cruzadas"] += 1
+                m["cab_cruzadas"] += cab
+            elif re_prop.match(clave):
+                f["proveedor"] = f["consignatario"] = None
+                o = "PROPIO · " + RV_CAMPOS_PROPIOS.get(clave[3:6], clave[3:6])
+                m["n_propias"] += 1
+                m["cab_propias"] += cab
+            else:
+                f["proveedor"] = f["consignatario"] = None
+                o = "SIN INGRESO · " + _rv_token_tropa(clave)
+                m["n_sin_ingreso"] += 1
+                m["cab_sin_ingreso"] += cab
+                tk = str(f.get("tropa") or "?")
+                m["sin_ingreso"][tk] = m["sin_ingreso"].get(tk, 0) + cab
+            if o in alias:
+                o = alias[o]
+                m["alias_aplicados"] += 1
+            f["origen_ing"] = o
+            # kg MS de la fila: la real si el snapshot la trae (v15.79 en
+            # adelante); si no, la de la venta prorrateada por el costo de
+            # alimento de la fila, que ya salió de días × kg × %PV × $/kg MS.
+            if f.get("kg_ms") is None and kgms_v and al_tot:
+                f["kg_ms"] = round(kgms_v * (f.get("alimento") or 0) / al_tot, 1)
+                f["kg_ms_estimado"] = True
+                m["kg_ms_estimadas"] += 1
+    log.info(f"  Resultados de ventas · origen del ingreso: {m['n_cruzadas']}/{m['n_filas']} filas "
+             f"cruzadas ({m['cab_cruzadas']} cab) · {m['n_propias']} propias · "
+             f"{m['n_sin_ingreso']} sin ingreso · {m['alias_aplicados']} alias · "
+             f"{m['kg_ms_estimadas']} kg MS estimadas")
+    return m
+
+
 def generar_resultados_ventas(carpeta_out, log=None):
     """v15.69.1: consolida los snapshots de resultado que baja el módulo.
 
@@ -9694,6 +9820,12 @@ def generar_resultados_ventas(carpeta_out, log=None):
         log.info(f"  Resultados de ventas: sin snapshots en {RR_RV_DIRNAME}\\ todavía")
 
     lista = sorted(ventas.values(), key=lambda v: (str(v.get("fecha_egreso") or ""), v["id"]))
+    # v15.79 · origen del ingreso + kg MS por fila (sólo en el JSON publicado)
+    try:
+        _origenes = _rv_enriquecer_filas(lista, carpeta_out, log)
+    except Exception as e:                 # nunca rompe el tick
+        log.warning(f"  ⚠ Resultados de ventas: no pude agregar el origen del ingreso ({e})")
+        _origenes = {"error": f"{type(e).__name__}: {e}"}
 
     # ── v15.71.2 · Agregados para los informes acumulados ──────────
     # Todo sale de las FILAS (una por tropa dentro de la venta), con la venta
@@ -9808,6 +9940,7 @@ def generar_resultados_ventas(carpeta_out, log=None):
             "hasta": max(fechas) if fechas else None,
             "carpeta": f"datos\\{RR_RV_DIRNAME}\\",
             "min_cab_ranking": RV_MIN_CAB,
+            "origenes": _origenes,
             "nota": ("todos los agregados salen de las filas, con la venta neta y los kg de carne "
                      "prorrateados por kg de egreso. El rinde por tropa es el de sus ventas "
                      "ponderado por kg vivo: el rinde real por animal necesitaría romaneo por "
