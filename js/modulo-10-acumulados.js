@@ -1,4 +1,4 @@
-/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.79 (2026-10-05)
+/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.80 (2026-10-05)
    ────────────────────────────────────────────────────────────────
    Todo lo que se fue guardando con "Informe PDF" en 07 · Resultado por Remito,
    junto y por tramo de tiempo: resultado del período, por categoría y el
@@ -17,6 +17,12 @@
    categoría, ventas / sin liquidar, tortas de categoría y top de ORÍGENES DEL
    INGRESO (`f.origen_ing`, lo agrega el pipeline cruzando con
    compras_ingresos.json). Mes a mes y Tropas de origen quedan al final.
+
+   v15.80 · categoría de VENTA (Vaca / Macho / Hembra) en categoría, destino,
+   tortas y chips; puente de 9 pasos con etiquetas, conectores y unidad ($,
+   $/kg carne, $/cab); orígenes por proveedor / proveedor + tipo / localidad;
+   tropas de origen con su origen y localidad. Las tablas por tropa y por
+   origen siguen con la categoría fina.
 
    ⚠ DEPENDENCIA DE CARGA: `modulo-09-remitos.js` tiene que cargarse ANTES que
    este archivo. De ahí salen los helpers de formato `_remM`, `_remN`, `_remFec`
@@ -215,6 +221,8 @@ function rvFiltro(campo, v) {
   else if (campo === 'hasta') { _rvHasta = v; _rvSel = 'custom'; rvGuardarSel(); }
   else if (campo === 'orden') _rvOrden = v;
   else if (campo === 'orden_ori') _rvOrdenOri = v;
+  else if (campo === 'puente_u') { _rvPuenteU = v; rvLsSet('pegsa_rv_puente_u', v); }
+  else if (campo === 'ori_nivel') { _rvOrigenNivel = v; rvLsSet('pegsa_rv_origen_nivel', v); }
   else if (campo === 'top')   _rvTop = parseInt(v, 10) || 0;
   rvRender();
 }
@@ -261,7 +269,7 @@ function rvFilas(t) {
       ? (rpv.costos.total || 0) - (v.costos.total || 0) : null;
     filas.forEach(function (f) {
       if (_rvHot && f.hotelero !== _rvHot) return;
-      if (_rvCat && f.categoria !== _rvCat) return;
+      if (_rvCat && rvCatV(f.categoria) !== _rvCat) return;   // v15.80 · categoría de venta
       if (porIngreso) {
         if (!f.fecha_ingreso) { sinFecha++; return; }
         if (!rvEnTramo(f.fecha_ingreso, t)) return;
@@ -283,7 +291,8 @@ function rvAgg(rows, keyFn) {
     var a = m[k] || (m[k] = { ids: {}, cabezas: 0, kg_ingreso: 0, kg_egreso: 0, kg_carne: 0,
       venta_neta: 0, costo: 0, compra: 0, aes: 0, diasAnimal: 0, hot: {}, cat: {}, fi: {},
       bruta: 0, comision: 0, gastos_compra: 0, alimento: 0, estructura: 0, sanidad: 0, mortandad: 0,
-      kg_ms: 0, kg_ms_n: 0, kg_ms_est: 0, repo_d: 0, sin_repo: 0, tropas: {} });
+      kg_ms: 0, kg_ms_n: 0, kg_ms_est: 0, repo_d: 0, sin_repo: 0, tropas: {},
+      ori: {}, oril: {}, otip: {}, loc: {} });
     var f = r.f;
     a.ids[r.v.id] = 1;
     a.cabezas += f.cabezas || 0;
@@ -307,6 +316,11 @@ function rvAgg(rows, keyFn) {
     a.repo_d += r.repo_d || 0;
     if (r.sin_repo) a.sin_repo += f.cabezas || 0;
     if (f.tropa) a.tropas[f.tropa] = 1;
+    // v15.80 · de dónde vino (por cabezas)
+    if (f.origen_ing) a.ori[f.origen_ing] = (a.ori[f.origen_ing] || 0) + (f.cabezas || 0);
+    if (f.origen_ing) a.oril[rvOriLbl(f)] = (a.oril[rvOriLbl(f)] || 0) + (f.cabezas || 0);
+    if (f.origen_tipo) a.otip[f.origen_tipo] = (a.otip[f.origen_tipo] || 0) + (f.cabezas || 0);
+    if (f.localidad) a.loc[f.localidad] = (a.loc[f.localidad] || 0) + (f.cabezas || 0);
   });
   var moda = function (o) {
     var mk = null, mv = -1;
@@ -345,24 +359,15 @@ function rvAgg(rows, keyFn) {
       kg_prod_cab: a.cabezas ? kgProd / a.cabezas : null,
       kg_ing_cab: a.cabezas ? a.kg_ingreso / a.cabezas : null,
       kg_egr_cab: a.cabezas ? a.kg_egreso / a.cabezas : null,
-      n_tropas: Object.keys(a.tropas).length
+      n_tropas: Object.keys(a.tropas).length,
+      origen_ing: moda(a.ori), origen_lbl: moda(a.oril), origen_tipo: moda(a.otip),
+      localidad: moda(a.loc), n_prov: Object.keys(a.ori).length
     };
   });
 }
 function rvTotal(rows) {
   var t = rvAgg(rows, function () { return 'TOTAL'; });
   return t.length ? t[0] : null;
-}
-function rvOpciones() {
-  var hot = {}, comp = {}, cat = {};
-  rvVentas().forEach(function (v) {
-    if (v.comprador) comp[v.comprador] = 1;
-    (v.filas || []).forEach(function (f) {
-      if (f.hotelero) hot[f.hotelero] = 1;
-      if (f.categoria) cat[f.categoria] = 1;
-    });
-  });
-  return { hot: Object.keys(hot).sort(), comp: Object.keys(comp).sort(), cat: Object.keys(cat).sort() };
 }
 
 /* Δ entre A y B, con el formato de cada magnitud. */
@@ -548,10 +553,10 @@ function rvRender() {
     + 'por animal necesitaría romaneo por caravana." style="border-bottom:1px dotted;cursor:help">'
     + 'El rinde es de la venta, prorrateado.</span></div>';
   h += rvTabla(
-    ['Tropa', 'Hotelero', 'Cat'].concat(porIng ? ['Ingreso'] : [])
+    ['Tropa', 'Origen', 'Localidad', 'Hotelero', 'Cat'].concat(porIng ? ['Ingreso'] : [])
       .concat(['Cab', 'Kg prod', 'Resultado', '% s/costo', '$/cab', 'Rinde', 'ADP', '$/kg prod', '$/kg pagado']),
     muestra.map(function (t) {
-      return [t.clave, t.hotelero || '—', t.categoria || '—']
+      return [t.clave, rvCorta(t.origen_lbl || '—', 28), t.localidad || '—', t.hotelero || '—', t.categoria || '—']
         .concat(porIng ? [_remFec(t.fecha_ingreso)] : [])
         .concat([_remN(t.cabezas), _remN(t.kg_producidos), _remM(t.resultado),
                  _remN(t.resultado_pct, 1) + ' %', _remM(t.resultado_cab), _remN(t.rinde, 2) + ' %',
@@ -746,7 +751,7 @@ function rvVentasTramo(t) {
     if (_rvComp && v.comprador !== _rvComp) return;
     var filas = v.filas || [];
     var cumple = function (f) {
-      return (!_rvHot || f.hotelero === _rvHot) && (!_rvCat || f.categoria === _rvCat);
+      return (!_rvHot || f.hotelero === _rvHot) && (!_rvCat || rvCatV(f.categoria) === _rvCat);
     };
     var porIngreso = false;
     if (porIng) {
@@ -988,6 +993,356 @@ function rvTablaSinLiq(lista, accion) {
   return h + '</tbody></table></div>';
 }
 
+// ════ v15.80 · categoría de venta, puente con unidad, orígenes por nivel ════
+/* Nicolás 05/10: "cuando trabajemos las categorías en venta, hablá por
+   categoría de venta: Vaca, Macho y Hembra". Se usa en Por categoría, Por
+   destino, las tortas y los chips. Tropas de origen, Orígenes y Ventas
+   liquidadas siguen con la categoría fina. */
+var RV_CAT_VENTA = { 'Vaca': 'Vaca', 'Novillo': 'Macho', 'Novillito': 'Macho', 'Ternero': 'Macho', 'Toro': 'Macho',
+                     'Vaquillona': 'Hembra', 'Ternera': 'Hembra' };   // cualquier otra → 'Otros'
+var RV_CAT_VENTA_COLOR = { 'Vaca': '#1a1612', 'Macho': '#2d6a8a', 'Hembra': '#b8922a', 'Otros': '#8a827a' };
+var RV_CAT_VENTA_ORDEN = ['Vaca', 'Macho', 'Hembra', 'Otros'];
+function rvCatV(c) { return RV_CAT_VENTA[c] || 'Otros'; }
+function rvOrdCatV(a, b) {
+  var i = function (x) { var k = RV_CAT_VENTA_ORDEN.indexOf(x.clave); return k < 0 ? 99 : k; };
+  return i(a) - i(b);
+}
+function rvColCatV(k, i) { return RV_CAT_VENTA_COLOR[k] || remCatColor(k, i); }
+function rvLsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function rvLsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+var _rvCatDet = rvLsGet('pegsa_rv_cat_detalle') === '1';
+var _rvPuenteU = rvLsGet('pegsa_rv_puente_u') || 'total';           // total | kg | cab
+var _rvOrigenNivel = rvLsGet('pegsa_rv_origen_nivel') || 'proveedor'; // proveedor | tipo | localidad
+function rvToggleCatDet() { _rvCatDet = !_rvCatDet; rvLsSet('pegsa_rv_cat_detalle', _rvCatDet ? '1' : '0'); rvRender(); }
+
+/* Etiqueta de origen con el tipo: "DARWASH · feria". Las propias ya dicen
+   el campo ("PROPIO · El Descanso") y las que no cruzan quedan como están. */
+function rvOriLbl(f) {
+  var o = f.origen_ing || 'SIN DATO', t = f.origen_tipo;
+  return (t && t !== 'propio') ? o + ' · ' + t : o;
+}
+function rvOriClave(f) {
+  if (_rvOrigenNivel === 'localidad') return f.localidad || 'SIN INGRESO';
+  if (_rvOrigenNivel === 'tipo') return rvOriLbl(f);
+  return f.origen_ing || 'SIN DATO';
+}
+function rvOriNivelTxt() {
+  return { proveedor: 'proveedor', tipo: 'proveedor y tipo', localidad: 'localidad' }[_rvOrigenNivel] || 'proveedor';
+}
+
+function rvOpciones() {
+  var hot = {}, comp = {}, cat = {};
+  rvVentas().forEach(function (v) {
+    if (v.comprador) comp[v.comprador] = 1;
+    (v.filas || []).forEach(function (f) {
+      if (f.hotelero) hot[f.hotelero] = 1;
+      if (f.categoria) cat[rvCatV(f.categoria)] = 1;     // v15.80 · categoría de venta
+    });
+  });
+  return { hot: Object.keys(hot).sort(), comp: Object.keys(comp).sort(),
+           cat: RV_CAT_VENTA_ORDEN.filter(function (k) { return cat[k]; }) };
+}
+function rvPuentePasos(T) {
+  var p = [], x = T.bruta;
+  var baja = function (lbl, m, partes) {
+    if (Math.abs(m) < 0.5 && !partes) return;
+    p.push([lbl, Math.min(x - m, x), Math.max(x - m, x), m >= 0 ? 'neg' : 'pos', -m, partes || null, x - m]);
+    x -= m;
+  };
+  p.push(['Venta bruta', 0, x, 'total', x, null, x]);
+  baja('Gastos de venta', T.gastos_venta);
+  p.push(['Venta neta', 0, T.venta_neta, 'sub', T.venta_neta, null, T.venta_neta]);
+  x = T.venta_neta;
+  baja('Compra', T.compra + T.comision + T.gastos_compra,
+       [['compra', T.compra], ['comisión', T.comision], ['gastos de compra', T.gastos_compra]]);
+  baja('Alimento', T.alimento);
+  baja('Otros costos', T.estructura + T.sanidad + T.mortandad,
+       [['estructura', T.estructura], ['sanidad', T.sanidad], ['mortandad', T.mortandad]]);
+  var resto = x - T.resultado;
+  if (Math.abs(resto) >= 1) baja('Otros (resto)', resto);
+  p.push(['Resultado histórico', Math.min(0, T.resultado), Math.max(0, T.resultado), 'res', T.resultado, null, T.resultado]);
+  if (Math.abs(T.repo_delta) >= 0.5) {
+    p.push(['Ajuste reposición', Math.min(T.resultado, T.resultado_repo), Math.max(T.resultado, T.resultado_repo),
+            'adj', -T.repo_delta, null, T.resultado_repo]);
+    p.push(['Resultado c/ reposición', Math.min(0, T.resultado_repo), Math.max(0, T.resultado_repo), 'res',
+            T.resultado_repo, null, T.resultado_repo]);
+  }
+  return p;
+}
+/* Los mismos pasos divididos por la unidad elegida: kg de carne o cabezas. */
+function rvPuenteDiv(T, u) { return u === 'kg' ? (T.kg_carne || 0) : u === 'cab' ? (T.cabezas || 0) : 1; }
+function rvPuentePasosU(T, u) {
+  var d = rvPuenteDiv(T, u) || 1;
+  return rvPuentePasos(T).map(function (q) {
+    return [q[0], q[1] / d, q[2] / d, q[3], q[4] / d,
+            q[5] ? q[5].map(function (x) { return [x[0], x[1] / d]; }) : null, q[6] / d];
+  });
+}
+function rvPuenteSufijo(u) { return u === 'kg' ? '/kg carne' : u === 'cab' ? '/cab' : ''; }
+function rvPuenteFmt(v, u) {
+  if (u === 'total' && Math.abs(v) >= 1e6) {
+    var m = Math.abs(v) / 1e6;
+    return (v < 0 ? '−' : '') + '$ ' + _remN(m, m >= 1000 ? 0 : 1) + ' M';
+  }
+  return _remM(v);
+}
+function rvPuenteCfg(T, pdf, u) {
+  u = u || 'total';
+  var P = rvPuentePasosU(T, u), bruta = T.bruta / (rvPuenteDiv(T, u) || 1);
+  var col = function (q) {
+    return q[3] === 'total' ? '#1a1612' : q[3] === 'sub' ? '#b8922a'
+         : q[3] === 'res' ? (q[4] < 0 ? '#c0392b' : '#27613d')
+         : q[3] === 'adj' ? '#8a827a' : '#c9a59a';
+  };
+  // etiquetas (monto + % s/ venta bruta) y conectores punteados, en el mismo
+  // canvas: corre igual en pantalla y en el canvas oculto del PDF
+  var etiquetas = {
+    id: 'rvPuenteEtiq',
+    afterDatasetsDraw: function (ch) {
+      var ctx = ch.ctx, els = ch.getDatasetMeta(0).data, ys = ch.scales.y, top = ch.chartArea.top;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(26,22,18,.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+      for (var i = 0; i < els.length - 1; i++) {
+        var a = els[i], b = els[i + 1], y = ys.getPixelForValue(P[i][6]);
+        ctx.beginPath(); ctx.moveTo(a.x + a.width / 2, y); ctx.lineTo(b.x - b.width / 2, y); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.textAlign = 'center';
+      els.forEach(function (el, i) {
+        var q = P[i], alto = Math.min(el.y, el.base), bajo = Math.max(el.y, el.base);
+        var inter = q[3] === 'neg' || q[3] === 'pos' || q[3] === 'adj';
+        var pct = inter && bruta ? _remN(q[4] / bruta * 100, 1) + ' %' : '';
+        var arriba = alto - (pct ? 26 : 14) >= top;
+        var y1 = arriba ? alto - (pct ? 17 : 5) : bajo + 13;
+        ctx.font = '600 ' + (pdf ? 12 : 10) + 'px "DM Mono", monospace';
+        ctx.fillStyle = q[4] < 0 && q[3] === 'res' ? '#c0392b' : '#1a1612';
+        ctx.fillText(rvPuenteFmt(q[4], u), el.x, y1);
+        if (pct) {
+          ctx.font = (pdf ? 11 : 9.5) + 'px "DM Mono", monospace';
+          ctx.fillStyle = 'rgba(26,22,18,.5)';
+          ctx.fillText(pct, el.x, y1 + 12);
+        }
+      });
+      ctx.restore();
+    }
+  };
+  return {
+    type: 'bar',
+    data: { labels: P.map(function (q) { return q[0]; }),
+            datasets: [{ data: P.map(function (q) { return [q[1], q[2]]; }), backgroundColor: P.map(col),
+                         borderRadius: 2, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.9 }] },
+    plugins: [etiquetas],
+    options: {
+      responsive: !pdf, maintainAspectRatio: false, animation: pdf ? false : undefined,
+      layout: { padding: { top: 34, left: 4, right: 4 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function (c) {
+          var q = P[c.dataIndex];
+          var l = [' ' + rvPuenteFmt(q[4], u) + rvPuenteSufijo(u)
+                   + (bruta ? ' · ' + _remN(q[4] / bruta * 100, 1) + ' % s/ venta bruta' : '')];
+          (q[5] || []).forEach(function (x) { l.push('   ' + x[0] + ': ' + _remM(x[1])); });
+          return l;
+        } } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: pdf ? 12 : 11 }, autoSkip: false,
+             maxRotation: 0, callback: function (v, i) { var l = P[i][0]; return l.length > 12 ? l.split(' ') : l; } } },
+        y: { grace: '12%', ticks: { font: { family: 'DM Mono', size: 10 }, callback: function (v) { return rvPuenteFmt(v, u); } },
+             grid: { color: 'rgba(26,22,18,.06)' } }
+      }
+    }
+  };
+}
+function rvPuenteTexto(T, u) {
+  u = u || 'total';
+  var suf = rvPuenteSufijo(u);
+  return rvPuentePasosU(T, u).map(function (q) {
+    var fuerte = q[3] === 'total' || q[3] === 'sub' || q[3] === 'res';
+    var partes = q[5] ? ' (' + q[5].map(function (x) { return x[0] + ' ' + _remM(x[1]); }).join(', ') + ')' : '';
+    return (fuerte ? '<strong>' : '') + q[0] + ' ' + _remM(q[4]) + suf + (fuerte ? '</strong>' : '') + partes;
+  }).join(' · ');
+}
+function rvSecPuente(S, TA) {
+  return '<div style="' + S.H2 + ';font-size:17px">Puente de costos</div>'
+    + '<div style="' + S.SUB + ';margin:-6px 0 8px">Unidad '
+    + [['total', '$ total'], ['kg', '$/kg carne'], ['cab', '$/cab']].map(function (o) {
+        return rvChip(o[1], _rvPuenteU === o[0], 'rvFiltro(\'puente_u\',\'' + o[0] + '\')'); }).join('')
+    + '</div>'
+    + '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:14px;height:340px;'
+    + 'margin-bottom:6px"><canvas id="rvChartPuente"></canvas></div>'
+    + '<div style="' + S.SUB + ';margin:0 0 6px;line-height:1.7">' + rvPuenteTexto(TA, _rvPuenteU) + '</div>';
+}
+function rvPintarPuente(T) {
+  try { if (_rvChPuente) _rvChPuente.destroy(); } catch (e) {}
+  _rvChPuente = null;
+  var cv = document.getElementById('rvChartPuente');
+  if (!cv || typeof Chart === 'undefined' || !T) return;
+  _rvChPuente = new Chart(cv.getContext('2d'), rvPuenteCfg(T, false, _rvPuenteU));
+}
+function rvSecCategoria(S, dA, dB, TA, TB) {
+  var catsA = rvAgg(dA.rows, function (r) { return rvCatV(r.f.categoria); }).sort(rvOrdCatV);
+  var h = '<div style="' + S.H2 + ';font-size:17px">Por categoría de venta' + rvBtnCSV('cat') + '</div>';
+  if (TB) {
+    var bCat = {};
+    rvAgg(dB.rows, function (r) { return rvCatV(r.f.categoria); }).forEach(function (c) { bCat[c.clave] = c; });
+    h += rvTabla(['Cat. de venta', 'Cab A', 'Cab B', 'Resultado A', 'Resultado B', '% A', '% B', 'Δ pp'],
+      catsA.map(function (c) {
+        var b = bCat[c.clave];
+        return [c.clave, _remN(c.cabezas), b ? _remN(b.cabezas) : '—',
+                _remM(c.resultado), b ? _remM(b.resultado) : '—',
+                _remN(c.resultado_pct, 1) + ' %', b ? _remN(b.resultado_pct, 1) + ' %' : '—',
+                b ? rvDelta(c.resultado_pct, b.resultado_pct, 'pp') : '—'];
+      }), catsA.map(function (c) { return c.resultado < 0; }));
+    h += '<div style="' + S.SUB + ';margin:8px 0 6px">Detalle del tramo A:</div>';
+  }
+  var cols = ['Cat. de venta'].concat(RV_COLS_CAT.slice(1));
+  var rows = catsA.map(function (c) { return { c: rvFilaCat(c, c.clave), neg: c.resultado < 0 }; });
+  rows.push({ c: rvFilaCat(TA, '<strong>TOTAL</strong>'), tot: true });
+  h += rvTablaX(cols, rows, 1);
+  h += '<div style="' + S.SUB + ';margin:5px 0 0">Vaca · Macho (novillo, novillito, ternero, toro) · Hembra '
+    + '(vaquillona, ternera). <a onclick="rvToggleCatDet()" style="cursor:pointer;color:var(--gold);'
+    + 'text-decoration:underline">' + (_rvCatDet ? 'ocultar detalle' : 'ver detalle') + '</a>'
+    + (TA.kg_ms_est ? '<br>* conversión con kg de MS estimados: el consumo de la venta prorrateado por el costo '
+        + 'de alimento de cada tropa (los snapshots anteriores a v15.79.1 no guardaban el consumo por tropa).' : '')
+    + '</div>';
+  if (_rvCatDet) {
+    var fina = rvAgg(dA.rows, function (r) { return r.f.categoria; })
+      .sort(function (a, b) { return b.cabezas - a.cabezas; });
+    var rf = fina.map(function (c) { return { c: rvFilaCat(c, c.clave), neg: c.resultado < 0 }; });
+    rf.push({ c: rvFilaCat(TA, '<strong>TOTAL</strong>'), tot: true });
+    h += '<div style="margin-top:8px">' + rvTablaX(RV_COLS_CAT, rf, 1) + '</div>';
+  }
+  return h;
+}
+function rvDestinoFilas(rows) {
+  var min = rvMinCab(), n = {};
+  rows.forEach(function (r) {
+    var k = (r.v.comprador || '—') + '|' + rvCatV(r.f.categoria);
+    n[k] = (n[k] || 0) + (r.f.cabezas || 0);
+  });
+  var celdas = rvAgg(rows, function (r) {
+    var d = r.v.comprador || '—', k = d + '|' + rvCatV(r.f.categoria);
+    return n[k] >= min ? k : d + '|otras';
+  });
+  var dest = rvAgg(rows, function (r) { return r.v.comprador || '—'; })
+    .sort(function (a, b) { return b.cabezas - a.cabezas; });
+  return { celdas: celdas, dest: dest };
+}
+/* dentro de un destino: Vaca · Macho · Hembra · Otros · otras */
+function rvOrdDestCelda(a, b) {
+  var i = function (x) {
+    var c = x.clave.split('|')[1];
+    if (c === 'otras') return 100;
+    var k = RV_CAT_VENTA_ORDEN.indexOf(c); return k < 0 ? 99 : k;
+  };
+  return i(a) - i(b);
+}
+function rvSecDestino(S, dA) {
+  var D = rvDestinoFilas(dA.rows);
+  var fila = function (x, d, cat) {
+    return [d, cat, _remN(x.cabezas), _remN(x.kg_egr_cab), _remN(x.rinde, 2) + ' %', '$ ' + _remN(x.precio_kg_carne),
+            _remN(x.estadia), rvConv(x), rvRojo(x.resultado, _remM(x.resultado)),
+            rvRojo(x.resultado_cab, _remM(x.resultado_cab))];
+  };
+  var rows = [];
+  D.dest.forEach(function (d) {
+    rows.push({ c: fila(d, rvCorta(d.clave, 30), 'todas'), sub: true });
+    D.celdas.filter(function (c) { return c.clave.split('|')[0] === d.clave; }).sort(rvOrdDestCelda)
+      .forEach(function (c) { rows.push({ c: fila(c, '', c.clave.split('|')[1]), neg: c.resultado < 0 }); });
+  });
+  return '<div style="' + S.H2 + ';font-size:17px">Por destino y categoría de venta' + rvBtnCSV('destino') + '</div>'
+    + '<div style="' + S.SUB + ';margin:-6px 0 8px">Categorías con menos de ' + rvMinCab()
+    + ' cabezas en un destino se juntan en «otras».</div>'
+    + rvTablaX(['Destino', 'Cat. de venta', 'Cab', 'Kg sal/cab', 'Rinde', '$/kg carne', 'Estadía', 'Conversión',
+                'Resultado', '$/cab'], rows, 2);
+}
+function rvCatsTorta(rows) {
+  return rvAgg(rows, function (r) { return rvCatV(r.f.categoria); }).sort(rvOrdCatV);
+}
+function rvTortaCfg(G, campo, pdf) {
+  var tot = G.reduce(function (a, g) { return a + (g[campo] || 0); }, 0);
+  var uni = campo === 'cabezas' ? ' cab' : ' kg';
+  return {
+    type: 'doughnut',
+    data: { labels: G.map(function (g) { return g.clave; }),
+            datasets: [{ data: G.map(function (g) { return Math.round(g[campo] || 0); }),
+                         backgroundColor: G.map(function (g, i) { return rvColCatV(g.clave, i); }),
+                         borderColor: '#fff', borderWidth: 2 }] },
+    options: {
+      responsive: !pdf, maintainAspectRatio: false, cutout: '52%', animation: pdf ? false : undefined,
+      plugins: {
+        legend: { display: !pdf, position: 'right', labels: {
+          boxWidth: 10, boxHeight: 10, padding: 7, font: { family: 'DM Mono, monospace', size: 11 }, color: '#1a1612',
+          generateLabels: function (ch) {
+            var ds = ch.data.datasets[0];
+            return ch.data.labels.map(function (l, i) {
+              return { text: l + ' · ' + _remN(ds.data[i] / (tot || 1) * 100, 1) + ' % · ' + _remN(ds.data[i]) + uni,
+                       fillStyle: ds.backgroundColor[i], strokeStyle: '#fff', lineWidth: 1, index: i };
+            });
+          } } },
+        tooltip: { callbacks: { label: function (c) {
+          return ' ' + c.label + ': ' + _remN(c.raw) + uni + ' · ' + _remN(c.raw / (tot || 1) * 100, 1) + ' %'; } } }
+      }
+    }
+  };
+}
+function rvOrigenes(rows) {
+  var ori = rvAgg(rows, function (r) { return rvOriClave(r.f); })
+    .filter(function (o) { return o.cabezas >= RV_MIN_CAB_ORIGEN; }).sort(rvOrdenOri(_rvOrdenOri));
+  var oc = rvAgg(rows, function (r) { return rvOriClave(r.f) + '|' + (r.f.categoria || '—'); })
+    .filter(function (o) { return o.cabezas >= RV_MIN_CAB_ORIGEN; }).sort(rvOrdenOri('cab'));
+  return { ori: ori, oc: oc };
+}
+function rvOriExtra() {
+  return _rvOrigenNivel === 'localidad' ? ['Proveedores', function (o) { return o.n_prov; }]
+                                        : ['Localidad', function (o) { return o.localidad || '—'; }];
+}
+function rvSecOrigenes(S, dA) {
+  var h = '<div style="' + S.H2 + ';font-size:17px">Orígenes del ingreso'
+    + (rvTieneOrigen() ? rvBtnCSV('origen_cat') + rvBtnCSV('origen') : '') + '</div>';
+  if (!rvTieneOrigen()) {
+    return h + '<div style="' + S.SUB + '">El origen del ingreso lo agrega el pipeline desde v15.79: aparece '
+      + 'cuando se publique el próximo resultados_ventas.json.</div>';
+  }
+  var mo = ((_rvHist || {}).meta || {}).origenes || {};
+  var O = rvOrigenes(dA.rows), X = rvOriExtra();
+  var sinLugar = !rvVentas().some(function (v) { return (v.filas || []).some(function (f) { return f.localidad; }); });
+  h += '<div style="' + S.SUB + ';margin:-6px 0 8px">Origen = proveedor del remito de ingreso en WinCampo (no el '
+    + 'código de tropa), con su tipo (campo / feria) y localidad. Tropas propias figuran como PROPIO. Alias en '
+    + '<code>datos\\origenes_alias.json</code>.'
+    + (mo.n_filas ? ' · ' + mo.n_cruzadas + ' de ' + mo.n_filas + ' filas cruzadas con su ingreso' : '')
+    + (sinLugar ? ' · <span style="color:#a3311f">tipo y localidad llegan con el próximo tick (v15.80)</span>' : '')
+    + '<br>Agrupar por ' + [['proveedor', 'proveedor'], ['tipo', 'proveedor + tipo'], ['localidad', 'localidad']]
+        .map(function (o) { return rvChip(o[1], _rvOrigenNivel === o[0], 'rvFiltro(\'ori_nivel\',\'' + o[0] + '\')'); }).join('')
+    + ' · ordenar por ' + [['cab', '$/cab'], ['resultado', 'resultado $'], ['pct', '% s/costo'], ['rinde', 'rinde'],
+        ['adp', 'ADP'], ['cabezas', 'cabezas']].map(function (o) {
+          return rvChip(o[1], _rvOrdenOri === o[0], 'rvFiltro(\'orden_ori\',\'' + o[0] + '\')'); }).join('')
+    + ' · ' + O.ori.length + ' con ' + RV_MIN_CAB_ORIGEN + ' cabezas o más'
+    + (O.ori.length > 15 ? ' (top 10 y últimos 5)' : '') + '.</div>';
+  h += rvTablaX(['Origen', X[0], 'Cab', 'Tropas', 'Cat. principal', 'Resultado', '% s/costo', '$/cab', 'Repos./cab',
+                 'Rinde', 'ADP', 'Estadía', '$/kg compra', '$/kg prod'],
+    rvTopBottom(O.ori, function (o) {
+      return { neg: o.resultado < 0, c: [rvCorta(o.clave, 34), X[1](o), _remN(o.cabezas), o.n_tropas, o.categoria || '—',
+        rvRojo(o.resultado, _remM(o.resultado)), _remN(o.resultado_pct, 1) + ' %',
+        rvRojo(o.resultado_cab, _remM(o.resultado_cab)), rvRojo(o.resultado_repo_cab, _remM(o.resultado_repo_cab)),
+        _remN(o.rinde, 2) + ' %', _remN(o.adp, 3), _remN(o.estadia), '$ ' + _remN(o.precio_pagado),
+        _remM(o.costo_kg_prod)] };
+    }), 2);
+  h += '<div style="' + S.H2 + ';font-size:15px;margin-top:18px">Origen × categoría</div>'
+    + '<div style="' + S.SUB + ';margin:-6px 0 8px">Por ' + rvOriNivelTxt() + ' y categoría fina, $/cab, '
+    + RV_MIN_CAB_ORIGEN + ' cabezas o más. Es la que responde «la vaca de tal feria contra la de tal otra».</div>';
+  h += rvTablaX(['Origen', 'Categoría', 'Cab', 'Resultado', '% s/costo', '$/cab', 'Rinde', 'ADP', '$/kg compra'],
+    rvTopBottom(O.oc, function (o) {
+      var p = o.clave.split('|');
+      return { neg: o.resultado < 0, c: [rvCorta(p[0], 34), p[1], _remN(o.cabezas),
+        rvRojo(o.resultado, _remM(o.resultado)), _remN(o.resultado_pct, 1) + ' %',
+        rvRojo(o.resultado_cab, _remM(o.resultado_cab)), _remN(o.rinde, 2) + ' %', _remN(o.adp, 3),
+        '$ ' + _remN(o.precio_pagado)] };
+    }), 2);
+  return h;
+}
 // ════════════════════════════════════════════════════════════
 //  v15.79 · Informe completo: tarjetas, puente, categoría, destino,
 //  tortas y orígenes del ingreso
@@ -1096,82 +1451,6 @@ function rvSecTarjetas(S, TA, TB, A, kpi) {
 }
 
 // ── 3 · puente ──
-/* Pasos del puente. Cada uno es [etiqueta, desde, hasta, tipo]; tipo total |
-   sub | neg | pos | res | adj. La comisión y los gastos de compra van
-   separados; si queda un resto entre el costo y sus partes, va como "Otros". */
-function rvPuentePasos(T) {
-  var p = [], x = T.bruta;
-  var baja = function (lbl, m) { if (Math.abs(m) < 0.5) return; p.push([lbl, x - m, x, m >= 0 ? 'neg' : 'pos', -m]); x -= m; };
-  p.push(['Venta bruta', 0, x, 'total', x]);
-  baja('Gastos de venta', T.gastos_venta);
-  p.push(['Venta neta', 0, T.venta_neta, 'sub', T.venta_neta]);
-  x = T.venta_neta;
-  baja('Compra', T.compra);
-  baja('Comisión compra', T.comision);
-  baja('Gastos compra', T.gastos_compra);
-  baja('Alimento', T.alimento);
-  baja('Estructura', T.estructura);
-  baja('Sanidad', T.sanidad);
-  baja('Mortandad', T.mortandad);
-  baja('Otros', x - T.resultado);          // resto: 0 si las partes cierran
-  p.push(['Resultado histórico', Math.min(0, T.resultado), Math.max(0, T.resultado), 'res', T.resultado]);
-  if (Math.abs(T.repo_delta) >= 0.5) {
-    p.push(['Ajuste reposición', Math.min(T.resultado, T.resultado_repo), Math.max(T.resultado, T.resultado_repo),
-            'adj', -T.repo_delta]);
-    p.push(['Resultado c/ reposición', Math.min(0, T.resultado_repo), Math.max(0, T.resultado_repo), 'res', T.resultado_repo]);
-  }
-  return p;
-}
-function rvPuenteCfg(T, pdf) {
-  var P = rvPuentePasos(T);
-  var col = function (q) {
-    return q[3] === 'total' ? '#1a1612' : q[3] === 'sub' ? '#b8922a'
-         : q[3] === 'res' ? (q[4] < 0 ? '#c0392b' : '#27613d')
-         : q[3] === 'adj' ? '#8a827a' : q[3] === 'pos' ? '#5a8f6d' : '#d9b8ae';
-  };
-  return {
-    type: 'bar',
-    data: { labels: P.map(function (q) { return q[0]; }),
-            datasets: [{ data: P.map(function (q) { return [q[1], q[2]]; }),
-                         backgroundColor: P.map(col), borderRadius: 2, borderSkipped: false }] },
-    options: {
-      responsive: !pdf, maintainAspectRatio: false, animation: pdf ? false : undefined,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: function (c) {
-          var q = P[c.dataIndex];
-          return ' ' + _remM(q[4]) + (T.bruta ? ' · ' + _remN(q[4] / T.bruta * 100, 1) + ' % s/ venta bruta' : '');
-        } } }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: pdf ? 11 : 10 }, autoSkip: false,
-             maxRotation: 0, callback: function (v, i) {
-               var l = P[i][0]; return l.length > 12 ? l.split(' ') : l; } } },
-        y: { ticks: { font: { family: 'DM Mono', size: 10 }, callback: function (v) { return _remM(v); } },
-             grid: { color: 'rgba(26,22,18,.06)' } }
-      }
-    }
-  };
-}
-function rvPuenteTexto(T) {
-  return rvPuentePasos(T).map(function (q) {
-    var fuerte = q[3] === 'total' || q[3] === 'sub' || q[3] === 'res';
-    return (fuerte ? '<strong>' : '') + q[0] + ' ' + _remM(q[4]) + (fuerte ? '</strong>' : '');
-  }).join(' · ');
-}
-function rvSecPuente(S, TA) {
-  return '<div style="' + S.H2 + ';font-size:17px">Puente de costos</div>'
-    + '<div style="background:#fff;border:1px solid var(--border);border-radius:2px;padding:14px;height:300px;'
-    + 'margin-bottom:6px"><canvas id="rvChartPuente"></canvas></div>'
-    + '<div style="' + S.SUB + ';margin:0 0 6px;line-height:1.7">' + rvPuenteTexto(TA) + '</div>';
-}
-function rvPintarPuente(T) {
-  try { if (_rvChPuente) _rvChPuente.destroy(); } catch (e) {}
-  _rvChPuente = null;
-  var cv = document.getElementById('rvChartPuente');
-  if (!cv || typeof Chart === 'undefined' || !T) return;
-  _rvChPuente = new Chart(cv.getContext('2d'), rvPuenteCfg(T, false));
-}
 
 // ── 4 · por categoría ──
 function rvFilaCat(c, etiqueta) {
@@ -1183,103 +1462,10 @@ function rvFilaCat(c, etiqueta) {
 }
 var RV_COLS_CAT = ['Categoría', 'Cab', 'Kg ing/cab', 'Kg sal/cab', 'Kg prod/cab', 'ADP', 'Estadía', 'Conversión',
                    'Rinde', '$/kg carne', '$/kg compra', 'Resultado', '% s/costo', '$/cab', 'Result. repos.'];
-function rvSecCategoria(S, dA, dB, TA, TB) {
-  var catsA = rvAgg(dA.rows, function (r) { return r.f.categoria; })
-    .sort(function (a, b) { return b.cabezas - a.cabezas; });
-  var h = '<div style="' + S.H2 + ';font-size:17px">Por categoría' + rvBtnCSV('cat') + '</div>';
-  if (TB) {
-    var bCat = {};
-    rvAgg(dB.rows, function (r) { return r.f.categoria; }).forEach(function (c) { bCat[c.clave] = c; });
-    h += rvTabla(['Categoría', 'Cab A', 'Cab B', 'Resultado A', 'Resultado B', '% A', '% B', 'Δ pp'],
-      catsA.map(function (c) {
-        var b = bCat[c.clave];
-        return [c.clave, _remN(c.cabezas), b ? _remN(b.cabezas) : '—',
-                _remM(c.resultado), b ? _remM(b.resultado) : '—',
-                _remN(c.resultado_pct, 1) + ' %', b ? _remN(b.resultado_pct, 1) + ' %' : '—',
-                b ? rvDelta(c.resultado_pct, b.resultado_pct, 'pp') : '—'];
-      }), catsA.map(function (c) { return c.resultado < 0; }));
-    h += '<div style="' + S.SUB + ';margin:8px 0 6px">Detalle del tramo A:</div>';
-  }
-  var rows = catsA.map(function (c) { return { c: rvFilaCat(c, c.clave), neg: c.resultado < 0 }; });
-  rows.push({ c: rvFilaCat(TA, '<strong>TOTAL</strong>'), tot: true });
-  h += rvTablaX(RV_COLS_CAT, rows, 1);
-  if (TA.kg_ms_est) h += '<div style="' + S.SUB + ';margin:5px 0 0">* conversión con kg de MS estimados: el '
-    + 'consumo de la venta prorrateado por el costo de alimento de cada tropa (los snapshots anteriores a '
-    + 'v15.79 no guardaban el consumo por tropa).</div>';
-  return h;
-}
 
 // ── 5 · por destino × categoría ──
-function rvDestinoFilas(rows) {
-  var min = rvMinCab(), n = {};
-  rows.forEach(function (r) {
-    var k = (r.v.comprador || '—') + '|' + (r.f.categoria || '—');
-    n[k] = (n[k] || 0) + (r.f.cabezas || 0);
-  });
-  var celdas = rvAgg(rows, function (r) {
-    var d = r.v.comprador || '—', k = d + '|' + (r.f.categoria || '—');
-    return n[k] >= min ? k : d + '|otras';
-  });
-  var dest = rvAgg(rows, function (r) { return r.v.comprador || '—'; })
-    .sort(function (a, b) { return b.cabezas - a.cabezas; });
-  return { celdas: celdas, dest: dest };
-}
-function rvSecDestino(S, dA) {
-  var D = rvDestinoFilas(dA.rows);
-  var fila = function (x, d, cat) {
-    return [d, cat, _remN(x.cabezas), _remN(x.kg_egr_cab), _remN(x.rinde, 2) + ' %', '$ ' + _remN(x.precio_kg_carne),
-            _remN(x.estadia), rvConv(x), rvRojo(x.resultado, _remM(x.resultado)),
-            rvRojo(x.resultado_cab, _remM(x.resultado_cab))];
-  };
-  var rows = [];
-  D.dest.forEach(function (d) {
-    rows.push({ c: fila(d, rvCorta(d.clave, 30), 'todas'), sub: true });
-    D.celdas.filter(function (c) { return c.clave.split('|')[0] === d.clave; })
-      .sort(function (a, b) {
-        var oa = a.clave.slice(-6) === '|otras', ob = b.clave.slice(-6) === '|otras';
-        return oa !== ob ? (oa ? 1 : -1) : b.cabezas - a.cabezas;
-      })
-      .forEach(function (c) { rows.push({ c: fila(c, '', c.clave.split('|')[1]), neg: c.resultado < 0 }); });
-  });
-  return '<div style="' + S.H2 + ';font-size:17px">Por destino y categoría' + rvBtnCSV('destino') + '</div>'
-    + '<div style="' + S.SUB + ';margin:-6px 0 8px">Categorías con menos de ' + rvMinCab()
-    + ' cabezas en un destino se juntan en «otras».</div>'
-    + rvTablaX(['Destino', 'Categoría', 'Cab', 'Kg sal/cab', 'Rinde', '$/kg carne', 'Estadía', 'Conversión',
-                'Resultado', '$/cab'], rows, 2);
-}
 
 // ── 7 · tortas ──
-function rvCatsTorta(rows) {
-  return rvAgg(rows, function (r) { return r.f.categoria; })
-    .sort(function (a, b) { return b.cabezas - a.cabezas; });
-}
-function rvTortaCfg(G, campo, pdf) {
-  var tot = G.reduce(function (a, g) { return a + (g[campo] || 0); }, 0);
-  var uni = campo === 'cabezas' ? ' cab' : ' kg';
-  return {
-    type: 'doughnut',
-    data: { labels: G.map(function (g) { return g.clave; }),
-            datasets: [{ data: G.map(function (g) { return Math.round(g[campo] || 0); }),
-                         backgroundColor: G.map(function (g, i) { return remCatColor(g.clave, i); }),
-                         borderColor: '#fff', borderWidth: 2 }] },
-    options: {
-      responsive: !pdf, maintainAspectRatio: false, cutout: '52%', animation: pdf ? false : undefined,
-      plugins: {
-        legend: { display: !pdf, position: 'right', labels: {
-          boxWidth: 10, boxHeight: 10, padding: 7, font: { family: 'DM Mono, monospace', size: 11 }, color: '#1a1612',
-          generateLabels: function (ch) {
-            var ds = ch.data.datasets[0];
-            return ch.data.labels.map(function (l, i) {
-              return { text: l + ' · ' + _remN(ds.data[i] / (tot || 1) * 100, 1) + ' % · ' + _remN(ds.data[i]) + uni,
-                       fillStyle: ds.backgroundColor[i], strokeStyle: '#fff', lineWidth: 1, index: i };
-            });
-          } } },
-        tooltip: { callbacks: { label: function (c) {
-          return ' ' + c.label + ': ' + _remN(c.raw) + uni + ' · ' + _remN(c.raw / (tot || 1) * 100, 1) + ' %'; } } }
-      }
-    }
-  };
-}
 function rvSecTortas(S) {
   var caja = 'background:#fff;border:1px solid var(--border);border-radius:2px;padding:12px;height:220px';
   return '<div style="' + S.H2 + ';font-size:17px">Categorías vendidas</div>'
@@ -1318,52 +1504,6 @@ function rvTopBottom(lista, fila) {
   } else lista.forEach(function (x) { rows.push(fila(x)); });
   return rows;
 }
-function rvOrigenes(rows) {
-  var ori = rvAgg(rows, function (r) { return r.f.origen_ing || 'SIN DATO'; })
-    .filter(function (o) { return o.cabezas >= RV_MIN_CAB_ORIGEN; }).sort(rvOrdenOri(_rvOrdenOri));
-  var oc = rvAgg(rows, function (r) { return (r.f.origen_ing || 'SIN DATO') + '|' + (r.f.categoria || '—'); })
-    .filter(function (o) { return o.cabezas >= RV_MIN_CAB_ORIGEN; }).sort(rvOrdenOri('cab'));
-  return { ori: ori, oc: oc };
-}
-function rvSecOrigenes(S, dA) {
-  var h = '<div style="' + S.H2 + ';font-size:17px">Orígenes del ingreso'
-    + (rvTieneOrigen() ? rvBtnCSV('origen_cat') + rvBtnCSV('origen') : '') + '</div>';
-  if (!rvTieneOrigen()) {
-    return h + '<div style="' + S.SUB + '">El origen del ingreso lo agrega el pipeline desde v15.79: aparece '
-      + 'cuando se publique el próximo resultados_ventas.json.</div>';
-  }
-  var mo = ((_rvHist || {}).meta || {}).origenes || {};
-  var O = rvOrigenes(dA.rows);
-  h += '<div style="' + S.SUB + ';margin:-6px 0 8px">Origen = proveedor del remito de ingreso en WinCampo (no el '
-    + 'código de tropa). Tropas propias figuran como PROPIO · campo. Alias en <code>datos\\origenes_alias.json</code>.'
-    + (mo.n_filas ? ' · ' + mo.n_cruzadas + ' de ' + mo.n_filas + ' filas cruzadas con su ingreso' : '')
-    + '<br>Ordenar por ' + [['cab', '$/cab'], ['resultado', 'resultado $'], ['pct', '% s/costo'], ['rinde', 'rinde'],
-        ['adp', 'ADP'], ['cabezas', 'cabezas']].map(function (o) {
-          return rvChip(o[1], _rvOrdenOri === o[0], 'rvFiltro(\'orden_ori\',\'' + o[0] + '\')'); }).join('')
-    + ' · ' + O.ori.length + ' orígenes con ' + RV_MIN_CAB_ORIGEN + ' cabezas o más'
-    + (O.ori.length > 15 ? ' (top 10 y últimos 5)' : '') + '.</div>';
-  h += rvTablaX(['Origen', 'Cab', 'Tropas', 'Cat. principal', 'Resultado', '% s/costo', '$/cab', 'Repos./cab',
-                 'Rinde', 'ADP', 'Estadía', '$/kg compra', '$/kg prod'],
-    rvTopBottom(O.ori, function (o) {
-      return { neg: o.resultado < 0, c: [rvCorta(o.clave, 34), _remN(o.cabezas), o.n_tropas, o.categoria || '—',
-        rvRojo(o.resultado, _remM(o.resultado)), _remN(o.resultado_pct, 1) + ' %',
-        rvRojo(o.resultado_cab, _remM(o.resultado_cab)), rvRojo(o.resultado_repo_cab, _remM(o.resultado_repo_cab)),
-        _remN(o.rinde, 2) + ' %', _remN(o.adp, 3), _remN(o.estadia), '$ ' + _remN(o.precio_pagado),
-        _remM(o.costo_kg_prod)] };
-    }), 1);
-  h += '<div style="' + S.H2 + ';font-size:15px;margin-top:18px">Origen × categoría</div>'
-    + '<div style="' + S.SUB + ';margin:-6px 0 8px">Por $/cab, ' + RV_MIN_CAB_ORIGEN + ' cabezas o más. Es la que '
-    + 'responde «la vaca de tal feria contra la de tal otra».</div>';
-  h += rvTablaX(['Origen', 'Categoría', 'Cab', 'Resultado', '% s/costo', '$/cab', 'Rinde', 'ADP', '$/kg compra'],
-    rvTopBottom(O.oc, function (o) {
-      var p = o.clave.split('|');
-      return { neg: o.resultado < 0, c: [rvCorta(p[0], 34), p[1], _remN(o.cabezas),
-        rvRojo(o.resultado, _remM(o.resultado)), _remN(o.resultado_pct, 1) + ' %',
-        rvRojo(o.resultado_cab, _remM(o.resultado_cab)), _remN(o.rinde, 2) + ' %', _remN(o.adp, 3),
-        '$ ' + _remN(o.precio_pagado)] };
-    }), 2);
-  return h;
-}
 function rvToggleTropas() { _rvVerTropas = !_rvVerTropas; rvRender(); }
 
 /* PNG de un gráfico para el PDF: canvas propio, sin animación, fondo blanco
@@ -1372,9 +1512,9 @@ function rvChartPNG(cfg, w, h) {
   if (typeof Chart === 'undefined') return '';
   var cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
-  cfg.plugins = [{ id: 'bgBlanco', beforeDraw: function (c) {
+  cfg.plugins = (cfg.plugins || []).concat([{ id: 'bgBlanco', beforeDraw: function (c) {
     var x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over';
-    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.restore(); } }];
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.restore(); } }]);
   var ch = null, url = '';
   try { ch = new Chart(cv.getContext('2d'), cfg); url = cv.toDataURL('image/png'); } catch (e) { url = ''; }
   try { if (ch) ch.destroy(); } catch (e) {}
@@ -1438,9 +1578,9 @@ function rvCSV(cual) {
   var dA = rvFilas(A), dB = B ? rvFilas(B) : null;
   var keyFn = {
     cat: function (r) { return r.f.categoria; },
-    destino: function (r) { return (r.v.comprador || '—') + ' | ' + (r.f.categoria || '—'); },
-    origen: function (r) { return r.f.origen_ing || 'SIN DATO'; },
-    origen_cat: function (r) { return (r.f.origen_ing || 'SIN DATO') + ' | ' + (r.f.categoria || '—'); }
+    destino: function (r) { return (r.v.comprador || '—') + ' | ' + rvCatV(r.f.categoria); },
+    origen: function (r) { return rvOriClave(r.f); },
+    origen_cat: function (r) { return rvOriClave(r.f) + ' | ' + (r.f.categoria || '—'); }
   }[cual] || function (r) { return r.f.tropa; };
   var rowsA = rvAgg(dA.rows, keyFn);
   var bMap = {};
@@ -1451,7 +1591,12 @@ function rvCSV(cual) {
               // v15.79 · al final, para no mover las de antes
               'bruta', 'gastos_venta', 'comision', 'gastos_compra', 'alimento', 'estructura', 'sanidad',
               'mortandad', 'kg_ms', 'conversion', 'kg_ing_cab', 'kg_egr_cab', 'kg_prod_cab', 'estadia',
-              'precio_kg_carne', 'resultado_repo', 'resultado_repo_pct', 'resultado_repo_cab', 'n_tropas'];
+              'precio_kg_carne', 'resultado_repo', 'resultado_repo_pct', 'resultado_repo_cab', 'n_tropas',
+              'origen_ing', 'origen_tipo', 'localidad'];   // v15.80
+  // v15.80 · el CSV de categoría lleva la categoría de venta adelante y la fina
+  // en `clave`, ordenado Vaca · Macho · Hembra
+  if (cual === 'cat') rowsA.sort(function (a, b) {
+    return rvOrdCatV({ clave: rvCatV(a.clave) }, { clave: rvCatV(b.clave) }) || b.cabezas - a.cabezas; });
   var head = cols.slice();
   if (dB) head = head.concat(cols.slice(3).map(function (c) { return c + '_B'; }));
   var val = function (v) {
@@ -1459,8 +1604,10 @@ function rvCSV(cual) {
     if (typeof v === 'number') return String(Math.round(v * 100) / 100).replace('.', ',');
     return /[;"\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
   };
+  if (cual === 'cat') head.unshift('categoria_venta');
   var txt = head.join(';') + '\n' + rowsA.map(function (r) {
     var l = cols.map(function (c) { return val(r[c]); });
+    if (cual === 'cat') l.unshift(val(rvCatV(r.clave)));
     if (dB) {
       var b = bMap[r.clave];
       l = l.concat(cols.slice(3).map(function (c) { return b ? val(b[c]) : ''; }));
@@ -1541,10 +1688,11 @@ function rvInformePDF() {
   if (!TA) return;
   // v15.79 · mismo orden que la pantalla: tarjetas, puente, categoría, destino,
   // ventas, sin liquidar, tortas, orígenes; al final mes a mes y tropas.
-  var cats = rvAgg(dA.rows, function (r) { return r.f.categoria; })
+  var cats = rvAgg(dA.rows, function (r) { return rvCatV(r.f.categoria); }).sort(rvOrdCatV);
+  var catsFina = rvAgg(dA.rows, function (r) { return r.f.categoria; })
     .sort(function (a, b) { return b.cabezas - a.cabezas; });
   var bCat = {};
-  if (dB) rvAgg(dB.rows, function (r) { return r.f.categoria; }).forEach(function (c) { bCat[c.clave] = c; });
+  if (dB) rvAgg(dB.rows, function (r) { return rvCatV(r.f.categoria); }).forEach(function (c) { bCat[c.clave] = c; });
   var minCab = rvMinCab();
   var tropas = rvAgg(dA.rows, function (r) { return r.f.tropa; })
     .filter(function (t) { return t.cabezas >= minCab; })
@@ -1580,14 +1728,14 @@ function rvInformePDF() {
   var sinTags = function (s) { return String(s).replace(/<sup[^>]*>\*<\/sup>/g, '*'); };
 
   // gráficos como imágenes (canvas propio, sin animación)
-  var imgPuente = rvChartPNG(rvPuenteCfg(TA, true), 900, 300);
+  var imgPuente = rvChartPNG(rvPuenteCfg(TA, true, _rvPuenteU), 1000, 360);
   var G = rvCatsTorta(dA.rows);
   var imgCab = rvChartPNG(rvTortaCfg(G, 'cabezas', true), 340, 340);
   var imgKg = rvChartPNG(rvTortaCfg(G, 'kg_carne', true), 340, 340);
   var leyenda = function (campo, uni) {
     var tot = G.reduce(function (a, g) { return a + (g[campo] || 0); }, 0) || 1;
     return G.map(function (g, i) {
-      return '<div><span style="display:inline-block;width:9px;height:9px;background:' + remCatColor(g.clave, i)
+      return '<div><span style="display:inline-block;width:9px;height:9px;background:' + rvColCatV(g.clave, i)
         + ';margin-right:5px"></span>' + g.clave + ' · ' + _remN(g[campo] / tot * 100, 1) + ' % · '
         + _remN(g[campo]) + uni + '</div>';
     }).join('');
@@ -1602,10 +1750,7 @@ function rvInformePDF() {
     };
     filasDest.push({ c: f(d, d.clave, 'todas'), sub: true });
     D.celdas.filter(function (c) { return c.clave.split('|')[0] === d.clave; })
-      .sort(function (a, b) {
-        var oa = a.clave.slice(-6) === '|otras', ob = b.clave.slice(-6) === '|otras';
-        return oa !== ob ? (oa ? 1 : -1) : b.cabezas - a.cabezas;
-      })
+      .sort(rvOrdDestCelda)
       .forEach(function (c) { filasDest.push(f(c, '', c.clave.split('|')[1])); });
   });
 
@@ -1649,24 +1794,27 @@ function rvInformePDF() {
         + ' d · conv. ' + conv(TA))
     + '</div>'
     // 3 · puente
-    + '<div class="sec">Puente de costos</div>'
-    + (imgPuente ? '<img src="' + imgPuente + '" style="width:100%;max-width:900px;height:auto">' : '')
-    + '<div class="s" style="line-height:1.6">' + rvPuenteTexto(TA) + '</div>'
+    + '<div class="sec">Puente de costos' + (rvPuenteSufijo(_rvPuenteU) ? ' · $' + rvPuenteSufijo(_rvPuenteU) : '') + '</div>'
+    + (imgPuente ? '<img src="' + imgPuente + '" style="width:100%;max-width:1000px;height:auto">' : '')
+    + '<div class="s" style="line-height:1.6">' + rvPuenteTexto(TA, _rvPuenteU) + '</div>'
     // 4 · categoría
-    + '<div class="sec pb">Por categoría</div>'
+    + '<div class="sec pb">Por categoría de venta</div>'
     + (TB ? tabla(['Categoría', 'Cab A', 'Cab B', 'Resultado A', 'Resultado B', '% A', '% B'],
         cats.map(function (c) {
           var b = bCat[c.clave];
           return [c.clave, _remN(c.cabezas), b ? _remN(b.cabezas) : '—', _remM(c.resultado), b ? _remM(b.resultado) : '—',
                   _remN(c.resultado_pct, 1) + ' %', b ? _remN(b.resultado_pct, 1) + ' %' : '—'];
         })) + '<div class="s" style="margin:6px 0 3px">Detalle del tramo A:</div>' : '')
-    + tabla(RV_COLS_CAT, cats.map(function (c) { return rvFilaCat(c, c.clave).map(sinTags); })
+    + tabla(['Cat. de venta'].concat(RV_COLS_CAT.slice(1)), cats.map(function (c) { return rvFilaCat(c, c.clave).map(sinTags); })
         .concat([{ c: rvFilaCat(TA, 'TOTAL').map(sinTags), tot: true }]))
+    + (_rvCatDet ? '<div class="s" style="margin:6px 0 3px">Detalle por categoría:</div>'
+        + tabla(RV_COLS_CAT, catsFina.map(function (c) { return rvFilaCat(c, c.clave).map(sinTags); })
+          .concat([{ c: rvFilaCat(TA, 'TOTAL').map(sinTags), tot: true }])) : '')
     + (TA.kg_ms_est ? '<div class="s" style="margin-top:3px">* conversión con kg de MS estimados (consumo de la '
         + 'venta prorrateado por el costo de alimento de cada tropa).</div>' : '')
     // 5 · destino
-    + '<div class="sec">Por destino y categoría</div>'
-    + tabla(['Destino', 'Categoría', 'Cab', 'Kg sal/cab', 'Rinde', '$/kg carne', 'Estadía', 'Conversión',
+    + '<div class="sec">Por destino y categoría de venta</div>'
+    + tabla(['Destino', 'Cat. de venta', 'Cab', 'Kg sal/cab', 'Rinde', '$/kg carne', 'Estadía', 'Conversión',
              'Resultado', '$/cab'], filasDest, 2)
     // 6 · ventas + sin liquidar
     + '<div class="pb"></div>' + rvPdfVentas(A, !!TB) + rvPdfSinLiquidar(A)
@@ -1678,18 +1826,18 @@ function rvInformePDF() {
 
   // 8 · orígenes
   if (rvTieneOrigen()) {
-    var O = rvOrigenes(dA.rows);
-    h += '<div class="sec">Orígenes del ingreso (' + RV_MIN_CAB_ORIGEN + ' cabezas o más)</div>'
+    var O = rvOrigenes(dA.rows), X = rvOriExtra();
+    h += '<div class="sec">Orígenes del ingreso por ' + rvOriNivelTxt() + ' (' + RV_MIN_CAB_ORIGEN + ' cabezas o más)</div>'
       + '<div class="s">Origen = proveedor del remito de ingreso en WinCampo (no el código de tropa). Tropas propias '
-      + 'figuran como PROPIO · campo.</div>'
-      + tabla(['Origen', 'Cab', 'Tropas', 'Cat. principal', 'Resultado', '% s/costo', '$/cab', 'Repos./cab', 'Rinde',
+      + 'figuran como PROPIO.</div>'
+      + tabla(['Origen', X[0], 'Cab', 'Tropas', 'Cat. principal', 'Resultado', '% s/costo', '$/cab', 'Repos./cab', 'Rinde',
                'ADP', 'Estadía', '$/kg compra', '$/kg prod'],
         rvTopBottom(O.ori, function (o) {
-          return [o.clave, _remN(o.cabezas), o.n_tropas, o.categoria || '—', _remM(o.resultado),
+          return [o.clave, X[1](o), _remN(o.cabezas), o.n_tropas, o.categoria || '—', _remM(o.resultado),
                   _remN(o.resultado_pct, 1) + ' %', _remM(o.resultado_cab), _remM(o.resultado_repo_cab),
                   _remN(o.rinde, 2) + ' %', _remN(o.adp, 3), _remN(o.estadia), '$ ' + _remN(o.precio_pagado),
                   _remM(o.costo_kg_prod)];
-        }))
+        }), 2)
       + '<div class="sec">Origen × categoría</div>'
       + tabla(['Origen', 'Categoría', 'Cab', 'Resultado', '% s/costo', '$/cab', 'Rinde', 'ADP', '$/kg compra'],
         rvTopBottom(O.oc, function (o) {
@@ -1706,15 +1854,15 @@ function rvInformePDF() {
                 _remM(m.resultado_repo), _remN(m.rinde, 2) + ' %'];
       }))
     + '<div class="sec">Tropas de origen (' + minCab + ' cabezas o más)' + (TB ? ' · tramo A' : '') + '</div>'
-    + tabla(['Tropa', 'Hotelero', 'Cat'].concat(A.base === 'ingreso' ? ['Ingreso'] : [])
+    + tabla(['Tropa', 'Origen', 'Localidad', 'Hotelero', 'Cat'].concat(A.base === 'ingreso' ? ['Ingreso'] : [])
         .concat(['Cab', 'Resultado', '% s/costo', '$/cab', 'Rinde', 'ADP']),
       tropas.slice(0, 30).map(function (t) {
-        return [t.clave, t.hotelero || '—', t.categoria || '—']
+        return [t.clave, rvCorta(t.origen_lbl || '—', 28), t.localidad || '—', t.hotelero || '—', t.categoria || '—']
           .concat(A.base === 'ingreso' ? [_remFec(t.fecha_ingreso)] : [])
           .concat([_remN(t.cabezas), _remM(t.resultado), _remN(t.resultado_pct, 1) + ' %',
                    _remM(t.resultado_cab), _remN(t.rinde, 2) + ' %', _remN(t.adp, 3)]);
       }))
-    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.79 · '
+    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.80 · '
     + 'Las tarjetas y las tablas se calculan por tropa (cada fila de cada venta): la venta de cada remito se '
     + 'prorratea entre sus tropas por kg de egreso, y el ajuste de reposición por costo de compra. La suma de lo '
     + 'guardado en cada venta puede diferir un poco por snapshots de versiones viejas del 07. El rinde es el de la '
