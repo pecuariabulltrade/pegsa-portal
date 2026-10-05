@@ -1102,6 +1102,9 @@ function remSnapshot(r) {
       costo_compra: f.costo_compra, comision: com,
       alimento: f.alimento, estructura: f.estructura,
       sanidad: f.sanidad, mortandad: f.mortandad,
+      // v15.79.1 · consumo real de la tropa: el acumulado (11) calcula la
+      // conversión por categoría/origen sin tener que estimarlo
+      kg_ms: f.kg_ms != null ? Math.round(f.kg_ms * 10) / 10 : null,
       costo_fila: costo,
       origen: f.origen, sc_tipo: f.sc_tipo || null,
       venta_prorrateada: vp,
