@@ -1,4 +1,4 @@
-/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.71.3 (2026-09-04)
+/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.78 (2026-10-05)
    ────────────────────────────────────────────────────────────────
    Todo lo que se fue guardando con "Informe PDF" en 07 · Resultado por Remito,
    junto y por tramo de tiempo: resultado del período, por categoría y el
@@ -6,6 +6,11 @@
 
    Hasta v15.71.2 esto era un bloque colapsable adentro del módulo 07. Ahora es
    pantalla propia (`screenAcumulados`) con su propia carga de datos.
+
+   v15.78 · dos secciones nuevas entre las tarjetas y "Mes a mes": la tabla de
+   VENTAS LIQUIDADAS (una fila por venta guardada, completa, sin prorratear) y
+   los remitos SIN LIQUIDAR (índice del 07 menos los remitos de las ventas
+   guardadas; los traslados a feria van aparte). Entran también al CSV y al PDF.
 
    ⚠ DEPENDENCIA DE CARGA: `modulo-09-remitos.js` tiene que cargarse ANTES que
    este archivo. De ahí salen los helpers de formato `_remM`, `_remN`, `_remFec`
@@ -61,6 +66,7 @@ function rvCargar() {
 function initAcumulados() {
   var load = document.getElementById('rvLoading');
   var cont = document.getElementById('rvContent');
+  rvCargarIdx();           // v15.78 · para "Sin liquidar"; re-renderiza al llegar
   if (_rvHist) { rvRender(); return; }
   if (load) load.style.display = 'block';
   if (cont) cont.style.display = 'none';
@@ -435,6 +441,21 @@ function rvRender() {
           TB ? rvDelta(TA.precio_kg_vivo, TB.precio_kg_vivo, 'kg') : '')
     + '</div>';
 
+  // ── v15.78 · ventas liquidadas (siempre del tramo A) + sin liquidar ──
+  var vtsA = rvVentasTramo(A);
+  h += '<div style="' + S.H2 + ';font-size:17px">Ventas liquidadas'
+    + (TB ? ' <span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--gold)">'
+            + '· tramo A</span>' : '')
+    + '<button onclick="rvCSV(\'ventas\')" style="float:right;padding:4px 11px;background:#faf8f4;'
+    + 'border:1px solid #d8d6ce;border-radius:2px;font-family:\'DM Mono\',monospace;font-size:11px;'
+    + 'cursor:pointer">&#11015; CSV</button></div>';
+  h += '<div style="' + S.SUB + ';margin:-6px 0 8px">Cada fila es la venta completa, como se guardó en el 07 '
+    + '(los filtros deciden qué ventas entran, no recortan sus números). Resultado c/ repos. = venta neta menos '
+    + 'lo que costaría reponer esos animales hoy.</div>';
+  h += vtsA.length ? rvTablaVentas(S, vtsA)
+                   : '<div style="' + S.SUB + '">Ninguna venta en el tramo con esos filtros.</div>';
+  h += rvSeccionSinLiquidar(S, A);
+
   // ── serie mensual ──
   var mesesA = rvAgg(dA.rows, function (r) { return String(r.v.fecha_egreso || '').slice(0, 7); })
     .sort(function (a, b) { return a.clave < b.clave ? -1 : 1; });
@@ -686,12 +707,320 @@ function rvPintarMeses(mesesA, dB) {
 }
 
 // ════════════════════════════════════════════════════════════
+//  v15.78 · Ventas liquidadas (una fila por venta) y remitos sin liquidar
+// ════════════════════════════════════════════════════════════
+/* Cada fila es la VENTA COMPLETA tal cual se guardó con "Informe PDF" en el
+   07: no se prorratea por tropa (eso ya lo hacen "Por categoría" y "Tropas de
+   origen"). Los chips de hotelero / categoría / comprador deciden si la venta
+   entra (alcanza con que una fila cumpla), pero no recortan sus números. */
+/* Decimales sólo si el número los tiene: $ 7.200 pero $ 3.904,57. */
+function _rvNd(n, d) {
+  if (n == null || isNaN(n)) return '—';
+  return _remN(n, Math.abs(n - Math.round(n)) < 0.005 ? 0 : d);
+}
+
+function rvVentasTramo(t) {
+  var porIng = (t && t.base === 'ingreso');
+  var out = [];
+  rvVentas().forEach(function (v) {
+    if (_rvComp && v.comprador !== _rvComp) return;
+    var filas = v.filas || [];
+    var cumple = function (f) {
+      return (!_rvHot || f.hotelero === _rvHot) && (!_rvCat || f.categoria === _rvCat);
+    };
+    var porIngreso = false;
+    if (porIng) {
+      var ok = filas.some(function (f) {
+        return cumple(f) && f.fecha_ingreso && rvEnTramo(f.fecha_ingreso, t);
+      });
+      if (!ok) return;
+      porIngreso = true;
+    } else {
+      if (!rvEnTramo(v.fecha_egreso, t)) return;
+      if ((_rvHot || _rvCat) && !filas.some(cumple)) return;
+    }
+    out.push({ v: v, porIngreso: porIngreso });
+  });
+  var primer = function (v) { return String((v.remitos || [])[0] || ''); };
+  out.sort(function (a, b) {
+    var fa = String(a.v.fecha_egreso || ''), fb = String(b.v.fecha_egreso || '');
+    if (fa !== fb) return fa < fb ? 1 : -1;
+    return primer(a.v) < primer(b.v) ? 1 : primer(a.v) > primer(b.v) ? -1 : 0;
+  });
+  return out;
+}
+
+/* "PEGSA 97 · UGMA 1": un campo de las filas ponderado por cabezas, de mayor a
+   menor. Con un solo valor va sin número. */
+function rvPond(v, campo) {
+  var o = {};
+  (v.filas || []).forEach(function (f) {
+    var k = f[campo] || '—';
+    o[k] = (o[k] || 0) + (f.cabezas || 0);
+  });
+  var ks = Object.keys(o).sort(function (a, b) { return o[b] - o[a] || (a < b ? -1 : 1); });
+  if (ks.length === 1) return ks[0];
+  return ks.map(function (k) { return k + ' ' + o[k]; }).join(' · ');
+}
+
+/* Una venta → los números de su fila (pantalla, CSV y PDF usan esto). */
+function rvVentaFila(v) {
+  var ve = v.venta || {}, re = v.resultado || {}, rp = v.reposicion || null;
+  var kgv = v.kg_egreso || 0, kgc = ve.kg_carne || 0;
+  return {
+    fecha: v.fecha_egreso, remitos: (v.remitos || []).join('+'), es_grupo: !!v.es_grupo,
+    comprador: v.comprador || '', propietario: rvPond(v, 'hotelero'),
+    categorias: rvPond(v, 'categoria'), cabezas: v.cabezas || 0,
+    kg_vivo: kgv, kg_carne: kgc,
+    rinde: ve.rinde_pct != null ? ve.rinde_pct : (kgv ? kgc / kgv * 100 : null),
+    precio_kg: ve.precio_kg, bruta: ve.bruta, neta: ve.neta,
+    costo: (v.costos || {}).total, res: re.monto, res_pct: re.pct_costo,
+    repo: rp ? rp.resultado : null, repo_precio: rp ? rp.precio_kg : null,
+    repo_manual: rp ? !!rp.manual : null, repo_costo: rp ? (rp.costos || {}).total : null,
+    estado: (v.verificacion || {}).estado || '', version: v.version_portal || ''
+  };
+}
+
+/* TOTAL = la misma cuenta que una venta grande: rinde y $/kg salen de los
+   totales, no de promediar las filas. */
+function rvVentasTotal(F) {
+  var t = { cabezas: 0, kg_vivo: 0, kg_carne: 0, bruta: 0, neta: 0, costo: 0, res: 0,
+            repo: 0, repo_costo: 0, n_repo: 0, n_remitos: 0 };
+  F.forEach(function (x) {
+    t.cabezas += x.cabezas; t.kg_vivo += x.kg_vivo; t.kg_carne += x.kg_carne;
+    t.bruta += x.bruta || 0; t.neta += x.neta || 0; t.costo += x.costo || 0; t.res += x.res || 0;
+    t.n_remitos += x.remitos ? x.remitos.split('+').length : 0;
+    if (x.repo != null) { t.repo += x.repo; t.repo_costo += x.repo_costo || 0; t.n_repo++; }
+  });
+  t.rinde = t.kg_vivo ? t.kg_carne / t.kg_vivo * 100 : null;
+  t.precio_kg = t.kg_carne ? t.bruta / t.kg_carne : null;
+  t.res_pct = t.costo ? t.res / t.costo * 100 : null;
+  t.repo_pct = t.repo_costo ? t.repo / t.repo_costo * 100 : null;
+  return t;
+}
+
+function rvTablaVentas(S, lista) {
+  var F = lista.map(function (x) { var f = rvVentaFila(x.v); f.porIngreso = x.porIngreso; return f; });
+  var T = rvVentasTotal(F);
+  var cols = ['Fecha', 'Remito(s)', 'Comprador', 'Propietario', 'Categoría', 'Cab', 'Kg vivo',
+              'Kg carne', 'Rinde', '$/kg carne', 'Venta neta', 'Resultado hist.', 'Resultado c/ repos.'];
+  var izq = 5;   // las primeras 5 columnas son texto
+  var sub = function (t) { return '<div style="' + S.UNI + ';margin-top:1px">' + t + '</div>'; };
+  var rojo = function (n, txt) { return n < 0 ? '<span style="color:#c0392b">' + txt + '</span>' : txt; };
+  var corta = function (s, n) {
+    s = String(s || '');
+    return s.length > n ? '<span title="' + s.replace(/"/g, '&quot;') + '">' + s.slice(0, n - 1) + '…</span>' : s;
+  };
+  var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:#fff;'
+    + 'border:1px solid var(--border);font-family:\'DM Mono\',monospace"><thead><tr>'
+    + cols.map(function (c, i) {
+        return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);'
+          + 'padding:8px 6px;border-bottom:2px solid var(--border);text-align:' + (i < izq ? 'left' : 'right')
+          + ';white-space:nowrap">' + c + '</th>';
+      }).join('') + '</tr></thead><tbody>';
+  var td = 'padding:6px 6px;border-bottom:1px solid #f0eee8;font-size:12px;vertical-align:top';
+  var celdas = function (x, total) {
+    var repoSub = x.repo == null ? ''
+      : total ? (x.repo_pct != null ? _remN(x.repo_pct, 2) + ' % s/costo' : '')
+      : '$ ' + _rvNd(x.repo_precio, 2) + '/kg · ' + (x.repo_manual ? 'manual' : 'auto');
+    return [
+      total ? '<strong>TOTAL</strong>'
+            : _remFec(x.fecha) + (x.porIngreso ? ' <span title="entra por fecha de ingreso de alguna de sus '
+              + 'tropas" style="cursor:help">·</span>' : ''),
+      total ? x.n_remitos + ' remitos'
+            : x.remitos + (x.es_grupo ? ' <span style="font-size:9.5px;padding:0 4px;border:1px solid #e3e1da;'
+              + 'border-radius:2px;color:rgba(26,22,18,.55)">grupo</span>' : ''),
+      total ? '' : corta(x.comprador, 22),
+      total ? '' : x.propietario,
+      total ? '' : x.categorias,
+      _remN(x.cabezas), _remN(x.kg_vivo), _rvNd(x.kg_carne, 1),
+      _remN(x.rinde, 2) + ' %', '$ ' + _rvNd(x.precio_kg, 2), _remM(x.neta),
+      rojo(x.res, _remM(x.res)) + sub(_remN(x.res_pct, 2) + ' % s/costo'),
+      x.repo == null ? '—' : rojo(x.repo, _remM(x.repo)) + sub(repoSub)
+    ];
+  };
+  F.forEach(function (x) {
+    h += '<tr' + (x.res < 0 ? ' style="background:#fdf6f4"' : '') + '>'
+      + celdas(x, false).map(function (c, j) {
+          return '<td style="' + td + ';text-align:' + (j < izq ? 'left' : 'right')
+            + (j === 3 || j === 4 ? ';white-space:normal;min-width:96px' : ';white-space:nowrap') + '">' + c + '</td>';
+        }).join('') + '</tr>';
+  });
+  h += '<tr style="background:#f6f5f2">' + celdas(T, true).map(function (c, j) {
+      return '<td style="' + td + ';font-weight:600;border-top:2px solid var(--border);white-space:nowrap;text-align:'
+        + (j < izq ? 'left' : 'right') + '">' + c + '</td>';
+    }).join('') + '</tr>';
+  h += '</tbody></table></div>';
+  var ult = F.length ? F.reduce(function (a, x) { return x.fecha > a ? x.fecha : a; }, '') : '';
+  h += '<div style="' + S.SUB + ';margin:6px 0 4px">' + F.length + ' venta' + (F.length === 1 ? '' : 's')
+    + ' · ' + T.n_remitos + ' remito' + (T.n_remitos === 1 ? '' : 's')
+    + (ult ? ' · última ' + _remFec(ult) : '')
+    + (T.n_repo < F.length ? ' · ' + (F.length - T.n_repo) + ' sin reposición guardada' : '') + '</div>';
+  return h;
+}
+
+/* ── remitos sin liquidar ── */
+var _rvIdx = null;          // resultado_remitos_index.json (el mismo objeto que usa el 07)
+var _rvIdxEstado = '';      // '' | 'cargando' | 'ok' | 'error'
+var _rvFeriaVer = false;
+
+function rvCargarIdx() {
+  if (_rvIdxEstado === 'ok' || _rvIdxEstado === 'cargando') return;
+  if (typeof remIndice !== 'function') { _rvIdxEstado = 'error'; return; }
+  _rvIdxEstado = 'cargando';
+  remIndice()
+    .then(function (j) { _rvIdx = j; _rvIdxEstado = 'ok'; })
+    .catch(function () { _rvIdx = null; _rvIdxEstado = 'error'; })
+    .then(function () { if (document.getElementById('rvContent')) rvRender(); });
+}
+
+function rvEsFeria(r) { return /TRASLADO\s+A\s+FERIA/i.test(String((r || {}).comprador || '')); }
+
+/* Remitos del índice que no están en ninguna venta guardada. Se filtra por
+   fecha de EGRESO del tramo A (el índice no trae fecha de ingreso por fila) y
+   por comprador; un remito dentro de un grupo guardado cuenta como liquidado. */
+function rvSinLiquidar(t) {
+  if (!_rvIdx || !_rvIdx.remitos) return null;
+  var liq = {};
+  rvVentas().forEach(function (v) { (v.remitos || []).forEach(function (n) { liq[String(n)] = 1; }); });
+  var desdeIdx = (_rvIdx.meta || {}).desde || '';
+  var tt = { desde: (t && t.desde) || desdeIdx, hasta: (t && t.hasta) || '' };
+  var sin = [], feria = [];
+  Object.keys(_rvIdx.remitos).forEach(function (n) {
+    if (liq[String(n)]) return;
+    var r = _rvIdx.remitos[n];
+    if (!rvEnTramo(r.fecha_egreso, tt)) return;
+    if (_rvComp && r.comprador !== _rvComp) return;
+    var x = { nro: String(n), fecha: r.fecha_egreso, comprador: r.comprador || '',
+              cabezas: r.cabezas || 0, kg_vivo: r.kg_egreso || 0, cobertura: r.cobertura_pct };
+    (rvEsFeria(r) ? feria : sin).push(x);
+  });
+  var ord = function (a, b) {
+    return a.fecha !== b.fecha ? (a.fecha < b.fecha ? 1 : -1) : (a.nro < b.nro ? 1 : -1);
+  };
+  sin.sort(ord); feria.sort(ord);
+  return { sin: sin, feria: feria, desde: tt.desde,
+           cab: sin.reduce(function (a, x) { return a + x.cabezas; }, 0),
+           kg: sin.reduce(function (a, x) { return a + x.kg_vivo; }, 0) };
+}
+
+/* Abre el 07 con ese remito elegido, en modo de un remito. renderRemitos sólo
+   pisa _remSel si no existe en el índice, así que alcanza con dejarlo puesto. */
+function rvLiquidar(nro) {
+  if (typeof _remModo !== 'undefined') { _remModo = 'simple'; _remGrupo = []; _remSel = String(nro); }
+  sbNavigate('remitos');
+}
+function rvFeriaToggle() { _rvFeriaVer = !_rvFeriaVer; rvRender(); }
+
+function rvSeccionSinLiquidar(S, A) {
+  var csv = '<button onclick="rvCSV(\'sin_liquidar\')" style="float:right;padding:4px 11px;background:#faf8f4;'
+    + 'border:1px solid #d8d6ce;border-radius:2px;font-family:\'DM Mono\',monospace;font-size:11px;'
+    + 'cursor:pointer">&#11015; CSV</button>';
+  var h = '<div style="' + S.H2 + ';font-size:17px">Sin liquidar' + (_rvIdxEstado === 'ok' ? csv : '') + '</div>';
+  if (_rvIdxEstado === 'cargando' || _rvIdxEstado === '') {
+    return h + '<div style="' + S.SUB + '">Leyendo el índice de remitos…</div>';
+  }
+  var D = rvSinLiquidar(A);
+  if (!D) return h + '<div style="' + S.SUB + ';color:#a3311f">No se pudo leer el índice de remitos.</div>';
+  h += '<div style="' + S.SUB + ';margin:-6px 0 8px">Remitos de venta del índice del 07 que no están en '
+    + 'ninguna venta guardada, por fecha de egreso'
+    + (_rvComp ? ' · comprador ' + _rvComp : '')
+    + ((_rvHot || _rvCat) ? ' · <span style="color:#a3311f">los chips de hotelero y categoría no aplican '
+        + 'acá: el índice no trae las filas</span>' : '') + '.</div>';
+  if (!D.sin.length) {
+    h += '<div style="' + S.CARD + ';margin-bottom:8px">Todo lo vendido en el tramo está liquidado.</div>';
+  } else {
+    h += '<div style="' + S.CARD + ';margin-bottom:8px"><strong>' + D.sin.length + ' remito'
+      + (D.sin.length === 1 ? '' : 's') + ' sin liquidar</strong> · ' + _remN(D.cab) + ' cab · '
+      + _remN(D.kg) + ' kg vivo · desde ' + _remFec(D.desde) + '</div>';
+    h += rvTablaSinLiq(D.sin, true);
+  }
+  if (D.feria.length) {
+    h += '<div style="' + S.SUB + ';margin:6px 0">+ ' + D.feria.length + ' traslado'
+      + (D.feria.length === 1 ? '' : 's') + ' a feria (no se liquidan acá) '
+      + rvChip(_rvFeriaVer ? 'ocultar' : 'mostrar', _rvFeriaVer, 'rvFeriaToggle()') + '</div>';
+    if (_rvFeriaVer) h += rvTablaSinLiq(D.feria, false);
+  }
+  return h;
+}
+
+function rvTablaSinLiq(lista, accion) {
+  var cols = ['Fecha', 'Remito', 'Comprador', 'Cab', 'Kg vivo', 'Cobertura'].concat(accion ? [''] : []);
+  var td = 'padding:6px 9px;border-bottom:1px solid #f0eee8;font-size:12.5px;white-space:nowrap';
+  var h = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:#fff;'
+    + 'border:1px solid var(--border);font-family:\'DM Mono\',monospace"><thead><tr>'
+    + cols.map(function (c, i) {
+        return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);'
+          + 'padding:8px 9px;border-bottom:2px solid var(--border);text-align:' + (i < 3 ? 'left' : 'right') + '">' + c + '</th>';
+      }).join('') + '</tr></thead><tbody>';
+  lista.forEach(function (x) {
+    var cob = x.cobertura == null ? '—'
+      : '<span style="color:' + (x.cobertura < 70 ? '#c0392b' : 'inherit') + '">' + _remN(x.cobertura, 1) + ' %</span>';
+    h += '<tr><td style="' + td + '">' + _remFec(x.fecha) + '</td><td style="' + td + '">' + x.nro + '</td>'
+      + '<td style="' + td + '">' + x.comprador + '</td>'
+      + '<td style="' + td + ';text-align:right">' + _remN(x.cabezas) + '</td>'
+      + '<td style="' + td + ';text-align:right">' + _remN(x.kg_vivo) + '</td>'
+      + '<td style="' + td + ';text-align:right">' + cob + '</td>'
+      + (accion ? '<td style="' + td + ';text-align:right"><a onclick="rvLiquidar(\'' + x.nro + '\')" '
+          + 'style="cursor:pointer;color:var(--gold);text-decoration:underline">Liquidar →</a></td>' : '')
+      + '</tr>';
+  });
+  return h + '</tbody></table></div>';
+}
+
+// ════════════════════════════════════════════════════════════
 //  CSV y PDF
 // ════════════════════════════════════════════════════════════
 function _rvSlug(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tramo';
 }
+/* v15.78 · formato y descarga de los CSV nuevos: el mismo `;`, coma decimal y
+   BOM que el val() de rvCSV (que no se tocó, para no mover los CSV viejos). */
+function _rvCsvVal(v) {
+  if (v == null) return '';
+  if (typeof v === 'number') return String(Math.round(v * 100) / 100).replace('.', ',');
+  if (typeof v === 'boolean') return v ? 'si' : 'no';
+  return /[;"\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+}
+function _rvBajar(nombre, txt) {
+  try {
+    var blob = new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  } catch (e) {}
+}
+function rvCSVVentas(cual) {
+  var A = rvTramoA();
+  var sufijo = _rvSlug(A.nombre) + (A.desde ? '_' + A.desde : '') + (A.hasta ? '_' + A.hasta : '');
+  var cols, filas;
+  if (cual === 'ventas') {
+    cols = ['fecha_egreso', 'remitos', 'es_grupo', 'comprador', 'propietario', 'categorias', 'cabezas',
+            'kg_vivo', 'kg_carne', 'rinde_pct', 'precio_kg_carne', 'venta_bruta', 'venta_neta', 'costo_hist',
+            'resultado_hist', 'resultado_hist_pct', 'precio_reposicion', 'reposicion_manual',
+            'costo_reposicion', 'resultado_reposicion', 'estado_verificacion', 'version_portal'];
+    filas = rvVentasTramo(A).map(function (x) {
+      var f = rvVentaFila(x.v);
+      return [f.fecha, f.remitos, f.es_grupo, f.comprador, f.propietario, f.categorias, f.cabezas,
+              f.kg_vivo, f.kg_carne, f.rinde, f.precio_kg, f.bruta, f.neta, f.costo, f.res, f.res_pct,
+              f.repo_precio, f.repo_manual, f.repo_costo, f.repo, f.estado, f.version];
+    });
+  } else {
+    var D = rvSinLiquidar(A);
+    if (!D) return;
+    cols = ['fecha_egreso', 'remito', 'comprador', 'cabezas', 'kg_vivo', 'cobertura_pct', 'traslado_feria'];
+    var fila = function (fer) { return function (x) {
+      return [x.fecha, x.nro, x.comprador, x.cabezas, x.kg_vivo, x.cobertura, fer]; }; };
+    filas = D.sin.map(fila(false)).concat(D.feria.map(fila(true)));
+  }
+  _rvBajar((cual === 'ventas' ? 'ventas_' : 'sin_liquidar_') + sufijo + '.csv',
+           cols.join(';') + '\n' + filas.map(function (l) { return l.map(_rvCsvVal).join(';'); }).join('\n'));
+}
+
 function rvCSV(cual) {
+  if (cual === 'ventas' || cual === 'sin_liquidar') return rvCSVVentas(cual);
   var A = rvTramoA(), B = _rvCmp ? rvTramoB() : null;
   var dA = rvFilas(A), dB = B ? rvFilas(B) : null;
   var keyFn = cual === 'cat' ? function (r) { return r.f.categoria; } : function (r) { return r.f.tropa; };
@@ -729,6 +1058,59 @@ function rvCSV(cual) {
   } catch (e) {}
 }
 
+/* v15.78 · secciones del PDF. La de ventas tiene 13 columnas y en A4 vertical
+   no entraba ni con letra de 8,5 px (las columnas de resultado quedaban
+   cortadas), así que el informe pasó a A4 APAISADO con la letra de siempre;
+   comprador, propietario y categoría se parten en renglones. */
+function rvPdfVentas(A, conB) {
+  var F = rvVentasTramo(A).map(function (x) { return rvVentaFila(x.v); });
+  var h = '<div class="sec">Ventas liquidadas' + (conB ? ' · tramo A' : '')
+    + ' <span style="font-weight:400;font-size:9px;color:#8a827a">— cada fila es la venta completa</span></div>';
+  if (!F.length) return h + '<div class="s">Ninguna venta en el tramo con esos filtros.</div>';
+  var T = rvVentasTotal(F);
+  var c = function (x, total) {
+    return [total ? '<b>TOTAL</b>' : _remFec(x.fecha), total ? x.n_remitos + ' rem.' : x.remitos,
+            total ? '' : x.comprador, total ? '' : x.propietario, total ? '' : x.categorias,
+            _remN(x.cabezas), _remN(x.kg_vivo), _rvNd(x.kg_carne, 1), _remN(x.rinde, 2) + ' %',
+            '$ ' + _rvNd(x.precio_kg, 2), _remM(x.neta),
+            _remM(x.res) + '<br><span class="u">' + _remN(x.res_pct, 2) + ' %</span>',
+            x.repo == null ? '—' : _remM(x.repo) + '<br><span class="u">'
+              + (total ? (x.repo_pct != null ? _remN(x.repo_pct, 2) + ' %' : '')
+                       : '$ ' + _rvNd(x.repo_precio, 2) + ' · ' + (x.repo_manual ? 'man.' : 'auto')) + '</span>'];
+  };
+  var fila = function (x, total) {
+    return '<tr' + (total ? ' style="background:#f6f5f2;font-weight:700"' : (x.res < 0 ? ' style="background:#fdf6f4"' : ''))
+      + '>' + c(x, total).map(function (v, j) {
+        return '<td style="text-align:' + (j < 5 ? 'left' : 'right') + (j >= 2 && j <= 4 ? ';white-space:normal' : '')
+          + '">' + v + '</td>'; }).join('') + '</tr>';
+  };
+  return h + '<table class="tv"><thead><tr>' + ['Fecha', 'Remito(s)', 'Comprador', 'Propietario', 'Categoría',
+      'Cab', 'Kg vivo', 'Kg carne', 'Rinde', '$/kg carne', 'Venta neta', 'Result. hist.', 'Result. repos.']
+      .map(function (t, j) { return '<th style="text-align:' + (j < 5 ? 'left' : 'right') + '">' + t + '</th>'; }).join('')
+    + '</tr></thead><tbody>' + F.map(function (x) { return fila(x, false); }).join('') + fila(T, true)
+    + '</tbody></table>';
+}
+function rvPdfSinLiquidar(A) {
+  var h = '<div class="sec">Sin liquidar</div>';
+  var D = rvSinLiquidar(A);
+  if (!D) return h + '<div class="s">No se pudo leer el índice de remitos.</div>';
+  if (!D.sin.length) h += '<div class="s">Todo lo vendido en el tramo está liquidado.</div>';
+  else {
+    h += '<div class="s">' + D.sin.length + ' remito(s) sin liquidar · ' + _remN(D.cab) + ' cab · '
+      + _remN(D.kg) + ' kg vivo · desde ' + _remFec(D.desde) + (_rvComp ? ' · comprador ' + _rvComp : '') + '</div>'
+      + '<table><thead><tr><th>Fecha</th><th style="text-align:left">Remito</th><th style="text-align:left">Comprador</th>'
+      + '<th>Cab</th><th>Kg vivo</th><th>Cobertura</th></tr></thead><tbody>'
+      + D.sin.map(function (x) {
+          return '<tr><td>' + _remFec(x.fecha) + '</td><td>' + x.nro + '</td><td>' + x.comprador + '</td>'
+            + '<td style="text-align:right">' + _remN(x.cabezas) + '</td><td style="text-align:right">'
+            + _remN(x.kg_vivo) + '</td><td style="text-align:right">' + _remN(x.cobertura, 1) + ' %</td></tr>';
+        }).join('') + '</tbody></table>';
+  }
+  if (D.feria.length) h += '<div class="s" style="margin-top:4px">+ ' + D.feria.length
+    + ' traslado(s) a feria, que no se liquidan en el 07.</div>';
+  return h;
+}
+
 function rvInformePDF() {
   var A = rvTramoA(), B = _rvCmp ? rvTramoB() : null;
   var dA = rvFilas(A), dB = B ? rvFilas(B) : null;
@@ -760,7 +1142,7 @@ function rvInformePDF() {
       + '<div class="u">' + (u || '&nbsp;') + '</div></div>';
   };
   var h = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Resultados acumulados</title>'
-    + '<style>@page{size:A4;margin:12mm}body{font-family:Georgia,serif;color:#1a1612;font-size:11px}'
+    + '<style>@page{size:A4 landscape;margin:12mm}body{font-family:Georgia,serif;color:#1a1612;font-size:11px}'
     + 'h1{font-size:19px;margin:0 0 2px}.s{font-size:10px;color:#6b6560;margin-bottom:12px}'
     + '.k{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}'
     + '.kc{border:1px solid #e3e1da;padding:8px 10px;border-radius:2px}'
@@ -768,6 +1150,8 @@ function rvInformePDF() {
     + '.v{font-size:15px;font-weight:700;margin-top:2px}.u{font-size:8.5px;color:#8a827a}'
     + '.sec{font-size:13px;font-weight:700;margin:13px 0 5px;border-bottom:1px solid #e3e1da;padding-bottom:3px}'
     + 'table{width:100%;border-collapse:collapse;font-size:9.5px}'
+    + 'table.tv td,table.tv th{padding:2px 4px;vertical-align:top;white-space:nowrap}'
+    + 'table.tv .u{font-size:7.5px;color:#8a827a;font-weight:400}'
     + 'th{text-align:right;font-size:8px;text-transform:uppercase;color:#8a827a;border-bottom:1px solid #e3e1da;padding:3px 4px}'
     + 'th:first-child{text-align:left}td{padding:3px 4px;border-bottom:1px solid #f2f0ea}'
     + '.ft{margin-top:13px;font-size:8.5px;color:#8a827a;border-top:1px solid #e3e1da;padding-top:6px}</style>'
@@ -781,6 +1165,7 @@ function rvInformePDF() {
         + (TB ? ' · B ' + _remN(TB.rinde, 2) + ' %' : ''))
     + kc('$/cab', _remM(TA.resultado_cab), TB ? 'B ' + _remM(TB.resultado_cab) : '')
     + '</div>'
+    + rvPdfVentas(A, !!TB)
     + '<div class="sec">Por categoría</div><table><thead><tr><th>Categoría</th><th>Cab</th>'
     + '<th>Resultado</th><th>% s/costo</th><th>$/cab</th><th>Rinde</th>'
     + (TB ? '<th>Result. B</th><th>% B</th>' : '') + '</tr></thead><tbody>'
@@ -804,7 +1189,8 @@ function rvInformePDF() {
                    _remM(t.resultado_cab), _remN(t.rinde, 2) + ' %', _remN(t.adp, 3)]));
       }).join('')
     + '</tbody></table>'
-    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.71.3 · '
+    + rvPdfSinLiquidar(A)
+    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.78 · '
     + 'La venta de cada remito se prorratea entre sus tropas por kg de egreso. El rinde es el de la '
     + 'venta (kg carne del camión ÷ kg vivo del camión) ponderado por los kg vivos de la tropa: el '
     + 'rinde real por animal necesitaría romaneo por caravana.'
