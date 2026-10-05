@@ -9683,6 +9683,23 @@ def _rv_norm_origen(s):
     return s
 
 
+def _rv_tipo_origen(s):
+    """`FERIAS Y REMATES` → `feria`, `CAMPO` → `campo`, `DIRECTA` → `directa`."""
+    s = " ".join(str(s or "").upper().split())
+    if not s:
+        return ""
+    if "FERIA" in s or "REMATE" in s:
+        return "feria"
+    return {"CAMPO": "campo", "DIRECTA": "directa"}.get(s, s.lower())
+
+
+def _rv_norm_lugar(s):
+    """Localidad del ingreso: mayúsculas, sin tildes, espacios colapsados."""
+    import unicodedata
+    s = unicodedata.normalize("NFD", str(s or "").upper())
+    return " ".join("".join(c for c in s if unicodedata.category(c) != "Mn").split())
+
+
 def _rv_token_tropa(clave):
     """`PEGELD230826` → `ELD`: el código del medio, para nombrar lo que no cruza."""
     import re
@@ -9700,13 +9717,22 @@ def _rv_enriquecer_filas(lista, carpeta_out, log):
     JSON publicado: los snapshots de Supabase y los archivos quedan como están.
     Devuelve el bloque `meta.origenes`. Nunca levanta excepción."""
     import re
-    m = {"n_filas": 0, "n_cruzadas": 0, "n_propias": 0, "n_sin_ingreso": 0,
+    m = {"n_filas": 0, "n_cruzadas": 0, "n_propias": 0, "n_sin_ingreso": 0, "n_con_localidad": 0,
          "cab_cruzadas": 0, "cab_propias": 0, "cab_sin_ingreso": 0,
          "alias_aplicados": 0, "kg_ms_estimadas": 0, "sin_ingreso": {}, "compras": "ok"}
-    tropas = {}
+    tropas, lugar = {}, {}
     try:
         with (Path(carpeta_out) / "compras_ingresos.json").open(encoding="utf-8") as fh:
-            tropas = json.load(fh).get("tropas") or {}
+            _ci = json.load(fh)
+        tropas = _ci.get("tropas") or {}
+        # v15.80 · tipo (CAMPO / FERIAS Y REMATES / DIRECTA) y localidad del
+        # ingreso. Viven en `grupos[]` (tropa × categoría), no en `tropas{}`;
+        # son iguales dentro de una tropa (verificado 05/10: 579 de 579), así
+        # que manda el primer grupo.
+        for g in (_ci.get("grupos") or []):
+            k = _norm_tropa(g.get("tropa_norm") or g.get("tropa"))
+            if k and k not in lugar:
+                lugar[k] = (g.get("origen"), g.get("localidad"))
     except Exception as e:
         m["compras"] = f"no pude leer compras_ingresos.json ({type(e).__name__})"
         log.warning(f"  ⚠ Resultados de ventas: {m['compras']} — sin origen del ingreso")
@@ -9732,6 +9758,12 @@ def _rv_enriquecer_filas(lista, carpeta_out, log):
             cab = f.get("cabezas") or 0
             clave = _norm_tropa(f.get("tropa_norm") or f.get("tropa"))
             t = tropas.get(clave)
+            f["origen_tipo"], f["localidad"] = "", ""
+            if clave in lugar:
+                f["origen_tipo"] = _rv_tipo_origen(lugar[clave][0])
+                f["localidad"] = _rv_norm_lugar(lugar[clave][1])
+                if f["localidad"]:
+                    m["n_con_localidad"] += 1
             if t:
                 f["proveedor"] = t.get("proveedor")
                 f["consignatario"] = t.get("consignatario")
@@ -9741,6 +9773,7 @@ def _rv_enriquecer_filas(lista, carpeta_out, log):
             elif re_prop.match(clave):
                 f["proveedor"] = f["consignatario"] = None
                 o = "PROPIO · " + RV_CAMPOS_PROPIOS.get(clave[3:6], clave[3:6])
+                f["origen_tipo"], f["localidad"] = "propio", "PROPIO"
                 m["n_propias"] += 1
                 m["cab_propias"] += cab
             else:
