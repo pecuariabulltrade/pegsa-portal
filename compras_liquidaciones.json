@@ -1,18 +1,18 @@
 {
   "meta": {
-    "generado": "2026-10-05T09:08:58.649030",
+    "generado": "2026-10-05T10:11:56.843360",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 152,
+    "n_supabase": 153,
     "n_archivos": 143,
-    "n_liquidaciones": 149,
+    "n_liquidaciones": 150,
     "n_anuladas": 3,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 166,
+      "ok": 167,
       "revisar": 1,
       "sin_liquidar": 294,
-      "terceros": 118,
+      "terceros": 117,
       "tol_kg_pct": 8,
       "tol_cab": 0
     }
@@ -12807,6 +12807,108 @@
       ]
     },
     {
+      "id": "SAGVIL160926_2026-09-16",
+      "fecha": "2026-09-16",
+      "consignataria": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "nro_liquidacion": "0013-000000830",
+      "archivo": "2026-09-16 compra villegas (el saguipe)",
+      "comision_modo": "pct",
+      "comision_valor": 0.02,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-10-05T12:34:14.659Z",
+      "version_portal": "v15.74.16",
+      "categorias": [
+        {
+          "kg_wc": 536.4,
+          "tropa": "SAG.VIL.16/09/2026",
+          "kg_liq": 536.4,
+          "importe": 6480000.0,
+          "hotelero": "EL SAGUAIPE SAS",
+          "categoria": "Ternera",
+          "kg_wc_cab": 89.39999999999999,
+          "precio_kg": 12080.536912751679,
+          "cabezas_wc": 6,
+          "gastos_cat": 0.0,
+          "importe_cg": 6609600.0,
+          "kg_liq_cab": 89.39999999999999,
+          "tropa_norm": "SAGVIL160926",
+          "cabezas_liq": 6,
+          "precio_modo": "cab",
+          "comision_cat": 129600.0,
+          "desbaste_pct": 0.0,
+          "precio_kg_cg": 12322.147651006711,
+          "precio_valor": 1080000,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1101600.0
+        },
+        {
+          "kg_wc": 804.6,
+          "tropa": "SAG.VIL.16/09/2026",
+          "kg_liq": 804.6,
+          "importe": 9720000.0,
+          "hotelero": "EL SAGUAIPE SAS",
+          "categoria": "Ternero",
+          "kg_wc_cab": 89.4,
+          "precio_kg": 12080.536912751677,
+          "cabezas_wc": 9,
+          "gastos_cat": 0.0,
+          "importe_cg": 9914400.0,
+          "kg_liq_cab": 89.4,
+          "tropa_norm": "SAGVIL160926",
+          "cabezas_liq": 9,
+          "precio_modo": "cab",
+          "comision_cat": 194400.0,
+          "desbaste_pct": 0.0,
+          "precio_kg_cg": 12322.147651006711,
+          "precio_valor": 1080000,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1101600.0
+        },
+        {
+          "kg_wc": 12246.4,
+          "tropa": "SAG.VIL.16/09/2026",
+          "kg_liq": 12247.5,
+          "importe": 41900000.0,
+          "hotelero": "EL SAGUAIPE SAS",
+          "categoria": "Vaca",
+          "kg_wc_cab": 532.4521739130435,
+          "precio_kg": 3421.1063482343334,
+          "cabezas_wc": 23,
+          "gastos_cat": 0.0,
+          "importe_cg": 42738000.0,
+          "kg_liq_cab": 532.5,
+          "tropa_norm": "SAGVIL160926",
+          "cabezas_liq": 23,
+          "precio_modo": "total",
+          "comision_cat": 838000.0,
+          "desbaste_pct": 0.008981424780572289,
+          "precio_kg_cg": 3489.5284751990202,
+          "precio_valor": 41900000,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1858173.9130434783
+        }
+      ],
+      "total": {
+        "cabezas_liq": 38.0,
+        "kg_liq": 13588.5,
+        "cabezas_wc": 38.0,
+        "kg_wc": 13587.4,
+        "importe": 58100000.0,
+        "comision": 1162000.0,
+        "gastos": 0.0,
+        "importe_cg": 59262000.0,
+        "precio_kg": 4275.674283401406,
+        "precio_kg_cg": 4361.187769069434,
+        "precio_cab_cg": 1559526.3157894737,
+        "recargo_pct": 2.0000000000000018,
+        "desbaste_pct": 0.00809508039887104,
+        "cabezas_dif": 0.0
+      }
+    },
+    {
       "id": "TAPDAR090926_2026-09-09",
       "fecha": "2026-09-09",
       "consignataria": "DARWASH SA",
@@ -19616,6 +19718,68 @@
         "desbaste_aceptado_vigente": false
       }
     },
+    "SAGVIL160926": {
+      "Ternera": {
+        "liq_id": "SAGVIL160926_2026-09-16",
+        "fecha": "2026-09-16",
+        "liq_ids": [
+          "SAGVIL160926_2026-09-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 6.0,
+        "kg_liq": 536.4,
+        "precio_kg": 12080.536912751679,
+        "precio_kg_cg": 12322.147651006711,
+        "precio_cab_cg": 1101600.0,
+        "comision_cat": 129600.0,
+        "gastos_cat": 0.0,
+        "importe": 6480000.0,
+        "importe_cg": 6609600.0,
+        "desbaste_pct": 0.0,
+        "hotelero": "EL SAGUAIPE SAS",
+        "desbaste_aceptado_vigente": false
+      },
+      "Ternero": {
+        "liq_id": "SAGVIL160926_2026-09-16",
+        "fecha": "2026-09-16",
+        "liq_ids": [
+          "SAGVIL160926_2026-09-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 9.0,
+        "kg_liq": 804.6,
+        "precio_kg": 12080.536912751677,
+        "precio_kg_cg": 12322.147651006711,
+        "precio_cab_cg": 1101600.0,
+        "comision_cat": 194400.0,
+        "gastos_cat": 0.0,
+        "importe": 9720000.0,
+        "importe_cg": 9914400.0,
+        "desbaste_pct": 0.0,
+        "hotelero": "EL SAGUAIPE SAS",
+        "desbaste_aceptado_vigente": false
+      },
+      "Vaca": {
+        "liq_id": "SAGVIL160926_2026-09-16",
+        "fecha": "2026-09-16",
+        "liq_ids": [
+          "SAGVIL160926_2026-09-16"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 23.0,
+        "kg_liq": 12247.5,
+        "precio_kg": 3421.1063482343334,
+        "precio_kg_cg": 3489.5284751990202,
+        "precio_cab_cg": 1858173.9130434783,
+        "comision_cat": 838000.0,
+        "gastos_cat": 0.0,
+        "importe": 41900000.0,
+        "importe_cg": 42738000.0,
+        "desbaste_pct": 0.008981424780572289,
+        "hotelero": "EL SAGUAIPE SAS",
+        "desbaste_aceptado_vigente": false
+      }
+    },
     "TAPDAR090926": {
       "Ternera": {
         "liq_id": "TAPDAR090926_2026-09-09",
@@ -22761,7 +22925,7 @@
       ]
     },
     "SAGVIL160926": {
-      "estado": "terceros",
+      "estado": "ok",
       "motivos": {},
       "avisos": [
         "remito_distinto"
