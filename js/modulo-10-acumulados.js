@@ -1,4 +1,4 @@
-/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.80 (2026-10-05)
+/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.80.2 (2026-10-05)
    ────────────────────────────────────────────────────────────────
    Todo lo que se fue guardando con "Informe PDF" en 07 · Resultado por Remito,
    junto y por tramo de tiempo: resultado del período, por categoría y el
@@ -23,6 +23,10 @@
    $/kg carne, $/cab); orígenes por proveedor / proveedor + tipo / localidad;
    tropas de origen con su origen y localidad. Las tablas por tropa y por
    origen siguen con la categoría fina.
+
+   v15.80.2 · el puente junta alimento, estructura, sanidad y mortandad en una
+   sola barra "Gastos feedlot" (8 pasos); el desglose va en el tooltip y en la
+   línea de texto, así el PDF no lo pierde.
 
    ⚠ DEPENDENCIA DE CARGA: `modulo-09-remitos.js` tiene que cargarse ANTES que
    este archivo. De ahí salen los helpers de formato `_remM`, `_remN`, `_remFec`
@@ -1043,6 +1047,11 @@ function rvOpciones() {
   return { hot: Object.keys(hot).sort(), comp: Object.keys(comp).sort(),
            cat: RV_CAT_VENTA_ORDEN.filter(function (k) { return cat[k]; }) };
 }
+/* Pasos del puente (8 desde v15.80.2). Cada paso: [etiqueta, desde, hasta,
+   tipo, monto, partes, valor acumulado después del paso]. "Compra" junta
+   compra + comisión + gastos de compra y "Gastos feedlot" alimento +
+   estructura + sanidad + mortandad (Nicolás 05/10); las partes van en el
+   tooltip y en la línea de texto. El resto de cierre sólo si es de $ 1 o más. */
 function rvPuentePasos(T) {
   var p = [], x = T.bruta;
   var baja = function (lbl, m, partes) {
@@ -1056,9 +1065,8 @@ function rvPuentePasos(T) {
   x = T.venta_neta;
   baja('Compra', T.compra + T.comision + T.gastos_compra,
        [['compra', T.compra], ['comisión', T.comision], ['gastos de compra', T.gastos_compra]]);
-  baja('Alimento', T.alimento);
-  baja('Otros costos', T.estructura + T.sanidad + T.mortandad,
-       [['estructura', T.estructura], ['sanidad', T.sanidad], ['mortandad', T.mortandad]]);
+  baja('Gastos feedlot', T.alimento + T.estructura + T.sanidad + T.mortandad,
+       [['alimento', T.alimento], ['estructura', T.estructura], ['sanidad', T.sanidad], ['mortandad', T.mortandad]]);
   var resto = x - T.resultado;
   if (Math.abs(resto) >= 1) baja('Otros (resto)', resto);
   p.push(['Resultado histórico', Math.min(0, T.resultado), Math.max(0, T.resultado), 'res', T.resultado, null, T.resultado]);
@@ -1080,6 +1088,8 @@ function rvPuentePasosU(T, u) {
   });
 }
 function rvPuenteSufijo(u) { return u === 'kg' ? '/kg carne' : u === 'cab' ? '/cab' : ''; }
+/* $ 3.979 M · $ 129,3 M · −$ 55,5 M; abajo de $ 1 M, en pesos. Por kg o por
+   cabeza siempre en pesos. */
 function rvPuenteFmt(v, u) {
   if (u === 'total' && Math.abs(v) >= 1e6) {
     var m = Math.abs(v) / 1e6;
@@ -1142,7 +1152,10 @@ function rvPuenteCfg(T, pdf, u) {
           var q = P[c.dataIndex];
           var l = [' ' + rvPuenteFmt(q[4], u) + rvPuenteSufijo(u)
                    + (bruta ? ' · ' + _remN(q[4] / bruta * 100, 1) + ' % s/ venta bruta' : '')];
-          (q[5] || []).forEach(function (x) { l.push('   ' + x[0] + ': ' + _remM(x[1])); });
+          (q[5] || []).forEach(function (x) {
+            l.push('   ' + x[0] + ': ' + rvPuenteFmt(x[1], u) + rvPuenteSufijo(u)
+                   + (bruta ? ' · ' + _remN(x[1] / bruta * 100, 1) + ' %' : ''));
+          });
           return l;
         } } }
       },
@@ -1160,8 +1173,14 @@ function rvPuenteTexto(T, u) {
   var suf = rvPuenteSufijo(u);
   return rvPuentePasosU(T, u).map(function (q) {
     var fuerte = q[3] === 'total' || q[3] === 'sub' || q[3] === 'res';
-    var partes = q[5] ? ' (' + q[5].map(function (x) { return x[0] + ' ' + _remM(x[1]); }).join(', ') + ')' : '';
-    return (fuerte ? '<strong>' : '') + q[0] + ' ' + _remM(q[4]) + suf + (fuerte ? '</strong>' : '') + partes;
+    var partes = q[5] ? ' (' + q[5].map(function (x) {
+      return x[0] + ' ' + (u === 'total' ? _remN(x[1] / 1e6, 1) : _remN(x[1]));
+    }).join(' · ') + ')' : '';
+    // en el texto, $ total siempre con un decimal ($ 1.163,9 M); las etiquetas
+    // de las barras siguen redondeando arriba de $ 1.000 M
+    var monto = (u === 'total' && Math.abs(q[4]) >= 1e6)
+      ? (q[4] < 0 ? '−' : '') + '$ ' + _remN(Math.abs(q[4]) / 1e6, 1) + ' M' : rvPuenteFmt(q[4], u);
+    return (fuerte ? '<strong>' : '') + q[0] + ' ' + monto + suf + (fuerte ? '</strong>' : '') + partes;
   }).join(' · ');
 }
 function rvSecPuente(S, TA) {
@@ -1295,6 +1314,8 @@ function rvOrigenes(rows) {
     .filter(function (o) { return o.cabezas >= RV_MIN_CAB_ORIGEN; }).sort(rvOrdenOri('cab'));
   return { ori: ori, oc: oc };
 }
+/* columna extra según el nivel: localidad (proveedor / proveedor + tipo) o
+   cuántos proveedores (localidad) */
 function rvOriExtra() {
   return _rvOrigenNivel === 'localidad' ? ['Proveedores', function (o) { return o.n_prov; }]
                                         : ['Localidad', function (o) { return o.localidad || '—'; }];
@@ -1862,7 +1883,7 @@ function rvInformePDF() {
           .concat([_remN(t.cabezas), _remM(t.resultado), _remN(t.resultado_pct, 1) + ' %',
                    _remM(t.resultado_cab), _remN(t.rinde, 2) + ' %', _remN(t.adp, 3)]);
       }))
-    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.80 · '
+    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.80.2 · '
     + 'Las tarjetas y las tablas se calculan por tropa (cada fila de cada venta): la venta de cada remito se '
     + 'prorratea entre sus tropas por kg de egreso, y el ajuste de reposición por costo de compra. La suma de lo '
     + 'guardado en cada venta puede diferir un poco por snapshots de versiones viejas del 07. El rinde es el de la '
