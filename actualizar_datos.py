@@ -7485,8 +7485,208 @@ def _norm_tropa(s):
     return re.sub(r'20(\d{2})$', r'\1', k)
 
 
+# ── v15.82 · PRECIO DE LA RACIÓN DESDE EL PORTAL DE HOTELERÍA ──────────
+# Nicolás (06/10/2026): "el precio de la ración tiene que tener el markup, sí o
+# sí, para el análisis de resultado de la ganadería: ese markup cubre los gastos
+# indirectos del feedlot y es ganancia del feedlot ... el precio de la materia
+# seca de septiembre es 384,81; ese es el precio que se tiene que tomar."
+#
+# Fuente: el Supabase de Caravanas Pecuaria (tablas hot_*), que es donde la app
+# de Hotelería El Haras guarda lo que liquida. Reglas, verificadas el 06/10 contra
+# el index.html de la app (pecuariabulltrade/hoteleria-haras):
+#   · alimento = kg × precio × (1 + markup)  → el $/kg MS ya viene con markup
+#   · hotelería = cab-día × precio_hoteleria (SIN markup)
+#   · sanidad   = cab ingresadas × precio_sanidad × (1 + markup)
+# El $/kg MS es el del FEEDLOT ENTERO: Σ alimento ÷ Σ kg MS de las liquidaciones
+# del mes que traen kg MS. Sep-26 = 384,81 (el número de Nicolás); el de la
+# liquidación de PEGSA sola da 384,26 y queda como dato (`precio_ms_pegsa`).
+# Se excluyen las liquidaciones sin kg MS (FERIA, que trae alimento pero no
+# consumo): sumarlas infla el promedio (abr-26 daba 351 con todos los hoteleros
+# en ~342).
+RACION_HOT_TIMEOUT = 30
+RACION_HOT_PAGINA = 1000
+
+
+def _racion_hot_cred(carpeta_out):
+    """(url, key, motivo). Mismo .env que _rv_leer_supabase (PEGSA_Portal\\.env).
+    Acepta HOT_SUPABASE_SERVICE_KEY o HOT_SUPABASE_SERVICE_ROLE_KEY; si
+    SUPABASE_URL ya es el proyecto de Caravanas, reusa SUPABASE_SERVICE_KEY."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(Path(carpeta_out).parent / ".env")
+    except Exception:
+        pass
+    url = (os.environ.get("HOT_SUPABASE_URL") or "").strip()
+    key = (os.environ.get("HOT_SUPABASE_SERVICE_KEY") or os.environ.get("HOT_SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+    if not (url and key) and "xqcipsnyvnozkvehpzsk" in (os.environ.get("SUPABASE_URL") or ""):
+        url = url or os.environ.get("SUPABASE_URL", "").strip()
+        key = key or (os.environ.get("SUPABASE_SERVICE_KEY") or "").strip()
+    if not url:
+        return None, None, "sin HOT_SUPABASE_URL"
+    if not key:
+        return None, None, "sin clave"
+    return url.rstrip("/"), key, ""
+
+
+def _racion_hot_get(url, key, tabla, query):
+    """GET paginado a PostgREST (Range de a RACION_HOT_PAGINA filas)."""
+    import requests
+    hdr = {"apikey": key, "Authorization": "Bearer " + key, "Accept": "application/json"}
+    out, desde = [], 0
+    while True:
+        h = dict(hdr, Range=f"{desde}-{desde + RACION_HOT_PAGINA - 1}", **{"Range-Unit": "items"})
+        r = requests.get(f"{url}/rest/v1/{tabla}?{query}", headers=h, timeout=RACION_HOT_TIMEOUT)
+        if r.status_code not in (200, 206):
+            raise RuntimeError(f"{tabla}: HTTP {r.status_code}")
+        filas = r.json()
+        out.extend(filas)
+        if len(filas) < RACION_HOT_PAGINA:
+            return out
+        desde += RACION_HOT_PAGINA
+
+
+def _racion_desde_hoteleria(carpeta_out, log):
+    """{mes: {...}} del portal de Hotelería + estado ("ok" | "sin clave" | "error …").
+    Meses cerrados: de las liquidaciones. Mes abierto (sin liquidar): en vivo con
+    hot_alimentacion × hot_precios × (1 + markup). Nunca levanta excepción."""
+    url, key, motivo = _racion_hot_cred(carpeta_out)
+    if not url:
+        return {}, motivo
+    try:
+        per = _racion_hot_get(url, key, "hot_periodos",
+                              "select=mes,markup,precio_hoteleria,precio_sanidad,estado,insumos&order=mes")
+        # sólo `datos->r` (los totales): `datos` entero trae los días y pesa MB
+        liq = _racion_hot_get(url, key, "hot_liquidaciones", "select=mes,hotelero,r:datos->r&order=mes")
+    except Exception as e:
+        return {}, f"error {type(e).__name__}: {e}"
+    P = {p["mes"]: p for p in per if p.get("mes")}
+    por_mes = {}
+    for l in liq:
+        por_mes.setdefault(l.get("mes"), []).append(l)
+    out = {}
+    for mes in sorted(P):
+        p = P[mes]
+        mk = float(p.get("markup") or 0)
+        base = {"markup": mk, "dia": float(p.get("precio_hoteleria") or 0),
+                "san": round(float(p.get("precio_sanidad") or 0) * (1 + mk), 2),
+                "san_costo": float(p.get("precio_sanidad") or 0)}
+        filas = [l for l in por_mes.get(mes, []) if ((l.get("r") or {}).get("kg_ms") or 0) > 0]
+        if filas:
+            ali = sum(float(l["r"].get("alimento") or 0) for l in filas)
+            kgms = sum(float(l["r"]["kg_ms"]) for l in filas)
+            kgt = sum(float(l["r"].get("kg_tot") or 0) for l in filas)
+            peg = next((l["r"] for l in filas if str(l.get("hotelero")).upper() == "PEGSA"), None)
+            pms = ali / kgms
+            ms = kgms / kgt if kgt else None
+            if not ms:
+                continue
+            out[mes] = dict(base, precio_ms=round(pms, 2), ms=round(ms, 4), tc=round(pms * round(ms, 4), 6),
+                            precio_ms_costo=round(pms / (1 + mk), 2), fuente="hoteleria",
+                            estado=p.get("estado") or "cerrado", kg_tot=round(kgt, 1), kg_ms=round(kgms, 1),
+                            cab_dias=sum(int(l["r"].get("cab_dias") or 0) for l in por_mes.get(mes, [])),
+                            n_liq=len(filas),
+                            precio_ms_pegsa=round(float(peg["precio_ms"]), 2) if peg and peg.get("precio_ms") else None)
+    # mes abierto: el más nuevo con alimentación cargada y sin liquidación
+    try:
+        ult = _racion_hot_get(url, key, "hot_alimentacion", "select=mes&order=fecha.desc&limit=1")
+        mes_ab = (ult[0].get("mes") if ult else None)
+    except Exception as e:
+        mes_ab = None
+        log.warning(f"  ⚠ Ración: no pude ver el mes abierto en hot_alimentacion ({e})")
+    if mes_ab and mes_ab not in out:
+        try:
+            ali_rows = _racion_hot_get(url, key, "hot_alimentacion", f"select=fecha,insumo,kg&mes=eq.{mes_ab}")
+            pre_rows = _racion_hot_get(url, key, "hot_precios", f"select=fecha,insumo,precio&mes=eq.{mes_ab}")
+            p = P.get(mes_ab) or P[max(P)]
+            mk = float(p.get("markup") or 0)
+            hum = {str(i.get("nombre")): float(i.get("humedad") or 0) for i in (p.get("insumos") or [])}
+            pre = {(r["fecha"], r["insumo"]): float(r.get("precio") or 0) for r in pre_rows}
+            ali = kgms = kgt = 0.0
+            dias = set()
+            for r in ali_rows:
+                kg = float(r.get("kg") or 0)
+                pr = pre.get((r["fecha"], r["insumo"]))
+                if not kg or pr is None:
+                    continue
+                ali += kg * pr * (1 + mk)
+                kgms += kg * (1 - hum.get(str(r["insumo"]), 0))
+                kgt += kg
+                dias.add(r["fecha"])
+            if kgms and kgt:
+                pms = ali / kgms
+                out[mes_ab] = {"markup": mk, "dia": float(p.get("precio_hoteleria") or 0),
+                               "san": round(float(p.get("precio_sanidad") or 0) * (1 + mk), 2),
+                               "san_costo": float(p.get("precio_sanidad") or 0),
+                               "precio_ms": round(pms, 2), "ms": round(kgms / kgt, 4),
+                               "tc": round(pms * round(kgms / kgt, 4), 6), "precio_ms_costo": round(pms / (1 + mk), 2),
+                               "fuente": "hoteleria_vivo", "estado": "abierto", "dias_con_datos": len(dias),
+                               "kg_tot": round(kgt, 1), "kg_ms": round(kgms, 1)}
+        except Exception as e:
+            log.warning(f"  ⚠ Ración: no pude calcular en vivo el mes abierto {mes_ab} ({e})")
+    return out, "ok"
+
+
 def procesar_precios_racion(carpeta_out, log=None):
-    """v15.59: lee 'preico de racion feelot.xlsx' (sí, 'preico' — el nombre del
+    """v15.82: precios mensuales del feedlot, `{mes: {tc, ms, dia, san, …}}`.
+
+    Prioridad por mes: hotelería cerrado → hotelería abierto (en vivo) → Excel
+    (meses anteriores a may-25, o si Supabase no responde) → último mes
+    conocido (`copiado`, también para el mes corriente si todavía no hay nada).
+    `tc / ms` es el $/kg MS que usa el costeo; para los meses de hotelería
+    `tc = precio_ms × ms`, así el cociente da EXACTO el precio liquidado.
+    Publica `racion_mensual.json`. Devuelve {} sólo si no hay ninguna fuente.
+    """
+    if log is None:
+        log = logging.getLogger("racion")
+    excel = {}
+    try:
+        excel = _racion_desde_excel(carpeta_out, log)
+    except Exception as e:
+        log.warning(f"  ⚠ Ración: Excel ilegible ({e})")
+    hot, estado_hot = _racion_desde_hoteleria(carpeta_out, log)
+    if estado_hot != "ok":
+        log.warning(f"  ⚠ Ración: portal de Hotelería no disponible ({estado_hot}) — se usa el Excel")
+    out = {}
+    for mes in sorted(set(excel) | set(hot)):
+        if mes in hot:
+            out[mes] = hot[mes]
+        else:
+            e = excel[mes]
+            out[mes] = dict(e, precio_ms=round(e["tc"] / e["ms"], 2) if e.get("ms") else None,
+                            fuente="excel", estado="excel")
+    if not out:
+        return {}
+    # el mes corriente sin datos repite el último conocido, pero queda marcado
+    hoy = datetime.now().strftime("%Y-%m")
+    ult = max(out)
+    if hoy > ult:
+        out[hoy] = dict(out[ult], fuente="copiado", estado="copiado", copiado_de=ult)
+    cerrados = [m for m, v in out.items() if v.get("fuente") == "hoteleria"]
+    meta = {"generado": datetime.now().isoformat(),
+            "fuente_principal": "hoteleria" if hot else "excel",
+            "supabase": estado_hot, "meses": len(out), "desde": min(out), "hasta": max(out),
+            "ultimo_cerrado": max(cerrados) if cerrados else None,
+            "nota": ("precio_ms con markup (lo que liquida el feedlot); precio_ms_costo es sólo informativo. "
+                     "dia = precio_hoteleria (sin markup); san = precio_sanidad × (1 + markup).")}
+    try:
+        guardar({"meta": meta, "meses": out}, carpeta_out, "racion_mensual.json")
+    except Exception as e:
+        log.warning(f"  ⚠ Ración: no pude guardar racion_mensual.json ({e})")
+    for mes in sorted(out):
+        v = out[mes]
+        log.info(f"    ración {mes}: $ {v.get('precio_ms') or 0:,.2f}/kg MS · {v.get('fuente')}"
+                 + (f" (de {v['copiado_de']})" if v.get("copiado_de") else ""))
+    log.info(f"  ✓ Precios de ración: {len(out)} meses ({min(out)} → {max(out)}) · fuente "
+             f"{meta['fuente_principal']} · Supabase {estado_hot}")
+    return out
+
+
+def _racion_desde_excel(carpeta_out, log=None):
+    """v15.82 · RESPALDO: la fuente principal es el portal de Hotelería (ver
+    procesar_precios_racion). Se usa para meses anteriores a may-25 o si Supabase
+    no responde.
+
+    v15.59: lee 'preico de racion feelot.xlsx' (sí, 'preico' — el nombre del
     archivo del usuario está así y NO se corrige) y devuelve los precios
     mensuales del feedlot:
 
@@ -10619,7 +10819,9 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
         if meses:
             _u = max(meses)
             repo_cat[c] = {"precio_kg": meses[_u]["precio_kg"], "mes": _u}
-    _ultp = _meses_prec[-1]
+    # v15.82 · el último mes con precio real; el corriente "copiado" vale lo mismo
+    # pero diría "repetido" en la pantalla
+    _ultp = max([m for m in _meses_prec if PRECIOS[m].get("fuente") != "copiado"] or _meses_prec)
     repo_ms = PRECIOS[_ultp]["tc"] / PRECIOS[_ultp]["ms"]
 
     # ── Cálculo por remito ────────────────────────────────────
@@ -10635,8 +10837,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
            "filas_mercado": 0, "cab_mercado": 0, "filas_mercado_120": 0, "cab_mercado_120": 0,
            "mercado_dias": RR_MERCADO_DIAS, "mercado_dias_max": RR_MERCADO_DIAS_MAX,
            "por_origen": {}}
+    _rac_glob = {}       # v15.82 · mes sin precio de hotelería → remitos que lo usan
     for rem in sorted({g["remito"] for g in grupos.values()}):
         filas_g = [g for g in grupos.values() if g["remito"] == rem]
+        _rac_cop = set()     # v15.82 · meses de la estadía copiados / del Excel
 
         # Precio de cada fila: tropa+categoría; si no está, promedio ponderado
         # de las compañeras del MISMO remito (y se marca estimado).
@@ -10765,6 +10969,8 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             while cur < fe:
                 ym = f"{cur.year:04d}-{cur.month:02d}"
                 pp = PRECIOS[_mk(ym)]
+                if ym not in PRECIOS or PRECIOS[ym].get("fuente") in ("copiado", "excel"):
+                    _rac_cop.add(ym)
                 pv_raw = PCTPV.get(ym)
                 if pv_raw is None:
                     pv_raw = PV_FALLBACK
@@ -10791,6 +10997,9 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
 
             # sanidad: ÚNICA por cabeza, al precio del MES DE INGRESO
             sa = g["cab"] * PRECIOS[_mk(f"{fi.year:04d}-{fi.month:02d}")]["san"]
+            _ymi = f"{fi.year:04d}-{fi.month:02d}"
+            if _ymi not in PRECIOS or PRECIOS[_ymi].get("fuente") in ("copiado", "excel"):
+                _rac_cop.add(_ymi)
 
             compra += c
             comision += com_fila
@@ -10942,6 +11151,9 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "reposicion": {
                 "precio_kg": round(rp, 2), "fuente_precio": rp_lbl,
                 "precio_kg_ms": round(repo_ms, 2), "mes_ms": _ultp,
+                # v15.82 · de dónde salió el precio de la ración
+                "fuente_ms": PRECIOS[_ultp].get("fuente") or "excel",
+                "meses_copiados": [(m + " (" + ((PRECIOS.get(m) or {}).get("fuente") or ("fuera de rango → " + _mk(m))) + ((" de " + PRECIOS[m]["copiado_de"]) if (PRECIOS.get(m) or {}).get("copiado_de") else "") + ")") for m in sorted(_rac_cop)],
                 "compra": round(compra_repo, 2), "comision": round(com_repo, 2),
                 "alimento": round(ali_repo, 2), "mortandad": round(mort_repo, 2),
                 "total": round(costo_repo, 2),
@@ -10955,6 +11167,13 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "dias_sin_pv": sin_pv,
         }
 
+    # v15.82 · aviso explícito: antes un mes sin precio se repetía en silencio
+    for _r, _v in remitos_out.items():
+        for _m in (_v.get("reposicion") or {}).get("meses_copiados") or []:
+            _rac_glob.setdefault(_m, set()).add(_r)
+    for _m, _rs in sorted(_rac_glob.items()):
+        if "excel" not in _m:
+            log.warning(f"  ⚠ Ración: {_m} — sin precio de hotelería, lo usan {len(_rs)} remito(s) vendidos")
     _kg_tot = sum(r["kg_ingreso"] for r in remitos_out.values())
     _kg_sin = sum(sum(t["kg_ingreso"] for t in r["tropas_sin_precio"])
                   for r in remitos_out.values())
@@ -10971,6 +11190,10 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
             "pv_fallback": PV_FALLBACK,
             "tasas_mortandad": MORT_PCT,
             "datamars": meta_dm,
+            # v15.82 · fuente del precio de la ración
+            "racion": {"fuente_ultimo": PRECIOS[_ultp].get("fuente") or "excel", "mes_ultimo": _ultp,
+                       "precio_ms_ultimo": round(repo_ms, 2),
+                       "meses_sin_hoteleria": {m: len(r) for m, r in sorted(_rac_glob.items())}},
             # v15.74.12 · de dónde salen los precios de compra
             "compras": dict(_mc,
                             precio=("cabezas × precio_cab_cg (liquidado + comisión + gastos)"
