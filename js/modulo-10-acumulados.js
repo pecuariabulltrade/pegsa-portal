@@ -1,4 +1,4 @@
-/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.81 (2026-10-05)
+/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.82 (2026-10-06)
    ────────────────────────────────────────────────────────────────
    Todo lo que se fue guardando con "Informe PDF" en 07 · Resultado por Remito,
    junto y por tramo de tiempo: resultado del período, por categoría y el
@@ -33,6 +33,10 @@
    verde/rojo, fondo graduado en $/cab, punto del mejor y del peor, chips de
    categoría, barra de volumen; orígenes con "Qué vendimos" (mix) en vez de
    "Cat. principal" y encabezado Vendedor; en el PDF todo negativo en rojo.
+
+   v15.82 · la caja del resumen dice a qué precio de ración se costeó el feedlot
+   (racion_mensual.json, del portal de Hotelería, con markup) y avisa si alguna
+   venta usó un precio repetido o del Excel.
 
    ⚠ DEPENDENCIA DE CARGA: `modulo-09-remitos.js` tiene que cargarse ANTES que
    este archivo. De ahí salen los helpers de formato `_remM`, `_remN`, `_remFec`
@@ -70,7 +74,17 @@ var _rvBorrar = null;               // id con borrado pendiente de confirmar
 // ════════════════════════════════════════════════════════════
 //  Carga
 // ════════════════════════════════════════════════════════════
+var _rvRacion = null;   // v15.82 · racion_mensual.json
+function rvCargarRacion() {
+  if (_rvRacion) return;
+  _rvRacion = {};
+  fetch(STOCK_SB + '/racion_mensual.json', {}, {})
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) { if (j) { _rvRacion = j; if (document.getElementById('rvContent') && _rvHist) rvRender(); } })
+    .catch(function () {});
+}
 function rvCargar() {
+  rvCargarRacion();
   if (_rvPromesa) return _rvPromesa;
   // si 07 ya lo bajó, se reusa y no se pide de nuevo
   if (typeof _remHist !== 'undefined' && _remHist) {
@@ -960,8 +974,8 @@ var RV_INTRO = {
 
 /* Caja de presentación: línea gold corta (marca la sección al hojear) + "Qué
    muestra" + "Lectura rápida" (si hay datos; nunca "undefined"). */
-function rvIntro(clave, lectura, pdf) {
-  var que = RV_INTRO[clave] || '';
+function rvIntro(clave, lectura, pdf, queExtra) {
+  var que = (RV_INTRO[clave] || '') + (queExtra ? ' ' + queExtra : '');
   if (pdf) {
     return '<div class="intro"><div><b>Qué muestra.</b> ' + que + '</div>'
       + (lectura ? '<div><b>Lectura rápida.</b> ' + lectura + '</div>' : '') + '</div>';
@@ -973,6 +987,31 @@ function rvIntro(clave, lectura, pdf) {
     + (lectura ? '<div style="margin-top:5px"><b>Lectura rápida.</b> ' + lectura + '</div>' : '') + '</div>';
 }
 function rvOk(x) { return x != null && isFinite(x); }
+/* v15.82 · a qué precio de ración se costeó el feedlot y si hubo meses sin
+   precio de hotelería (repetidos o del Excel) en las ventas del tramo. */
+function rvRacionFrase(A, pdf) {
+  var R = _rvRacion || {}, M = R.meta || {}, mes = M.ultimo_cerrado, v = mes && (R.meses || {})[mes];
+  var s = '';
+  if (v && rvOk(v.precio_ms)) {
+    s = 'El feedlot se costea al precio de ración que liquida el portal de Hotelería (con su markup): <b>$ '
+      + _remN(v.precio_ms, 2) + '/kg MS en ' + (typeof remMesCorto === 'function' ? remMesCorto(mes) : mes)
+      + '</b>; meses sin cierre se calculan con los precios diarios cargados.';
+  } else if (M.fuente_principal === 'excel') {
+    s = 'El feedlot se costea con el Excel de precios de ración (el portal de Hotelería no estaba disponible).';
+  }
+  var cop = {}, n = 0;
+  rvVentasTramo(A).forEach(function (x) {
+    var mc = ((x.v.reposicion || {}).meses_copiados) || [];
+    if (mc.length) { n++; mc.forEach(function (m) { cop[m] = 1; }); }
+  });
+  if (n) {
+    var lista = Object.keys(cop).sort().join(', ');
+    s += (s ? ' ' : '') + (pdf ? '<span class="neg">⚠' : '<span title="' + lista + '" style="color:#a3311f;cursor:help">⚠')
+      + ' ' + n + ' venta' + (n === 1 ? ' usó' : 's usaron') + ' un precio de ración repetido o del Excel en algún mes de la estadía'
+      + (pdf ? ' (' + lista + ')' : '') + '.</span>';
+  }
+  return s;
+}
 
 /* Semáforo: verde si gana, rojo si pierde. La clase `neg` la usa el PDF (y el
    test que verifica que todo negativo del PDF esté en rojo). */
@@ -1208,7 +1247,7 @@ function rvSecTarjetas(S, TA, TB, A, kpi) {
   var fondo = function (n) { return n < 0 ? '#7a1f16' : '#1f4d31'; };
   var gold = function (t) { return '<span style="color:' + RV_GOLD + '">' + t + '</span>'; };
   var h = '<div style="' + S.H2 + ';font-size:17px">Resumen del tramo</div>'
-    + rvIntro('tarjetas', RV_LECT.tarjetas(TA))
+    + rvIntro('tarjetas', RV_LECT.tarjetas(TA), false, rvRacionFrase(A))
     + '<div style="' + rvGrid4() + '">'
     + kpi('Resultado histórico', _remM(TA.resultado),
           _remN(TA.resultado_pct, 1) + ' % s/costo · ' + _remM(TA.resultado_cab) + '/cab',
@@ -1641,7 +1680,7 @@ function rvInformePDF() {
     + '</head><body><h1>' + titulo + '</h1><div class="s">' + filtros.join(' · ') + ' · '
     + TA.ventas + ' venta(s) · ' + TA.cabezas + ' cabezas</div>'
     // 2 · resumen
-    + '<div class="sec">Resumen del tramo</div>' + rvIntro('tarjetas', RV_LECT.tarjetas(TA), true)
+    + '<div class="sec">Resumen del tramo</div>' + rvIntro('tarjetas', RV_LECT.tarjetas(TA), true, rvRacionFrase(A, true))
     + '<div class="k">'
     + kc('Resultado histórico', semOsc(TA.resultado, _remM(TA.resultado)),
         semOsc(TA.resultado_pct, _remN(TA.resultado_pct, 1) + ' %') + ' s/costo · '
@@ -1726,7 +1765,7 @@ function rvInformePDF() {
                    rvSem(t.resultado_pct, _remN(t.resultado_pct, 1) + ' %'),
                    rvSem(t.resultado_cab, _remM(t.resultado_cab)), _remN(t.rinde, 2) + ' %', _remN(t.adp, 3)]) };
       }))
-    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.81 · '
+    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.82 · '
     + 'Las tarjetas y las tablas se calculan por tropa (cada fila de cada venta): la venta de cada remito se '
     + 'prorratea entre sus tropas por kg de egreso, y el ajuste de reposición por costo de compra. La suma de lo '
     + 'guardado en cada venta puede diferir un poco por snapshots de versiones viejas del 07. El rinde es el de la '

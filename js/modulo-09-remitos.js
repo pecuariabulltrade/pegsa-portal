@@ -295,6 +295,7 @@ function remConsolidar(ids) {
   var RP = { compra: 0, comision: 0, alimento: 0, mortandad: 0, total: 0 };
   var cab = 0, kgi = 0, kge = 0, kgms = 0, diasAnimal = 0, pvDen = 0, kgiConPrecio = 0;
   var repoPrecioNum = 0, repoPrecioDen = 0, fuentes = {}, mesMs = null, precioMs = null;
+  var fuenteMs = null, copiadosMs = {};   // v15.82
   var fechas = [], sinPv = 0;
   // v15.68: verificación sumada del grupo — cabezas sin caravana de todos sus
   // remitos, y las tropas a las que se les imputó el origen.
@@ -320,6 +321,8 @@ function remConsolidar(ids) {
     if (r.reposicion.precio_kg) { repoPrecioNum += r.reposicion.precio_kg * (r.kg_ingreso || 0); repoPrecioDen += (r.kg_ingreso || 0); }
     fuentes[r.reposicion.fuente_precio] = 1;
     mesMs = r.reposicion.mes_ms; precioMs = r.reposicion.precio_kg_ms;
+    fuenteMs = r.reposicion.fuente_ms || fuenteMs;
+    (r.reposicion.meses_copiados || []).forEach(function (m) { copiadosMs[m] = 1; });
     var vv = r.verificacion || { estado: 'sin_datamars', sc: 0 };
     VER.estados[vv.estado] = (VER.estados[vv.estado] || 0) + 1;
     VER.sc += vv.sc || 0;
@@ -377,6 +380,7 @@ function remConsolidar(ids) {
       precio_kg: repoPrecioDen ? repoPrecioNum / repoPrecioDen : null,
       fuente_precio: fu.length === 1 ? fu[0] : 'prom. ponderado de ' + orden.length + ' remitos',
       precio_kg_ms: precioMs, mes_ms: mesMs,
+      fuente_ms: fuenteMs, meses_copiados: Object.keys(copiadosMs).sort(),
       compra: RP.compra, comision: RP.comision, alimento: RP.alimento,
       mortandad: RP.mortandad, total: RP.total,
       por_kg_vendido: kge ? RP.total / kge : null
@@ -554,6 +558,7 @@ function remAplicarSC(r, sc) {
   out.reposicion = {
     precio_kg: RP.precio_kg, fuente_precio: RP.fuente_precio,
     precio_kg_ms: RP.precio_kg_ms, mes_ms: RP.mes_ms,
+    fuente_ms: RP.fuente_ms, meses_copiados: RP.meses_copiados,
     compra: compraR, comision: comR, alimento: aliR, mortandad: mortR,
     total: compraR + comR + aliR + mortR + C.estructura + C.sanidad,
     por_kg_vendido: kge ? (compraR + comR + aliR + mortR + C.estructura + C.sanidad) / kge : null
@@ -907,7 +912,7 @@ function remInformePDF() {
     + '<div class="t" style="font-size:20px">' + _remM(RPc.total) + '</div>'
     + '<div style="font-size:9px;color:#8a827a">$ ' + _remN(RPc.por_kg_vendido) + ' / kg vendido · hist $ ' + _remN(C.por_kg_vendido) + '</div>'
     + '<div style="font-size:9px;color:#6b6560;margin-top:4px">' + (RPc.manualP ? 'manual' : RP.fuente_precio)
-    + ' $ ' + _remN(RPc.precio) + '/kg · MS ' + (RPc.manualMs ? 'manual' : RP.mes_ms) + ' $ ' + _remN(RPc.precioMs, 2) + '</div></div>'
+    + ' $ ' + _remN(RPc.precio) + '/kg · ración ' + (RPc.manualMs ? 'manual' : remRacionTxt(RP, true)) + ' $ ' + _remN(RPc.precioMs, 2) + '/kg MS</div></div>'
     + (hayVenta
         ? '<div class="kc big" style="text-align:right"><div class="l">Resultado a reposición</div>'
           + '<div class="v" style="font-size:24px;color:' + (resRepo >= 0 ? '#d4a84b' : '#ff8b7d') + '">' + _remM(resRepo) + '</div>'
@@ -1047,6 +1052,27 @@ function remVentaKgVivo(r, V) {
    Todo lo que muestra el PDF, ya con los overrides aplicados, en un JSON que se
    baja al disco. La venta se prorratea por fila segun sus kg de egreso, asi que
    los agregados por tropa y por hotelero del pipeline cierran contra la neta. */
+/* v15.82 · "sep-26 · hotelería" (+ ⚠ si algún mes de la estadía usó un precio
+   repetido o del Excel). El precio de la ración sale del portal de Hotelería
+   (racion_mensual.json, con markup); el Excel queda de respaldo. */
+function remMesCorto(m) {
+  var M = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  m = String(m || '');
+  return m.length >= 7 ? M[+m.slice(5, 7) - 1] + '-' + m.slice(2, 4) : m;
+}
+function remRacionTxt(RP, plano) {
+  RP = RP || {};
+  var f = RP.fuente_ms, fu = { hoteleria: 'hotelería', hoteleria_vivo: 'hotelería (mes abierto)',
+    excel: 'Excel', copiado: 'repetido' }[f] || (f || 'Excel');
+  var cop = RP.meses_copiados || [];
+  var t = remMesCorto(RP.mes_ms) + ' · ' + fu;
+  if (cop.length) {
+    var tit = 'precio de ración repetido / tomado del Excel en: ' + cop.join(', ');
+    t += plano ? ' ⚠ (' + cop.length + ' mes' + (cop.length === 1 ? '' : 'es') + ' sin precio de hotelería)'
+               : ' <span title="' + tit.replace(/"/g, '&quot;') + '" style="color:#a3311f;cursor:help">⚠</span>';
+  }
+  return t;
+}
 function remSnapshot(r) {
   var venta = remVentaCtx(), V = remVentaCalc(venta), RPc = remRepoCalc(r, venta);
   var SC = remSCEstado(r), C = r.costos, I = r.indicadores;
@@ -1153,6 +1179,9 @@ function remSnapshot(r) {
     },
     reposicion: {
       precio_kg: RPc.precio, precio_kg_ms: RPc.precioMs, manual: RPc.manual,
+      // v15.82 · de dónde salió el precio de la ración
+      fuente_ms: (r.reposicion || {}).fuente_ms || 'excel',
+      meses_copiados: (r.reposicion || {}).meses_copiados || [],
       costos: { compra: RPc.compra, comision: RPc.comision, alimento: RPc.alimento,
                 mortandad: RPc.mortandad, total: RPc.total,
                 por_kg_vendido: RPc.por_kg_vendido },
@@ -2176,7 +2205,7 @@ function renderRemitos(soloResultado) {
     + (RPc.manualP ? '<span style="color:var(--gold)">manual</span>' : RP.fuente_precio) + '</label>'
     + '<input value="' + _remN(RPc.precio) + '" style="' + INP + '" onchange="remRepoInput(\'repoPrecio\',this.value)"></div>'
     + '<div style="display:flex;flex-direction:column;gap:5px"><label style="' + LBL + '">$/kg MS reposición · '
-    + (RPc.manualMs ? '<span style="color:var(--gold)">manual</span>' : RP.mes_ms) + '</label>'
+    + (RPc.manualMs ? '<span style="color:var(--gold)">manual</span>' : remRacionTxt(RP)) + '</label>'
     + '<input value="' + _remN(RPc.precioMs, 2) + '" style="' + INP + '" onchange="remRepoInput(\'repoMS\',this.value)"></div>'
     + (RPc.manual
         ? '<a onclick="remRepoAuto()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
