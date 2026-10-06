@@ -7497,12 +7497,14 @@ def _norm_tropa(s):
 #   · alimento = kg × precio × (1 + markup)  → el $/kg MS ya viene con markup
 #   · hotelería = cab-día × precio_hoteleria (SIN markup)
 #   · sanidad   = cab ingresadas × precio_sanidad × (1 + markup)
-# El $/kg MS es el del FEEDLOT ENTERO: Σ alimento ÷ Σ kg MS de las liquidaciones
-# del mes que traen kg MS. Sep-26 = 384,81 (el número de Nicolás); el de la
-# liquidación de PEGSA sola da 384,26 y queda como dato (`precio_ms_pegsa`).
-# Se excluyen las liquidaciones sin kg MS (FERIA, que trae alimento pero no
-# consumo): sumarlas infla el promedio (abr-26 daba 351 con todos los hoteleros
-# en ~342).
+# v15.83 · el $/kg MS es el de la LIQUIDACIÓN DE PEGSA (Nicolás 06/10: "tomá el
+# de PEGSA, creo que es mejor"): sep-26 = 384,26. Si PEGSA no tiene liquidación
+# ese mes (o trae kg MS 0) se usa el promedio del feedlot (Σ alimento ÷ Σ kg MS
+# de las liquidaciones con kg MS; sep-26 = 384,81), marcado `hoteleria_feedlot`.
+# El del feedlot queda siempre como dato (`precio_ms_feedlot`). Se excluyen las
+# liquidaciones sin kg MS (FERIA, alimento sin consumo): inflaban el promedio.
+# El mes abierto se calcula en vivo para el feedlot entero (la asignación a
+# PEGSA es residual y necesita el motor de la app): `hoteleria_vivo_feedlot`.
 RACION_HOT_TIMEOUT = 30
 RACION_HOT_PAGINA = 1000
 
@@ -7576,15 +7578,24 @@ def _racion_desde_hoteleria(carpeta_out, log):
             kgms = sum(float(l["r"]["kg_ms"]) for l in filas)
             kgt = sum(float(l["r"].get("kg_tot") or 0) for l in filas)
             peg = next((l["r"] for l in filas if str(l.get("hotelero")).upper() == "PEGSA"), None)
-            pms = ali / kgms
-            ms = kgms / kgt if kgt else None
+            pms_f = ali / kgms                                  # feedlot (informativo)
+            if peg and float(peg.get("kg_tot") or 0) > 0:
+                # v15.83 · la liquidación de PEGSA manda
+                pms = float(peg.get("alimento") or 0) / float(peg["kg_ms"])
+                ms = float(peg["kg_ms"]) / float(peg["kg_tot"])
+                fte, kgt_o, kgms_o = "hoteleria", float(peg["kg_tot"]), float(peg["kg_ms"])
+                cabd = int(peg.get("cab_dias") or 0)
+            else:
+                pms, ms = pms_f, (kgms / kgt if kgt else None)
+                fte, kgt_o, kgms_o = "hoteleria_feedlot", kgt, kgms
+                cabd = sum(int(l["r"].get("cab_dias") or 0) for l in por_mes.get(mes, []))
             if not ms:
                 continue
             out[mes] = dict(base, precio_ms=round(pms, 2), ms=round(ms, 4), tc=round(pms * round(ms, 4), 6),
-                            precio_ms_costo=round(pms / (1 + mk), 2), fuente="hoteleria",
-                            estado=p.get("estado") or "cerrado", kg_tot=round(kgt, 1), kg_ms=round(kgms, 1),
-                            cab_dias=sum(int(l["r"].get("cab_dias") or 0) for l in por_mes.get(mes, [])),
-                            n_liq=len(filas),
+                            precio_ms_costo=round(pms / (1 + mk), 2), fuente=fte,
+                            estado=p.get("estado") or "cerrado", kg_tot=round(kgt_o, 1), kg_ms=round(kgms_o, 1),
+                            cab_dias=cabd, n_liq=len(filas),
+                            precio_ms_feedlot=round(pms_f, 2),
                             precio_ms_pegsa=round(float(peg["precio_ms"]), 2) if peg and peg.get("precio_ms") else None)
     # mes abierto: el más nuevo con alimentación cargada y sin liquidación
     try:
@@ -7619,7 +7630,7 @@ def _racion_desde_hoteleria(carpeta_out, log):
                                "san_costo": float(p.get("precio_sanidad") or 0),
                                "precio_ms": round(pms, 2), "ms": round(kgms / kgt, 4),
                                "tc": round(pms * round(kgms / kgt, 4), 6), "precio_ms_costo": round(pms / (1 + mk), 2),
-                               "fuente": "hoteleria_vivo", "estado": "abierto", "dias_con_datos": len(dias),
+                               "fuente": "hoteleria_vivo_feedlot", "estado": "abierto", "dias_con_datos": len(dias),
                                "kg_tot": round(kgt, 1), "kg_ms": round(kgms, 1)}
         except Exception as e:
             log.warning(f"  ⚠ Ración: no pude calcular en vivo el mes abierto {mes_ab} ({e})")
@@ -7661,12 +7672,13 @@ def procesar_precios_racion(carpeta_out, log=None):
     ult = max(out)
     if hoy > ult:
         out[hoy] = dict(out[ult], fuente="copiado", estado="copiado", copiado_de=ult)
-    cerrados = [m for m, v in out.items() if v.get("fuente") == "hoteleria"]
+    cerrados = [m for m, v in out.items() if v.get("fuente") in ("hoteleria", "hoteleria_feedlot")]
     meta = {"generado": datetime.now().isoformat(),
             "fuente_principal": "hoteleria" if hot else "excel",
             "supabase": estado_hot, "meses": len(out), "desde": min(out), "hasta": max(out),
             "ultimo_cerrado": max(cerrados) if cerrados else None,
-            "nota": ("precio_ms con markup (lo que liquida el feedlot); precio_ms_costo es sólo informativo. "
+            "nota": ("precio_ms = liquidación de PEGSA, con markup (lo que liquida el feedlot); "
+                     "precio_ms_feedlot y precio_ms_costo son sólo informativos. "
                      "dia = precio_hoteleria (sin markup); san = precio_sanidad × (1 + markup).")}
     try:
         guardar({"meta": meta, "meses": out}, carpeta_out, "racion_mensual.json")

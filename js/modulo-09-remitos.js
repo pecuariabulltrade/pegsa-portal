@@ -1063,6 +1063,7 @@ function remMesCorto(m) {
 function remRacionTxt(RP, plano) {
   RP = RP || {};
   var f = RP.fuente_ms, fu = { hoteleria: 'hotelería', hoteleria_vivo: 'hotelería (mes abierto)',
+    hoteleria_feedlot: 'hotelería (promedio feedlot)', hoteleria_vivo_feedlot: 'hotelería (mes abierto, feedlot)',
     excel: 'Excel', copiado: 'repetido' }[f] || (f || 'Excel');
   var cop = RP.meses_copiados || [];
   var t = remMesCorto(RP.mes_ms) + ' · ' + fu;
