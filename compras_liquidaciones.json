@@ -1,18 +1,18 @@
 {
   "meta": {
-    "generado": "2026-10-07T16:08:16.772145",
+    "generado": "2026-10-07T17:10:14.072093",
     "fuente": "supabase+archivos",
     "motivo_sin_base": null,
-    "n_supabase": 158,
+    "n_supabase": 159,
     "n_archivos": 143,
-    "n_liquidaciones": 155,
+    "n_liquidaciones": 156,
     "n_anuladas": 3,
     "carpeta_fallback": "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos\\compras_liquidaciones",
     "semaforo": {
-      "ok": 170,
+      "ok": 171,
       "revisar": 3,
       "sin_liquidar": 291,
-      "terceros": 115,
+      "terceros": 114,
       "tol_kg_pct": 8,
       "tol_cab": 0
     }
@@ -13350,6 +13350,62 @@
       }
     },
     {
+      "id": "TAPDAR230926_2026-09-28",
+      "fecha": "2026-09-28",
+      "consignataria": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "nro_liquidacion": "0011-0009922/9920",
+      "archivo": "2026-09-24 Compra Darwash (LT)",
+      "comision_modo": "pct",
+      "comision_valor": null,
+      "gastos_monto": null,
+      "observaciones": null,
+      "estado": "cargada",
+      "generado": "2026-10-07T19:49:00.630Z",
+      "version_portal": "v15.74.16",
+      "categorias": [
+        {
+          "kg_wc": 8971.9,
+          "tropa": "TAP.DAR.23/09/2026",
+          "kg_liq": 8973,
+          "importe": 42940000.0,
+          "hotelero": "LAS TAPERAS",
+          "categoria": "Ternero",
+          "kg_wc_cab": 299.06333333333333,
+          "precio_kg": 4785.467513652067,
+          "cabezas_wc": 30,
+          "gastos_cat": 0.0,
+          "importe_cg": 42940000.0,
+          "kg_liq_cab": 299.1,
+          "tropa_norm": "TAPDAR230926",
+          "cabezas_liq": 30,
+          "precio_modo": "total",
+          "comision_cat": 0.0,
+          "desbaste_pct": 0.012258999219889722,
+          "precio_kg_cg": 4785.467513652067,
+          "precio_valor": 42940000,
+          "categorias_de": "caravanas",
+          "precio_cab_cg": 1431333.3333333333
+        }
+      ],
+      "total": {
+        "cabezas_liq": 30.0,
+        "kg_liq": 8973.0,
+        "cabezas_wc": 30.0,
+        "kg_wc": 8971.9,
+        "importe": 42940000.0,
+        "comision": 0.0,
+        "gastos": 0.0,
+        "importe_cg": 42940000.0,
+        "precio_kg": 4785.467513652067,
+        "precio_kg_cg": 4785.467513652067,
+        "precio_cab_cg": 1431333.3333333333,
+        "recargo_pct": 0.0,
+        "desbaste_pct": 0.012258999219889722,
+        "cabezas_dif": 0.0
+      }
+    },
+    {
       "id": "TAPDAR260926_2026-09-28",
       "fecha": "2026-09-28",
       "consignataria": "DARWASH SA",
@@ -20494,6 +20550,28 @@
         "desbaste_aceptado_vigente": false
       }
     },
+    "TAPDAR230926": {
+      "Ternero": {
+        "liq_id": "TAPDAR230926_2026-09-28",
+        "fecha": "2026-09-28",
+        "liq_ids": [
+          "TAPDAR230926_2026-09-28"
+        ],
+        "n_liq": 1,
+        "cabezas_liq": 30.0,
+        "kg_liq": 8973.0,
+        "precio_kg": 4785.467513652067,
+        "precio_kg_cg": 4785.467513652067,
+        "precio_cab_cg": 1431333.3333333333,
+        "comision_cat": 0.0,
+        "gastos_cat": 0.0,
+        "importe": 42940000.0,
+        "importe_cg": 42940000.0,
+        "desbaste_pct": 0.012258999219889722,
+        "hotelero": "LAS TAPERAS",
+        "desbaste_aceptado_vigente": false
+      }
+    },
     "TAPDAR260926": {
       "Ternera": {
         "liq_id": "TAPDAR260926_2026-09-28",
@@ -23744,7 +23822,7 @@
       "avisos": []
     },
     "TAPDAR230926": {
-      "estado": "terceros",
+      "estado": "ok",
       "motivos": {},
       "avisos": []
     },
