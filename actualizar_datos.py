@@ -4892,8 +4892,8 @@ def main():
     # 2026-04-30 y el módulo Resultado por Remito costea animales con hasta
     # 360 días de estadía → esto reconstruye el %PV mes a mes.
     #   - numerador:   consumo_{periodo}.json → por_mes (mixer, días válidos)
-    #   - denominador: comportamiento_historico → El Haras kg_proyectado,
-    #                  PROMEDIO del mes = (fin mes anterior + fin mes) / 2
+    #   - v15.84: numerador = kg MS/cab/día del liquidador de Hotelería (General),
+    #             denominador = kg/cab de El Haras (eficiencia diaria o snapshots)
     #   - ÷ 0.92: mismo ajuste que el indicador del portal (data.js ~L761)
     # Va acá y NO en la sección 9 porque comportamiento_historico.json se
     # genera en el Módulo 9 (más arriba) y se lee desde DISCO, no de memoria:
@@ -9116,23 +9116,134 @@ def procesar_compras_reales(carpeta_out, log=None):
 # v15.58: mismo ajuste que aplica el portal en el indicador de %PV
 # (data.js ~L761: pct_peso_vivo.valor / 0.92). Se guardan crudo y ajustado.
 AJUSTE_MS_PCT_PV = 0.92
+# v15.84 · rango de negocio del consumo (decisión de Nicolás, 09/10/2026): el
+# mes que queda afuera se lleva al límite. Lo usa también el costeo del 07
+# (RR_PV_MIN / RR_PV_MAX), así pct_pv_usado es exactamente lo que se costea.
+PCT_PV_RANGO = (2.3, 2.7)
+PCT_PV_MIN_REGISTROS = 20     # días de eficiencia_historico para usar la serie diaria
+
+
+def _pctpv_hoteleria(carpeta_out, log):
+    """v15.84 · consumo kg MS por mes del liquidador de Hotelería, fila General
+    (todos los hoteleros). ({mes: {...}}, estado). Nunca levanta excepción.
+
+    Mes cerrado: Σ datos.r.kg_ms ÷ Σ datos.r.cab_dias de las liquidaciones, sin
+    las que no traen kg_ms (FERIA). Mes abierto (alimentación cargada y sin
+    liquidar): Σ kg × (1 − humedad) ÷ cab-días reconstruidos como la app
+    (stock inicial + ingresos − egresos − mortandad, día a día)."""
+    url, key, motivo = _racion_hot_cred(carpeta_out)
+    if not url:
+        return {}, motivo
+    try:
+        # sólo los totales: datos->r entero trae los días y pesa MB
+        liq = _racion_hot_get(url, key, "hot_liquidaciones",
+                              "select=mes,hotelero,kg_ms:datos->r->kg_ms,cab_dias:datos->r->cab_dias,"
+                              "kg_tot:datos->r->kg_tot,stock_final:datos->r->stock_final&order=mes")
+        per = _racion_hot_get(url, key, "hot_periodos", "select=mes,insumos,stock_inicial&order=mes")
+    except Exception as e:
+        return {}, f"error {type(e).__name__}: {e}"
+    P = {p["mes"]: p for p in per if p.get("mes")}
+    por_mes = {}
+    for l in liq:
+        por_mes.setdefault(l.get("mes"), []).append(l)
+    out = {}
+    for mes, ls in sorted(por_mes.items()):
+        filas = [l for l in ls if float(l.get("kg_ms") or 0) > 0]
+        kgms = sum(float(l["kg_ms"]) for l in filas)
+        cabd = sum(float(l.get("cab_dias") or 0) for l in filas)
+        kgt = sum(float(l.get("kg_tot") or 0) for l in filas)
+        if not (kgms and cabd):
+            continue
+        peg = [l for l in filas if str(l.get("hotelero")).strip().upper() == "PEGSA"]
+        pk, pc = sum(float(l["kg_ms"]) for l in peg), sum(float(l.get("cab_dias") or 0) for l in peg)
+        out[mes] = {"kg_ms": kgms, "cab_dias": cabd, "ms_pct": kgms / kgt if kgt else None,
+                    "kg_ms_cab_dia_pegsa": pk / pc if pc else None, "n_liq": len(filas),
+                    "fuente_ms": "hoteleria"}
+    # ── mes abierto ──
+    try:
+        ult = _racion_hot_get(url, key, "hot_alimentacion", "select=mes&order=fecha.desc&limit=1")
+        mes_ab = ult[0].get("mes") if ult else None
+    except Exception as e:
+        mes_ab = None
+        log.warning(f"  ⚠ %PV: no pude ver el mes abierto en hot_alimentacion ({e})")
+    if mes_ab and mes_ab not in out:
+        try:
+            ali = _racion_hot_get(url, key, "hot_alimentacion", f"select=fecha,insumo,kg&mes=eq.{mes_ab}")
+            mov = _racion_hot_get(url, key, "hot_movimientos",
+                                  f"select=fecha,hotelero,tipo,cabezas&mes=eq.{mes_ab}")
+            p = P.get(mes_ab) or P[max(P)]
+            hum = {str(i.get("nombre")): float(i.get("humedad") or 0) for i in (p.get("insumos") or [])}
+            prev = max((m for m in por_mes if m < mes_ab), default=None)
+            # los hoteleros sin kg MS en la última liquidación (FERIA) quedan afuera,
+            # igual que en los meses cerrados
+            fuera = {str(l.get("hotelero")).strip().upper() for l in por_mes.get(prev, [])
+                     if not float(l.get("kg_ms") or 0)}
+            si = (P.get(mes_ab) or {}).get("stock_inicial")
+            if si:
+                stock = sum(float(v or 0) for h, v in si.items() if str(h).strip().upper() not in fuera)
+                fte_si = "hot_periodos"
+            else:
+                stock = sum(float(l.get("stock_final") or 0) for l in por_mes.get(prev, [])
+                            if str(l.get("hotelero")).strip().upper() not in fuera)
+                fte_si = f"stock_final {prev}"
+            kg_dia = {}
+            kgt = 0.0
+            for r in ali:
+                kg = float(r.get("kg") or 0)
+                kg_dia[r["fecha"]] = kg_dia.get(r["fecha"], 0.0) + kg * (1 - hum.get(str(r["insumo"]), 0))
+                kgt += kg
+            dmov = {}
+            for m in mov:
+                if str(m.get("hotelero")).strip().upper() in fuera:
+                    continue
+                sg = {"ingreso": 1, "egreso": -1, "mortandad": -1}.get(m.get("tipo"), 0)
+                dmov[m["fecha"]] = dmov.get(m["fecha"], 0) + sg * float(m.get("cabezas") or 0)
+            from datetime import date as _d8, timedelta as _td8
+            dias = sorted(d for d, v in kg_dia.items() if v > 0)
+            cabd = 0.0
+            if dias and stock:
+                cur = _d8.fromisoformat(f"{mes_ab}-01")
+                fin = _d8.fromisoformat(dias[-1])
+                while cur <= fin:
+                    d = cur.isoformat()
+                    stock += dmov.get(d, 0)          # la app suma los movimientos del día antes de contar
+                    if kg_dia.get(d, 0) > 0:
+                        cabd += stock
+                    cur += _td8(days=1)
+            kgms = sum(kg_dia[d] for d in dias)
+            if kgms and cabd > 0:
+                out[mes_ab] = {"kg_ms": kgms, "cab_dias": cabd, "ms_pct": kgms / kgt if kgt else None,
+                               "kg_ms_cab_dia_pegsa": None, "n_liq": 0, "dias_con_datos": len(dias),
+                               "fuente_ms": "hoteleria_vivo", "stock_inicial_de": fte_si}
+            else:
+                log.warning(f"  ⚠ %PV: no pude reconstruir los cab-días de {mes_ab} en Hotelería "
+                            f"(stock {stock:,.0f}, {len(dias)} días con alimentación) — va el mixer")
+        except Exception as e:
+            log.warning(f"  ⚠ %PV: no pude calcular en vivo el mes abierto {mes_ab} ({e})")
+    return out, "ok"
 
 
 def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
-    """v15.58: cruza el consumo mensual del mixer con los kg PV de El Haras y
-    vuelca pct_pv_mensual.json — el %PV mes a mes de toda la historia.
+    """v15.58 / v15.84: vuelca pct_pv_mensual.json — el %PV mes a mes de toda la
+    historia, que usa el costeo del alimento del módulo 07.
 
-    Lo consume el módulo Resultado por Remito, que hoy usa un 2,63% de
-    referencia (un objetivo anual, no el consumo real) que sobreestima el
-    alimento 30-40%.
+    v15.84 (decisión de Nicolás, 09/10/2026): el consumo por cabeza es el dato
+    duro (lo alimentado y liquidado) y el peso promedio la estimación débil:
 
-        pct_pv_crudo    = (kg_ms_mes / dias_con_registro) / kg_pv_promedio * 100
-        pct_pv_ajustado = pct_pv_crudo / 0.92
+        kg_ms_cab_dia    = Hotelería, General: Σ kg_ms ÷ Σ cab_dias
+                           (sin Hotelería: mixer ÷ cabezas de WinCampo)
+        kg_cab_prom      = El Haras real (WinCampo): eficiencia_historico diario
+                           (≥ 20 registros) o snapshots (fin mes ant + fin mes) / 2
+        pct_pv_crudo     = kg_ms_cab_dia ÷ kg_cab_prom × 100
+        pct_pv_ajustado  = crudo ÷ 0,92
+        pct_pv_usado     = ajustado acotado a 2,3–2,7
+        kg_cab_implicito = kg_ms_cab_dia ÷ 0,92 ÷ pct_pv_usado × 100
+                           (el peso promedio consistente con el consumo)
 
-    Denominador = PROMEDIO del mes (fin mes anterior + fin mes) / 2, no fin de
-    mes: el snapshot es del último día y el stock se mueve mucho adentro del mes
-    (jun-26 arrancó en 3,57M y terminó en 2,99M kg → fin de mes inflaría el %PV
-    ~9%).
+    Bug corregido en v15.84: el denominador sumaba hacienda_masa.por_hotelero de
+    TODOS los campos (Tercio Bravo en La Panchita, Las Taperas en Coloradito…):
+    agosto-26 daba 3.079.164 kg contra 2.691.824 reales de El Haras.
+    por_campo["El Haras"].kg_proyectado ya es PEGSA + hoteleros de El Haras.
 
     Devuelve el dict volcado, o None si falta alguna fuente.
     NO levanta excepción — sólo loguea warning y no pisa el JSON existente.
@@ -9142,7 +9253,7 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
 
     base = Path(carpeta_out)
 
-    # ── Fuentes (ambas desde disco) ──────────────────────────
+    # ── Fuentes ──────────────────────────────────────────────
     try:
         with (base / f"consumo_{periodo}.json").open(encoding="utf-8") as f:
             _consumo = json.load(f)
@@ -9161,91 +9272,110 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
         log.warning(f"  ⚠ no pude leer comportamiento_historico.json ({e}), saltando %PV mensual")
         return None
     _snaps = _comp.get("snapshots") or []
-    if not _snaps:
-        log.warning("  ⚠ comportamiento_historico sin snapshots, saltando %PV mensual")
-        return None
 
-    # kg PV de El Haras a fin de cada mes (el snapshot es del último día).
-    # v15.58.1: el mixer alimenta a TODOS los animales de El Haras, propios y de
-    # hoteleros (Bulltrade, Darwash, Las Taperas, Tercio Bravo, Saguaipé, UGMA…) —
-    # confirmado por el usuario. El denominador es El Haras pegsa + hoteleros.
-    # Con pegsa solo, 2025 daba 3,1-3,9% de %PV, imposible: en 2025 los hoteleros
-    # pesaban 0,8-1,3M kg (30-50% extra), en 2026 bajaron a 0,3-0,4M.
-    # ⚠ por_hotelero trae una clave 'PEGSA' que duplica la hacienda propia (y además
-    # es de TODOS los campos, no solo El Haras): hay que excluirla.
-    # Limitación conocida: por_hotelero no abre por campo. Si algún hotelero tuviera
-    # hacienda fuera de El Haras, esto sobreestima un poco el denominador (contra la
-    # serie diaria: ±1% en abr/may-26, +5/+9% en jun/jul-26).
-    kg_fin_mes = {}
-    kg_hoteleros_fin_mes = {}
+    _diario = {}
+    try:
+        with (base / "eficiencia_historico.json").open(encoding="utf-8") as f:
+            for r in (json.load(f).get("registros") or []):
+                if r.get("fecha") and r.get("cabezas") and r.get("kg_pv"):
+                    _diario.setdefault(str(r["fecha"])[:7], []).append(r)
+    except Exception as e:
+        log.warning(f"  ⚠ no pude leer eficiencia_historico.json ({e}), el kg PV va por snapshots")
+
+    hot, estado_hot = _pctpv_hoteleria(carpeta_out, log)
+    if estado_hot != "ok":
+        log.warning(f"  ⚠ %PV: portal de Hotelería no disponible ({estado_hot}) — el consumo va por el mixer")
+
+    # El Haras real a fin de cada mes (el snapshot es del último día). El mixer
+    # alimenta a todos los animales de El Haras, propios y de hoteleros, y
+    # por_campo["El Haras"] ya los trae a todos.
+    fin_mes = {}
     for s in _snaps:
         per = s.get("periodo")
-        _hm = s.get("hacienda_masa") or {}
-        kg = ((_hm.get("pegsa") or {})
-              .get("por_campo", {}).get("El Haras", {}).get("kg_proyectado"))
-        if not (per and kg):
+        eh = ((s.get("hacienda_masa") or {}).get("por_campo") or {}).get("El Haras") or {}
+        kg, cab = float(eh.get("kg_proyectado") or 0), float(eh.get("cabezas") or 0)
+        if not (per and kg and cab):
             continue
-        _hot = sum(
-            float((v or {}).get("kg_proyectado") or 0)
-            for k, v in (_hm.get("por_hotelero") or {}).items()
-            if str(k).strip().upper() != "PEGSA"
-        )
-        kg_fin_mes[per]           = float(kg) + _hot
-        kg_hoteleros_fin_mes[per] = _hot
+        fin_mes[per] = {
+            "kg": kg, "cab": cab,
+            "kg_hot": sum(float((v or {}).get("kg_proyectado") or 0)
+                          for k, v in (eh.get("por_hotelero") or {}).items()
+                          if str(k).strip().upper() != "PEGSA"),
+        }
 
     def _mes_anterior(mes):
         y, m = int(mes[:4]), int(mes[5:7])
         return f"{y-1:04d}-12" if m == 1 else f"{y:04d}-{m-1:02d}"
 
-    meses_out         = {}
-    meses_sin_kg_pv   = []
-    meses_sin_consumo = []
-    fuera_de_rango    = []
+    mes_hoy = datetime.now().strftime("%Y-%m")
+    lo, hi = PCT_PV_RANGO
+    meses_out, meses_sin_kg_pv, acotados = {}, [], []
 
-    for mes in sorted(_meses_consumo):
-        c = _meses_consumo[mes]
-        kg_ms_mes = c.get("kg_ms_total")
-        n_dias    = c.get("dias_con_registro") or 0
-        if not kg_ms_mes or n_dias <= 0:
-            continue
+    for mes in sorted(set(_meses_consumo) | set(hot)):
+        c = _meses_consumo.get(mes) or {}
+        n_dias = c.get("dias_con_registro") or 0
+        kg_ms_dia_mixer = (c["kg_ms_total"] / n_dias) if (c.get("kg_ms_total") and n_dias > 0) else None
 
-        prev = kg_fin_mes.get(_mes_anterior(mes))
-        fin  = kg_fin_mes.get(mes)
-        if fin is not None and prev is not None:
-            kg_pv, fuente = (prev + fin) / 2, "promedio_snapshots"
-        elif fin is not None:
-            # Primer mes de la serie de snapshots: no hay mes anterior.
-            kg_pv, fuente = fin, "fin_mes"
-        elif prev is not None:
-            # Mes en curso: todavía no hay snapshot propio.
-            kg_pv, fuente = prev, "fin_mes_anterior"
+        # ── denominador: kg/cab de El Haras ──
+        regs = _diario.get(mes) or []
+        prev, fin = fin_mes.get(_mes_anterior(mes)), fin_mes.get(mes)
+        if regs and (len(regs) >= PCT_PV_MIN_REGISTROS or mes == mes_hoy):
+            kg_pv = sum(float(r["kg_pv"]) for r in regs) / len(regs)
+            cab = sum(float(r["cabezas"]) for r in regs) / len(regs)
+            fte_kg = "diario"
+        elif prev and fin:
+            kg_pv, cab, fte_kg = (prev["kg"] + fin["kg"]) / 2, (prev["cab"] + fin["cab"]) / 2, "promedio_snapshots"
+        elif fin:
+            kg_pv, cab, fte_kg = fin["kg"], fin["cab"], "fin_mes"
+        elif prev:
+            kg_pv, cab, fte_kg = prev["kg"], prev["cab"], "fin_mes_anterior"
         else:
             meses_sin_kg_pv.append(mes)
             continue
+        kg_cab = kg_pv / cab
 
-        kg_ms_dia = kg_ms_mes / n_dias
-        crudo     = kg_ms_dia / kg_pv * 100
+        # ── numerador: kg MS/cab/día ──
+        kg_ms_cab_mixer = kg_ms_dia_mixer / cab if kg_ms_dia_mixer else None
+        h = hot.get(mes)
+        if h:
+            kg_ms_cab, fte_ms = h["kg_ms"] / h["cab_dias"], h["fuente_ms"]
+        elif kg_ms_cab_mixer:
+            kg_ms_cab, fte_ms = kg_ms_cab_mixer, "mixer"
+        else:
+            continue
+
+        crudo = kg_ms_cab / kg_cab * 100
+        ajust = round(crudo / AJUSTE_MS_PCT_PV, 2)
+        usado = min(hi, max(lo, ajust))
+        acot = usado != ajust
+        implicito = kg_ms_cab / AJUSTE_MS_PCT_PV / usado * 100
         meses_out[mes] = {
-            "kg_ms_mes":         round(kg_ms_mes, 1),
-            "kg_ms_dia":         round(kg_ms_dia, 1),
-            "dias_calendario":   c.get("dias_calendario"),
-            "dias_con_registro": n_dias,
-            "kg_pv_fin_mes":     round(fin) if fin is not None else None,
-            # v15.58.1: cuánto de kg_pv_fin_mes son hoteleros (para auditar el aporte).
-            "kg_pv_hoteleros_fin_mes": (round(kg_hoteleros_fin_mes[mes])
-                                        if mes in kg_hoteleros_fin_mes else None),
-            "kg_pv_haras":       round(kg_pv),
-            "fuente_kg_pv":      fuente,
-            "pct_pv_crudo":      round(crudo, 2),
-            "pct_pv_ajustado":   round(crudo / AJUSTE_MS_PCT_PV, 2),
-            "parcial":           bool(c.get("parcial")),
+            "kg_ms_cab_dia":       round(kg_ms_cab, 2),
+            "kg_ms_cab_dia_pegsa": (round(h["kg_ms_cab_dia_pegsa"], 2)
+                                    if h and h.get("kg_ms_cab_dia_pegsa") else None),
+            "kg_ms_cab_dia_mixer": round(kg_ms_cab_mixer, 2) if kg_ms_cab_mixer else None,
+            "ms_pct":              round(h["ms_pct"], 4) if h and h.get("ms_pct") else None,
+            "kg_cab_prom":         round(kg_cab, 1),
+            "cab_prom":            round(cab),
+            "kg_pv":               round(kg_pv),
+            "fuente_ms":           fte_ms,
+            "fuente_kg_pv":        fte_kg,
+            "pct_pv_crudo":        round(crudo, 2),
+            "pct_pv_ajustado":     ajust,
+            "pct_pv_usado":        usado,
+            "acotado":             acot,
+            "kg_cab_implicito":    round(implicito, 1),
+            "dias_con_registro":   len(regs) if fte_kg == "diario" else n_dias,
+            # para auditar contra la serie vieja (mixer)
+            "kg_ms_dia":           round(kg_ms_dia_mixer, 1) if kg_ms_dia_mixer else None,
+            "kg_pv_fin_mes":       round(fin["kg"]) if fin else None,
+            "kg_pv_hoteleros_fin_mes": round(fin["kg_hot"]) if fin else None,
+            "parcial":             bool(c.get("parcial")) or mes == mes_hoy,
         }
-        if not (1.0 <= crudo <= 3.5):
-            fuera_de_rango.append((mes, round(crudo, 2), round(kg_ms_dia), round(kg_pv)))
-
-    for mes in sorted(kg_fin_mes):
-        if mes not in _meses_consumo:
-            meses_sin_consumo.append(mes)
+        if h and h.get("fuente_ms") == "hoteleria_vivo":
+            meses_out[mes]["stock_inicial_de"] = h.get("stock_inicial_de")
+        if acot:
+            acotados.append(mes)
 
     if not meses_out:
         log.warning("  ⚠ ningún mes con consumo Y kg PV, no se genera pct_pv_mensual.json")
@@ -9253,29 +9383,44 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
 
     salida = {
         "meta": {
-            "generado":        datetime.now().isoformat(),
-            "formula":         "(kg_ms_mes / dias_con_registro) / kg_pv_promedio_mes / 0.92 * 100",
-            "ajuste_ms":       AJUSTE_MS_PCT_PV,
-            "fuente_consumo":  f"consumo_{periodo}.json -> por_mes (mixer Dropbox, dias validos)",
-            "fuente_kg_pv":    ("comportamiento_historico.json -> El Haras pegsa + hoteleros "
-                                "(kg_proyectado), promedio (fin mes ant + fin mes)/2"),
-            "desde":           min(meses_out),
-            "hasta":           max(meses_out),
-            "meses":           len(meses_out),
-            "meses_sin_kg_pv":   meses_sin_kg_pv,
-            "meses_sin_consumo": meses_sin_consumo,
+            "generado":   datetime.now().isoformat(),
+            "formula":    ("pct_pv_usado = min(2,7, max(2,3, kg_ms_cab_dia / kg_cab_prom * 100 / 0.92)); "
+                           "kg_cab_implicito = kg_ms_cab_dia / 0.92 / pct_pv_usado * 100"),
+            "correccion": ("v15.84: el denominador es El Haras real (por_campo['El Haras']); antes sumaba "
+                           "por_hotelero de TODOS los campos (+14 % en ago-26). El numerador es el "
+                           "consumo por cabeza del liquidador de Hotelería (General)."),
+            "rango":      list(PCT_PV_RANGO),
+            "ajuste_ms":  AJUSTE_MS_PCT_PV,
+            "fuente_consumo": ("hot_liquidaciones (General: Σ kg_ms ÷ Σ cab_dias, sin FERIA); mes abierto "
+                               "hot_alimentacion × (1 − humedad) ÷ cab-días de hot_movimientos; sin Hotelería "
+                               f"consumo_{periodo}.json (mixer) ÷ cabezas WinCampo"),
+            "fuente_kg_pv": ("eficiencia_historico.json (promedio diario, ≥ 20 registros) o "
+                             "comportamiento_historico.json por_campo['El Haras'] (fin mes ant + fin mes)/2"),
+            "supabase":   estado_hot,
+            "desde":      min(meses_out),
+            "hasta":      max(meses_out),
+            "meses":      len(meses_out),
+            "acotados":   acotados,
+            "meses_sin_kg_pv": meses_sin_kg_pv,
         },
         "meses": meses_out,
     }
     guardar(salida, carpeta_out, "pct_pv_mensual.json")
 
-    log.info(f"  ✓ %PV mensual: {len(meses_out)} meses ({min(meses_out)} → {max(meses_out)})")
+    log.info(f"  ✓ %PV mensual: {len(meses_out)} meses ({min(meses_out)} → {max(meses_out)}) · "
+             f"Hotelería {estado_hot} · {len(acotados)} acotados a {lo}–{hi} %")
     if meses_sin_kg_pv:
         log.info(f"    {len(meses_sin_kg_pv)} mes(es) con consumo pero sin kg PV "
                  f"(mixer más viejo que los snapshots): {meses_sin_kg_pv[0]} → {meses_sin_kg_pv[-1]}")
-    for mes, crudo, kgms, kgpv in fuera_de_rango:
-        log.warning(f"  ⚠ %PV fuera de rango [1,0-3,5] en {mes}: {crudo}% "
-                    f"(kg_ms_dia={kgms:,} · kg_pv={kgpv:,})")
+    for mes in sorted(meses_out):
+        v = meses_out[mes]
+        log.info(f"    %PV {mes}: {v['kg_ms_cab_dia']:.2f} kg MS/cab/día ({v['fuente_ms']}) ÷ "
+                 f"{v['kg_cab_prom']:.0f} kg/cab ({v['fuente_kg_pv']}) → crudo {v['pct_pv_crudo']:.2f} · "
+                 f"÷0,92 {v['pct_pv_ajustado']:.2f} · usado {v['pct_pv_usado']:.2f}")
+    for mes in acotados:
+        v = meses_out[mes]
+        log.warning(f"  ⚠ %PV {mes} acotado: {v['pct_pv_ajustado']:.2f} → {v['pct_pv_usado']:.2f} % "
+                    f"(kg/cab implícito {v['kg_cab_implicito']:.0f} vs {v['kg_cab_prom']:.0f} WinCampo)")
     return salida
 
 
@@ -9285,8 +9430,7 @@ def generar_pct_pv_mensual(carpeta_out, periodo, log=None):
 # Port 1:1 del motor calc() del prototipo v2.5 validado por el usuario
 # (Claude_Outputs\Scripts_Auxiliares\modulo_resultado_remito\).
 RR_DESDE          = "2026-07-01"   # alcance: ventas con remito desde acá
-RR_PV_MIN         = 2.0            # límites de negocio del % consumo MS…
-RR_PV_MAX         = 3.0            # …los meses fuera se acotan al límite
+RR_PV_MIN, RR_PV_MAX = PCT_PV_RANGO   # v15.84: 2,3–2,7 (antes 2–3); el mes fuera se acota al límite
 RR_FACTOR_VACA    = 1.30           # la vaca come +30% (decisión de prudencia)
 RR_COMISION_DEF   = 0.03           # fallback si el Excel no trae comisión
 # Categoría → grupo de mortandad de muertes_2025.json
@@ -10714,7 +10858,7 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
     if not PCTPV:
         log.warning("  ⚠ sin pct_pv_mensual, saltando resultado por remito")
         return None
-    PV_FALLBACK = round(sum(PCTPV.values()) / len(PCTPV), 2)
+    PV_FALLBACK = 2.5                  # v15.84: centro del rango (antes el promedio histórico)
 
     PRECIOS = procesar_precios_racion(carpeta_out, log)
     if not PRECIOS:
@@ -11222,7 +11366,7 @@ def generar_resultado_remitos(carpeta_out, periodo, egresos_data, log=None):
                 "compras": ("Compras y Liquidaciones (modulo 12) -> precios_compra_real.json "
                             "(por_tropa, fuente=liquidacion, kg_ingreso WC x precio_kg_cg); el Excel no se usa"),
                 "racion":  "preico de racion feelot.xlsx",
-                "pct_pv":  "pct_pv_mensual.json (pct_pv_ajustado, limites 2-3%)",
+                "pct_pv":  "pct_pv_mensual.json (pct_pv_ajustado acotado 2,3-2,7 % = pct_pv_usado)",
                 "mortandad": f"muertes_{periodo}.json (tasa por grupo)",
                 "caravanas": ("Datamars Livestock /odata/WeightRecords (EID leido por el "
                               "baston); sin sesion vale lo cargado en WinCampo"),
