@@ -238,6 +238,12 @@ function remSkeleton(el, n) {
    venta (re-pintar le comería el foco del input). */
 function remExtras() {
   var pend = [];
+  // v15.84 · tabla de consumo mes a mes (%PV) debajo del detalle por tropa
+  if (!_remPctPv) pend.push(
+    fetch(STOCK_SB + '/pct_pv_mensual.json', {}, {})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) _remPctPv = j; })
+      .catch(function () { _remPctPv = null; }));
   if (!_remFant) pend.push(
     fetch(STOCK_SB + '/fantasmas.json', {}, {})
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -975,7 +981,7 @@ function remInformePDF() {
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.74.14 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.84 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -1438,6 +1444,8 @@ var REM_LS_DET_COSTOS = 'pegsa_rem_detalle_costos2';
 var _remDetCostos = (function () {
   try { return localStorage.getItem(REM_LS_DET_COSTOS) !== '0'; } catch (e) { return true; }
 })();
+var _remPctPv = null;       // v15.84 · pct_pv_mensual.json
+var _remPvAbierto = false;  // v15.84 · sección plegable del %PV. No persiste.
 var _remCatModo  = 'cab';    // 'cab' | 'kg' — reparto de la torta. No persiste.
 var _remCatChart = null;     // instancia viva de Chart.js, para no duplicarla
 
@@ -1446,6 +1454,60 @@ function remDetCostosToggle() {
   try { localStorage.setItem(REM_LS_DET_COSTOS, _remDetCostos ? '1' : '0'); } catch (e) {}
   renderRemitos();
 }
+function remPvToggle() { _remPvAbierto = !_remPvAbierto; renderRemitos(); }
+
+/* v15.84 · "Consumo del feedlot mes a mes (%PV)": de dónde sale el %PV con
+   que se costea el alimento. Consumo por cabeza del liquidador de Hotelería
+   (General) ÷ kg/cab de El Haras (WinCampo) ÷ 0,92, acotado a 2,3–2,7 %. La
+   fila acotada va en ámbar con el kg/cab implícito en negrita: es el peso
+   promedio que el consumo dice que había. */
+function remPctPvHTML(H2) {
+  var P = _remPctPv || {}, M = P.meta || {}, MS = P.meses || {};
+  var meses = Object.keys(MS).sort().reverse();
+  var rg = M.rango || [2.3, 2.7];
+  var h = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:26px 0 12px">'
+    + '<div style="' + H2 + ';margin:0">Consumo del feedlot mes a mes (%PV)</div>'
+    + '<a onclick="remPvToggle()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
+    + 'color:var(--gold);text-decoration:underline">'
+    + (_remPvAbierto ? '&#9650; ocultar' : '&#9660; ver ' + meses.length + ' meses') + '</a></div>';
+  if (!_remPvAbierto) return h;
+  if (!meses.length) return h + '<div style="font-size:12px;color:rgba(26,22,18,.55)">Todavía no se bajó <code>pct_pv_mensual.json</code>.</div>';
+  var FTE = {hoteleria: 'hotelería', hoteleria_vivo: 'hotelería (en vivo)', mixer: 'mixer'};
+  var FKG = {diario: 'diario', promedio_snapshots: 'snapshots', fin_mes: 'fin de mes', fin_mes_anterior: 'fin mes ant.'};
+  var th = 'font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:right;white-space:nowrap';
+  h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
+    + '<thead><tr>' + ['Mes', 'kg MS/cab/día (Hotelería)', 'kg MS/cab/día (mixer)', '% MS', 'kg/cab prom. (WinCampo)',
+      '%PV crudo', '%PV ÷0,92', '%PV usado', 'kg/cab implícito', 'Fuente']
+      .map(function (t, i) { return '<th style="' + th + (i === 0 || i === 9 ? ';text-align:left' : '') + '">' + t + '</th>'; }).join('')
+    + '</tr></thead><tbody>';
+  meses.forEach(function (m) {
+    var v = MS[m];
+    var td = 'padding:7px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:12.5px;white-space:nowrap';
+    var hot = v.fuente_ms === 'mixer' ? null : v.kg_ms_cab_dia;
+    h += '<tr' + (v.acotado ? ' style="background:#fdf3dc" title="acotado: ' + _remN(v.pct_pv_ajustado, 2) + ' % → ' + _remN(v.pct_pv_usado, 2) + ' %"' : '') + '>'
+      + '<td style="' + td + ';text-align:left">' + remMesCorto(m) + (v.parcial ? ' <span style="color:rgba(26,22,18,.45)">(parcial)</span>' : '') + '</td>'
+      + '<td style="' + td + '"' + (v.kg_ms_cab_dia_pegsa != null ? ' title="sólo PEGSA: ' + _remN(v.kg_ms_cab_dia_pegsa, 2) + '"' : '') + '>' + (hot != null ? _remN(hot, 2) : '—') + '</td>'
+      + '<td style="' + td + '">' + (v.kg_ms_cab_dia_mixer != null ? _remN(v.kg_ms_cab_dia_mixer, 2) : '—') + '</td>'
+      + '<td style="' + td + '">' + (v.ms_pct != null ? _remN(v.ms_pct * 100, 1) : '—') + '</td>'
+      + '<td style="' + td + '" title="' + _remN(v.kg_pv) + ' kg PV · ' + _remN(v.cab_prom) + ' cab">' + _remN(v.kg_cab_prom) + '</td>'
+      + '<td style="' + td + '">' + _remN(v.pct_pv_crudo, 2) + '</td>'
+      + '<td style="' + td + '">' + _remN(v.pct_pv_ajustado, 2) + '</td>'
+      + '<td style="' + td + (v.acotado ? ';color:#7a5c14;font-weight:600' : '') + '">' + _remN(v.pct_pv_usado, 2) + '</td>'
+      + '<td style="' + td + (v.acotado ? ';font-weight:700' : ';color:rgba(26,22,18,.45)') + '">' + _remN(v.kg_cab_implicito) + '</td>'
+      + '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.55)">' + (FTE[v.fuente_ms] || v.fuente_ms) + ' · ' + (FKG[v.fuente_kg_pv] || v.fuente_kg_pv) + '</td>'
+      + '</tr>';
+  });
+  h += '</tbody></table></div>'
+    + '<div style="font-size:11px;line-height:1.6;color:rgba(26,22,18,.55);margin-top:8px">'
+    + '%PV crudo = kg MS/cab/día ÷ kg/cab promedio × 100 · %PV usado = crudo ÷ 0,92, acotado a '
+    + _remN(rg[0], 1) + '–' + _remN(rg[1], 1) + ' % (lo que costea el alimento; Vaca +30 % después del límite). '
+    + 'El consumo sale del liquidador de Hotelería (fila General, sin FERIA); sin Hotelería, del mixer ÷ cabezas de WinCampo. '
+    + 'El kg/cab es El Haras real: promedio diario de la eficiencia o (fin de mes anterior + fin de mes) ÷ 2. '
+    + 'En ámbar, los meses acotados: el kg/cab implícito es el peso promedio que haría consistente ese consumo con el %PV usado.'
+    + '</div>';
+  return h;
+}
+
 function remCatModoSet(m) {
   if (_remCatModo === m) return;
   _remCatModo = m;
@@ -2364,6 +2426,9 @@ function renderRemitos(soloResultado) {
         : '')
     + '</tr></tfoot></table>';
 
+  // ── v15.84 · Consumo del feedlot mes a mes (%PV), plegable ──
+  h += remPctPvHTML(H2);
+
   // ── Filas sin liquidación (v15.74.12: antes "para completar en el Excel") ──
   if ((r.tropas_sin_precio || []).length) {
     h += '<div style="' + H2 + '">Filas sin liquidación</div>';
@@ -2408,7 +2473,7 @@ function renderRemitos(soloResultado) {
              + ' a mercado interno 60 d · ' + n.estimado + ' sin mercado (compañeras)';
       })()
     + ' · sin liquidación: promedio de las compañeras + comisión ' + Math.round(meta.comision_default * 100) + ' %'
-    + ' · %PV mensual ajustado ÷0,92 de <code>pct_pv_mensual.json</code>'
+    + ' · %PV mensual: consumo del liquidador de Hotelería ÷ kg/cab de El Haras ÷0,92 (<code>pct_pv_mensual.json</code>)'
     + ' · mortandad: tasa del portal por grupo × costo de compra.'
     + '<br>La edición fina de estos parámetros sigue en el prototipo standalone.'
     + '</div>';

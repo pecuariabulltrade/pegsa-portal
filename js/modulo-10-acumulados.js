@@ -1,4 +1,4 @@
-/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.82 (2026-10-06)
+/* modulo-10-acumulados.js — 11 · Resultados Acumulados · v15.84 (2026-10-09)
    ────────────────────────────────────────────────────────────────
    Todo lo que se fue guardando con "Informe PDF" en 07 · Resultado por Remito,
    junto y por tramo de tiempo: resultado del período, por categoría y el
@@ -34,6 +34,7 @@
    categoría, barra de volumen; orígenes con "Qué vendimos" (mix) en vez de
    "Cat. principal" y encabezado Vendedor; en el PDF todo negativo en rojo.
 
+   v15.84 · la misma caja dice con qué %PV se costeó el consumo (pct_pv_mensual.json)
    v15.82 · la caja del resumen dice a qué precio de ración se costeó el feedlot
    (racion_mensual.json, del portal de Hotelería, con markup) y avisa si alguna
    venta usó un precio repetido o del Excel.
@@ -75,7 +76,15 @@ var _rvBorrar = null;               // id con borrado pendiente de confirmar
 //  Carga
 // ════════════════════════════════════════════════════════════
 var _rvRacion = null;   // v15.82 · racion_mensual.json
+var _rvPctPv = null;    // v15.84 · pct_pv_mensual.json
 function rvCargarRacion() {
+  if (!_rvPctPv) {
+    _rvPctPv = {};
+    fetch(STOCK_SB + '/pct_pv_mensual.json', {}, {})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j) { _rvPctPv = j; if (document.getElementById('rvContent') && _rvHist) rvRender(); } })
+      .catch(function () {});
+  }
   if (_rvRacion) return;
   _rvRacion = {};
   fetch(STOCK_SB + '/racion_mensual.json', {}, {})
@@ -999,6 +1008,16 @@ function rvRacionFrase(A, pdf) {
   } else if (M.fuente_principal === 'excel') {
     s = 'El feedlot se costea con el Excel de precios de ración (el portal de Hotelería no estaba disponible).';
   }
+  // v15.84 · el %PV del último mes cerrado (el que se usó para costear)
+  var PM = (_rvPctPv || {}).meses || {};
+  var mpv = Object.keys(PM).filter(function (m) { return !PM[m].parcial; }).sort().pop();
+  if (mpv && rvOk(PM[mpv].pct_pv_usado)) {
+    var pv = PM[mpv];
+    s += (s ? ' ' : '') + 'Consumo usado: <b>' + _remN(pv.pct_pv_usado, 2) + ' % del peso vivo en '
+      + (typeof remMesCorto === 'function' ? remMesCorto(mpv) : mpv) + '</b> (' + _remN(pv.kg_ms_cab_dia, 2)
+      + ' kg MS/cab/día, ' + (pv.fuente_ms === 'mixer' ? 'mixer' : 'liquidador de Hotelería') + ')'
+      + (pv.acotado ? ', acotado al rango 2,3–2,7 %' : '') + '.';
+  }
   var cop = {}, n = 0;
   rvVentasTramo(A).forEach(function (x) {
     var mc = ((x.v.reposicion || {}).meses_copiados) || [];
@@ -1765,7 +1784,7 @@ function rvInformePDF() {
                    rvSem(t.resultado_pct, _remN(t.resultado_pct, 1) + ' %'),
                    rvSem(t.resultado_cab, _remM(t.resultado_cab)), _remN(t.rinde, 2) + ' %', _remN(t.adp, 3)]) };
       }))
-    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.82 · '
+    + '<div class="ft">Generado el ' + new Date().toLocaleString('es-AR') + ' · Portal PEGSA v15.84 · '
     + 'Las tarjetas y las tablas se calculan por tropa (cada fila de cada venta): la venta de cada remito se '
     + 'prorratea entre sus tropas por kg de egreso, y el ajuste de reposición por costo de compra. La suma de lo '
     + 'guardado en cada venta puede diferir un poco por snapshots de versiones viejas del 07. El rinde es el de la '
