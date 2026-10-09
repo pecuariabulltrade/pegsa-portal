@@ -835,6 +835,13 @@ function remInformePDF() {
     + '.ft{margin-top:12px;border-top:1px solid #e3e1da;padding-top:6px;font-size:8.5px;color:#8a827a;line-height:1.55}'
     // v15.73 · tabla del detalle por tropa (vista resumida)
     + '.dt{width:100%;border-collapse:collapse;font-size:8px;table-layout:auto}'
+    // v15.85 · Fuente y Lím: texto chico, a la izquierda, sin partirse
+    + '.dt .fu{text-align:left;font-size:7px;color:#6b6560}'
+    + '.dt .sc{color:#a3311f}'
+    + '.dt-pie{font-size:7.5px;color:#8a827a;margin-top:3px;line-height:1.45}'
+    // con 15 columnas la tropa se partía en dos renglones: los encabezados
+    // largos ("Compra c/gastos", "Kg ing/cab") van en dos líneas y le dejan el ancho
+    + '.dt thead th{white-space:normal;vertical-align:bottom;line-height:1.25}'
     + '.dt th{font-size:7px;letter-spacing:.05em;text-transform:uppercase;color:#8a827a;'
     + 'padding:3px 3px;border-bottom:1px solid #1a1612;white-space:nowrap}'
     + '.dt td{padding:3px 3px;border-bottom:1px solid #f0eee8;text-align:right;white-space:nowrap}'
@@ -943,24 +950,26 @@ function remInformePDF() {
     h += '<div class="sec">Detalle por tropa</div>';
     h += '<table class="dt"><thead><tr>'
       + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa'])
-        .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra',
-                 'Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'])
-        .map(function (t, i) { return '<th class="' + (t === 'Tropa' ? 'trp' : '') + '" style="text-align:' + (i < (esGrupo ? 3 : 2) ? 'left' : 'right') + '">' + t + '</th>'; }).join('')
+        .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra', 'Fuente',
+                 'Compra c/gastos', 'Kg MS', '% MS', 'Lím', 'Alimento', 'Estr+San'])
+        .map(function (t, i) { return '<th class="' + (t === 'Tropa' ? 'trp' : '') + '" style="text-align:' + (i < (esGrupo ? 3 : 2) || t === 'Fuente' || t === 'Lím' ? 'left' : 'right') + '">' + t + '</th>'; }).join('')
       + '</tr></thead><tbody>';
     filasPDF.forEach(function (f) {
       h += '<tr>'
         + (esGrupo ? '<td style="text-align:left;color:#8a827a">' + f.remito + '</td>' : '')
-        + '<td class="trp" style="text-align:left">' + f.tropa + (f.sc_tipo ? ' *' : '') + (f.estimado && f.fuente_precio !== 'mercado' ? ' (est)' : '') + '</td>'
+        + '<td class="trp' + (f.sc_tipo ? ' sc' : '') + '" style="text-align:left">' + f.tropa + '</td>'
         + '<td style="text-align:left">' + remCatNombre(f.categoria) + '</td>'
         + '<td>' + f.cabezas + '</td>'
         + '<td>' + (f.fecha_ingreso ? f.fecha_ingreso.split('-').reverse().join('/') : '—') + '</td>'
-        + '<td>' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
-        + '<td>' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
+        + '<td>' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null, 1) + '</td>'
+        + '<td>' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null, 1) + '</td>'
         + '<td>' + f.dias + '</td>'
-        + '<td>' + _remN(f.precio_kg_cg != null ? f.precio_kg_cg : f.precio_kg) + ' ' + remFuenteInfo(f).lbl + '</td>'
-        + '<td>' + _remM(f.costo_compra) + '</td>'
+        + '<td>' + _remN(remFilaPrecioCG(f) != null ? remFilaPrecioCG(f) : f.precio_kg) + '</td>'
+        + '<td class="fu">' + remFuenteTxt(f) + '</td>'
+        + '<td>' + _remM(remFilaCompraCG(f)) + '</td>'
         + '<td>' + _remN(f.kg_ms) + '</td>'
-        + '<td>' + _remN(f.pct_ms, 2) + (f.acotado ? ' lim' : '') + '</td>'
+        + '<td>' + _remN(f.pct_ms, 2) + '</td>'
+        + '<td class="fu">' + (f.acotado ? 'sí' : '') + '</td>'
         + '<td>' + _remM(f.alimento) + '</td>'
         + '<td>' + _remM(f.estructura + f.sanidad) + '</td></tr>';
     });
@@ -968,20 +977,21 @@ function remInformePDF() {
       + (esGrupo ? '<td></td>' : '')
       + '<td style="text-align:left">TOTAL</td><td></td>'
       + '<td>' + r.cabezas + '</td><td></td>'
-      + '<td>' + _remN(I.kg_prom_ingreso) + '</td>'
-      + '<td>' + _remN(I.kg_prom_salida) + '</td>'
+      + '<td>' + _remN(I.kg_prom_ingreso, 1) + '</td>'
+      + '<td>' + _remN(I.kg_prom_salida, 1) + '</td>'
       + '<td>' + _remN(I.estadia_prom) + '</td>'
-      + '<td>' + _remN(I.precio_prom_pagado_cg != null ? I.precio_prom_pagado_cg : I.precio_prom_pagado) + '</td>'
-      + '<td>' + _remM(C.compra) + '</td>'
+      + '<td>' + _remN(remDetalleTot(r).precio_cg) + '</td><td></td>'
+      + '<td>' + _remM(remDetalleTot(r).compra_cg) + '</td>'
       + '<td>' + _remN(r.kg_ms) + '</td>'
-      + '<td>' + _remN(I.pct_ms, 2) + '</td>'
+      + '<td>' + _remN(I.pct_ms, 2) + '</td><td></td>'
       + '<td>' + _remM(C.alimento) + '</td>'
       + '<td>' + _remM(C.estructura + C.sanidad) + '</td>'
-      + '</tr></tfoot></table>';
+      + '</tr></tfoot></table>'
+      + '<div class="dt-pie">' + remDetallePie(r) + '</div>';
   }
 
   // 7 · Pie — los supuestos salen de meta, no hardcodeados
-  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.84 · Supuestos: %PV real por mes (límites '
+  h += '<div class="ft">Generado el ' + fh + ' · Portal PEGSA v15.85 · Supuestos: %PV real por mes (límites '
     + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %) · consumo Vaca +' + Math.round((meta.factor_vaca - 1) * 100) + ' %'
     + ' · mortandad Vacas ' + _remN(tas.Vaca, 2) + ' % / Machos ' + _remN(tas.Novillo, 2) + ' % / Hembras ' + _remN(tas.Vaquillona, 2) + ' %'
     + (RPc.manual ? ' · reposición a precio manual $ ' + _remN(RPc.precio) + '/kg'
@@ -1335,6 +1345,122 @@ function remFantFiltro(campo, v) {
 function remFantCopiar(t) {
   try { navigator.clipboard.writeText(t); } catch (e) {}
 }
+/* v15.85 · Compra c/gastos de una fila = kg de ingreso × $/kg con comisión y
+   gastos: la misma base que el $/kg de la tabla y que "COMPRA + COM" del puente.
+   La fila con origen manual (sin caravana, v15.68) recalcula costo_compra pero no
+   trae costo_compra_cg ni comisión nuevos: se rehacen con su % de comisión. */
+function remFilaComision(f) {
+  return f.manual ? (f.costo_compra || 0) * (f.comision_pct || 0) / 100 : (f.comision || 0);
+}
+function remFilaCompraCG(f) {
+  if (!f.manual && f.costo_compra_cg != null) return f.costo_compra_cg;
+  return (f.costo_compra || 0) + remFilaComision(f) + (f.gastos_compra || 0);
+}
+function remFilaPrecioCG(f) {
+  if (!f.manual && f.precio_kg_cg != null) return f.precio_kg_cg;
+  return f.kg_ingreso ? remFilaCompraCG(f) / f.kg_ingreso : null;
+}
+/* Texto de la columna Fuente (PDF y CSV): la marca ya no va pegada al número. */
+function remFuenteTxt(f) {
+  var I = remFuenteInfo(f);
+  var sem = f.liq_semaforo;
+  return I.lbl + (I.lbl === 'liq.' && (sem === 'revisar' || sem === 'sin_liquidar') ? ' ⚠' : '');
+}
+/* Totales del detalle por tropa. Compra c/gastos sale de los rubros del remito
+   (C), así el TOTAL de la tabla es la tarjeta "Compra + comisión" y la barra del
+   puente; $/kg = esa compra ÷ Σ kg de ingreso. */
+function remDetalleTot(r) {
+  var C = r.costos || {};
+  var cg = (C.compra || 0) + (C.comision || 0) + (C.gastos || 0);
+  return { compra_cg: cg, precio_cg: r.kg_ingreso ? cg / r.kg_ingreso : null,
+           precio: r.kg_ingreso ? (C.compra || 0) / r.kg_ingreso : null };
+}
+function remDetallePie(r) {
+  var I = r.indicadores || {};
+  return 'Compra c/gastos = kg de ingreso WinCampo × $/kg liquidado con comisión y gastos. '
+    + 'TOTAL ponderado: kg/cab = Σ kg ÷ Σ cab · $/kg = Σ Compra ÷ Σ kg · % MS = Σ kg MS ÷ Σ (kg promedio × días). '
+    + 'Sin gastos: $ ' + _remN(I.precio_prom_pagado != null ? I.precio_prom_pagado : remDetalleTot(r).precio) + '/kg.'
+    + ((r.filas || []).some(function (f) { return f.sc_tipo; }) ? ' * fila sin caravana verificable, imputada.' : '');
+}
+/* "2327+28+29": el primero entero, los demás con los 2 últimos dígitos si
+   comparten el resto. */
+function remNombreArchivo(r) {
+  if (!r.esGrupo) return String(_remSel);
+  var ids = r.remitos_ids.slice().sort(), a = String(ids[0]);
+  return [a].concat(ids.slice(1).map(function (x) {
+    x = String(x);
+    return x.length === a.length && x.slice(0, -2) === a.slice(0, -2) ? x.slice(-2) : x;
+  })).join('+');
+}
+
+/* v15.85 · "Detalle por tropa" a CSV para Excel es-AR: `;`, coma decimal, sin
+   separador de miles ni símbolos, marcas en columnas propias. Mismas filas que
+   la tabla (remActual(): consolidado del grupo y overrides de los sin caravana)
+   y siempre con las columnas de costos. */
+var REM_DET_CSV_COLS = ['remito', 'tropa', 'categoria', 'cabezas', 'fecha_ingreso', 'fecha_egreso', 'dias',
+  'kg_ingreso', 'kg_ingreso_cab', 'kg_egreso', 'kg_egreso_cab',
+  'precio_kg', 'comision_pct', 'gastos_pct', 'precio_kg_cg', 'fuente_precio', 'semaforo_liq',
+  'costo_compra', 'comision', 'gastos_compra', 'costo_compra_cg',
+  'kg_ms', 'pct_ms', 'pct_ms_acotado', 'alimento', 'estructura', 'sanidad', 'mortandad', 'costo_total_fila',
+  'estimado', 'sin_caravana', 'imputado_manual'];
+function remDetalleCSVTexto(r) {
+  var num = function (v, d) {
+    if (v == null || v === '' || isNaN(v)) return '';
+    return Number(v).toFixed(d).replace('.', ',');
+  };
+  var fec = function (x) { return x ? String(x).slice(0, 10).split('-').reverse().join('/') : ''; };
+  var txt = function (v) {
+    v = v == null ? '' : String(v);
+    return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  };
+  var fuente = function (f) {
+    var fu = f.fuente_precio || (f.estimado ? 'estimado' : '');
+    return fu === 'liquidacion' || fu === 'mercado' || fu === 'propio' ? fu : (fu || f.estimado ? 'estimado' : '');
+  };
+  var lineas = [REM_DET_CSV_COLS.join(';')];
+  var S = {cab: 0, kgi: 0, kge: 0, cc: 0, com: 0, gas: 0, cg: 0, kgms: 0, ali: 0, est: 0, san: 0, mort: 0};
+  (r.filas || []).forEach(function (f) {
+    var com = remFilaComision(f), gas = f.gastos_compra || 0, cg = remFilaCompraCG(f);
+    var tot = cg + (f.alimento || 0) + (f.estructura || 0) + (f.sanidad || 0) + (f.mortandad || 0);
+    S.cab += f.cabezas || 0; S.kgi += f.kg_ingreso || 0; S.kge += f.kg_egreso || 0;
+    S.cc += f.costo_compra || 0; S.com += com; S.gas += gas; S.cg += cg; S.kgms += f.kg_ms || 0;
+    S.ali += f.alimento || 0; S.est += f.estructura || 0; S.san += f.sanidad || 0; S.mort += f.mortandad || 0;
+    lineas.push([
+      txt(f.remito || (r.esGrupo ? '' : _remSel)), txt(f.tropa), txt(remCatNombre(f.categoria)), num(f.cabezas, 0),
+      fec(f.fecha_ingreso), fec(f.fecha_egreso || r.fecha_egreso), num(f.dias, 0),
+      num(f.kg_ingreso, 1), num(f.cabezas ? f.kg_ingreso / f.cabezas : null, 1),
+      num(f.kg_egreso, 1), num(f.cabezas ? f.kg_egreso / f.cabezas : null, 1),
+      num(f.precio_kg, 2), num(f.comision_pct, 2), num(f.gastos_pct, 2), num(remFilaPrecioCG(f), 2),
+      fuente(f), txt(f.liq_semaforo || ''),
+      num(f.costo_compra, 2), num(com, 2), num(gas, 2), num(cg, 2),
+      num(f.kg_ms, 1), num(f.pct_ms, 2), f.acotado ? 'SI' : 'NO',
+      num(f.alimento, 2), num(f.estructura, 2), num(f.sanidad, 2), num(f.mortandad, 2), num(tot, 2),
+      f.estimado ? 'SI' : 'NO', txt(f.sc_tipo || ''), f.manual ? 'SI' : 'NO'
+    ].join(';'));
+  });
+  var I = r.indicadores || {};
+  lineas.push([
+    'TOTAL', '', '', num(S.cab, 0), '', '', num(I.estadia_prom, 0),
+    num(S.kgi, 1), num(S.cab ? S.kgi / S.cab : null, 1), num(S.kge, 1), num(S.cab ? S.kge / S.cab : null, 1),
+    num(S.kgi ? S.cc / S.kgi : null, 2), '', '', num(S.kgi ? S.cg / S.kgi : null, 2), '', '',
+    num(S.cc, 2), num(S.com, 2), num(S.gas, 2), num(S.cg, 2),
+    num(S.kgms, 1), num(I.pct_ms, 2), '',
+    num(S.ali, 2), num(S.est, 2), num(S.san, 2), num(S.mort, 2),
+    num(S.cg + S.ali + S.est + S.san + S.mort, 2), '', '', ''
+  ].join(';'));
+  return lineas.join('\n');
+}
+function remDetalleCSV() {
+  var r = remActual(); if (!r) return;
+  // BOM para que Excel en es-AR abra los acentos bien (como remFantCSV)
+  var blob = new Blob(['﻿' + remDetalleCSVTexto(r)], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Resultado_Remito_' + remNombreArchivo(r) + '_detalle_tropas.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
 function remFantCSV() {
   var COL = ['fecha_lectura', 'placeholder_sugerido', 'eid', 'caravana_visual', 'hotelero',
              'tropa', 'categoria', 'corral', 'kg_ingreso', 'fecha_ingreso', 'dias_en_stock',
@@ -2287,9 +2413,14 @@ function renderRemitos(soloResultado) {
   var catIdx = {}; GC.forEach(function (g, i) { catIdx[g.cat] = i; });
   h += '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:26px 0 12px">'
     + '<div style="' + H2 + ';margin:0">Detalle por tropa</div>'
+    + '<div style="display:flex;align-items:center;gap:14px">'
     + '<a onclick="remDetCostosToggle()" style="cursor:pointer;font-family:\'DM Mono\',monospace;font-size:11px;'
     + 'color:var(--gold);text-decoration:underline">'
-    + (_remDetCostos ? '&#9650; ocultar costos' : '&#9660; ver costos') + '</a></div>';
+    + (_remDetCostos ? '&#9650; ocultar costos' : '&#9660; ver costos') + '</a>'
+    // v15.85 · CSV numérico para Excel (siempre con las columnas de costos)
+    + '<button onclick="remDetalleCSV()" style="padding:6px 14px;background:var(--ink);'
+    + 'border:1px solid var(--ink);border-radius:2px;color:#d4a84b;font-family:\'DM Mono\',monospace;'
+    + 'font-size:11px;cursor:pointer">&#11015; Exportar CSV</button></div></div>';
 
   // Torta de categorías de ingreso — el canvas nace acá vacío y se llena en
   // remRenderTortaCat(), después del innerHTML.
@@ -2337,15 +2468,17 @@ function renderRemitos(soloResultado) {
         + _remN(f.gastos_pct || 0, 1) + ' % → $ ' + _remN(cg) + '/kg × ' + _remN(f.kg_ingreso) + ' kg'
         + (f.precio_cab_cg ? ' ($/cab liquidado ' + _remN(f.precio_cab_cg) + ', informativo)' : '')
       : 'estimado al promedio de las compañeras: $ ' + _remN(f.precio_kg) + '/kg + comisión ' + _remN(f.comision_pct, 1) + ' %';
+    if (f.manual) cg = remFilaPrecioCG(f);   // v15.85 · origen manual: rehecho
     return '<span title="' + tip + '">' + _remN(cg != null ? cg : f.precio_kg) + '</span>';
   };
-  var COLS_COSTO = ['Compra', 'Kg MS', '% MS', 'Alimento', 'Estr+San'];
+  // v15.85 · Compra c/gastos (misma base que el $/kg) y Lím en su columna
+  var COLS_COSTO = ['Compra c/gastos', 'Kg MS', '% MS', 'Lím', 'Alimento', 'Estr+San'];
   var nIzq = esGrupo ? 3 : 2;   // remito · tropa · cat van alineadas a la izquierda
   h += '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);font-family:\'DM Mono\',monospace">'
     + '<thead><tr>' + (esGrupo ? ['Remito', 'Tropa'] : ['Tropa'])
-      .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra'])
+      .concat(['Cat', 'Cab', 'Ingreso', 'Kg ing/cab', 'Kg sal/cab', 'Días', '$/kg compra', 'Fuente'])
       .concat(_remDetCostos ? COLS_COSTO : [])
-      .map(function (t, i) { return '<th style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i < nIzq ? 'left' : 'right') + ';white-space:nowrap">' + t + '</th>'; }).join('')
+      .map(function (t, i) { return '<th' + (t === 'Lím' ? ' title="consumo acotado a ' + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %PV"' : '') + ' style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(26,22,18,.5);padding:9px 10px;border-bottom:2px solid var(--border);text-align:' + (i < nIzq || t === 'Fuente' || t === 'Lím' ? 'left' : 'right') + ';white-space:nowrap">' + t + '</th>'; }).join('')
     + '</tr></thead><tbody>';
   (r.filas || []).forEach(function (f) {
     var td = 'padding:8px 10px;border-bottom:1px solid #f0eee8;text-align:right;font-size:13px;white-space:nowrap';
@@ -2384,21 +2517,23 @@ function renderRemitos(soloResultado) {
       : '';
     h += '<tr' + (f.sc_tipo ? ' style="background:#fdf6f4"' : (f.estimado ? ' style="background:#fffbf0"' : '')) + '>'
       + (esGrupo ? '<td style="' + td + ';text-align:left;color:rgba(26,22,18,.5)">' + f.remito + '</td>' : '')
-      + '<td style="' + td + ';text-align:left">' + f.tropa + (f.sc_tipo ? tagSC : tagAnt)
-      + (f.estimado && f.fuente_precio !== 'mercado' ? tag + 'est</span>' : '') + '</td>'
+      + '<td style="' + td + ';text-align:left">' + f.tropa + (f.sc_tipo ? tagSC : tagAnt) + '</td>'
       + '<td style="' + td + ';text-align:left">' + catChip(f.categoria) + '</td>'
       + '<td style="' + td + '">' + f.cabezas + '</td>'
       + '<td style="' + td + '">' + f.fecha_ingreso.split('-').reverse().join('/') + '</td>'
       // v15.73: por cabeza. El total de kg de la fila no se pierde — va en el
       // tooltip, que es de donde se leía antes.
-      + '<td style="' + td + '" title="' + _remN(f.kg_ingreso) + ' kg de ingreso en la fila">' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null) + '</td>'
-      + '<td style="' + td + '" title="' + _remN(f.kg_egreso) + ' kg de salida en la fila">' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null) + '</td>'
+      + '<td style="' + td + '" title="' + _remN(f.kg_ingreso, 1) + ' kg de ingreso en la fila">' + _remN(f.cabezas ? f.kg_ingreso / f.cabezas : null, 1) + '</td>'
+      + '<td style="' + td + '" title="' + _remN(f.kg_egreso, 1) + ' kg de salida en la fila">' + _remN(f.cabezas ? f.kg_egreso / f.cabezas : null, 1) + '</td>'
       + '<td style="' + td + '">' + f.dias + '</td>'
-      + '<td style="' + td + '">' + pkgCell(f) + fuChip(f) + '</td>'
+      + '<td style="' + td + '">' + pkgCell(f) + '</td>'
+      + '<td style="' + td + ';text-align:left">' + fuChip(f).replace('margin-left:5px;', '') + '</td>'
       + (_remDetCostos
-          ? '<td style="' + td + '">' + _remM(f.costo_compra) + '</td>'
+          ? '<td style="' + td + '" title="' + _remM(f.costo_compra) + ' s/gastos + comisión ' + _remM(remFilaComision(f))
+            + ' + gastos ' + _remM(f.gastos_compra || 0) + '">' + _remM(remFilaCompraCG(f)) + '</td>'
             + '<td style="' + td + '">' + _remN(f.kg_ms) + '</td>'
-            + '<td style="' + td + '">' + _remN(f.pct_ms, 2) + (f.acotado ? tag + 'lim</span>' : '') + '</td>'
+            + '<td style="' + td + '">' + _remN(f.pct_ms, 2) + '</td>'
+            + '<td style="' + td + ';text-align:left;color:#7a5c14" title="consumo acotado a ' + _remN(meta.pv_min, 1) + '–' + _remN(meta.pv_max, 1) + ' %PV">' + (f.acotado ? 'sí' : '') + '</td>'
             + '<td style="' + td + '">' + _remM(f.alimento) + '</td>'
             + '<td style="' + td + '">' + _remM(f.estructura + f.sanidad) + '</td>'
           : '')
@@ -2412,19 +2547,20 @@ function renderRemitos(soloResultado) {
     + (esGrupo ? '<td></td>' : '')
     + '<td style="' + tf + ';text-align:left">TOTAL</td><td></td>'
     + '<td style="' + tf + '">' + r.cabezas + '</td><td></td>'
-    + '<td style="' + tf + '" title="' + _remN(r.kg_ingreso) + ' kg de ingreso en total">' + _remN(I.kg_prom_ingreso) + '</td>'
-    + '<td style="' + tf + '" title="' + _remN(r.kg_egreso) + ' kg de salida en total">' + _remN(I.kg_prom_salida) + '</td>'
+    + '<td style="' + tf + '" title="' + _remN(r.kg_ingreso, 1) + ' kg de ingreso en total">' + _remN(I.kg_prom_ingreso, 1) + '</td>'
+    + '<td style="' + tf + '" title="' + _remN(r.kg_egreso, 1) + ' kg de salida en total">' + _remN(I.kg_prom_salida, 1) + '</td>'
     + '<td style="' + tf + '">' + _remN(I.estadia_prom) + '</td>'
-    + '<td style="' + tf + '" title="precio + comisión + gastos por kg de ingreso">'
-    + _remN(I.precio_prom_pagado_cg != null ? I.precio_prom_pagado_cg : I.precio_prom_pagado) + '</td>'
+    + '<td style="' + tf + '" title="Σ Compra c/gastos ÷ Σ kg de ingreso (precio + comisión + gastos)">'
+    + _remN(remDetalleTot(r).precio_cg) + '</td><td></td>'
     + (_remDetCostos
-        ? '<td style="' + tf + '">' + _remM(C.compra) + '</td>'
+        ? '<td style="' + tf + '">' + _remM(remDetalleTot(r).compra_cg) + '</td>'
           + '<td style="' + tf + '">' + _remN(r.kg_ms) + '</td>'
-          + '<td style="' + tf + '">' + _remN(I.pct_ms, 2) + '</td>'
+          + '<td style="' + tf + '">' + _remN(I.pct_ms, 2) + '</td><td></td>'
           + '<td style="' + tf + '">' + _remM(C.alimento) + '</td>'
           + '<td style="' + tf + '">' + _remM(C.estructura + C.sanidad) + '</td>'
         : '')
-    + '</tr></tfoot></table>';
+    + '</tr></tfoot></table>'
+    + '<div style="font-size:11px;line-height:1.6;color:rgba(26,22,18,.55);margin-top:6px">' + remDetallePie(r) + '</div>';
 
   // ── v15.84 · Consumo del feedlot mes a mes (%PV), plegable ──
   h += remPctPvHTML(H2);
