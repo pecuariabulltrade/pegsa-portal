@@ -1,4 +1,4 @@
-/* modulo-08-historico.js — Histórico & Evolución · 2026-04-25 */
+/* modulo-08-historico.js — Histórico & Evolución · v15.86 (2026-10-13) */
 
 // v15.52: se eliminó _histData (stock_historico.json) — nunca se le hacía fetch,
 // _renderHistHacienda apuntaba a canvas inexistentes en index.html (código huérfano).
@@ -169,8 +169,70 @@ function _netoDivergentePlugin(){
 }
 
 /**
+ * v15.86 — modo `netoArriba`: la altura SÓLIDA de la barra es el neto y lo que
+ * se descuenta (componentes negativos, de `ds.valoresReales`) va como banda
+ * rayada entre el neto y el bruto (= Σ positivos, que es lo que apila Chart.js
+ * porque el helper pone en 0 los negativos). Con la barra divergente de v15.50
+ * el ojo leía la pila positiva: may-26 era la columna más alta con el neto más
+ * bajo. Deja en chart.$neto / $bruto los valores por barra (para los tests).
+ */
+function _bandaDescontadaPlugin(){
+  return {
+    id: 'bandaDescontada',
+    afterDatasetsDraw: function(chart){
+      var ctx = chart.ctx, esc = chart.scales.y, area = chart.chartArea;
+      var n = chart.data.labels.length;
+      chart.$neto = []; chart.$bruto = [];
+      ctx.save();
+      for(var i=0;i<n;i++){
+        var bruto = 0, neg = 0, el = null, hay = false;
+        chart.data.datasets.forEach(function(ds, di){
+          if(!chart.isDatasetVisible(di)) return;
+          var real = ds.valoresReales ? ds.valoresReales[i] : ds.data[i];
+          if(real == null) return;
+          hay = true;
+          if(real < 0) neg += real; else bruto += real;
+          var e = chart.getDatasetMeta(di).data[i];
+          if(e) el = e;
+        });
+        chart.$neto.push(hay ? bruto + neg : null);
+        chart.$bruto.push(hay ? bruto : null);
+        if(!hay || !el || neg >= 0) continue;
+        var yN = esc.getPixelForValue(bruto + neg), yB = esc.getPixelForValue(bruto);
+        var w = el.width || 24, x0 = el.x - w / 2;
+        if(yN - yB >= 4){
+          ctx.save();
+          ctx.beginPath(); ctx.rect(x0, yB, w, yN - yB); ctx.clip();
+          ctx.fillStyle = 'rgba(255,255,255,.85)';
+          ctx.fillRect(x0, yB, w, yN - yB);
+          ctx.strokeStyle = '#2d6a8a'; ctx.lineWidth = 1;
+          ctx.beginPath();
+          // diagonales a 45° cada 5 px, de abajo-izquierda a arriba-derecha
+          for(var k = -(yN - yB); k < w; k += 5){
+            ctx.moveTo(x0 + k, yN); ctx.lineTo(x0 + k + (yN - yB), yB);
+          }
+          ctx.stroke();
+          ctx.restore();
+          ctx.save();
+          ctx.setLineDash([2,2]); ctx.strokeStyle = 'rgba(26,22,18,.55)'; ctx.lineWidth = 1;
+          ctx.strokeRect(x0 + .5, yB + .5, w - 1, yN - yB - 1);
+          ctx.restore();
+        }
+        // rayita del neto: el tope sólido
+        ctx.save();
+        ctx.setLineDash([4,3]); ctx.strokeStyle = 'rgba(26,22,18,.7)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x0 - 3, yN); ctx.lineTo(x0 + w + 3, yN); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  };
+}
+
+/**
  * v15.47: barras apiladas con el look del portal (Playfair/DM Mono/HIST_COLORS).
- * opts: { porcentaje:bool, totalFmt:function|false, horizontal:bool, totalesFijos:array, marcarNeto:bool }
+ * opts: { porcentaje:bool, totalFmt:function|false, horizontal:bool, totalesFijos:array,
+ *         marcarNeto:bool, netoArriba:bool (v15.86) }
  */
 function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
   opts = opts || {};
@@ -179,9 +241,27 @@ function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
   if(!ctx) return;
   var vAxis = opts.horizontal ? 'x' : 'y';
 
+  // v15.86 · netoArriba: los negativos se guardan y se apilan en 0 (la pila mide
+  // el bruto, el eje arranca en 0); el label de arriba es el neto.
+  var reales = function(ds){ return ds.valoresReales || ds.data; };
+  if(opts.netoArriba){
+    datasets.forEach(function(ds){
+      ds.valoresReales = ds.data.slice();
+      ds.data = ds.data.map(function(v){ return (v != null && v < 0) ? 0 : v; });
+    });
+    if(!opts.totalesFijos){
+      opts.totalesFijos = labels.map(function(_, i){
+        var t = null;
+        datasets.forEach(function(ds){ var v = ds.valoresReales[i]; if(v != null) t = (t || 0) + v; });
+        return t;
+      });
+    }
+  }
+
   var plugins = [];
   if(opts.totalFmt !== false) plugins.push(_totalesArribaPlugin(opts.totalFmt || yFmt, opts.totalesFijos));
   if(opts.marcarNeto) plugins.push(_netoDivergentePlugin());
+  if(opts.netoArriba) plugins.push(_bandaDescontadaPlugin());
 
   _histCharts[canvasId] = new Chart(ctx, {
     type: 'bar',
@@ -204,12 +284,24 @@ function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
           callbacks: {
             label: function(c){
               if(c.parsed[vAxis] == null) return null;
-              var v = c.parsed[vAxis];
+              var v = opts.netoArriba ? reales(c.dataset)[c.dataIndex] : c.parsed[vAxis];
               return ' ' + c.dataset.label + ': ' + (yFmt ? yFmt(v) : v.toLocaleString('es-AR'));
             },
             footer: function(items){
               if(!items.length) return '';
               var f = opts.totalFmt || yFmt;
+              if(opts.netoArriba){
+                // Total = neto (valores reales); si hubo descuento, bruto y descontado
+                var br = 0, ng = 0;
+                items.forEach(function(c){
+                  var v = reales(c.dataset)[c.dataIndex] || 0;
+                  if(v < 0) ng += v; else br += v;
+                });
+                var fx = function(x){ return f ? f(x) : x.toLocaleString('es-AR'); };
+                var out = ['Total: ' + fx(br + ng)];
+                if(ng < 0) out.push('Bruto: ' + fx(br) + ' · descontado: ' + fx(ng));
+                return out;
+              }
               if(opts.porcentaje){
                 // en % la suma es 100 → mostrar el total absoluto real del mes
                 var idx = items[0].dataIndex;
@@ -250,6 +342,17 @@ function _mkStackedBarChart(canvasId, labels, datasets, yFmt, opts){
     },
     plugins: plugins
   });
+}
+
+/* v15.86 · línea chica debajo del gráfico que explica la banda rayada. */
+function _leyendaBanda(canvasId){
+  var cv = document.getElementById(canvasId);
+  if(!cv || !cv.parentNode || document.getElementById(canvasId + 'Banda')) return;
+  var d = document.createElement('div');
+  d.id = canvasId + 'Banda';
+  d.style.cssText = 'font-family:"DM Mono",monospace;font-size:11px;color:rgba(26,22,18,.5);margin-top:8px';
+  d.textContent = 'Banda rayada: posición financiera negativa descontada del neto (la altura sólida es el patrimonio)';
+  cv.parentNode.parentNode.insertBefore(d, cv.parentNode.nextSibling);
 }
 
 function _mkLineChart(canvasId, labels, datasets, yFmt, yTitle){
@@ -1017,7 +1120,10 @@ function _renderValuacion(){
     return (v<0?'−':'') + '$ ' + Math.round(a).toLocaleString('es-AR') + 'M';
   };
   // v15.50: reusa el helper de v15.47 (divergente + total neto encima + tooltip).
-  _mkStackedBarChart('chartValStack', labels, dsStack, fM, { totalFmt: fM, marcarNeto: true });
+  // v15.86: neto arriba — la altura sólida es el patrimonio y la posición
+  // financiera negativa va como banda rayada entre el neto y el bruto.
+  _mkStackedBarChart('chartValStack', labels, dsStack, fM, { totalFmt: fM, netoArriba: true });
+  _leyendaBanda('chartValStack');
   var chVS = _histCharts['chartValStack'];
   if(chVS){
     // Línea de cero marcada (mismo tratamiento que chartRealFinanciero en v15.47)
@@ -1155,7 +1261,9 @@ function _renderValNovillo(snaps, labels, colores){
   var fT = function(v){ return Math.round(v).toLocaleString('es-AR')+' t'; };
 
   // Reusa el helper de v15.47 (divergente + total neto encima + tooltip con Total).
-  _mkStackedBarChart('chartValNovillo', labels, dsNov, fT, { totalFmt: fT, marcarNeto: true });
+  // v15.86: mismo criterio que chartValStack (neto arriba, banda rayada)
+  _mkStackedBarChart('chartValNovillo', labels, dsNov, fT, { totalFmt: fT, netoArriba: true });
+  _leyendaBanda('chartValNovillo');
 
   // El tooltip dice con qué MAG se dividió (para poder auditar el número).
   var ch = _histCharts['chartValNovillo'];
