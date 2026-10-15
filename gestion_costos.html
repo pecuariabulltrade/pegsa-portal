@@ -22,6 +22,11 @@
   participación por centro) y «Tablero de costos» (resumen por mes, barras de
   crecimiento, tortas por cuenta y por centro). Todo sale de lo publicado; los
   gráficos nuevos son SVG propios (sin librerías nuevas, andan sin internet).
+
+  v15.88.2 (15/10/2026) · «Participación en el resultado» = resultado NETO del
+  ramal (o centro) ÷ resultado final del cierre (la métrica elegida), con la
+  tenencia como porción propia y los que restan con su % negativo. «% del
+  resultado» de Un cierre / Comparar usa el mismo denominador (total 100 %).
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -326,7 +331,8 @@ function vTablero() {
   h += '</div><div class="card" id="tortaCard"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
     + '<h2 style="margin:0">Participación en el resultado</h2><select id="tEmp">'
     + GC.empresas.map(function (e) { return '<option value="' + e.id + '"' + (e.id === eT ? ' selected' : '') + '>' + esc(e.nombre) + '</option>'; }).join('')
-    + '</select><span class="muted" id="tInfo"></span></div><div id="tortaBox" style="margin-top:8px"></div></div>';
+    + '</select><span class="seg" id="segNivel"><button data-n="ramal">por ramal</button><button data-n="centro">por centro</button></span>'
+    + '<span class="muted" id="tInfo"></span></div><div id="tortaBox" style="margin-top:8px"></div></div>';
   h += '<div class="card" style="overflow:auto"><h2>Cierres publicados</h2><table><tr><th>Empresa</th><th>Cierre</th><th>Ventana</th>'
     + '<th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Operativo</th><th class="num">Dif. stock</th>'
     + '<th class="num">S/ tenencia</th><th class="num">Tenencia</th><th class="num">Final</th>'
@@ -347,6 +353,9 @@ function vTablero() {
     b.onclick = function () { SERIE = b.dataset.s; LS.set('metrica', SERIE); vTablero(); };
   });
   $('tEmp').onchange = function () { LS.set('emp', this.value); tortaGestion(this.value); };
+  document.querySelectorAll('#segNivel button').forEach(function (b) {
+    b.onclick = function () { LS.set('torta_nivel', b.dataset.n); tortaGestion($('tEmp').value); };
+  });
   tortaGestion(eT);
   if (!window.Chart) return;
   GC.empresas.forEach(function (e) {
@@ -371,8 +380,38 @@ var GCcalc = {
     return cen.map(function (x) {
       var k = x.emp + '|' + x.centro;
       return {k: k, emp: x.emp, centro: x.centro, nombre: x.centro === '~' ? '(sin centro)' : (x.centro_nombre || x.centro),
-        ramal: x.ramal, ingresos: Number(x.ingresos), v: Number(x.resultado) - (ds[k] || 0)};
+        ramal: x.ramal, ramal_nombre: x.ramal_nombre, ingresos: Number(x.ingresos), v: Number(x.resultado) - (ds[k] || 0)};
     });
+  },
+  /* v15.88.2 · «Participación en el resultado» (Nicolás 15/10): % = resultado NETO del ramal (o centro)
+     ÷ la métrica del cierre (por defecto el resultado FINAL). Con «final» la tenencia es una porción
+     propia (final = Σ ramales s/ tenencia + tenencia). Porciones = los que aportan; los que restan, aparte
+     con su % negativo. Aportan + restan = F al peso; a − r = 100 %. */
+  participacion: function (cen, mm, c, metrica, nivel) {
+    var met = metrica === 'operativo' ? 'operativo' : 'sin_tenencia', F = Number(c[metrica]) || 0;
+    var rows = GCcalc.resPorCentro(cen, mm, met), items = [];
+    if (nivel === 'centro') {
+      var nn = {};   // mismo nombre en dos centros (p. ej. dos «ADMINISTRACIÓN») → se agrega el código
+      rows.forEach(function (x) { var q = x.emp + ' ' + x.nombre; nn[q] = (nn[q] || 0) + 1; });
+      items = rows.map(function (x) { var q = x.emp + ' ' + x.nombre;
+        return {k: 'c:' + x.k, tipo: 'centro', open: x.k, cod: x.centro, label: q + (nn[q] > 1 ? ' ' + x.centro : ''), tip: q + ' ' + x.centro, v: x.v}; });
+    } else {
+      var rm = {};
+      rows.forEach(function (x) {
+        var r = rm[x.ramal] = rm[x.ramal] || {k: 'r:' + x.ramal, tipo: 'ramal', ramal: x.ramal,
+          label: x.ramal === '~' ? '(sin centro)' : x.ramal + ' ' + titulo(x.ramal_nombre || ''), v: 0};
+        r.v += x.v;
+      });
+      items = Object.keys(rm).map(function (k) { return rm[k]; });
+    }
+    if (metrica === 'final') items.push({k: 'ten', tipo: 'tenencia', label: 'Tenencia', v: Number(c.tenencia) || 0});
+    items = items.filter(function (x) { return Math.abs(x.v) >= 0.005; });
+    var T = GCcalc.partTorta(items, 8), pc = function (v) { return F ? v / F * 100 : null; };
+    T.slices.forEach(function (x) { x.pct = pc(x.v); });
+    var neg = items.filter(function (x) { return x.v < 0; }).sort(function (a, b) { return a.v - b.v; });
+    neg.forEach(function (x) { x.pct = pc(x.v); });
+    var R = neg.reduce(function (s, x) { return s + x.v; }, 0);
+    return {slices: T.slices, neg: neg, A: T.total, R: R, F: F, a: pc(T.total), r: pc(R), nivel: nivel, metrica: metrica};
   },
   /* top n + «otros» (si «otros» sería una sola porción, va con su nombre: máx. n+1 porciones) */
   partTorta: function (items, n) {
@@ -414,6 +453,7 @@ var GCcalc = {
 /* ── v15.88.1 · gráficos SVG propios (torta y barras) ── */
 var PAL = ['#b8922a', '#2d6a8a', '#27613d', '#0F1B64', '#8a5a9e', '#c0662b', '#5b8c85', '#a34a4a', '#6f7d3a'], PAL_OTROS = '#bdb7ad';
 function f1(n) { return Math.round(n * 10) / 10; }
+function titulo(s) { return String(s || '').toLowerCase().replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); }); }
 function corto(s, n) { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 function colorDe(sl, i) { return sl[i].k === '_otros' ? PAL_OTROS : PAL[i % PAL.length]; }
 /* devuelve el HTML; las porciones llevan data-i (índice en sl). compacto = sin etiquetas (móvil: va la lista abajo) */
@@ -494,48 +534,49 @@ function barrasSVG(pm) {
 async function tortaGestion(eid) {
   var box = $('tortaBox'), info = $('tInfo');
   if (!box) return;
-  var cs = cierresDe(eid), u = cs[cs.length - 1];
+  var cs = cierresDe(eid), u = cs[cs.length - 1], nivel = LS.get('torta_nivel', 'ramal') === 'centro' ? 'centro' : 'ramal';
+  document.querySelectorAll('#segNivel button').forEach(function (b) { b.classList.toggle('on', b.dataset.n === nivel); });
   if (!u) { box.innerHTML = '<div class="vacio">Sin datos: ' + esc(nomEmp(eid)) + ' no tiene cierres publicados.</div>'; info.textContent = ''; return; }
-  var met = SERIE === 'operativo' ? 'operativo' : 'sin_tenencia', cen, mm = [];
+  var cen, mm = [];
   box.innerHTML = '<div class="muted">cargando…</div>';
   try {
     var k = {empresa_id: eid, mes: u.mes, version: u.version};
     cen = await GC.leer('gc_cierre_centros', k);
-    if (met === 'operativo') mm = await GC.leer('gc_cierre_meses', k);
+    if (SERIE === 'operativo') mm = await GC.leer('gc_cierre_meses', k);
   } catch (e) { box.innerHTML = '<div class="aviso err">No se pudo leer el detalle del cierre: ' + esc(e.message || e) + '</div>'; return; }
   if ($('tEmp') && $('tEmp').value !== eid) return;   // cambió la empresa mientras cargaba
-  info.innerHTML = 'cierre ' + mesTxt(u.mes) + ' · v' + u.version + ' · ' + MET[met].toLowerCase();
+  info.innerHTML = 'cierre ' + mesTxt(u.mes) + ' · v' + u.version + ' · % sobre el ' + MET[SERIE].toLowerCase();
   if (!cen.length) { box.innerHTML = '<div class="vacio">Sin datos: el cierre ' + mesTxt(u.mes) + ' no tiene centros publicados.</div>'; return; }
-  var rows = GCcalc.resPorCentro(cen, mm, met);
-  var nn = {};   // mismo nombre en dos centros (p. ej. dos «ADMINISTRACIÓN») → se agrega el código
-  rows.forEach(function (x) { var q = x.emp + ' ' + x.nombre; nn[q] = (nn[q] || 0) + 1; });
-  var T = GCcalc.partTorta(rows.map(function (x) { var q = x.emp + ' ' + x.nombre; return {k: x.k, label: q + (nn[q] > 1 ? ' ' + x.centro : ''), tip: q + ' ' + x.centro, v: x.v}; }), 8);
-  var neg = rows.filter(function (x) { return x.v < 0; }).sort(function (a, b) { return a.v - b.v; });
-  var sNeg = neg.reduce(function (s, x) { return s + x.v; }, 0), esperado = Number(u[met]), dif = T.total + sNeg - esperado;
-  console[Math.abs(dif) < 1 ? 'info' : 'warn']('[gc] torta ' + eid + ' ' + u.mes + ' (' + met + '): aportan ' + T.total.toFixed(2) + ' + restan ' + sNeg.toFixed(2)
-    + ' = ' + (T.total + sNeg).toFixed(2) + ' vs cierre ' + esperado.toFixed(2) + (Math.abs(dif) < 1 ? ' · OK' : ' · DIFERENCIA ' + dif.toFixed(2)));
-  var abrir = function (kc) { ver('cierre', {e: eid, m: u.mes, open: kc}); };
-  var NR = 10, h = '<div class="torta-grid"><div><div id="tortaSvg"></div>'
-    + '<p class="nota">La torta reparte el resultado de los centros que <b>aportan</b> (resultado positivo); los que <b>restan</b> están a la derecha. '
-    + 'Clic en una porción → «Un cierre» con ese centro abierto.'
-    + (SERIE === 'final' ? ' Con la métrica «final» se reparte el resultado <b>s/ tenencia</b>: la tenencia (' + pesos(u.tenencia) + ') es la revaluación del stock entero y no se abre por centro.' : '')
-    + '</p></div><div class="restan"><div class="lbl">Restan · ' + neg.length + ' centros</div>';
-  if (!neg.length) h += '<div class="vacio">Ningún centro con resultado negativo.</div>';
+  var P = GCcalc.participacion(cen, mm, u, SERIE, nivel), ok = Math.abs(P.A + P.R - P.F) < 0.01;
+  console[ok ? 'info' : 'warn']('[gc] participación ' + eid + ' ' + u.mes + ' (' + SERIE + ', por ' + nivel + '): aportan ' + P.A.toFixed(2) + ' (' + (P.a == null ? '—' : P.a.toFixed(1)) + ' %) − restan '
+    + (-P.R).toFixed(2) + ' (' + (P.r == null ? '—' : (-P.r).toFixed(1)) + ' %) = ' + (P.A + P.R).toFixed(2) + ' vs cierre ' + P.F.toFixed(2) + (ok ? ' · OK' : ' · DIFERENCIA ' + (P.A + P.R - P.F).toFixed(2)));
+  var abrir = function (it) {
+    if (!it || it.k === '_otros') return ver('cierre', {e: eid, m: u.mes});
+    ver('cierre', it.tipo === 'ramal' ? {e: eid, m: u.mes, ram: it.ramal} : it.tipo === 'tenencia' ? {e: eid, m: u.mes, open: '__ten'} : {e: eid, m: u.mes, open: it.open});
+  };
+  var unidad = nivel === 'ramal' ? 'ramales' : 'centros', NR = 10, neg = P.neg;
+  var h = '<div class="torta-grid"><div><div id="tortaSvg"></div>'
+    + '<p class="nota">% = resultado del ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' ÷ <b>' + MET[SERIE].toLowerCase() + '</b> del cierre (' + pesos(P.F) + '). '
+    + 'Como hay ' + unidad + ' que restan, las porciones suman más de 100 %. '
+    + (SERIE === 'final' ? 'La <b>tenencia</b> (revaluación del stock entero, no se abre por centro) va como porción propia. ' : '')
+    + 'Clic en una porción → «Un cierre» con ese ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' abierto.</p></div>'
+    + '<div class="restan"><div class="lbl">Restan · ' + neg.length + ' ' + unidad + '</div>';
+  if (!neg.length) h += '<div class="vacio">Ningún ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' resta.</div>';
   else {
-    h += '<table>' + neg.slice(0, NR).map(function (x) {
-      return '<tr data-k="' + esc(x.k) + '"><td>' + esc(x.emp) + ' ' + esc(corto(x.nombre, 30)) + ' <span class="muted">' + esc(x.centro) + '</span></td><td class="num neg">' + num(x.v) + '</td></tr>'; }).join('');
+    h += '<table>' + neg.slice(0, NR).map(function (x, i) {
+      return '<tr data-i="' + i + '"><td>' + esc(corto(x.label, 34)) + (x.cod ? ' <span class="muted">' + esc(x.cod) + '</span>' : '') + '</td><td class="num neg">' + num(x.v) + '</td><td class="num neg">' + pctM(x.pct) + '</td></tr>'; }).join('');
     if (neg.length > NR) {
       var resto = neg.slice(NR).reduce(function (s, x) { return s + x.v; }, 0);
-      h += '<tr data-k=""><td class="muted">otros ' + (neg.length - NR) + ' centros</td><td class="num neg">' + num(resto) + '</td></tr>';
+      h += '<tr data-i="-1"><td class="muted">otros ' + (neg.length - NR) + ' ' + unidad + '</td><td class="num neg">' + num(resto) + '</td><td class="num neg">' + pctM(P.F ? resto / P.F * 100 : null) + '</td></tr>';
     }
-    h += '<tfoot><tr><td>Total que resta</td><td class="num neg">' + num(sNeg) + '</td></tr></tfoot></table>';
+    h += '<tfoot><tr><td>Total que resta</td><td class="num neg">' + num(P.R) + '</td><td class="num neg">' + pctM(P.r) + '</td></tr></tfoot></table>';
   }
-  h += '</div></div><p class="muted" style="margin:10px 0 0">Aportan <b>' + pesos(T.total) + '</b> · restan <b class="neg">' + pesos(sNeg) + '</b> · = '
-    + MET[met].toLowerCase() + ' <b>' + pesos(T.total + sNeg) + '</b> (12 meses al ' + fecha(u.hasta) + ')</p>';
+  h += '</div></div><p class="muted" style="margin:10px 0 0">Aportan <b>' + pesos(P.A) + '</b> (' + pctM(P.a) + ') − restan <b class="neg">' + pesos(-P.R) + '</b> (' + pctM(P.r == null ? null : -P.r) + ') = '
+    + MET[SERIE].toLowerCase() + ' <b>' + pesos(P.F) + '</b> (100 %) · 12 meses al ' + fecha(u.hasta) + '</p>';
   box.innerHTML = h;
-  if (!T.slices.length) $('tortaSvg').innerHTML = '<div class="vacio">Ningún centro con resultado positivo: no hay nada que repartir.</div>';
-  else pintarTorta($('tortaSvg'), T.slices, ['$ ' + millones(T.total), 'aportan'], function (s) { abrir(s.k === '_otros' ? null : s.k); });
-  box.querySelectorAll('.restan tr[data-k]').forEach(function (tr) { tr.onclick = function () { abrir(tr.getAttribute('data-k') || null); }; });
+  if (!P.slices.length) $('tortaSvg').innerHTML = '<div class="vacio">Ningún ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' con resultado positivo: no hay nada que repartir.</div>';
+  else pintarTorta($('tortaSvg'), P.slices, ['$ ' + millones(P.A), 'aportan · ' + pctM(P.a)], abrir);
+  box.querySelectorAll('.restan tr[data-i]').forEach(function (tr) { tr.onclick = function () { abrir(neg[Number(tr.getAttribute('data-i'))]); }; });
 }
 
 /* ══════════ 2 · un cierre ══════════ */
@@ -557,10 +598,11 @@ async function vCierre(arg) {
   var k = {empresa_id: eid, mes: mes, version: c.version};
   var cen = await GC.leer('gc_cierre_centros', k), cta = await GC.leer('gc_cierre_cuentas', k), mm = await GC.leer('gc_cierre_meses', k);
   GC.actual = {c: c, cen: cen, cta: cta, mm: mm};
-  if (arg && arg.open) {   // v15.88.1 · viene de la torta: ese centro desplegado
+  if (arg && arg.open && arg.open !== '__ten') {   // v15.88.1 · viene de la torta: ese centro desplegado
     ABIERTO[arg.open] = true;
     cen.forEach(function (x) { if (x.emp + '|' + x.centro === arg.open) ABIERTO['r' + x.ramal] = true; });
   }
+  if (arg && arg.ram) ABIERTO['r' + arg.ram] = true;   // v15.88.2 · torta por ramal
   var tj = [['Ingresos', 'ingresos'], ['Egresos', 'egresos'], ['Resultado operativo', 'operativo'], ['Dif. de stock', 'dif_stock'],
             ['Resultado s/ tenencia', 'sin_tenencia'], ['Tenencia', 'tenencia'], ['Resultado final', 'final']];
   var h = '<div class="card"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' + selectorCierre(eid, mes)
@@ -587,15 +629,17 @@ async function vCierre(arg) {
         + (x.vigente ? ' (vigente)' : '') + ' ' + fechaHora(x.publicado_el) + ' · final ' + pesos(x.final) + (prev ? ' · Δ ' + pesos(x.final - prev.final) : '');
     }).join(' · ') + '</div>';
   }
-  h += '</div><div class="card"><div class="seg" id="segCierre"><button data-t="cen" class="on">Por centro de costo</button><button data-t="mes">Por mes</button></div>'
+  h += '</div><div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div class="seg" id="segCierre"><button data-t="cen" class="on">Por centro de costo</button><button data-t="mes">Por mes</button></div>'
+    + '<span class="muted">«% del resultado» sobre el <span class="seg" id="segMetC"><button data-s="final">final</button><button data-s="sin_tenencia">s/ tenencia</button><button data-s="operativo">operativo</button></span></span></div>'
     + '<div id="tabCen" style="margin-top:10px">' + tablaCentros(c, cen) + '</div><div id="tabMes" class="oculto scroll" style="margin-top:10px">' + tablaMeses(c, cen, mm) + '</div></div>';
   V.innerHTML = h;
   $('selEmp').onchange = function () { ver('cierre', {e: this.value}); };
   $('selMes').onchange = function () { ver('cierre', {e: eid, m: this.value}); };
-  if (arg && arg.open) {
-    var tr = document.getElementById('cen_' + arg.open);
+  if (arg && (arg.open || arg.ram)) {
+    var tr = document.getElementById(arg.ram ? 'ram_' + arg.ram : arg.open === '__ten' ? 'filaTen' : 'cen_' + arg.open);
     if (tr) { tr.classList.add('flash'); tr.scrollIntoView({block: 'center'}); }
   }
+  wireMetCierre();
   document.querySelectorAll('#segCierre button').forEach(function (b) {
     b.onclick = function () {
       document.querySelectorAll('#segCierre button').forEach(function (x) { x.classList.toggle('on', x === b); });
@@ -615,23 +659,26 @@ function arbolCentros(cen) {
   return Object.keys(ram).map(function (k) { var r = ram[k]; r.subs = Object.keys(r.subs).map(function (j) { var s = r.subs[j]; s.centros.sort(abs); return s; }).sort(abs); return r; }).sort(abs);
 }
 function tablaCentros(c, cen) {
-  var den = c.sin_tenencia || 0, h = '<table><tr><th>Ramal / sub-ramal / centro</th><th>Empresa</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Resultado</th><th class="num">% del resultado</th>'
+  // v15.88.2 · «% del resultado» = resultado ÷ la métrica elegida (por defecto el FINAL del cierre, no s/ tenencia)
+  var den = Number(c[SERIE]) || 0, TIP_R = 'resultado ÷ ' + MET[SERIE].toLowerCase() + ' del cierre';
+  var pr = function (v) { return den ? pct(v / den * 100) : '—'; };
+  var h = '<table><tr><th>Ramal / sub-ramal / centro</th><th>Empresa</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Resultado</th><th class="num" title="' + TIP_R + '">% del resultado</th>'
     + '<th class="num" title="' + TIP_MG + '">% s/ facturado</th></tr>';
   var mgTd = function (res, ing) { var v = margen(res, ing); return '<td class="num' + (v == null ? ' muted' : cls(v)) + '" title="' + TIP_MG + '">' + pctM(v) + '</td>'; };
   arbolCentros(cen).forEach(function (r) {
     var kr = 'r' + r.cod, ab = ABIERTO[kr] !== false;
-    h += '<tr class="ram" style="cursor:pointer" onclick="ABIERTO[\'' + kr + '\']=' + !ab + ';refrescarCen()"><td>' + (ab ? '▾ ' : '▸ ') + esc(r.cod) + ' ' + esc(r.nombre) + '</td><td></td>'
+    h += '<tr class="ram" id="ram_' + esc(r.cod) + '" style="cursor:pointer" onclick="ABIERTO[\'' + kr + '\']=' + !ab + ';refrescarCen()"><td>' + (ab ? '▾ ' : '▸ ') + esc(r.cod) + ' ' + esc(r.nombre) + '</td><td></td>'
       + '<td class="num">' + num(r.ingresos) + '</td><td class="num">' + num(r.egresos) + '</td><td class="num' + cls(r.resultado) + '">' + num(r.resultado) + '</td>'
-      + '<td class="num">' + (den ? pct(r.resultado / den * 100) : '') + '</td>' + mgTd(r.resultado, r.ingresos) + '</tr>';
+      + '<td class="num" title="' + TIP_R + '">' + pr(r.resultado) + '</td>' + mgTd(r.resultado, r.ingresos) + '</tr>';
     if (!ab) return;
     r.subs.forEach(function (s) {
       h += '<tr class="sub"><td style="padding-left:22px">' + esc(s.cod) + ' ' + esc(s.nombre) + '</td><td></td><td class="num">' + num(s.ingresos) + '</td><td class="num">' + num(s.egresos)
-        + '</td><td class="num' + cls(s.resultado) + '">' + num(s.resultado) + '</td><td></td>' + mgTd(s.resultado, s.ingresos) + '</tr>';
+        + '</td><td class="num' + cls(s.resultado) + '">' + num(s.resultado) + '</td><td class="num muted" title="' + TIP_R + '">' + pr(s.resultado) + '</td>' + mgTd(s.resultado, s.ingresos) + '</tr>';
       s.centros.forEach(function (x) {
         var kc = x.emp + '|' + x.centro;
         h += '<tr class="cen" id="cen_' + esc(kc) + '" onclick="abrirCentro(\'' + kc + '\')"><td style="padding-left:42px">' + (ABIERTO[kc] ? '▾ ' : '▸ ') + esc(x.centro === '~' ? '(sin centro)' : x.centro) + ' ' + esc(x.centro_nombre)
           + '</td><td class="muted">' + esc(x.emp) + '</td><td class="num">' + num(x.ingresos) + '</td><td class="num">' + num(x.egresos) + '</td><td class="num' + cls(x.resultado) + '"><b>' + num(x.resultado) + '</b></td>'
-          + '<td class="num">' + (x.pct != null ? pct(x.pct) : '') + '</td>' + mgTd(x.resultado, x.ingresos) + '</tr>';
+          + '<td class="num" title="' + TIP_R + '">' + pr(x.resultado) + '</td>' + mgTd(x.resultado, x.ingresos) + '</tr>';
         if (ABIERTO[kc]) {
           GC.actual.cta.filter(function (q) { return q.emp === x.emp && q.centro === x.centro; })
             .sort(function (a, b) { return Math.abs(b.resultado) - Math.abs(a.resultado); }).forEach(function (q) {
@@ -642,14 +689,27 @@ function tablaCentros(c, cen) {
       });
     });
   });
-  var tot = cen.reduce(function (a, x) { return a + Number(x.resultado); }, 0);
-  return h + '<tfoot><tr><td>TOTAL = Resultado s/ tenencia</td><td></td><td class="num">' + num(c.ingresos) + '</td><td class="num">' + num(c.egresos)
-    + '</td><td class="num">' + num(tot) + '</td><td></td><td class="num" title="' + MET[SERIE].toLowerCase() + ' ÷ ingresos del cierre">' + pctM(margen(c[SERIE], c.ingresos)) + '</td></tr></tfoot></table>'
-    + '<p class="muted">La tenencia (' + pesos(c.tenencia) + ') es la revaluación del stock entero y no se abre por centro: resultado final = s/ tenencia + tenencia. '
-    + '«% s/ facturado» = resultado ÷ ingresos del mismo centro, sub-ramal o ramal («—» si no facturó); en el total es el <b>' + MET[SERIE].toLowerCase()
-    + '</b> (' + pesos(c[SERIE]) + ', la métrica elegida en el tablero) ÷ ingresos del cierre.</p>';
+  var tot = cen.reduce(function (a, x) { return a + Number(x.resultado); }, 0), extra = '';
+  // para que la columna cierre en 100 %: con «final» suma la tenencia; con «operativo» resta la dif. de stock (va dentro de los centros)
+  if (SERIE === 'final') extra = '<tr class="ram" id="filaTen"><td>Tenencia <span class="muted" style="font-weight:400">(revaluación del stock entero, no se abre por centro)</span></td><td></td><td></td><td></td>'
+    + '<td class="num' + cls(c.tenencia) + '">' + num(c.tenencia) + '</td><td class="num" title="' + TIP_R + '">' + pr(c.tenencia) + '</td><td></td></tr>';
+  if (SERIE === 'operativo') extra = '<tr class="ram" id="filaTen"><td>menos Dif. de stock <span class="muted" style="font-weight:400">(está dentro de los centros; el operativo no la lleva)</span></td><td></td><td></td><td></td>'
+    + '<td class="num' + cls(-c.dif_stock) + '">' + num(-c.dif_stock) + '</td><td class="num" title="' + TIP_R + '">' + pr(-c.dif_stock) + '</td><td></td></tr>';
+  var totM = tot + (SERIE === 'final' ? Number(c.tenencia) || 0 : SERIE === 'operativo' ? -(Number(c.dif_stock) || 0) : 0);
+  if (Math.abs(totM - den) > 0.5) console.warn('[gc] un cierre: Σ filas ' + totM.toFixed(2) + ' ≠ ' + SERIE + ' ' + den.toFixed(2));
+  return h + extra + '<tfoot><tr><td>TOTAL = ' + MET[SERIE] + '</td><td></td><td class="num">' + num(c.ingresos) + '</td><td class="num">' + num(c.egresos)
+    + '</td><td class="num">' + num(totM) + '</td><td class="num">' + (den ? pct(totM / den * 100) : '—') + '</td><td class="num" title="' + MET[SERIE].toLowerCase() + ' ÷ ingresos del cierre">' + pctM(margen(c[SERIE], c.ingresos)) + '</td></tr></tfoot></table>'
+    + '<p class="muted">«% del resultado» = resultado ÷ <b>' + MET[SERIE].toLowerCase() + '</b> del cierre (' + pesos(c[SERIE]) + '); se cambia arriba o en el tablero. '
+    + 'La tenencia (' + pesos(c.tenencia) + ') es la revaluación del stock entero y no se abre por centro: resultado final = s/ tenencia + tenencia. '
+    + '«% s/ facturado» = resultado ÷ ingresos del mismo centro, sub-ramal o ramal («—» si no facturó); en el total es el ' + MET[SERIE].toLowerCase() + ' ÷ ingresos del cierre.</p>';
 }
 function refrescarCen() { $('tabCen').innerHTML = tablaCentros(GC.actual.c, GC.actual.cen); }
+function wireMetCierre() {
+  document.querySelectorAll('#segMetC button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.s === SERIE);
+    b.onclick = function () { SERIE = b.dataset.s; LS.set('metrica', SERIE); refrescarCen(); wireMetCierre(); };
+  });
+}
 function abrirCentro(k) { ABIERTO[k] = !ABIERTO[k]; refrescarCen(); }
 function tablaMeses(c, cen, mm) {
   var meses = Array.from(new Set(mm.map(function (x) { return x.mes_op; }))).sort(function (a, b) { return (a === 'dif_stock') - (b === 'dif_stock') || (a < b ? -1 : 1); });
@@ -705,7 +765,7 @@ async function vComparar(arg) {
   var h = '<div class="card"><h2>Comparar dos cierres</h2><div style="display:flex;gap:10px;align-items:center">'
     + '<select id="cEmp">' + GC.empresas.map(function (e) { return '<option value="' + e.id + '"' + (e.id === eid ? ' selected' : '') + '>' + esc(e.nombre) + '</option>'; }).join('') + '</select>'
     + ' A ' + sel('cA', a) + ' B ' + sel('cB', b) + '</div></div>';
-  if (!a || !b) { V.innerHTML = h + '<div class="card muted">Hacen falta dos cierres publicados.</div>'; return wireComp(eid); }
+  if (!a || !b || a === b) { V.innerHTML = h + '<div class="card"><div class="vacio">' + (cs.length < 2 ? 'Hace falta un segundo cierre publicado de ' + esc(nomEmp(eid)) + ' para comparar (hoy hay ' + cs.length + ').' : 'Elegí dos cierres distintos.') + '</div></div>'; return wireComp(eid); }
   var CA = cs.filter(function (c) { return c.mes === a; })[0], CB = cs.filter(function (c) { return c.mes === b; })[0];
   var ka = await GC.leer('gc_cierre_centros', {empresa_id: eid, mes: a, version: CA.version});
   var kb = await GC.leer('gc_cierre_centros', {empresa_id: eid, mes: b, version: CB.version});
@@ -717,15 +777,17 @@ async function vComparar(arg) {
   var sd = filas.reduce(function (s, r) { return s + r.d; }, 0);
   var mgTd = function (res, ing) { var v = margen(res, ing); return '<td class="num' + (v == null ? ' muted' : cls(v)) + '" title="' + TIP_MG + '">' + pctM(v) + '</td>'; };
   var ma = margen(CA[SERIE], CA.ingresos), mb = margen(CB[SERIE], CB.ingresos);
+  var TIP_R = 'resultado ÷ ' + MET[SERIE].toLowerCase() + ' del cierre';
+  var prTd = function (v, C) { var d = Number(C[SERIE]); return '<td class="num muted" title="' + TIP_R + '">' + (d ? pct(v / d * 100) : '—') + '</td>'; };
   h += '<div class="card" style="overflow:auto"><p>Resultado final: <b>' + mesTxt(a) + '</b> ' + pesos(CA.final) + ' · <b>' + mesTxt(b) + '</b> ' + pesos(CB.final)
     + ' · diferencia <b>' + pesos(CB.final - CA.final) + '</b> = s/ tenencia ' + pesos(CB.sin_tenencia - CA.sin_tenencia) + ' (Σ por centro ' + pesos(sd) + ') + tenencia '
     + pesos(CB.tenencia - CA.tenencia) + '</p><p class="muted" title="' + TIP_MG + '">Margen s/ facturado (' + MET[SERIE].toLowerCase() + ' ÷ ingresos): '
     + mesTxt(a) + ' <b>' + pctM(ma) + '</b> · ' + mesTxt(b) + ' <b>' + pctM(mb) + '</b>' + (ma != null && mb != null ? ' · ' + pp(mb - ma) : '') + '</p>'
-    + '<table><tr><th>Centro</th><th>Empresa</th><th>Sub-ramal</th><th class="num">Resultado ' + mesTxt(a) + '</th><th class="num" title="' + TIP_MG + '">% s/ facturado ' + mesTxt(a) + '</th>'
-    + '<th class="num">Resultado ' + mesTxt(b) + '</th><th class="num" title="' + TIP_MG + '">% s/ facturado ' + mesTxt(b) + '</th><th class="num">Diferencia</th></tr>'
+    + '<table><tr><th>Centro</th><th>Empresa</th><th>Sub-ramal</th><th class="num">Resultado ' + mesTxt(a) + '</th><th class="num" title="' + TIP_R + '">% del resultado ' + mesTxt(a) + '</th><th class="num" title="' + TIP_MG + '">% s/ facturado ' + mesTxt(a) + '</th>'
+    + '<th class="num">Resultado ' + mesTxt(b) + '</th><th class="num" title="' + TIP_R + '">% del resultado ' + mesTxt(b) + '</th><th class="num" title="' + TIP_MG + '">% s/ facturado ' + mesTxt(b) + '</th><th class="num">Diferencia</th></tr>'
     + filas.map(function (r) {
         return '<tr><td>' + esc(r.x.centro) + ' ' + esc(r.x.centro_nombre) + '</td><td class="muted">' + esc(r.x.emp) + '</td><td class="muted">' + esc(r.x.subramal_nombre)
-          + '</td><td class="num' + cls(r.a) + '">' + num(r.a) + '</td>' + mgTd(r.a, r.ia) + '<td class="num' + cls(r.b) + '">' + num(r.b) + '</td>' + mgTd(r.b, r.ib)
+          + '</td><td class="num' + cls(r.a) + '">' + num(r.a) + '</td>' + prTd(r.a, CA) + mgTd(r.a, r.ia) + '<td class="num' + cls(r.b) + '">' + num(r.b) + '</td>' + prTd(r.b, CB) + mgTd(r.b, r.ib)
           + '<td class="num' + cls(r.d) + '"><b>' + num(r.d) + '</b></td></tr>';
       }).join('') + '</table></div>';
   V.innerHTML = h;
