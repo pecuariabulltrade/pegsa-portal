@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-15T10:08:34.062692",
+    "generado": "2026-10-15T11:08:16.348983",
     "desde": "2024-01-09",
-    "hasta": "2026-10-01",
+    "hasta": "2026-10-14",
     "dias": 1010,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-15",
-    "n_tropas": 579,
-    "n_grupos": 990,
+    "n_tropas": 580,
+    "n_grupos": 993,
     "excluidas": 177,
     "excluidas_por": [
       "destete",
@@ -15,9 +15,9 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 579,
+      "caravanas": 580,
       "remito": 0,
-      "distintas_al_remito": 164,
+      "distintas_al_remito": 165,
       "cob_min": 90,
       "sin_datos_caravana": false
     },
@@ -26073,6 +26073,69 @@
       "vendidas_imputadas": 0,
       "muertas": 0
     },
+    "SAGDAR141026": {
+      "tropa": "SAG.DAR.14/10/2026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 28,
+      "kg_ingreso": 6692.0,
+      "categorias": [
+        "Ternera",
+        "Ternero",
+        "Vaca"
+      ],
+      "kg_cab": 239.0,
+      "categorias_remito": [
+        "Ternero",
+        "Vaca"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 14,
+          "kg_ingreso": 1260.0,
+          "kg_cab": 90.0
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 14,
+          "kg_ingreso": 5432.0,
+          "kg_cab": 388.0
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaca",
+          "cabezas": 14,
+          "kg_ingreso": 5432.0,
+          "kg_cab": 388.0
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 7,
+          "kg_ingreso": 630.0,
+          "kg_cab": 90.0
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 7,
+          "kg_ingreso": 630.0,
+          "kg_cab": 90.0
+        }
+      ],
+      "cab_real": 28,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": true,
+      "en_stock": 28,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
     "SAGDAR230926": {
       "tropa": "SAG.DAR.23/09/2026",
       "hotelero": "EL SAGUAIPE SAS",
@@ -46903,6 +46966,60 @@
       "cabezas": 7,
       "kg_ingreso": 1590.4,
       "kg_cab": 227.2,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.DAR.14/10/2026",
+      "tropa_norm": "SAGDAR141026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 7,
+      "kg_ingreso": 630.0,
+      "kg_cab": 90.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.DAR.14/10/2026",
+      "tropa_norm": "SAGDAR141026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 7,
+      "kg_ingreso": 630.0,
+      "kg_cab": 90.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.DAR.14/10/2026",
+      "tropa_norm": "SAGDAR141026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Vaca",
+      "categoria_sigla": "VA",
+      "cabezas": 14,
+      "kg_ingreso": 5432.0,
+      "kg_cab": 388.0,
       "fuente": "caravanas"
     }
   ]
