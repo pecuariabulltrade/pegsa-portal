@@ -1,4 +1,4 @@
-/* modulo-08-historico.js — Histórico & Evolución · v15.86 (2026-10-13) */
+/* modulo-08-historico.js — Histórico & Evolución · v15.87 (2026-10-14) */
 
 // v15.52: se eliminó _histData (stock_historico.json) — nunca se le hacía fetch,
 // _renderHistHacienda apuntaba a canvas inexistentes en index.html (código huérfano).
@@ -951,6 +951,10 @@ function _renderHistReal(){
   var dsFin = [
     { label: 'Disponible',      backgroundColor: '#27613d',
       data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.disponible||0)/1000000) : 0; }) },
+    // v15.87: cheques de TERCEROS en cartera (hoja 'cheques en cartera' del
+    // financiero). Activo distinto de las ventas a cobrar de hacienda: se suman.
+    { label: 'Cheques en cartera', backgroundColor: '#8a6d2a',
+      data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.cheques_cartera||0)/1000000) : 0; }) },
     { label: 'Cobrar Hacienda', backgroundColor: '#2d6a8a',
       data: snaps.map(function(s){ return s.financiero ? Math.round((s.financiero.cobrar_hacienda||0)/1000000) : 0; }) },
     { label: 'Pagar Hacienda',  backgroundColor: '#c0392b',
