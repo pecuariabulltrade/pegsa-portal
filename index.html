@@ -96,6 +96,13 @@
     <a class="sb-item" data-target="compras" href="compras.html">
       <span class="sb-num">12</span><span class="sb-text">Compras y Liquidaciones</span>
     </a>
+    <!-- v15.88: Gestion y Costos (PORTAL_COSTOS_20), pagina propia. Los numeros
+         NO estan en el repo: los lee de Supabase (proyecto "gestion") con sesion
+         propia y RLS. Igual que compras: 'gestion-costos' tiene que figurar en
+         gerencia y admin de core-home.js o sbInit() lo esconde. -->
+    <a class="sb-item" data-target="gestion-costos" href="gestion_costos.html">
+      <span class="sb-num">13</span><span class="sb-text">Gesti&oacute;n y Costos</span>
+    </a>
   </div>
 
   <div class="sb-user">

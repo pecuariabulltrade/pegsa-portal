@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión y Costos · PEGSA</title>
+<!--
+  v15.88 · Gestión y Costos (PORTAL_COSTOS_20, Nicolás 14/10/2026)
+  ─────────────────────────────────────────────────────────────────
+  Página propia como compras.html / analisis_costos.html. Lee los cierres de
+  gestión y los grupos de costos que publica el PORTAL DE COSTOS local (botón
+  «Publicar») en el proyecto Supabase DEDICADO «gestion» (tablas gc_*).
+
+  ⚠ ESTE ARCHIVO NO TIENE NINGÚN NÚMERO. El repo es GitHub Pages: todo lo que
+  esté acá lo lee cualquiera con la URL. Los números viven en Supabase con RLS:
+  la clave de abajo es la PUBLICABLE (anon, pública por diseño) y sin sesión
+  no lee nada (probado: 0 filas). La sesión es la de Supabase Auth del
+  proyecto «gestion» (usuarios que crea Nicolás), distinta de la de Hotelería.
+  La clave service_role NUNCA va acá: queda en el .env del portal de costos.
+
+  v15.88.1 (15/10/2026) · «Tablero de gestión» (margen s/ facturado + torta de
+  participación por centro) y «Tablero de costos» (resumen por mes, barras de
+  crecimiento, tortas por cuenta y por centro). Todo sale de lo publicado; los
+  gráficos nuevos son SVG propios (sin librerías nuevas, andan sin internet).
+
+  v15.88.2 (15/10/2026) · «Participación en el resultado» = resultado NETO del
+  ramal (o centro) ÷ resultado final del cierre (la métrica elegida), con la
+  tenencia como porción propia y los que restan con su % negativo. «% del
+  resultado» de Un cierre / Comparar usa el mismo denominador (total 100 %).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  /* Mismos tokens que compras.html / analisis_costos.html */
+  :root{
+    --bg:#faf8f4; --surface:#FFF; --surface-2:#f7f5f0;
+    --border:#e3e1da; --border-2:#d8d6ce;
+    --ink:#1a1612; --text-2:#4a453f; --mutedc:#8a827a;
+    --accent:#b8922a; --accent-bright:#d4a84b; --accent-soft:#faf6ea;
+    --verde:#27613d; --verde-soft:#eef5f0;
+    --ambar:#b8922a; --ambar-soft:#fdf6e3;
+    --rojo:#c0392b; --rojo-soft:#fbebe8;
+    --azul:#2d6a8a; --azul-soft:#eef4f7;
+    --navy:#0F1B64;
+    --serif:'Playfair Display',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--sans)}
+  header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);
+    padding:12px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  header h1{font-family:var(--serif);font-weight:700;font-size:20px;margin:0}
+  header a.volver{font-family:var(--mono);font-size:11px;color:var(--mutedc);text-decoration:none}
+  nav{display:flex;gap:4px;flex-wrap:wrap}
+  nav button{all:unset;font-family:var(--mono);font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
+    padding:6px 11px;border-radius:6px;cursor:pointer;color:var(--text-2)}
+  nav button.on{background:var(--accent);color:#fff}
+  .sesion{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--mutedc);display:flex;align-items:center;gap:8px}
+  main{max-width:1400px;margin:0 auto;padding:18px 24px 60px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  .card h2{font-family:var(--serif);font-weight:700;font-size:17px;margin:0 0 6px}
+  .muted{color:var(--mutedc);font-size:12.5px}
+  .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mutedc);margin-bottom:3px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-family:var(--mono);font-size:11px;background:var(--accent-soft);color:var(--accent)}
+  .kpis{display:flex;flex-wrap:wrap;gap:22px;margin:8px 0}
+  .kpi .v{font-size:22px;font-weight:700;font-family:var(--serif)}
+  .kpi .v.grande{font-size:30px}
+  .kpi .d{font-family:var(--mono);font-size:11px;color:var(--mutedc)}
+  .neg{color:var(--rojo)}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--mutedc);font-weight:600;
+    text-align:left;padding:6px 8px;border-bottom:1px solid var(--border-2);background:var(--surface)}
+  td{padding:5px 8px;border-bottom:1px solid var(--border)}
+  .num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.ram td{background:var(--surface-2);font-weight:700}
+  tr.sub td{font-weight:600}
+  tr.cen{cursor:pointer} tr.cen:hover td{background:var(--accent-soft)}
+  tr.cta td{font-size:11.5px;color:var(--text-2)}
+  tfoot td{font-weight:700;border-top:2px solid var(--border-2);background:var(--surface-2)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+  .emp-card .flecha{font-size:14px}
+  button.btn{height:32px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;
+    padding:0 14px;font-family:var(--mono);font-size:11.5px;cursor:pointer}
+  button.btn.sec{background:var(--surface);color:var(--text-2);border-color:var(--border-2)}
+  select,input{height:32px;border:1px solid var(--border-2);border-radius:7px;padding:0 8px;font:400 13px var(--sans);background:var(--surface)}
+  .aviso{background:var(--ambar-soft);border:1px solid #e8d9ad;color:#7a5c12;border-radius:8px;padding:8px 12px;font-size:12.5px;margin:0 0 12px}
+  .aviso.err{background:var(--rojo-soft);border-color:#e8c4bd;color:var(--rojo)}
+  .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:7px;overflow:hidden;height:28px}
+  .seg button{all:unset;padding:0 9px;display:inline-flex;align-items:center;font-family:var(--mono);font-size:11px;cursor:pointer;color:var(--text-2)}
+  .seg button.on{background:var(--accent);color:#fff}
+  #login{max-width:380px;margin:80px auto}
+  #login .card{padding:26px}
+  #login input{width:100%;margin:4px 0 12px}
+  .oculto{display:none}
+  .scroll{overflow:auto;max-height:620px}
+  /* v15.88.1 · tableros (gráficos SVG propios: sin librerías nuevas, igual con o sin internet) */
+  .grid{grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr))}
+  .torta-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(250px,2fr);gap:18px;align-items:start}
+  .tortas2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+  .tortas2 .card{margin-bottom:0}
+  svg.graf{width:100%;height:auto;display:block}
+  svg.graf text{font-family:var(--sans)}
+  svg.graf path[data-i]:hover{opacity:.85}
+  .leg{list-style:none;margin:8px 0 0;padding:0;font-size:12.5px}
+  .leg li{display:flex;gap:8px;align-items:center;padding:3px 0;cursor:pointer;border-bottom:1px solid var(--border)}
+  .leg i{width:11px;height:11px;border-radius:3px;flex:none}
+  .leg .num{margin-left:auto}
+  .restan .lbl{color:var(--rojo)}
+  .restan tr{cursor:pointer} .restan tr:hover td{background:var(--rojo-soft)}
+  .nota{font-size:11.5px;color:var(--mutedc);margin:4px 0 0}
+  .vacio{border:1px dashed var(--border-2);border-radius:8px;padding:14px;color:var(--mutedc);font-size:12.5px;text-align:center}
+  .filtro{display:inline-flex;gap:8px;align-items:center;background:var(--accent-soft);border:1px solid #ecdcae;border-radius:8px;padding:5px 10px;font-size:12.5px;margin:6px 0}
+  td.hl,th.hl{background:var(--accent-soft)}
+  .kpi .d.mg{color:var(--text-2);font-size:11.5px}
+  tr.flash td{animation:flash 2.6s ease-out}
+  @keyframes flash{0%{background:#f3e3b0}100%{background:transparent}}
+  @media (max-width:760px){
+    header{padding:10px 14px} main{padding:14px 12px 50px}
+    .torta-grid,.tortas2{grid-template-columns:1fr}
+    .kpi .v.grande{font-size:24px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Gestión y Costos</h1>
+  <a class="volver" href="index.html">← Portal</a>
+  <nav id="nav" class="oculto">
+    <button data-v="tablero" class="on">Tablero de gestión</button>
+    <button data-v="costos">Tablero de costos</button>
+    <button data-v="cierre">Un cierre</button>
+    <button data-v="comparar">Comparar</button>
+    <button data-v="grupos">Costos · grupo</button>
+  </nav>
+  <div class="sesion" id="sesion"></div>
+</header>
+
+<main>
+  <!-- LOGIN: sin sesión no se pide ningún dato -->
+  <div id="login" class="oculto">
+    <div class="card">
+      <h2>Acceso restringido</h2>
+      <p class="muted" style="margin-top:0">Resultados de gestión y costos. Ingresá con tu usuario de
+        <b>Gestión</b> (Supabase · proyecto «gestion»; no es el de Hotelería ni el del portal).</p>
+      <div class="lbl">Email</div><input id="lEmail" type="email" autocomplete="username">
+      <div class="lbl">Contraseña</div><input id="lPass" type="password" autocomplete="current-password">
+      <div id="lErr" class="aviso err oculto"></div>
+      <button class="btn" id="lBtn" style="width:100%">Ingresar</button>
+    </div>
+  </div>
+  <div id="sinRed" class="card oculto"><h2>Sin conexión</h2>
+    <p class="muted">No se pudo conectar con el servidor de datos. Revisá la conexión y recargá.</p></div>
+
+  <div id="app" class="oculto">
+    <section id="v-tablero"></section>
+    <section id="v-costos" class="oculto"></section>
+    <section id="v-cierre" class="oculto"></section>
+    <section id="v-comparar" class="oculto"></section>
+    <section id="v-grupos" class="oculto"></section>
+  </div>
+</main>
+
+<script>
+/* ── configuración: SOLO la clave publicable (anon) del proyecto «gestion» ── */
+var GC_CFG = {
+  url:  'https://lahflesddeazgezatcct.supabase.co',
+  anon: 'sb_publishable_30z-8e1wLarzjIktPk3JRw_SWra2qAb'
+};
+var GC = { sb: null, user: null, empresas: [], cierres: [], cache: {} };
+
+/* ── formato es-AR ── */
+function pesos(n, dec) {
+  if (n == null || isNaN(n)) return '—';
+  return '$ ' + Number(n).toLocaleString('es-AR', {minimumFractionDigits: dec || 0, maximumFractionDigits: dec || 0});
+}
+function num(n) { return n == null ? '—' : Number(n).toLocaleString('es-AR', {maximumFractionDigits: 0}); }
+function pct(n) { return n == null ? '' : Number(n).toLocaleString('es-AR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + ' %'; }
+/* v15.88.1 · margen = resultado ÷ ingresos facturados (sin ingresos → null → «—», nunca ∞) */
+function margen(res, ing) { ing = Number(ing); return ing && isFinite(ing) ? Number(res) / ing * 100 : null; }
+function pctM(v) { return v == null ? '—' : pct(v); }
+function pp(d) { return (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d).toLocaleString('es-AR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + ' pp'; }
+function millones(v) { return (Number(v) / 1e6).toLocaleString('es-AR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + ' M'; }
+var TIP_MG = 'resultado ÷ ingresos facturados del período';
+/* preferencias del usuario (pestaña, empresa, grupo, métrica) */
+var LS = {
+  get: function (k, d) { try { var v = localStorage.getItem('gc_' + k); return v == null ? d : v; } catch (e) { return d; } },
+  set: function (k, v) { try { localStorage.setItem('gc_' + k, v); } catch (e) { /* sin storage: no pasa nada */ } }
+};
+function fecha(s) { if (!s) return '—'; var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : s; }
+function fechaHora(s) {
+  if (!s) return '—';
+  try { var d = new Date(s); return d.toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + d.toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'}); }
+  catch (e) { return s; }
+}
+function mesTxt(m) { if (!m || m === 'dif_stock') return m === 'dif_stock' ? 'Dif. stock' : '—'; return m.slice(5, 7) + '/' + m.slice(0, 4); }
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+function cls(n) { return Number(n) < 0 ? ' neg' : ''; }
+function $(id) { return document.getElementById(id); }
+
+/* ── acceso a datos: TODO pasa por acá (sesión + RLS) ── */
+GC.leer = async function (tabla, filtros, orden) {
+  var k = tabla + JSON.stringify(filtros || {}) + (orden || '');
+  if (GC.cache[k]) return GC.cache[k];
+  var out = [], desde = 0, paso = 1000;
+  while (true) {
+    var q = GC.sb.from(tabla).select('*');
+    Object.keys(filtros || {}).forEach(function (c) { q = q.eq(c, filtros[c]); });
+    if (orden) orden.split(',').forEach(function (o) { q = q.order(o.trim()); });
+    var r = await q.range(desde, desde + paso - 1);
+    if (r.error) throw r.error;
+    out = out.concat(r.data || []);
+    if (!r.data || r.data.length < paso) break;
+    desde += paso;
+  }
+  GC.cache[k] = out;
+  return out;
+};
+
+/* ── sesión ── */
+async function arrancar() {
+  if (!window.supabase) { $('sinRed').classList.remove('oculto'); return; }
+  GC.sb = window.supabase.createClient(GC_CFG.url, GC_CFG.anon, {auth: {persistSession: true, storageKey: 'pegsa-gestion-auth'}});
+  var s = await GC.sb.auth.getSession();
+  if (s.data && s.data.session) return GC.iniciar(s.data.session.user);
+  mostrarLogin();
+}
+function mostrarLogin(msg) {
+  $('app').classList.add('oculto'); $('nav').classList.add('oculto'); $('sesion').innerHTML = '';
+  $('login').classList.remove('oculto');
+  if (msg) { $('lErr').textContent = msg; $('lErr').classList.remove('oculto'); }
+}
+$('lBtn').onclick = async function () {
+  $('lErr').classList.add('oculto');
+  var r = await GC.sb.auth.signInWithPassword({email: $('lEmail').value.trim(), password: $('lPass').value});
+  if (r.error) return mostrarLogin(r.error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos.' : r.error.message);
+  $('lPass').value = '';
+  GC.iniciar(r.data.user);
+};
+$('lPass').onkeydown = function (e) { if (e.key === 'Enter') $('lBtn').click(); };
+async function salir() { await GC.sb.auth.signOut(); GC.cache = {}; location.reload(); }
+
+GC.iniciar = async function (user) {
+  GC.user = user;
+  $('login').classList.add('oculto');
+  $('sesion').innerHTML = esc(user.email || '') + ' · <a href="#" onclick="salir();return false">salir</a>';
+  try {
+    GC.empresas = await GC.leer('gc_empresas', {}, 'orden');
+    GC.cierres = await GC.leer('gc_cierres', {vigente: true}, 'empresa_id,mes');
+  } catch (e) {
+    return mostrarLogin('No se pudieron leer los datos: ' + (e.message || e));
+  }
+  $('nav').classList.remove('oculto'); $('app').classList.remove('oculto');
+  var h = leerHash();
+  ver(h.v || LS.get('vista', 'tablero'), h.arg);
+};
+document.querySelectorAll('#nav button').forEach(function (b) { b.onclick = function () { ver(b.dataset.v); }; });
+var VISTAS = {tablero: 'vTablero', costos: 'vCostos', cierre: 'vCierre', comparar: 'vComparar', grupos: 'vGrupos'};
+function ver(v, arg) {
+  if (!VISTAS[v]) v = 'tablero';
+  LS.set('vista', v);
+  escribirHash(v, arg);
+  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
+  Object.keys(VISTAS).forEach(function (x) { $('v-' + x).classList.toggle('oculto', x !== v); });
+  window[VISTAS[v]](arg);
+  window.scrollTo(0, 0);
+}
+/* estado en la URL: #grupos?g=<grupo>&cta=<cuenta> (sirve con file:// y con servidor) */
+function escribirHash(v, arg) {
+  var q = Object.keys(arg || {}).filter(function (k) { return arg[k] != null && arg[k] !== ''; })
+    .map(function (k) { return k + '=' + encodeURIComponent(arg[k]); }).join('&');
+  try { history.replaceState(null, '', '#' + v + (q ? '?' + q : '')); } catch (e) { /* file:// viejo */ }
+}
+function leerHash() {
+  var m = String(location.hash || '').match(/^#(\w+)(?:\?(.*))?$/);
+  if (!m || !VISTAS[m[1]]) return {};
+  var arg = {};
+  (m[2] || '').split('&').forEach(function (p) {
+    var kv = p.split('='); if (!kv[0]) return;
+    var v = decodeURIComponent(kv[1] || '');
+    arg[kv[0]] = (kv[0] === 'v' || kv[0] === 'comp') ? Number(v) : v;
+  });
+  return {v: m[1], arg: Object.keys(arg).length ? arg : null};
+}
+function cierresDe(eid) { return GC.cierres.filter(function (c) { return c.empresa_id === eid; }).sort(function (a, b) { return a.mes < b.mes ? -1 : 1; }); }
+function nomEmp(eid) { var e = GC.empresas.filter(function (x) { return x.id === eid; })[0]; return e ? e.nombre : eid; }
+function empElegida(arg) {
+  var ids = GC.empresas.map(function (e) { return e.id; }), e = (arg && arg.e) || LS.get('emp');
+  e = ids.indexOf(e) >= 0 ? e : ids[0];
+  if (e) LS.set('emp', e);
+  return e;
+}
+
+/* ══════════ 1 · tablero ══════════ */
+var MET = {final: 'Resultado final', sin_tenencia: 'Resultado s/ tenencia', operativo: 'Resultado operativo'};
+var SERIE = LS.get('metrica', 'final'), CHARTS = [];
+if (!MET[SERIE]) SERIE = 'final';
+function lnk(txt, v, arg) { return '<a href="#" onclick=\'ver("' + v + '",' + esc(JSON.stringify(arg)).replace(/'/g, '&#39;') + ');return false\'>' + txt + '</a>'; }
+function vTablero() {
+  CHARTS.forEach(function (c) { c.destroy(); }); CHARTS = [];
+  var h = '<div class="card"><h2>Tablero de gestión</h2><p class="muted" style="margin:0">Cada cierre es la gestión '
+    + '<b>anualizada</b>: los 12 meses terminados en el mes cerrado. Por defecto el número grande es el <b>resultado final</b> '
+    + '(s/ tenencia + tenencia), como en el portal de costos. Métrica: <span class="seg" id="segSerie">'
+    + '<button data-s="final">final</button><button data-s="sin_tenencia">s/ tenencia</button><button data-s="operativo">operativo</button></span></p></div>'
+    + '<div class="grid">';
+  GC.empresas.forEach(function (e) {
+    var cs = cierresDe(e.id), u = cs[cs.length - 1], p = cs[cs.length - 2];
+    h += '<div class="card emp-card"><h2>' + esc(e.nombre) + ' <span class="pill">' + esc(e.grupo) + '</span></h2>';
+    if (!u) { h += '<div class="vacio">Sin datos: no hay cierres publicados.</div></div>'; return; }
+    var dif = p ? u[SERIE] - p[SERIE] : null, base = p ? Math.abs(p[SERIE]) : null;
+    var sub = SERIE === 'final' ? 's/ tenencia ' + pesos(u.sin_tenencia) + ' · tenencia ' + pesos(u.tenencia)
+      : SERIE === 'sin_tenencia' ? 'operativo ' + pesos(u.operativo) + ' · dif. de stock ' + pesos(u.dif_stock)
+      : 'ingresos ' + pesos(u.ingresos) + ' · egresos ' + pesos(u.egresos);
+    var mg = margen(u[SERIE], u.ingresos), mgp = p ? margen(p[SERIE], p.ingresos) : null;
+    h += '<div class="muted">cierre ' + lnk(mesTxt(u.mes), 'cierre', {e: e.id, m: u.mes}) + ' · ventana '
+      + fecha(u.desde) + ' → ' + fecha(u.hasta) + ' · versión ' + u.version + '</div>'
+      + '<div class="kpi"><div class="lbl">' + MET[SERIE] + '</div><div class="v grande' + cls(u[SERIE]) + '">' + pesos(u[SERIE]) + '</div>'
+      + '<div class="d mg" title="' + TIP_MG + '">margen s/ facturado <b>' + pctM(mg) + '</b>'
+      + (mg != null && mgp != null ? ' <span style="color:' + (mg - mgp >= 0 ? 'var(--verde)' : 'var(--rojo)') + '">' + pp(mg - mgp) + '</span> contra ' + mesTxt(p.mes) : '')
+      + (SERIE === 'operativo' ? '' : ' <span class="muted">(ingresos ' + pesos(u.ingresos) + ')</span>') + '</div>'
+      + '<div class="d">' + sub + '</div></div>';
+    if (dif != null) h += '<div class="flecha" style="color:' + (dif >= 0 ? 'var(--verde)' : 'var(--rojo)') + '">'
+      + (dif > 0 ? '▲' : dif < 0 ? '▼' : '=') + ' ' + pesos(Math.abs(dif)) + (base ? ' (' + pct(dif / base * 100) + ')' : '')
+      + ' <span class="muted">contra ' + mesTxt(p.mes) + ' · ' + lnk('qué lo explica', 'comparar', {e: e.id, a: p.mes, b: u.mes}) + '</span></div>';
+    else h += '<div class="muted">primer cierre publicado</div>';
+    h += '<div style="height:170px;margin-top:8px"><canvas id="ch_' + e.id + '"></canvas></div></div>';
+  });
+  var eT = empElegida();
+  h += '</div><div class="card" id="tortaCard"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+    + '<h2 style="margin:0">Participación en el resultado</h2><select id="tEmp">'
+    + GC.empresas.map(function (e) { return '<option value="' + e.id + '"' + (e.id === eT ? ' selected' : '') + '>' + esc(e.nombre) + '</option>'; }).join('')
+    + '</select><span class="seg" id="segNivel"><button data-n="ramal">por ramal</button><button data-n="centro">por centro</button></span>'
+    + '<span class="muted" id="tInfo"></span></div><div id="tortaBox" style="margin-top:8px"></div></div>';
+  h += '<div class="card" style="overflow:auto"><h2>Cierres publicados</h2><table><tr><th>Empresa</th><th>Cierre</th><th>Ventana</th>'
+    + '<th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Operativo</th><th class="num">Dif. stock</th>'
+    + '<th class="num">S/ tenencia</th><th class="num">Tenencia</th><th class="num">Final</th>'
+    + '<th class="num" title="' + TIP_MG + ' (métrica: ' + MET[SERIE].toLowerCase() + ')">% s/ facturado</th><th>Datos de Physis al</th><th>Publicado el</th><th>Versión</th></tr>';
+  GC.empresas.forEach(function (e) {
+    cierresDe(e.id).slice().reverse().forEach(function (c) {
+      h += '<tr><td>' + esc(e.nombre) + '</td><td>' + lnk(mesTxt(c.mes), 'cierre', {e: e.id, m: c.mes}) + '</td>'
+        + '<td class="muted">' + fecha(c.desde) + ' → ' + fecha(c.hasta) + '</td>'
+        + ['ingresos', 'egresos', 'operativo', 'dif_stock', 'sin_tenencia', 'tenencia', 'final'].map(function (k) {
+            return '<td class="num' + cls(c[k]) + '">' + (k === SERIE ? '<b>' : '') + num(c[k]) + (k === SERIE ? '</b>' : '') + '</td>'; }).join('')
+        + '<td class="num' + cls(c[SERIE]) + '">' + pctM(margen(c[SERIE], c.ingresos)) + '</td>'
+        + '<td class="muted">' + fechaHora(c.datos_physis_al) + '</td><td class="muted">' + fechaHora(c.publicado_el) + '</td><td>v' + c.version + '</td></tr>';
+    });
+  });
+  $('v-tablero').innerHTML = h + '</table></div>';
+  document.querySelectorAll('#segSerie button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.s === SERIE);
+    b.onclick = function () { SERIE = b.dataset.s; LS.set('metrica', SERIE); vTablero(); };
+  });
+  $('tEmp').onchange = function () { LS.set('emp', this.value); tortaGestion(this.value); };
+  document.querySelectorAll('#segNivel button').forEach(function (b) {
+    b.onclick = function () { LS.set('torta_nivel', b.dataset.n); tortaGestion($('tEmp').value); };
+  });
+  tortaGestion(eT);
+  if (!window.Chart) return;
+  GC.empresas.forEach(function (e) {
+    var cs = cierresDe(e.id), el = $('ch_' + e.id);
+    if (!el || !cs.length) return;
+    CHARTS.push(new Chart(el, {type: 'line', data: {labels: cs.map(function (c) { return mesTxt(c.mes); }),
+      datasets: [{data: cs.map(function (c) { return c[SERIE]; }), borderColor: '#b8922a', backgroundColor: '#b8922a', tension: .2, pointRadius: 4}]},
+      options: {maintainAspectRatio: false, plugins: {legend: {display: false}, tooltip: {callbacks: {label: function (x) { return pesos(x.parsed.y); }}}},
+        scales: {y: {ticks: {callback: function (v) { return '$ ' + (v / 1e6).toLocaleString('es-AR', {maximumFractionDigits: 0}) + ' M'; }}}}}}));
+  });
+}
+
+/* ── v15.88.1 · cálculos puros (sin DOM: los usa el test de Scripts_Auxiliares) ── */
+var GCcalc = {
+  /* resultado por centro con la métrica pedida: s/ tenencia = gc_cierre_centros.resultado;
+     operativo = eso menos la fila mes_op='dif_stock' del mismo centro (gc_cierre_meses) */
+  resPorCentro: function (cen, mm, metrica) {
+    var ds = {};
+    if (metrica === 'operativo') (mm || []).forEach(function (x) {
+      if (x.mes_op === 'dif_stock') { var k = x.emp + '|' + x.centro; ds[k] = (ds[k] || 0) + Number(x.resultado); }
+    });
+    return cen.map(function (x) {
+      var k = x.emp + '|' + x.centro;
+      return {k: k, emp: x.emp, centro: x.centro, nombre: x.centro === '~' ? '(sin centro)' : (x.centro_nombre || x.centro),
+        ramal: x.ramal, ramal_nombre: x.ramal_nombre, ingresos: Number(x.ingresos), v: Number(x.resultado) - (ds[k] || 0)};
+    });
+  },
+  /* v15.88.2 · «Participación en el resultado» (Nicolás 15/10): % = resultado NETO del ramal (o centro)
+     ÷ la métrica del cierre (por defecto el resultado FINAL). Con «final» la tenencia es una porción
+     propia (final = Σ ramales s/ tenencia + tenencia). Porciones = los que aportan; los que restan, aparte
+     con su % negativo. Aportan + restan = F al peso; a − r = 100 %. */
+  participacion: function (cen, mm, c, metrica, nivel) {
+    var met = metrica === 'operativo' ? 'operativo' : 'sin_tenencia', F = Number(c[metrica]) || 0;
+    var rows = GCcalc.resPorCentro(cen, mm, met), items = [];
+    if (nivel === 'centro') {
+      var nn = {};   // mismo nombre en dos centros (p. ej. dos «ADMINISTRACIÓN») → se agrega el código
+      rows.forEach(function (x) { var q = x.emp + ' ' + x.nombre; nn[q] = (nn[q] || 0) + 1; });
+      items = rows.map(function (x) { var q = x.emp + ' ' + x.nombre;
+        return {k: 'c:' + x.k, tipo: 'centro', open: x.k, cod: x.centro, label: q + (nn[q] > 1 ? ' ' + x.centro : ''), tip: q + ' ' + x.centro, v: x.v}; });
+    } else {
+      var rm = {};
+      rows.forEach(function (x) {
+        var r = rm[x.ramal] = rm[x.ramal] || {k: 'r:' + x.ramal, tipo: 'ramal', ramal: x.ramal,
+          label: x.ramal === '~' ? '(sin centro)' : x.ramal + ' ' + titulo(x.ramal_nombre || ''), v: 0};
+        r.v += x.v;
+      });
+      items = Object.keys(rm).map(function (k) { return rm[k]; });
+    }
+    if (metrica === 'final') items.push({k: 'ten', tipo: 'tenencia', label: 'Tenencia', v: Number(c.tenencia) || 0});
+    items = items.filter(function (x) { return Math.abs(x.v) >= 0.005; });
+    var T = GCcalc.partTorta(items, 8), pc = function (v) { return F ? v / F * 100 : null; };
+    T.slices.forEach(function (x) { x.pct = pc(x.v); });
+    var neg = items.filter(function (x) { return x.v < 0; }).sort(function (a, b) { return a.v - b.v; });
+    neg.forEach(function (x) { x.pct = pc(x.v); });
+    var R = neg.reduce(function (s, x) { return s + x.v; }, 0);
+    return {slices: T.slices, neg: neg, A: T.total, R: R, F: F, a: pc(T.total), r: pc(R), nivel: nivel, metrica: metrica};
+  },
+  /* top n + «otros» (si «otros» sería una sola porción, va con su nombre: máx. n+1 porciones) */
+  partTorta: function (items, n) {
+    var xs = items.filter(function (x) { return x.v > 0; }).sort(function (a, b) { return b.v - a.v; });
+    var total = xs.reduce(function (s, x) { return s + x.v; }, 0), sl = xs.slice(0, xs.length <= n + 1 ? n + 1 : n);
+    var resto = xs.slice(sl.length);
+    if (resto.length) sl.push({k: '_otros', label: 'otros (' + resto.length + ')', v: resto.reduce(function (s, x) { return s + x.v; }, 0), n: resto.length});
+    sl.forEach(function (x) { x.pct = total ? x.v / total * 100 : 0; });
+    return {slices: sl, total: total};
+  },
+  /* resumen de un grupo de costos entre d y h (AAAA-MM). Por cuenta sale de gc_grupo_cuentas,
+     que es del período publicado completo: solo coincide con la tabla si el rango es el completo */
+  resumenGrupo: function (g, meses, ctas, d, h) {
+    var todos = Array.from(new Set(meses.map(function (x) { return x.mes_op; }))).sort();
+    d = d && todos.indexOf(d) >= 0 ? d : todos[0]; h = h && todos.indexOf(h) >= 0 ? h : todos[todos.length - 1];
+    if (d > h) { var t = d; d = h; h = t; }
+    var ms = todos.filter(function (m) { return m >= d && m <= h; }), comps = g.componentes || [];
+    var pm = ms.map(function (m) { return {m: m, e: 0, i: 0, comp: {}}; }), ix = {};
+    pm.forEach(function (p, i) { ix[p.m] = i; });
+    var pc = comps.map(function (c, i) { return {i: i, c: c, e: 0, ing: 0}; });
+    meses.forEach(function (x) {
+      if (!(x.mes_op in ix)) return;
+      var p = pm[ix[x.mes_op]], e = Number(x.egresos) || 0, ing = Number(x.ingresos) || 0;
+      p.e += e; p.i += ing; p.comp[x.comp] = (p.comp[x.comp] || 0) + e;
+      if (!pc[x.comp]) pc[x.comp] = {i: x.comp, c: {empresa: x.empresa, centro: x.centro, centro_nombre: x.centro_nombre}, e: 0, ing: 0};
+      pc[x.comp].e += e; pc[x.comp].ing += ing;
+    });
+    var cta = {};
+    ctas.forEach(function (q) {
+      var c = cta[q.cuenta] = cta[q.cuenta] || {cuenta: q.cuenta, nombre: (q.cuenta_nombre || '').trim(), e: 0, ing: 0};
+      c.e += Number(q.egresos) || 0; c.ing += Number(q.ingresos) || 0;
+    });
+    var tot = pm.reduce(function (s, p) { return s + p.e; }, 0), totI = pm.reduce(function (s, p) { return s + p.i; }, 0);
+    return {todos: todos, d: d, h: h, ms: ms, porMes: pm, porComp: pc.filter(Boolean), porCta: Object.keys(cta).map(function (k) { return cta[k]; }),
+      total: tot, totalIng: totI, completo: d === todos[0] && h === todos[todos.length - 1]};
+  }
+};
+
+/* ── v15.88.1 · gráficos SVG propios (torta y barras) ── */
+var PAL = ['#b8922a', '#2d6a8a', '#27613d', '#0F1B64', '#8a5a9e', '#c0662b', '#5b8c85', '#a34a4a', '#6f7d3a'], PAL_OTROS = '#bdb7ad';
+function f1(n) { return Math.round(n * 10) / 10; }
+function titulo(s) { return String(s || '').toLowerCase().replace(/(^|\s)(\S)/g, function (m, a, b) { return a + b.toUpperCase(); }); }
+function corto(s, n) { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+function colorDe(sl, i) { return sl[i].k === '_otros' ? PAL_OTROS : PAL[i % PAL.length]; }
+/* devuelve el HTML; las porciones llevan data-i (índice en sl). compacto = sin etiquetas (móvil: va la lista abajo) */
+function tortaSVG(sl, centroTxt, compacto, ancho) {
+  var W = compacto ? 280 : (ancho || 780), ang = W < 700, NL = ang ? 19 : 26, FS = ang ? 11 : 12, H = compacto ? 260 : 300, cx = W / 2, cy = H / 2, R = compacto ? 112 : ang ? 92 : 104, r0 = R * 0.52;
+  var tot = sl.reduce(function (s, x) { return s + x.v; }, 0), a = -Math.PI / 2, out = [], lab = {L: [], R: []};
+  var P = function (rr, t) { return [f1(cx + rr * Math.cos(t)), f1(cy + rr * Math.sin(t))]; };
+  sl.forEach(function (s, i) {
+    var f = tot ? s.v / tot : 0, a1 = a + f * 2 * Math.PI, d;
+    if (f >= 0.9999) d = 'M' + (cx - R) + ',' + cy + 'A' + R + ',' + R + ' 0 1 1 ' + (cx + R) + ',' + cy + 'A' + R + ',' + R + ' 0 1 1 ' + (cx - R) + ',' + cy + 'Z'
+      + 'M' + (cx - r0) + ',' + cy + 'A' + r0 + ',' + r0 + ' 0 1 0 ' + (cx + r0) + ',' + cy + 'A' + r0 + ',' + r0 + ' 0 1 0 ' + (cx - r0) + ',' + cy + 'Z';
+    else {
+      var big = f > 0.5 ? 1 : 0;
+      d = 'M' + P(R, a) + 'A' + R + ',' + R + ' 0 ' + big + ' 1 ' + P(R, a1) + 'L' + P(r0, a1) + 'A' + f1(r0) + ',' + f1(r0) + ' 0 ' + big + ' 0 ' + P(r0, a) + 'Z';
+    }
+    out.push('<path data-i="' + i + '" d="' + d + '" fill="' + colorDe(sl, i) + '" fill-rule="evenodd" stroke="#fff" stroke-width="1.5" style="cursor:pointer">'
+      + '<title>' + esc(s.tip || s.label) + ' · ' + pesos(s.v) + ' · ' + pct(s.pct) + '</title></path>');
+    var m = (a + a1) / 2;
+    lab[Math.cos(m) >= 0 ? 'R' : 'L'].push({i: i, m: m, y: cy + (R + 16) * Math.sin(m), s: s});
+    a = a1;
+  });
+  if (!compacto) ['L', 'R'].forEach(function (sd) {
+    var L = lab[sd].sort(function (p, q) { return p.y - q.y; }), sg = sd === 'R' ? 1 : -1, gap = 17, k;
+    for (k = 1; k < L.length; k++) L[k].y = Math.max(L[k].y, L[k - 1].y + gap);
+    var over = L.length ? L[L.length - 1].y - (H - 8) : 0;
+    if (over > 0) { L[L.length - 1].y -= over; for (k = L.length - 2; k >= 0; k--) L[k].y = Math.min(L[k].y, L[k + 1].y - gap); }
+    L.forEach(function (l) {
+      var p0 = P(R, l.m), p1 = P(R + 10, l.m), xe = cx + sg * (R + 26), tx = cx + sg * (R + 30);
+      out.push('<polyline points="' + p0 + ' ' + p1 + ' ' + f1(xe) + ',' + f1(l.y) + '" fill="none" stroke="#b9b3a8" stroke-width="1"/>'
+        + '<text x="' + f1(tx) + '" y="' + f1(l.y + 4) + '" font-size="' + FS + '" fill="#4a453f" text-anchor="' + (sd === 'R' ? 'start' : 'end') + '" data-i="' + l.i + '" style="cursor:pointer">'
+        + esc(corto(l.s.label, NL)) + ' <tspan font-weight="700" fill="#1a1612">' + pct(l.s.pct) + '</tspan></text>');
+    });
+  });
+  if (centroTxt) out.push('<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" font-size="' + (compacto ? 15 : 14) + '" font-weight="700" fill="#1a1612">' + esc(centroTxt[0]) + '</text>'
+    + '<text x="' + cx + '" y="' + (cy + 15) + '" text-anchor="middle" font-size="10.5" fill="#8a827a">' + esc(centroTxt[1]) + '</text>');
+  return '<svg class="graf" viewBox="0 0 ' + W + ' ' + H + '"' + (compacto ? ' style="max-width:300px;margin:0 auto"' : '') + ' role="img">' + out.join('') + '</svg>';
+}
+/* torta + lista (la lista solo en móvil, o siempre si pide) y clic por porción */
+function pintarTorta(el, sl, centroTxt, onclick, ancho) {
+  var comp = window.innerWidth < 640;
+  el.innerHTML = tortaSVG(sl, centroTxt, comp, ancho)
+    + (comp ? '<ul class="leg">' + sl.map(function (s, i) {
+        return '<li data-i="' + i + '"><i style="background:' + colorDe(sl, i) + '"></i>' + esc(corto(s.label, 34)) + '<span class="num">' + pct(s.pct) + '</span></li>'; }).join('') + '</ul>' : '');
+  el.querySelectorAll('[data-i]').forEach(function (x) { x.onclick = function () { onclick(sl[Number(x.getAttribute('data-i'))]); }; });
+}
+/* barras de costo por mes, con la variación contra el mes anterior arriba (costo: sube = rojo) y el promedio punteado */
+function barrasSVG(pm) {
+  var n = pm.length, W = Math.max(1000, 64 * n + 90), H = 270, L = 70, T = 46, B = 30, ch = H - T - B, step = (W - L - 14) / n, bw = Math.min(48, step * 0.62);
+  var vs = pm.map(function (p) { return p.v; }), mx = Math.max.apply(null, vs.concat([0])), mn = Math.min.apply(null, vs.concat([0]));
+  var rango = (mx - mn) || 1, Y = function (v) { return T + ch * (mx - v) / rango; }, out = [];
+  for (var t = 0; t <= 4; t++) {
+    var v = mn + rango * t / 4, y = f1(Y(v));
+    out.push('<line x1="' + L + '" x2="' + (W - 8) + '" y1="' + y + '" y2="' + y + '" stroke="#ece9e1"/>'
+      + '<text x="' + (L - 6) + '" y="' + (y + 4) + '" font-size="10.5" fill="#8a827a" text-anchor="end">$ ' + millones(v) + '</text>');
+  }
+  var avg = n ? vs.reduce(function (s, x) { return s + x; }, 0) / n : 0;
+  pm.forEach(function (p, i) {
+    var x = L + step * i + (step - bw) / 2, y0 = Y(0), y1 = Y(p.v), top = Math.min(y0, y1), prev = i ? pm[i - 1].v : null;
+    out.push('<rect x="' + f1(x) + '" y="' + f1(top) + '" width="' + f1(bw) + '" height="' + f1(Math.max(1, Math.abs(y0 - y1))) + '" rx="3" fill="#b8922a">'
+      + '<title>' + mesTxt(p.m) + ' · ' + pesos(p.v) + '</title></rect>'
+      + '<text x="' + f1(x + bw / 2) + '" y="' + f1(top - 5) + '" font-size="10" fill="#8a827a" text-anchor="middle">' + millones(p.v) + '</text>'
+      + '<text x="' + f1(x + bw / 2) + '" y="' + (H - B + 16) + '" font-size="11" fill="#4a453f" text-anchor="middle">' + mesTxt(p.m) + '</text>');
+    if (prev != null) {
+      var dv = prev ? (p.v - prev) / Math.abs(prev) * 100 : null;
+      out.push('<text x="' + f1(x + bw / 2) + '" y="' + f1(top - 18) + '" font-size="11" font-weight="700" text-anchor="middle" fill="'
+        + (dv == null ? '#8a827a' : dv > 0 ? '#c0392b' : '#27613d') + '">' + (dv == null ? '—' : (dv > 0 ? '▲ +' : dv < 0 ? '▼ ' : '= ') + pct(dv)) + '</text>');
+    }
+  });
+  if (n) {
+    var ya = f1(Y(avg));
+    out.push('<line x1="' + L + '" x2="' + (W - 8) + '" y1="' + ya + '" y2="' + ya + '" stroke="#2d6a8a" stroke-width="1.3" stroke-dasharray="5 4"/>'
+      + '<text x="' + (L + 6) + '" y="' + f1(ya - 5) + '" font-size="10.5" fill="#2d6a8a" text-anchor="start">promedio $ ' + millones(avg) + '</text>');
+  }
+  return '<div style="overflow-x:auto"><svg class="graf" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:' + Math.min(W, 560) + 'px" role="img">' + out.join('') + '</svg></div>';
+}
+
+/* ── v15.88.1 · torta «Participación en el resultado» del tablero de gestión ── */
+async function tortaGestion(eid) {
+  var box = $('tortaBox'), info = $('tInfo');
+  if (!box) return;
+  var cs = cierresDe(eid), u = cs[cs.length - 1], nivel = LS.get('torta_nivel', 'ramal') === 'centro' ? 'centro' : 'ramal';
+  document.querySelectorAll('#segNivel button').forEach(function (b) { b.classList.toggle('on', b.dataset.n === nivel); });
+  if (!u) { box.innerHTML = '<div class="vacio">Sin datos: ' + esc(nomEmp(eid)) + ' no tiene cierres publicados.</div>'; info.textContent = ''; return; }
+  var cen, mm = [];
+  box.innerHTML = '<div class="muted">cargando…</div>';
+  try {
+    var k = {empresa_id: eid, mes: u.mes, version: u.version};
+    cen = await GC.leer('gc_cierre_centros', k);
+    if (SERIE === 'operativo') mm = await GC.leer('gc_cierre_meses', k);
+  } catch (e) { box.innerHTML = '<div class="aviso err">No se pudo leer el detalle del cierre: ' + esc(e.message || e) + '</div>'; return; }
+  if ($('tEmp') && $('tEmp').value !== eid) return;   // cambió la empresa mientras cargaba
+  info.innerHTML = 'cierre ' + mesTxt(u.mes) + ' · v' + u.version + ' · % sobre el ' + MET[SERIE].toLowerCase();
+  if (!cen.length) { box.innerHTML = '<div class="vacio">Sin datos: el cierre ' + mesTxt(u.mes) + ' no tiene centros publicados.</div>'; return; }
+  var P = GCcalc.participacion(cen, mm, u, SERIE, nivel), ok = Math.abs(P.A + P.R - P.F) < 0.01;
+  console[ok ? 'info' : 'warn']('[gc] participación ' + eid + ' ' + u.mes + ' (' + SERIE + ', por ' + nivel + '): aportan ' + P.A.toFixed(2) + ' (' + (P.a == null ? '—' : P.a.toFixed(1)) + ' %) − restan '
+    + (-P.R).toFixed(2) + ' (' + (P.r == null ? '—' : (-P.r).toFixed(1)) + ' %) = ' + (P.A + P.R).toFixed(2) + ' vs cierre ' + P.F.toFixed(2) + (ok ? ' · OK' : ' · DIFERENCIA ' + (P.A + P.R - P.F).toFixed(2)));
+  var abrir = function (it) {
+    if (!it || it.k === '_otros') return ver('cierre', {e: eid, m: u.mes});
+    ver('cierre', it.tipo === 'ramal' ? {e: eid, m: u.mes, ram: it.ramal} : it.tipo === 'tenencia' ? {e: eid, m: u.mes, open: '__ten'} : {e: eid, m: u.mes, open: it.open});
+  };
+  var unidad = nivel === 'ramal' ? 'ramales' : 'centros', NR = 10, neg = P.neg;
+  var h = '<div class="torta-grid"><div><div id="tortaSvg"></div>'
+    + '<p class="nota">% = resultado del ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' ÷ <b>' + MET[SERIE].toLowerCase() + '</b> del cierre (' + pesos(P.F) + '). '
+    + 'Como hay ' + unidad + ' que restan, las porciones suman más de 100 %. '
+    + (SERIE === 'final' ? 'La <b>tenencia</b> (revaluación del stock entero, no se abre por centro) va como porción propia. ' : '')
+    + 'Clic en una porción → «Un cierre» con ese ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' abierto.</p></div>'
+    + '<div class="restan"><div class="lbl">Restan · ' + neg.length + ' ' + unidad + '</div>';
+  if (!neg.length) h += '<div class="vacio">Ningún ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' resta.</div>';
+  else {
+    h += '<table>' + neg.slice(0, NR).map(function (x, i) {
+      return '<tr data-i="' + i + '"><td>' + esc(corto(x.label, 34)) + (x.cod ? ' <span class="muted">' + esc(x.cod) + '</span>' : '') + '</td><td class="num neg">' + num(x.v) + '</td><td class="num neg">' + pctM(x.pct) + '</td></tr>'; }).join('');
+    if (neg.length > NR) {
+      var resto = neg.slice(NR).reduce(function (s, x) { return s + x.v; }, 0);
+      h += '<tr data-i="-1"><td class="muted">otros ' + (neg.length - NR) + ' ' + unidad + '</td><td class="num neg">' + num(resto) + '</td><td class="num neg">' + pctM(P.F ? resto / P.F * 100 : null) + '</td></tr>';
+    }
+    h += '<tfoot><tr><td>Total que resta</td><td class="num neg">' + num(P.R) + '</td><td class="num neg">' + pctM(P.r) + '</td></tr></tfoot></table>';
+  }
+  h += '</div></div><p class="muted" style="margin:10px 0 0">Aportan <b>' + pesos(P.A) + '</b> (' + pctM(P.a) + ') − restan <b class="neg">' + pesos(-P.R) + '</b> (' + pctM(P.r == null ? null : -P.r) + ') = '
+    + MET[SERIE].toLowerCase() + ' <b>' + pesos(P.F) + '</b> (100 %) · 12 meses al ' + fecha(u.hasta) + '</p>';
+  box.innerHTML = h;
+  if (!P.slices.length) $('tortaSvg').innerHTML = '<div class="vacio">Ningún ' + (nivel === 'ramal' ? 'ramal' : 'centro') + ' con resultado positivo: no hay nada que repartir.</div>';
+  else pintarTorta($('tortaSvg'), P.slices, ['$ ' + millones(P.A), 'aportan · ' + pctM(P.a)], abrir);
+  box.querySelectorAll('.restan tr[data-i]').forEach(function (tr) { tr.onclick = function () { abrir(neg[Number(tr.getAttribute('data-i'))]); }; });
+}
+
+/* ══════════ 2 · un cierre ══════════ */
+var ABIERTO = {};
+function selectorCierre(eid, mes, onch) {
+  var h = '<select id="selEmp">' + GC.empresas.map(function (e) { return '<option value="' + e.id + '"' + (e.id === eid ? ' selected' : '') + '>' + esc(e.nombre) + '</option>'; }).join('') + '</select> '
+    + '<select id="selMes">' + cierresDe(eid).map(function (c) { return '<option' + (c.mes === mes ? ' selected' : '') + '>' + c.mes + '</option>'; }).join('') + '</select>';
+  return h;
+}
+async function vCierre(arg) {
+  var eid = empElegida(arg), cs = cierresDe(eid);
+  var mes = (arg && arg.m) || (cs[cs.length - 1] || {}).mes, ver_ = arg && arg.v;
+  var V = $('v-cierre');
+  if (!mes) { V.innerHTML = '<div class="card"><div class="vacio">Sin datos: ' + esc(nomEmp(eid)) + ' no tiene cierres publicados.</div></div>'; return; }
+  V.innerHTML = '<div class="card muted">cargando…</div>';
+  var todas = await GC.leer('gc_cierres', {empresa_id: eid, mes: mes}, 'version');
+  var c = ver_ ? todas.filter(function (x) { return x.version === ver_; })[0] : todas.filter(function (x) { return x.vigente; })[0];
+  if (!c) { V.innerHTML = '<div class="card"><div class="vacio">Sin datos: no hay un cierre ' + esc(nomEmp(eid)) + ' ' + mesTxt(mes) + ' publicado.</div></div>'; return; }
+  var k = {empresa_id: eid, mes: mes, version: c.version};
+  var cen = await GC.leer('gc_cierre_centros', k), cta = await GC.leer('gc_cierre_cuentas', k), mm = await GC.leer('gc_cierre_meses', k);
+  GC.actual = {c: c, cen: cen, cta: cta, mm: mm};
+  if (arg && arg.open && arg.open !== '__ten') {   // v15.88.1 · viene de la torta: ese centro desplegado
+    ABIERTO[arg.open] = true;
+    cen.forEach(function (x) { if (x.emp + '|' + x.centro === arg.open) ABIERTO['r' + x.ramal] = true; });
+  }
+  if (arg && arg.ram) ABIERTO['r' + arg.ram] = true;   // v15.88.2 · torta por ramal
+  var tj = [['Ingresos', 'ingresos'], ['Egresos', 'egresos'], ['Resultado operativo', 'operativo'], ['Dif. de stock', 'dif_stock'],
+            ['Resultado s/ tenencia', 'sin_tenencia'], ['Tenencia', 'tenencia'], ['Resultado final', 'final']];
+  var h = '<div class="card"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' + selectorCierre(eid, mes)
+    + ' <button class="btn sec" onclick="csvCierre()">Descargar Excel (CSV)</button></div>'
+    + '<h2 style="margin-top:10px">' + esc(nomEmp(eid)) + ' · cierre ' + mesTxt(mes) + ' <span class="pill">' + fecha(c.desde) + ' → ' + fecha(c.hasta) + '</span> '
+    + '<span class="pill">versión ' + c.version + (c.vigente ? '' : ' (anterior)') + '</span></h2>'
+    + '<div class="muted">Datos de Physis al ' + fechaHora(c.datos_physis_al) + ' · Publicado el ' + fechaHora(c.publicado_el) + '</div><div class="kpis">';
+  tj.forEach(function (t) {
+    var sub = '';
+    if (t[1] === 'dif_stock' && c.dif_stock_insumos != null) sub = 'hacienda ' + pesos(c.dif_stock_hacienda) + ' · insumos ' + pesos(c.dif_stock_insumos);
+    if (t[1] === 'tenencia' && c.tenencia_insumos != null) sub = 'hacienda ' + pesos(c.tenencia_hacienda) + ' · insumos ' + pesos(c.tenencia_insumos);
+    h += '<div class="kpi"><div class="lbl">' + t[0] + '</div><div class="v' + (t[1] === 'final' ? ' grande' : '') + cls(c[t[1]]) + '">' + pesos(c[t[1]]) + '</div>'
+      + (sub ? '<div class="d">' + sub + '</div>' : '') + '</div>';
+  });
+  h += '</div>';
+  (c.avisos || []).forEach(function (a) {
+    if (a.tipo === 'facturas_internas_desbalanceadas') h += '<div class="aviso">Facturas internas desbalanceadas en la ventana: ' + a.n + ' (neto ' + pesos(a.neto) + '), como en el portal de costos.</div>';
+    else if (a.texto) h += '<div class="aviso">' + esc(a.texto) + '</div>';
+  });
+  if (todas.length > 1) {
+    h += '<div class="muted">Versiones: ' + todas.slice().reverse().map(function (x, i, arr) {
+      var prev = arr[i + 1];
+      return '<a href="#" onclick="ver(\'cierre\',{e:\'' + eid + '\',m:\'' + mes + '\',v:' + x.version + '});return false">v' + x.version + '</a>'
+        + (x.vigente ? ' (vigente)' : '') + ' ' + fechaHora(x.publicado_el) + ' · final ' + pesos(x.final) + (prev ? ' · Δ ' + pesos(x.final - prev.final) : '');
+    }).join(' · ') + '</div>';
+  }
+  h += '</div><div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div class="seg" id="segCierre"><button data-t="cen" class="on">Por centro de costo</button><button data-t="mes">Por mes</button></div>'
+    + '<span class="muted">«% del resultado» sobre el <span class="seg" id="segMetC"><button data-s="final">final</button><button data-s="sin_tenencia">s/ tenencia</button><button data-s="operativo">operativo</button></span></span></div>'
+    + '<div id="tabCen" style="margin-top:10px">' + tablaCentros(c, cen) + '</div><div id="tabMes" class="oculto scroll" style="margin-top:10px">' + tablaMeses(c, cen, mm) + '</div></div>';
+  V.innerHTML = h;
+  $('selEmp').onchange = function () { ver('cierre', {e: this.value}); };
+  $('selMes').onchange = function () { ver('cierre', {e: eid, m: this.value}); };
+  if (arg && (arg.open || arg.ram)) {
+    var tr = document.getElementById(arg.ram ? 'ram_' + arg.ram : arg.open === '__ten' ? 'filaTen' : 'cen_' + arg.open);
+    if (tr) { tr.classList.add('flash'); tr.scrollIntoView({block: 'center'}); }
+  }
+  wireMetCierre();
+  document.querySelectorAll('#segCierre button').forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll('#segCierre button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      $('tabCen').classList.toggle('oculto', b.dataset.t !== 'cen'); $('tabMes').classList.toggle('oculto', b.dataset.t !== 'mes');
+    };
+  });
+}
+function arbolCentros(cen) {
+  var ram = {};
+  cen.forEach(function (x) {
+    var r = ram[x.ramal] = ram[x.ramal] || {cod: x.ramal, nombre: x.ramal_nombre, subs: {}, ingresos: 0, egresos: 0, resultado: 0};
+    var s = r.subs[x.subramal] = r.subs[x.subramal] || {cod: x.subramal, nombre: x.subramal_nombre, centros: [], ingresos: 0, egresos: 0, resultado: 0};
+    s.centros.push(x);
+    ['ingresos', 'egresos', 'resultado'].forEach(function (k) { r[k] += Number(x[k]); s[k] += Number(x[k]); });
+  });
+  var abs = function (a, b) { return Math.abs(b.resultado) - Math.abs(a.resultado); };
+  return Object.keys(ram).map(function (k) { var r = ram[k]; r.subs = Object.keys(r.subs).map(function (j) { var s = r.subs[j]; s.centros.sort(abs); return s; }).sort(abs); return r; }).sort(abs);
+}
+function tablaCentros(c, cen) {
+  // v15.88.2 · «% del resultado» = resultado ÷ la métrica elegida (por defecto el FINAL del cierre, no s/ tenencia)
+  var den = Number(c[SERIE]) || 0, TIP_R = 'resultado ÷ ' + MET[SERIE].toLowerCase() + ' del cierre';
+  var pr = function (v) { return den ? pct(v / den * 100) : '—'; };
+  var h = '<table><tr><th>Ramal / sub-ramal / centro</th><th>Empresa</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Resultado</th><th class="num" title="' + TIP_R + '">% del resultado</th>'
+    + '<th class="num" title="' + TIP_MG + '">% s/ facturado</th></tr>';
+  var mgTd = function (res, ing) { var v = margen(res, ing); return '<td class="num' + (v == null ? ' muted' : cls(v)) + '" title="' + TIP_MG + '">' + pctM(v) + '</td>'; };
+  arbolCentros(cen).forEach(function (r) {
+    var kr = 'r' + r.cod, ab = ABIERTO[kr] !== false;
+    h += '<tr class="ram" id="ram_' + esc(r.cod) + '" style="cursor:pointer" onclick="ABIERTO[\'' + kr + '\']=' + !ab + ';refrescarCen()"><td>' + (ab ? '▾ ' : '▸ ') + esc(r.cod) + ' ' + esc(r.nombre) + '</td><td></td>'
+      + '<td class="num">' + num(r.ingresos) + '</td><td class="num">' + num(r.egresos) + '</td><td class="num' + cls(r.resultado) + '">' + num(r.resultado) + '</td>'
+      + '<td class="num" title="' + TIP_R + '">' + pr(r.resultado) + '</td>' + mgTd(r.resultado, r.ingresos) + '</tr>';
+    if (!ab) return;
+    r.subs.forEach(function (s) {
+      h += '<tr class="sub"><td style="padding-left:22px">' + esc(s.cod) + ' ' + esc(s.nombre) + '</td><td></td><td class="num">' + num(s.ingresos) + '</td><td class="num">' + num(s.egresos)
+        + '</td><td class="num' + cls(s.resultado) + '">' + num(s.resultado) + '</td><td class="num muted" title="' + TIP_R + '">' + pr(s.resultado) + '</td>' + mgTd(s.resultado, s.ingresos) + '</tr>';
+      s.centros.forEach(function (x) {
+        var kc = x.emp + '|' + x.centro;
+        h += '<tr class="cen" id="cen_' + esc(kc) + '" onclick="abrirCentro(\'' + kc + '\')"><td style="padding-left:42px">' + (ABIERTO[kc] ? '▾ ' : '▸ ') + esc(x.centro === '~' ? '(sin centro)' : x.centro) + ' ' + esc(x.centro_nombre)
+          + '</td><td class="muted">' + esc(x.emp) + '</td><td class="num">' + num(x.ingresos) + '</td><td class="num">' + num(x.egresos) + '</td><td class="num' + cls(x.resultado) + '"><b>' + num(x.resultado) + '</b></td>'
+          + '<td class="num" title="' + TIP_R + '">' + pr(x.resultado) + '</td>' + mgTd(x.resultado, x.ingresos) + '</tr>';
+        if (ABIERTO[kc]) {
+          GC.actual.cta.filter(function (q) { return q.emp === x.emp && q.centro === x.centro; })
+            .sort(function (a, b) { return Math.abs(b.resultado) - Math.abs(a.resultado); }).forEach(function (q) {
+              h += '<tr class="cta"><td style="padding-left:62px">' + esc(q.cuenta) + ' ' + esc(q.cuenta_nombre) + '</td><td class="muted">' + esc(q.origen_mov)
+                + '</td><td class="num">' + num(q.ingresos) + '</td><td class="num">' + num(q.egresos) + '</td><td class="num' + cls(q.resultado) + '">' + num(q.resultado) + '</td><td class="num muted">' + q.n + ' mov</td><td></td></tr>';
+            });
+        }
+      });
+    });
+  });
+  var tot = cen.reduce(function (a, x) { return a + Number(x.resultado); }, 0), extra = '';
+  // para que la columna cierre en 100 %: con «final» suma la tenencia; con «operativo» resta la dif. de stock (va dentro de los centros)
+  if (SERIE === 'final') extra = '<tr class="ram" id="filaTen"><td>Tenencia <span class="muted" style="font-weight:400">(revaluación del stock entero, no se abre por centro)</span></td><td></td><td></td><td></td>'
+    + '<td class="num' + cls(c.tenencia) + '">' + num(c.tenencia) + '</td><td class="num" title="' + TIP_R + '">' + pr(c.tenencia) + '</td><td></td></tr>';
+  if (SERIE === 'operativo') extra = '<tr class="ram" id="filaTen"><td>menos Dif. de stock <span class="muted" style="font-weight:400">(está dentro de los centros; el operativo no la lleva)</span></td><td></td><td></td><td></td>'
+    + '<td class="num' + cls(-c.dif_stock) + '">' + num(-c.dif_stock) + '</td><td class="num" title="' + TIP_R + '">' + pr(-c.dif_stock) + '</td><td></td></tr>';
+  var totM = tot + (SERIE === 'final' ? Number(c.tenencia) || 0 : SERIE === 'operativo' ? -(Number(c.dif_stock) || 0) : 0);
+  if (Math.abs(totM - den) > 0.5) console.warn('[gc] un cierre: Σ filas ' + totM.toFixed(2) + ' ≠ ' + SERIE + ' ' + den.toFixed(2));
+  return h + extra + '<tfoot><tr><td>TOTAL = ' + MET[SERIE] + '</td><td></td><td class="num">' + num(c.ingresos) + '</td><td class="num">' + num(c.egresos)
+    + '</td><td class="num">' + num(totM) + '</td><td class="num">' + (den ? pct(totM / den * 100) : '—') + '</td><td class="num" title="' + MET[SERIE].toLowerCase() + ' ÷ ingresos del cierre">' + pctM(margen(c[SERIE], c.ingresos)) + '</td></tr></tfoot></table>'
+    + '<p class="muted">«% del resultado» = resultado ÷ <b>' + MET[SERIE].toLowerCase() + '</b> del cierre (' + pesos(c[SERIE]) + '); se cambia arriba o en el tablero. '
+    + 'La tenencia (' + pesos(c.tenencia) + ') es la revaluación del stock entero y no se abre por centro: resultado final = s/ tenencia + tenencia. '
+    + '«% s/ facturado» = resultado ÷ ingresos del mismo centro, sub-ramal o ramal («—» si no facturó); en el total es el ' + MET[SERIE].toLowerCase() + ' ÷ ingresos del cierre.</p>';
+}
+function refrescarCen() { $('tabCen').innerHTML = tablaCentros(GC.actual.c, GC.actual.cen); }
+function wireMetCierre() {
+  document.querySelectorAll('#segMetC button').forEach(function (b) {
+    b.classList.toggle('on', b.dataset.s === SERIE);
+    b.onclick = function () { SERIE = b.dataset.s; LS.set('metrica', SERIE); refrescarCen(); wireMetCierre(); };
+  });
+}
+function abrirCentro(k) { ABIERTO[k] = !ABIERTO[k]; refrescarCen(); }
+function tablaMeses(c, cen, mm) {
+  var meses = Array.from(new Set(mm.map(function (x) { return x.mes_op; }))).sort(function (a, b) { return (a === 'dif_stock') - (b === 'dif_stock') || (a < b ? -1 : 1); });
+  var idx = {};
+  mm.forEach(function (x) { idx[x.emp + '|' + x.centro + '|' + x.mes_op] = Number(x.resultado); });
+  var h = '<table><tr><th>Centro</th>' + meses.map(function (m) { return '<th class="num">' + mesTxt(m) + '</th>'; }).join('') + '<th class="num">Total</th></tr>';
+  cen.slice().sort(function (a, b) { return a.centro < b.centro ? -1 : 1; }).forEach(function (x) {
+    h += '<tr><td>' + esc(x.centro) + ' ' + esc((x.centro_nombre || '').slice(0, 28)) + ' <span class="muted">' + esc(x.emp) + '</span></td>'
+      + meses.map(function (m) { var v = idx[x.emp + '|' + x.centro + '|' + m]; return '<td class="num' + cls(v) + '">' + (v ? num(v) : '') + '</td>'; }).join('')
+      + '<td class="num"><b>' + num(x.resultado) + '</b></td></tr>';
+  });
+  return h + '<tfoot><tr><td>Total</td>' + meses.map(function (m) {
+    return '<td class="num">' + num(mm.filter(function (x) { return x.mes_op === m; }).reduce(function (a, x) { return a + Number(x.resultado); }, 0)) + '</td>'; }).join('')
+    + '<td class="num">' + num(mm.reduce(function (a, x) { return a + Number(x.resultado); }, 0)) + '</td></tr></tfoot></table>';
+}
+function csv(nombre, filas) {
+  var txt = filas.map(function (f) {
+    return f.map(function (v) {
+      if (typeof v === 'number') return String(v).replace('.', ',');
+      var s = String(v == null ? '' : v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(';');
+  }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + txt], {type: 'text/csv;charset=utf-8'}));
+  a.download = nombre; a.click();
+}
+function csvCierre() {
+  var A = GC.actual, c = A.c, f = [['Gestión y Costos', nomEmp(c.empresa_id), 'cierre ' + c.mes, 'versión ' + c.version, 'ventana ' + c.desde + ' a ' + c.hasta],
+    ['Datos de Physis al', fechaHora(c.datos_physis_al), 'Publicado el', fechaHora(c.publicado_el)], [],
+    ['Ingresos', 'Egresos', 'Operativo', 'Dif. de stock', 'S/ tenencia', 'Tenencia', 'Final'],
+    [c.ingresos, c.egresos, c.operativo, c.dif_stock, c.sin_tenencia, c.tenencia, c.final].map(Number), [],
+    ['Empresa', 'Ramal', 'Sub-ramal', 'Centro', 'Nombre', 'Ingresos', 'Egresos', 'Resultado', '% s/ facturado']];
+  A.cen.forEach(function (x) {
+    var m = margen(x.resultado, x.ingresos);
+    f.push([x.emp, x.ramal_nombre, x.subramal_nombre, x.centro, x.centro_nombre, Number(x.ingresos), Number(x.egresos), Number(x.resultado), m == null ? '' : Math.round(m * 10) / 10]);
+  });
+  f.push([]); f.push(['Empresa', 'Ramal', 'Sub-ramal', 'Centro', 'Nombre', 'Cuenta', 'Nombre cuenta', 'Origen', 'Ingresos', 'Egresos', 'Resultado', 'Filas']);
+  A.cta.forEach(function (q) {
+    var x = A.cen.filter(function (y) { return y.emp === q.emp && y.centro === q.centro; })[0] || {};
+    f.push([q.emp, x.ramal_nombre, x.subramal_nombre, q.centro, x.centro_nombre, q.cuenta, q.cuenta_nombre, q.origen_mov, Number(q.ingresos), Number(q.egresos), Number(q.resultado), q.n]);
+  });
+  f.push([]); f.push(['Mes', 'Empresa', 'Centro', 'Ingresos', 'Egresos', 'Resultado']);
+  A.mm.forEach(function (x) { f.push([x.mes_op, x.emp, x.centro, Number(x.ingresos), Number(x.egresos), Number(x.resultado)]); });
+  csv('gestion_' + c.empresa_id + '_' + c.mes + '_v' + c.version + '.csv', f);
+}
+
+/* ══════════ 3 · comparar ══════════ */
+async function vComparar(arg) {
+  var eid = empElegida(arg), cs = cierresDe(eid);
+  var b = (arg && arg.b) || (cs[cs.length - 1] || {}).mes, a = (arg && arg.a) || (cs[cs.length - 2] || {}).mes;
+  var V = $('v-comparar');
+  var sel = function (id, v) { return '<select id="' + id + '">' + cs.map(function (c) { return '<option' + (c.mes === v ? ' selected' : '') + '>' + c.mes + '</option>'; }).join('') + '</select>'; };
+  var h = '<div class="card"><h2>Comparar dos cierres</h2><div style="display:flex;gap:10px;align-items:center">'
+    + '<select id="cEmp">' + GC.empresas.map(function (e) { return '<option value="' + e.id + '"' + (e.id === eid ? ' selected' : '') + '>' + esc(e.nombre) + '</option>'; }).join('') + '</select>'
+    + ' A ' + sel('cA', a) + ' B ' + sel('cB', b) + '</div></div>';
+  if (!a || !b || a === b) { V.innerHTML = h + '<div class="card"><div class="vacio">' + (cs.length < 2 ? 'Hace falta un segundo cierre publicado de ' + esc(nomEmp(eid)) + ' para comparar (hoy hay ' + cs.length + ').' : 'Elegí dos cierres distintos.') + '</div></div>'; return wireComp(eid); }
+  var CA = cs.filter(function (c) { return c.mes === a; })[0], CB = cs.filter(function (c) { return c.mes === b; })[0];
+  var ka = await GC.leer('gc_cierre_centros', {empresa_id: eid, mes: a, version: CA.version});
+  var kb = await GC.leer('gc_cierre_centros', {empresa_id: eid, mes: b, version: CB.version});
+  var m = {};
+  ka.forEach(function (x) { m[x.emp + '|' + x.centro] = {x: x, a: Number(x.resultado), b: 0, ia: Number(x.ingresos), ib: 0}; });
+  kb.forEach(function (x) { var k = x.emp + '|' + x.centro; m[k] = m[k] || {x: x, a: 0, b: 0, ia: 0, ib: 0}; m[k].b = Number(x.resultado); m[k].ib = Number(x.ingresos); m[k].x = x; });
+  var filas = Object.keys(m).map(function (k) { var r = m[k]; r.d = r.b - r.a; return r; }).filter(function (r) { return r.a || r.b; })
+    .sort(function (p, q) { return Math.abs(q.d) - Math.abs(p.d); });
+  var sd = filas.reduce(function (s, r) { return s + r.d; }, 0);
+  var mgTd = function (res, ing) { var v = margen(res, ing); return '<td class="num' + (v == null ? ' muted' : cls(v)) + '" title="' + TIP_MG + '">' + pctM(v) + '</td>'; };
+  var ma = margen(CA[SERIE], CA.ingresos), mb = margen(CB[SERIE], CB.ingresos);
+  var TIP_R = 'resultado ÷ ' + MET[SERIE].toLowerCase() + ' del cierre';
+  var prTd = function (v, C) { var d = Number(C[SERIE]); return '<td class="num muted" title="' + TIP_R + '">' + (d ? pct(v / d * 100) : '—') + '</td>'; };
+  h += '<div class="card" style="overflow:auto"><p>Resultado final: <b>' + mesTxt(a) + '</b> ' + pesos(CA.final) + ' · <b>' + mesTxt(b) + '</b> ' + pesos(CB.final)
+    + ' · diferencia <b>' + pesos(CB.final - CA.final) + '</b> = s/ tenencia ' + pesos(CB.sin_tenencia - CA.sin_tenencia) + ' (Σ por centro ' + pesos(sd) + ') + tenencia '
+    + pesos(CB.tenencia - CA.tenencia) + '</p><p class="muted" title="' + TIP_MG + '">Margen s/ facturado (' + MET[SERIE].toLowerCase() + ' ÷ ingresos): '
+    + mesTxt(a) + ' <b>' + pctM(ma) + '</b> · ' + mesTxt(b) + ' <b>' + pctM(mb) + '</b>' + (ma != null && mb != null ? ' · ' + pp(mb - ma) : '') + '</p>'
+    + '<table><tr><th>Centro</th><th>Empresa</th><th>Sub-ramal</th><th class="num">Resultado ' + mesTxt(a) + '</th><th class="num" title="' + TIP_R + '">% del resultado ' + mesTxt(a) + '</th><th class="num" title="' + TIP_MG + '">% s/ facturado ' + mesTxt(a) + '</th>'
+    + '<th class="num">Resultado ' + mesTxt(b) + '</th><th class="num" title="' + TIP_R + '">% del resultado ' + mesTxt(b) + '</th><th class="num" title="' + TIP_MG + '">% s/ facturado ' + mesTxt(b) + '</th><th class="num">Diferencia</th></tr>'
+    + filas.map(function (r) {
+        return '<tr><td>' + esc(r.x.centro) + ' ' + esc(r.x.centro_nombre) + '</td><td class="muted">' + esc(r.x.emp) + '</td><td class="muted">' + esc(r.x.subramal_nombre)
+          + '</td><td class="num' + cls(r.a) + '">' + num(r.a) + '</td>' + prTd(r.a, CA) + mgTd(r.a, r.ia) + '<td class="num' + cls(r.b) + '">' + num(r.b) + '</td>' + prTd(r.b, CB) + mgTd(r.b, r.ib)
+          + '<td class="num' + cls(r.d) + '"><b>' + num(r.d) + '</b></td></tr>';
+      }).join('') + '</table></div>';
+  V.innerHTML = h;
+  wireComp(eid);
+}
+function wireComp(eid) {
+  $('cEmp').onchange = function () { ver('comparar', {e: this.value}); };
+  if ($('cA')) $('cA').onchange = $('cB').onchange = function () { ver('comparar', {e: eid, a: $('cA').value, b: $('cB').value}); };
+}
+
+/* ══════════ 4 · costos · grupos ══════════ */
+async function vGrupos(arg) {
+  var V = $('v-grupos');
+  var gs = await GC.leer('gc_grupos', {vigente: true}, 'nombre');
+  if (!gs.length) { V.innerHTML = '<div class="card"><div class="vacio">Sin datos: no hay grupos publicados.</div></div>'; return; }
+  var g = grupoElegido(gs, arg);
+  var fCta = arg && arg.cta ? String(arg.cta) : null, fComp = arg && arg.comp != null && !isNaN(arg.comp) ? Number(arg.comp) : null;
+  var meses = await GC.leer('gc_grupo_meses', {grupo_id: g.id, version: g.version}, 'mes_op');
+  var ctas = await GC.leer('gc_grupo_cuentas', {grupo_id: g.id, version: g.version});
+  var todos = Array.from(new Set(meses.map(function (x) { return x.mes_op; }))).sort();
+  var d = (arg && arg.d) || todos[0], hh = (arg && arg.h) || todos[todos.length - 1];
+  var ms = todos.filter(function (m) { return m >= d && m <= hh; });
+  var comps = g.componentes || [];
+  var E = {}, I = {};
+  meses.forEach(function (x) { if (x.mes_op < d || x.mes_op > hh) return; E[x.mes_op + '|' + x.comp] = Number(x.egresos); I[x.comp] = (I[x.comp] || 0) + Number(x.ingresos); });
+  var totC = comps.map(function (c, i) { return ms.reduce(function (s, m) { return s + (E[m + '|' + i] || 0); }, 0); });
+  var tot = totC.reduce(function (a, b) { return a + b; }, 0);
+  var porMes = ms.map(function (m) { return {m: m, t: comps.reduce(function (s, c, i) { return s + (E[m + '|' + i] || 0); }, 0)}; });
+  var mx = porMes.slice().sort(function (a, b) { return b.t - a.t; })[0], mn = porMes.slice().sort(function (a, b) { return a.t - b.t; })[0];
+  var desc = function (c) {
+    return esc(c.empresa) + ' ' + esc(c.centro) + ' ' + esc(c.centro_nombre || '')
+      + ((c.cuentas || []).length ? ' (solo ' + esc(c.cuentas.join(', ')) + ')' : (c.cuentas_excluir || []).length ? ' (todas menos ' + esc(c.cuentas_excluir.join(', ')) + ')' : ' (todas)');
+  };
+  var opt = function (id, v) { return '<select id="' + id + '">' + todos.map(function (m) { return '<option value="' + m + '"' + (m === v ? ' selected' : '') + '>' + mesTxt(m) + '</option>'; }).join('') + '</select>'; };
+  var h = '<div class="card"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select id="gSel">'
+    + gs.map(function (x) { return '<option value="' + x.id + '"' + (x.id === g.id ? ' selected' : '') + '>' + esc(x.nombre) + '</option>'; }).join('')
+    + '</select> desde ' + opt('gD', d) + ' hasta ' + opt('gH', hh) + '</div>'
+    + '<h2 style="margin-top:10px">' + esc(g.nombre) + ' <span class="pill">versión ' + g.version + '</span></h2>'
+    + '<div class="muted">Publicado ' + fecha(g.periodo_desde) + ' → ' + fecha(g.periodo_hasta) + ' · Datos de Physis al ' + fechaHora(g.datos_physis_al) + ' · Publicado el ' + fechaHora(g.publicado_el) + '</div>'
+    + (g.nota ? '<p class="muted">' + esc(g.nota) + '</p>' : '')
+    + '<div style="font-size:12.5px;margin:6px 0"><b>Componentes:</b> ' + comps.map(desc).join(' · ') + '</div>'
+    + '<div class="kpis"><div class="kpi"><div class="lbl">Total del período (costos)</div><div class="v grande">' + pesos(tot) + '</div></div>'
+    + '<div class="kpi"><div class="lbl">Promedio mensual · ' + ms.length + ' meses</div><div class="v">' + pesos(ms.length ? tot / ms.length : 0) + '</div></div>'
+    + (mx ? '<div class="kpi"><div class="lbl">Mes mayor</div><div class="v">' + mesTxt(mx.m) + ' · ' + pesos(mx.t) + '</div></div>' : '')
+    + (mn ? '<div class="kpi"><div class="lbl">Mes menor</div><div class="v">' + mesTxt(mn.m) + ' · ' + pesos(mn.t) + '</div></div>' : '') + '</div>'
+    + '<div>' + comps.map(function (c, i) { return '<span class="pill" style="margin:0 4px 4px 0">' + esc(c.centro) + ' ' + esc(c.centro_nombre || '') + ' · ' + (tot ? pct(totC[i] / tot * 100) : '') + '</span>'; }).join('') + '</div></div>';
+  // v15.88.1 · filtros que llegan desde las tortas del tablero de costos
+  var ctasV = ctas.filter(function (q) { return (fCta == null || q.cuenta === fCta) && (fComp == null || q.comp === fComp); });
+  if (fCta != null || fComp != null) {
+    var cc = comps[fComp] || {}, cn = (ctas.filter(function (q) { return q.cuenta === fCta; })[0] || {}).cuenta_nombre || '';
+    h += '<div class="filtro">Filtrado por ' + (fCta != null ? 'cuenta <b>' + esc(fCta) + ' ' + esc(cn) + '</b>' : '')
+      + (fCta != null && fComp != null ? ' y ' : '') + (fComp != null ? 'centro <b>' + esc(cc.centro || '') + ' ' + esc(cc.centro_nombre || '') + '</b>' : '')
+      + ' · ' + pesos(ctasV.reduce(function (s, q) { return s + Number(q.egresos); }, 0)) + ' en el período publicado completo'
+      + ' <a href="#" id="gSinFiltro">quitar filtro</a></div>';
+  }
+  h += '<div class="card" style="overflow:auto"><h2>Costos por mes</h2><table><tr><th>Mes</th>' + comps.map(function (c, i) { return '<th class="num' + (i === fComp ? ' hl' : '') + '">' + esc(c.centro) + ' ' + esc((c.centro_nombre || '').slice(0, 20)) + '</th>'; }).join('') + '<th class="num">Total</th></tr>'
+    + porMes.map(function (p) { return '<tr><td>' + mesTxt(p.m) + '</td>' + comps.map(function (c, i) { return '<td class="num' + (i === fComp ? ' hl' : '') + '">' + num(E[p.m + '|' + i] || 0) + '</td>'; }).join('') + '<td class="num"><b>' + num(p.t) + '</b></td></tr>'; }).join('')
+    + '<tfoot><tr><td>Total</td>' + totC.map(function (v) { return '<td class="num">' + num(v) + '</td>'; }).join('') + '<td class="num">' + num(tot) + '</td></tr></tfoot></table>'
+    + (Object.keys(I).some(function (k) { return I[k]; }) ? '<p class="muted">Ingresos en el período: ' + comps.map(function (c, i) { return I[i] ? esc(c.centro) + ' ' + pesos(I[i]) : ''; }).filter(Boolean).join(' · ') + '</p>' : '')
+    + '</div><div class="card" style="overflow:auto" id="gDetalle"><h2>Detalle por cuenta <span class="muted">(período publicado completo)</span></h2><table><tr><th>Componente</th><th>Cuenta</th><th>Origen</th><th class="num">Movs</th><th class="num">Egresos</th><th class="num">Ingresos</th></tr>'
+    + ctasV.slice().sort(function (a, b) { return a.comp - b.comp || b.egresos - a.egresos; }).map(function (q) {
+        var c = comps[q.comp] || {};
+        return '<tr><td>' + esc(c.centro || q.centro) + ' ' + esc((c.centro_nombre || '').slice(0, 22)) + '</td><td>' + esc(q.cuenta) + ' <span class="muted">' + esc(q.cuenta_nombre) + '</span></td><td class="muted">' + esc(q.origen_mov)
+          + '</td><td class="num">' + q.n + '</td><td class="num">' + num(q.egresos) + '</td><td class="num">' + (Number(q.ingresos) ? num(q.ingresos) : '') + '</td></tr>';
+      }).join('') + '</table></div>';
+  V.innerHTML = h;
+  $('gSel').onchange = function () { ver('grupos', {g: this.value}); };
+  $('gD').onchange = $('gH').onchange = function () { ver('grupos', {g: g.id, d: $('gD').value, h: $('gH').value, cta: fCta, comp: fComp}); };
+  if ($('gSinFiltro')) $('gSinFiltro').onclick = function () { ver('grupos', {g: g.id, d: d, h: hh}); return false; };
+  if (fCta != null || fComp != null) setTimeout(function () { $('gDetalle').scrollIntoView({block: 'start'}); }, 0);
+}
+function grupoElegido(gs, arg) {
+  var id = (arg && arg.g) || LS.get('grupo'), g = gs.filter(function (x) { return x.id === id; })[0] || gs[0];
+  LS.set('grupo', g.id);
+  return g;
+}
+
+/* ══════════ 5 · tablero de costos (v15.88.1) ══════════ */
+var COMP_ON = LS.get('porcomp', '0') === '1';
+async function vCostos(arg) {
+  var V = $('v-costos');
+  V.innerHTML = '<div class="card muted">cargando…</div>';
+  var gs = await GC.leer('gc_grupos', {vigente: true}, 'nombre');
+  if (!gs.length) { V.innerHTML = '<div class="card"><h2>Tablero de costos</h2><div class="vacio">Sin datos: no hay grupos publicados. Se publican desde el Portal de Costos → /grupos → «Publicar grupo».</div></div>'; return; }
+  var g = grupoElegido(gs, arg);
+  var meses = await GC.leer('gc_grupo_meses', {grupo_id: g.id, version: g.version}, 'mes_op');
+  var ctas = await GC.leer('gc_grupo_cuentas', {grupo_id: g.id, version: g.version});
+  var R = GCcalc.resumenGrupo(g, meses, ctas, arg && arg.d, arg && arg.h), comps = g.componentes || [];
+  var opt = function (id, v) { return '<select id="' + id + '">' + R.todos.map(function (m) { return '<option value="' + m + '"' + (m === v ? ' selected' : '') + '>' + mesTxt(m) + '</option>'; }).join('') + '</select>'; };
+  var h = '<div class="card"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Tablero de costos</h2><select id="kSel">'
+    + gs.map(function (x) { return '<option value="' + x.id + '"' + (x.id === g.id ? ' selected' : '') + '>' + esc(x.nombre) + '</option>'; }).join('') + '</select>'
+    + (R.todos.length ? ' desde ' + opt('kD', R.d) + ' hasta ' + opt('kH', R.h) : '')
+    + ' <button class="btn sec" id="kCsv"' + (R.ms.length ? '' : ' disabled') + '>Descargar Excel (CSV)</button></div>'
+    + '<div class="muted" style="margin-top:6px">' + esc(g.nombre) + ' · versión ' + g.version + ' · grupo desde ' + fecha(g.desde) + ' · publicado ' + fecha(g.periodo_desde) + ' → ' + fecha(g.periodo_hasta)
+    + ' · Datos de Physis al ' + fechaHora(g.datos_physis_al) + ' · Publicado el ' + fechaHora(g.publicado_el) + '</div>';
+  if (!R.ms.length) {
+    V.innerHTML = h + '<div class="vacio" style="margin-top:10px">Sin datos: el grupo no tiene meses publicados.</div></div>';
+    $('kSel').onchange = function () { ver('costos', {g: this.value}); };
+    return;
+  }
+  var pm = R.porMes, u = pm[pm.length - 1], p = pm[pm.length - 2], dv = p ? u.e - p.e : null;
+  h += '<div class="kpis"><div class="kpi"><div class="lbl">Costo total · ' + mesTxt(R.d) + ' → ' + mesTxt(R.h) + '</div><div class="v grande">' + pesos(R.total) + '</div></div>'
+    + '<div class="kpi"><div class="lbl">Promedio mensual · ' + R.ms.length + ' ' + (R.ms.length === 1 ? 'mes' : 'meses') + '</div><div class="v">' + pesos(R.total / R.ms.length) + '</div></div>'
+    + '<div class="kpi"><div class="lbl">Último mes · ' + mesTxt(u.m) + '</div><div class="v">' + pesos(u.e) + '</div></div>'
+    + '<div class="kpi"><div class="lbl">Variación ' + (p ? mesTxt(u.m) + ' vs ' + mesTxt(p.m) : '') + '</div>'
+    + (p ? '<div class="v" style="color:' + (dv > 0 ? 'var(--rojo)' : 'var(--verde)') + '">' + (dv > 0 ? '▲ +' : dv < 0 ? '▼ ' : '= ') + (p.e ? pct(dv / Math.abs(p.e) * 100) : '—') + '</div>'
+      + '<div class="d">' + (dv > 0 ? '+' : '') + pesos(dv) + '</div>' : '<div class="v muted">—</div><div class="d">un solo mes en el rango</div>') + '</div></div></div>';
+  // tabla resumen por mes (+ componentes)
+  var conIng = R.totalIng !== 0;
+  var th = '<tr><th>Mes</th><th class="num">Costo</th>' + (conIng ? '<th class="num">Ingresos</th><th class="num">Costo neto</th>' : '')
+    + (COMP_ON ? R.porComp.map(function (c) { return '<th class="num" title="' + esc(c.c.empresa + ' ' + c.c.centro + ' ' + (c.c.centro_nombre || '')) + '">' + esc(c.c.centro) + ' ' + esc(corto(c.c.centro_nombre, 16)) + '</th>'; }).join('') : '') + '</tr>';
+  h += '<div class="card"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 style="margin:0">Costos por mes</h2>'
+    + '<label class="muted" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="kComp" style="height:auto"' + (COMP_ON ? ' checked' : '') + '> ver por componente</label></div>'
+    + '<div style="overflow:auto;margin-top:8px"><table' + (COMP_ON || conIng ? '' : ' style="max-width:520px"') + '>' + th
+    + pm.map(function (x) {
+        return '<tr><td>' + mesTxt(x.m) + '</td><td class="num"><b>' + num(x.e) + '</b></td>' + (conIng ? '<td class="num">' + num(x.i) + '</td><td class="num">' + num(x.e - x.i) + '</td>' : '')
+          + (COMP_ON ? R.porComp.map(function (c) { return '<td class="num">' + num(x.comp[c.i] || 0) + '</td>'; }).join('') : '') + '</tr>'; }).join('')
+    + '<tfoot><tr><td>Total</td><td class="num">' + num(R.total) + '</td>' + (conIng ? '<td class="num">' + num(R.totalIng) + '</td><td class="num">' + num(R.total - R.totalIng) + '</td>' : '')
+    + (COMP_ON ? R.porComp.map(function (c) { return '<td class="num">' + num(c.e) + '</td>'; }).join('') : '') + '</tr></tfoot></table></div>'
+    + '<p class="nota">Costo = egresos del grupo' + (conIng ? '; costo neto = costo − ingresos' : '; el grupo no tiene ingresos en el período') + '.</p></div>';
+  // barras
+  h += '<div class="card"><h2>Crecimiento mensual</h2>' + barrasSVG(pm.map(function (x) { return {m: x.m, v: x.e}; }))
+    + '<p class="nota">Arriba de cada barra, la variación contra el mes anterior (es costo: <span style="color:var(--rojo)">▲ sube en rojo</span>, <span style="color:var(--verde)">▼ baja en verde</span>). Punteado: promedio del rango.</p></div>';
+  // tortas
+  var Tc = GCcalc.partTorta(R.porCta.map(function (c) { return {k: c.cuenta, label: c.nombre || c.cuenta, tip: c.cuenta + ' ' + c.nombre, v: c.e}; }), 8);
+  var Tk = GCcalc.partTorta(R.porComp.map(function (c) { return {k: String(c.i), label: c.c.centro_nombre || c.c.centro, tip: c.c.empresa + ' ' + c.c.centro + ' ' + (c.c.centro_nombre || ''), v: c.e}; }), 8);
+  var negC = R.porCta.filter(function (c) { return c.e < 0; }), negK = R.porComp.filter(function (c) { return c.e < 0; });
+  var sCta = R.porCta.reduce(function (s, c) { return s + c.e; }, 0), sComp = R.porComp.reduce(function (s, c) { return s + c.e; }, 0);
+  var totPub = R.completo ? R.total : null;
+  h += '<div class="tortas2"><div class="card"><h2>Por cuenta contable</h2><div id="kTcta"></div>'
+    + '<p class="nota">Σ ' + pesos(sCta) + (R.completo ? '' : ' · <b>período publicado completo</b> (' + mesTxt(R.todos[0]) + ' → ' + mesTxt(R.todos[R.todos.length - 1]) + '): el detalle por cuenta no se publica por mes, así que esta torta no sigue el rango elegido')
+    + (negC.length ? ' · ' + negC.length + ' cuenta(s) con saldo a favor fuera de la torta (' + pesos(negC.reduce(function (s, c) { return s + c.e; }, 0)) + ')' : '') + '. Clic → «Costos · grupo» filtrado por esa cuenta.</p></div>'
+    + '<div class="card"><h2>Por centro de costos</h2><div id="kTcen"></div>'
+    + '<p class="nota">Σ ' + pesos(sComp) + ' (' + mesTxt(R.d) + ' → ' + mesTxt(R.h) + ')'
+    + (negK.length ? ' · ' + negK.length + ' centro(s) con saldo a favor fuera de la torta (' + pesos(negK.reduce(function (s, c) { return s + c.e; }, 0)) + ')' : '') + '. Clic → «Costos · grupo» con ese centro.</p></div></div>';
+  // definición del grupo
+  var desc = function (c) {
+    return esc(c.empresa) + ' ' + esc(c.centro) + ' ' + esc(c.centro_nombre || '')
+      + ((c.cuentas || []).length ? ' (solo ' + esc(c.cuentas.join(', ')) + ')' : (c.cuentas_excluir || []).length ? ' (todas menos ' + esc(c.cuentas_excluir.join(', ')) + ')' : ' (todas las cuentas)');
+  };
+  h += '<div class="card"><p class="nota" style="margin:0"><b>Definición del grupo:</b> ' + comps.map(desc).join(' · ') + (g.nota ? '<br>' + esc(g.nota) : '')
+    + '<br>' + lnk('ver todo el detalle → Costos · grupo', 'grupos', {g: g.id, d: R.d, h: R.h}) + '</p></div>';
+  V.innerHTML = h;
+  // controles: Σ tortas = total de la tabla
+  var ok1 = Math.abs(sComp - R.total) < 0.5, ok2 = totPub == null || Math.abs(sCta - totPub) < 0.5, okG = !R.completo || g.total == null || Math.abs(Number(g.total) - R.total) < 0.5;
+  console[ok1 && ok2 && okG ? 'info' : 'warn']('[gc] tablero de costos ' + g.id + ' ' + R.d + '→' + R.h + ': tabla ' + R.total.toFixed(2) + ' · Σ torta centros ' + sComp.toFixed(2)
+    + ' · Σ torta cuentas ' + sCta.toFixed(2) + (R.completo ? ' · publicado ' + Number(g.total).toFixed(2) : ' (cuentas = período completo)') + (ok1 && ok2 && okG ? ' · OK' : ' · DIFERENCIA'));
+  var aGrupo = function (extra) { ver('grupos', Object.assign({g: g.id}, extra)); };
+  if (Tc.slices.length) pintarTorta($('kTcta'), Tc.slices, ['$ ' + millones(Tc.total), Tc.slices.length + ' porciones'], function (s) { aGrupo(s.k === '_otros' ? {} : {cta: s.k}); }, 640);
+  else $('kTcta').innerHTML = '<div class="vacio">Sin datos por cuenta.</div>';
+  if (Tk.slices.length) pintarTorta($('kTcen'), Tk.slices, ['$ ' + millones(Tk.total), R.ms.length + (R.ms.length === 1 ? ' mes' : ' meses')], function (s) { aGrupo(s.k === '_otros' ? {d: R.d, h: R.h} : {comp: Number(s.k), d: R.d, h: R.h}); }, 640);
+  else $('kTcen').innerHTML = '<div class="vacio">Sin datos por centro en el rango.</div>';
+  $('kSel').onchange = function () { ver('costos', {g: this.value}); };
+  $('kD').onchange = $('kH').onchange = function () { ver('costos', {g: g.id, d: $('kD').value, h: $('kH').value}); };
+  $('kComp').onchange = function () { COMP_ON = this.checked; LS.set('porcomp', COMP_ON ? '1' : '0'); ver('costos', {g: g.id, d: R.d, h: R.h}); };
+  $('kCsv').onclick = function () {
+    var f = [['Gestión y Costos · tablero de costos', g.nombre, 'versión ' + g.version, mesTxt(R.d) + ' a ' + mesTxt(R.h)],
+      ['Datos de Physis al', fechaHora(g.datos_physis_al), 'Publicado el', fechaHora(g.publicado_el)], [],
+      ['Mes', 'Costo'].concat(conIng ? ['Ingresos', 'Costo neto'] : []).concat(R.porComp.map(function (c) { return c.c.centro + ' ' + (c.c.centro_nombre || ''); }))];
+    pm.forEach(function (x) { f.push([mesTxt(x.m), x.e].concat(conIng ? [x.i, x.e - x.i] : []).concat(R.porComp.map(function (c) { return x.comp[c.i] || 0; }))); });
+    f.push(['Total', R.total].concat(conIng ? [R.totalIng, R.total - R.totalIng] : []).concat(R.porComp.map(function (c) { return c.e; })));
+    f.push([]); f.push(['Cuenta', 'Nombre', 'Egresos (período publicado completo)', '% del total']);
+    R.porCta.slice().sort(function (a, b) { return b.e - a.e; }).forEach(function (c) { f.push([c.cuenta, c.nombre, c.e, sCta ? Math.round(c.e / sCta * 1000) / 10 : '']); });
+    csv('costos_' + g.id + '_' + R.d + '_' + R.h + '.csv', f);
+  };
+}
+
+arrancar().catch(function () { $('sinRed').classList.remove('oculto'); });
+</script>
+</body>
+</html>
