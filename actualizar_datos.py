@@ -3310,6 +3310,7 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'soja_pesos':        soja_pesos,
                 'insumos_pesos':     insumos_pesos,
                 'financiero_pesos':  fin_pesos,
+                'cheques_cartera':   round(cartera),       # v15.87 (activo sumado)
                 'darwash_pos':       round(darwash_pos),   # v15.23 (pasivo restado)
                 'darwash_origen':    darwash_origen,       # v15.23 (hoja del propio financiero)
                 'usd_cant':          round(_usd_cant) if _usd_cant else None,
@@ -6751,9 +6752,11 @@ def _parse_financiero_nuevo(sheets, fecha_str):
     #     sería doble-conteo (se restarían dos veces).
     #   · venc >= fecha del archivo: diferidos; no afectan el saldo bancario
     #     actual → pasivo cierto futuro = cheques_emitidos.
-    # Cartera (cheques al cobro) = 0 en este formato: los marcados 'AL COBRO=SI'
-    # son presentaciones del día (no pendientes de cobro). Se loguea su suma por
-    # visibilidad, NO se computa como cartera.
+    # Esta hoja es SOLO emitidos. Los marcados 'AL COBRO=SI' son presentaciones
+    # del día; se loguea su suma por visibilidad, NO se computan.
+    # (v15.22 decía "Cartera = 0 en este formato" porque la hoja de cartera
+    #  todavía estaba vacía; desde v15.87 la cartera sale de la hoja
+    #  'cheques en cartera', ver más abajo.)
     # (Antes de v15.22: se sumaba TODA la columna F como cartera (+$1.954M
     #  ficticios) y los emitidos salían de la row 30 del resumen — ambos mal.)
     cheq_raw         = sheets.get('cheques pendiente', pd.DataFrame())
@@ -6777,7 +6780,57 @@ def _parse_financiero_nuevo(sheets, fecha_str):
             cheques_emitidos = float(_imp[_imp > 0].sum())
         _al_cobro_dia = float(_imp[_cobro.isin(['SI', 'SÍ', 'YES', 'TRUE']) & (_imp > 0)].sum())
     log.info(f"    cheques pendiente → emitidos diferidos (venc>={fecha_str})="
-             f"${cheques_emitidos:,.0f} | cartera=$0 | al-cobro-del-día=${_al_cobro_dia:,.0f}")
+             f"${cheques_emitidos:,.0f} | al-cobro-del-día=${_al_cobro_dia:,.0f}")
+
+    # ── v15.87 · cheques en cartera (cheques de TERCEROS a cobrar, un activo) ──
+    # Hoja 'cheques en cartera' (existe desde 2026-03-20), misma estructura que
+    # 'cheques pendiente': F3 = SUBTOTAL(9, F5:F…), encabezados en la fila 4
+    # (FechaEmision · FechaVencimiento · NombreBanco · Electronico · IdNumero ·
+    # Importe · AL COBRO), datos desde la fila 5. Nicolás (14/10/2026): son
+    # distintos de las ventas a cobrar de 'vencimientos de hacienda' → se suman.
+    #   · cartera = Σ Importe > 0 con AL COBRO ≠ SI (los SI ya se presentaron al
+    #     banco y entran por 'disponible'; se loguean aparte).
+    #   · NO se filtra por vencimiento: vencido y no cobrado sigue en cartera
+    #     (se loguea la suma de los vencidos como aviso).
+    #   · Manda la suma de la columna; F3 es control (si difiere, había un
+    #     filtro activo en el Excel al guardarlo).
+    _cart_name = next((n for n in sheets.keys()
+                       if 'cartera' in str(n).lower() and 'cheque' in str(n).lower()), None)
+    cart_n = 0
+    cart_al_cobro = cart_vencidos = 0.0
+    cart_f3 = None
+    if _cart_name is not None:
+        _cr = sheets[_cart_name]
+        try:
+            cart_f3 = _sf(_cr.iloc[2, 5])
+        except Exception:
+            cart_f3 = None
+        if len(_cr) > 4 and _cr.shape[1] > 5:
+            from datetime import datetime as _dtc
+            _cs    = _cr.iloc[4:]
+            _cimp  = pd.to_numeric(_cs.iloc[:, 5], errors='coerce').fillna(0)
+            _cvenc = pd.to_datetime(_cs.iloc[:, 1], errors='coerce')
+            _ccob  = _cs.iloc[:, 6].astype(str).str.upper().str.strip() if _cs.shape[1] > 6 \
+                     else pd.Series([''] * len(_cs), index=_cs.index)
+            _es_si = _ccob.isin(['SI', 'SÍ', 'YES', 'TRUE'])
+            _imp_pos = _cimp > 0
+            _ok    = _imp_pos & ~_es_si
+            total_cartera = float(_cimp[_ok].sum())
+            cart_n        = int(_ok.sum())
+            cart_al_cobro = float(_cimp[_imp_pos & _es_si].sum())
+            try:
+                _fa = _dtc.strptime(fecha_str, '%Y-%m-%d')
+                cart_vencidos = float(_cimp[_ok & (_cvenc < _fa)].sum())
+            except Exception:
+                cart_vencidos = 0.0
+        _f3txt = f"${cart_f3:,.0f}" if cart_f3 is not None else "—"
+        log.info(f"    cartera: Σ F5:F = ${total_cartera + cart_al_cobro:,.0f} (F3 = {_f3txt}) "
+                 f"· {cart_n} cheques · al cobro ${cart_al_cobro:,.0f} · vencidos ${cart_vencidos:,.0f}")
+        if cart_f3 is not None and abs((total_cartera + cart_al_cobro) - cart_f3) > 1:
+            log.warning(f"    ⚠ cartera: Σ columna F ≠ F3 (${total_cartera + cart_al_cobro:,.0f} vs "
+                        f"${cart_f3:,.0f}) — ¿filtro activo en el Excel? Manda la suma de la columna.")
+        if cart_vencidos > 0:
+            log.warning(f"    ⚠ cartera: ${cart_vencidos:,.0f} en cheques vencidos sin cobrar (siguen en cartera)")
 
     # ── vencimientos de hacienda ──
     hac = sheets.get('vencimientos de hacienda', pd.DataFrame())
@@ -6857,6 +6910,7 @@ def _parse_financiero_nuevo(sheets, fecha_str):
         'tercio_bravo':     round(tercio_bravo, 2),
         'darwash_pos':      round(darwash_pos, 2),   # v15.23
         'darwash_origen':   darwash_origen,          # v15.23 (auditoría)
+        'cheques_cartera_n': cart_n,                 # v15.87 (auditoría)
     }
 
 
