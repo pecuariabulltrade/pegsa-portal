@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-16T08:07:21.660132",
+    "generado": "2026-10-16T09:08:40.754182",
     "desde": "2024-01-09",
     "hasta": "2026-10-14",
     "dias": 1011,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-16",
-    "n_tropas": 580,
-    "n_grupos": 993,
+    "n_tropas": 581,
+    "n_grupos": 996,
     "excluidas": 177,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 580,
+      "caravanas": 581,
       "remito": 0,
       "distintas_al_remito": 165,
       "cob_min": 90,
@@ -13945,6 +13945,76 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": true,
       "en_stock": 0,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
+    "PEGDAR141026": {
+      "tropa": "PEG.DAR.14/10/2026",
+      "hotelero": "PEGSA",
+      "fecha": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 110,
+      "kg_ingreso": 23598.0,
+      "categorias": [
+        "Ternera",
+        "Ternero",
+        "Vaquillona"
+      ],
+      "kg_cab": 214.5,
+      "categorias_remito": [
+        "Ternera",
+        "Ternero",
+        "Vaquillona"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternera",
+          "cabezas": 23,
+          "kg_ingreso": 4834.0,
+          "kg_cab": 210.2
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 86,
+          "kg_ingreso": 18448.0,
+          "kg_cab": 214.5
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 1,
+          "kg_ingreso": 316.0,
+          "kg_cab": 316.0
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 86,
+          "kg_ingreso": 18448.3,
+          "kg_cab": 214.5
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 23,
+          "kg_ingreso": 4833.8,
+          "kg_cab": 210.2
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 1,
+          "kg_ingreso": 315.9,
+          "kg_cab": 315.9
+        }
+      ],
+      "cab_real": 110,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 110,
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 0
@@ -46966,6 +47036,60 @@
       "cabezas": 7,
       "kg_ingreso": 1590.4,
       "kg_cab": 227.2,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.DAR.14/10/2026",
+      "tropa_norm": "PEGDAR141026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 4,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 23,
+      "kg_ingreso": 4833.8,
+      "kg_cab": 210.2,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.DAR.14/10/2026",
+      "tropa_norm": "PEGDAR141026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 4,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 86,
+      "kg_ingreso": 18448.3,
+      "kg_cab": 214.5,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.DAR.14/10/2026",
+      "tropa_norm": "PEGDAR141026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-10-14",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 4,
+      "categoria": "Vaquillona",
+      "categoria_sigla": "VQ",
+      "cabezas": 1,
+      "kg_ingreso": 315.9,
+      "kg_cab": 315.9,
       "fuente": "caravanas"
     },
     {
