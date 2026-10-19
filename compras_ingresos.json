@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-19T08:07:58.310059",
+    "generado": "2026-10-19T09:08:54.091187",
     "desde": "2024-01-09",
-    "hasta": "2026-10-15",
+    "hasta": "2026-10-16",
     "dias": 1014,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-19",
-    "n_tropas": 581,
-    "n_grupos": 996,
+    "n_tropas": 582,
+    "n_grupos": 999,
     "excluidas": 177,
     "excluidas_por": [
       "destete",
@@ -15,9 +15,9 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 581,
+      "caravanas": 582,
       "remito": 0,
-      "distintas_al_remito": 165,
+      "distintas_al_remito": 166,
       "cob_min": 90,
       "sin_datos_caravana": false
     },
@@ -26297,6 +26297,69 @@
       "vendidas_imputadas": 0,
       "muertas": 0
     },
+    "SAGFRH161026": {
+      "tropa": "SAG.FRH.16/10/2026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha": "2026-10-16",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "FERIA RODEO HUINCA S.R.L",
+      "cabezas": 42,
+      "kg_ingreso": 12390.0,
+      "categorias": [
+        "Ternera",
+        "Ternero",
+        "Vaca"
+      ],
+      "kg_cab": 295.0,
+      "categorias_remito": [
+        "Ternero",
+        "Vaca"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 21,
+          "kg_ingreso": 1890.0,
+          "kg_cab": 90.0
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 21,
+          "kg_ingreso": 10500.0,
+          "kg_cab": 500.0
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaca",
+          "cabezas": 21,
+          "kg_ingreso": 10500.0,
+          "kg_cab": 500.0
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 11,
+          "kg_ingreso": 990.0,
+          "kg_cab": 90.0
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 10,
+          "kg_ingreso": 900.0,
+          "kg_cab": 90.0
+        }
+      ],
+      "cab_real": 42,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": true,
+      "en_stock": 42,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
     "SAGVIL160926": {
       "tropa": "SAG.VIL.16/09/2026",
       "hotelero": "EL SAGUAIPE SAS",
@@ -47144,6 +47207,60 @@
       "cabezas": 1,
       "kg_ingreso": 316.0,
       "kg_cab": 316.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.FRH.16/10/2026",
+      "tropa_norm": "SAGFRH161026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-10-16",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "FERIA RODEO HUINCA S.R.L",
+      "origen": "CAMPO",
+      "localidad": "HUINCA RENANCO",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 10,
+      "kg_ingreso": 900.0,
+      "kg_cab": 90.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.FRH.16/10/2026",
+      "tropa_norm": "SAGFRH161026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-10-16",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "FERIA RODEO HUINCA S.R.L",
+      "origen": "CAMPO",
+      "localidad": "HUINCA RENANCO",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 11,
+      "kg_ingreso": 990.0,
+      "kg_cab": 90.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "SAG.FRH.16/10/2026",
+      "tropa_norm": "SAGFRH161026",
+      "hotelero": "EL SAGUAIPE SAS",
+      "fecha_ingreso": "2026-10-16",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "FERIA RODEO HUINCA S.R.L",
+      "origen": "CAMPO",
+      "localidad": "HUINCA RENANCO",
+      "destino_compra": "CONSUMO",
+      "camiones": 2,
+      "categoria": "Vaca",
+      "categoria_sigla": "VA",
+      "cabezas": 21,
+      "kg_ingreso": 10500.0,
+      "kg_cab": 500.0,
       "fuente": "caravanas"
     }
   ]
