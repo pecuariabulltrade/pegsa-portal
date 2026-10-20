@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-20T10:07:47.392476",
+    "generado": "2026-10-20T11:09:14.176118",
     "desde": "2024-01-09",
     "hasta": "2026-10-16",
     "dias": 1015,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-20",
     "n_tropas": 583,
-    "n_grupos": 1001,
+    "n_grupos": 1002,
     "excluidas": 177,
     "excluidas_por": [
       "destete",
@@ -18436,42 +18436,56 @@
       "consignatario": "FERIA RODEO HUINCA S.R.L",
       "proveedor": "FERIA RODEO HUINCA S.R.L",
       "cabezas": 231,
-      "kg_ingreso": 109440.0,
+      "kg_ingreso": 112049.0,
       "categorias": [
         "Novillo",
-        "Vaca"
+        "Vaca",
+        "Vaquillona"
       ],
-      "kg_cab": 473.8,
+      "kg_cab": 485.1,
       "categorias_remito": [
         "Novillo",
-        "Vaca"
+        "Vaca",
+        "Vaquillona"
       ],
       "remito": [
         {
           "categoria": "Novillo",
           "cabezas": 94,
-          "kg_ingreso": 46000.0,
-          "kg_cab": 489.4
+          "kg_ingreso": 47902.0,
+          "kg_cab": 509.6
         },
         {
           "categoria": "Vaca",
-          "cabezas": 137,
-          "kg_ingreso": 63440.0,
-          "kg_cab": 463.1
+          "cabezas": 78,
+          "kg_ingreso": 38239.0,
+          "kg_cab": 490.2
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 59,
+          "kg_ingreso": 25908.0,
+          "kg_cab": 439.1
         }
       ],
       "categorias_real": [
         {
-          "categoria": "Vaca",
-          "cabezas": 137,
-          "kg_ingreso": 62617.8,
-          "kg_cab": 457.1
-        },
-        {
           "categoria": "Novillo",
           "cabezas": 94,
-          "kg_ingreso": 46760.0,
-          "kg_cab": 497.4
+          "kg_ingreso": 47902.0,
+          "kg_cab": 509.6
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 78,
+          "kg_ingreso": 38239.0,
+          "kg_cab": 490.2
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 59,
+          "kg_ingreso": 25908.0,
+          "kg_cab": 439.1
         }
       ],
       "cab_real": 231,
@@ -47275,12 +47289,12 @@
       "origen": "FERIAS Y REMATES",
       "localidad": "HUINCA RENANCO",
       "destino_compra": "CONSUMO",
-      "camiones": 5,
+      "camiones": 3,
       "categoria": "Novillo",
       "categoria_sigla": "NV",
       "cabezas": 94,
-      "kg_ingreso": 46760.0,
-      "kg_cab": 497.4,
+      "kg_ingreso": 47902.0,
+      "kg_cab": 509.6,
       "fuente": "caravanas"
     },
     {
@@ -47293,12 +47307,30 @@
       "origen": "FERIAS Y REMATES",
       "localidad": "HUINCA RENANCO",
       "destino_compra": "CONSUMO",
-      "camiones": 5,
+      "camiones": 3,
       "categoria": "Vaca",
       "categoria_sigla": "VA",
-      "cabezas": 137,
-      "kg_ingreso": 62617.8,
-      "kg_cab": 457.1,
+      "cabezas": 78,
+      "kg_ingreso": 38239.0,
+      "kg_cab": 490.2,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.FRH.16/10/2026",
+      "tropa_norm": "PEGFRH161026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-10-16",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "FERIA RODEO HUINCA S.R.L",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "HUINCA RENANCO",
+      "destino_compra": "CONSUMO",
+      "camiones": 3,
+      "categoria": "Vaquillona",
+      "categoria_sigla": "VQ",
+      "cabezas": 59,
+      "kg_ingreso": 25908.0,
+      "kg_cab": 439.1,
       "fuente": "caravanas"
     },
     {
