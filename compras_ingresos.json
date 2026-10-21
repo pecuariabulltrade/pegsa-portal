@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-21T16:07:56.738983",
+    "generado": "2026-10-21T17:08:23.940785",
     "desde": "2024-01-09",
     "hasta": "2026-10-16",
     "dias": 1016,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-21",
-    "n_tropas": 584,
-    "n_grupos": 1003,
+    "n_tropas": 585,
+    "n_grupos": 1004,
     "excluidas": 183,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 584,
+      "caravanas": 585,
       "remito": 0,
       "distintas_al_remito": 166,
       "cob_min": 90,
@@ -14526,6 +14526,48 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 0,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
+    "PEGDAR161026": {
+      "tropa": "PEG.DAR.16/10/2026",
+      "hotelero": "PEGSA",
+      "fecha": "2026-10-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 25,
+      "kg_ingreso": 9761.0,
+      "categorias": [
+        "Novillo"
+      ],
+      "kg_cab": 390.4,
+      "categorias_remito": [
+        "Novillo"
+      ],
+      "remito": [
+        {
+          "categoria": "Novillo",
+          "cabezas": 25,
+          "kg_ingreso": 9761.0,
+          "kg_cab": 390.4
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Novillo",
+          "cabezas": 26,
+          "kg_ingreso": 9761.0,
+          "kg_cab": 375.4
+        }
+      ],
+      "cab_real": 26,
+      "cobertura_pct": 104.0,
+      "dif_remito": -1,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 26,
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 0
@@ -47337,6 +47379,24 @@
       "cabezas": 5,
       "kg_ingreso": 3315.0,
       "kg_cab": 663.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.DAR.16/10/2026",
+      "tropa_norm": "PEGDAR161026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-10-16",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Novillo",
+      "categoria_sigla": "NV",
+      "cabezas": 26,
+      "kg_ingreso": 9761.0,
+      "kg_cab": 375.4,
       "fuente": "caravanas"
     },
     {
