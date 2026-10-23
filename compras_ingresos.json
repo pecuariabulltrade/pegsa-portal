@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-22T20:08:58.663703",
+    "generado": "2026-10-22T21:08:55.790032",
     "desde": "2024-10-22",
     "hasta": "2026-10-22",
     "dias": 730,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-22",
-    "n_tropas": 586,
-    "n_grupos": 1006,
+    "n_tropas": 587,
+    "n_grupos": 1007,
     "excluidas": 183,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 586,
+      "caravanas": 587,
       "remito": 0,
       "distintas_al_remito": 166,
       "cob_min": 90,
@@ -28236,6 +28236,48 @@
       "vendidas_imputadas": 0,
       "muertas": 0
     },
+    "TAPVIL211026": {
+      "tropa": "TAP.VIL.21/10/2026",
+      "hotelero": "LAS TAPERAS",
+      "fecha": null,
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "cabezas": 14,
+      "kg_ingreso": 3453.0,
+      "categorias": [
+        "Ternero"
+      ],
+      "kg_cab": 246.6,
+      "categorias_remito": [
+        "Ternero"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 14,
+          "kg_ingreso": 3453.0,
+          "kg_cab": 246.6
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 14,
+          "kg_ingreso": 3453.0,
+          "kg_cab": 246.6
+        }
+      ],
+      "cab_real": 14,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 14,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
     "TBRBJI270825": {
       "tropa": "TBR.BJI.27/08/25",
       "hotelero": "TERCIO BRAVO SAS",
@@ -46985,6 +47027,24 @@
       "cabezas": 19,
       "kg_ingreso": 5827.0,
       "kg_cab": 306.7,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "TAP.VIL.21/10/2026",
+      "tropa_norm": "TAPVIL211026",
+      "hotelero": "LAS TAPERAS",
+      "fecha_ingreso": null,
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "GENERAL VILLEGAS",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 14,
+      "kg_ingreso": 3453.0,
+      "kg_cab": 246.6,
       "fuente": "caravanas"
     },
     {
