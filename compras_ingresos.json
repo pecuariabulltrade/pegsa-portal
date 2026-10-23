@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-23T19:08:01.438382",
+    "generado": "2026-10-23T20:07:50.414823",
     "desde": "2024-10-23",
     "hasta": "2026-10-23",
     "dias": 730,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-23",
-    "n_tropas": 587,
-    "n_grupos": 1007,
+    "n_tropas": 588,
+    "n_grupos": 1008,
     "excluidas": 183,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 587,
+      "caravanas": 588,
       "remito": 0,
       "distintas_al_remito": 166,
       "cob_min": 90,
@@ -25821,6 +25821,48 @@
       "vendidas_imputadas": 0,
       "muertas": 0
     },
+    "PEGVIL221026": {
+      "tropa": "PEG.VIL.22/10/2026",
+      "hotelero": "PEGSA",
+      "fecha": null,
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "cabezas": 68,
+      "kg_ingreso": 33121.0,
+      "categorias": [
+        "Vaquillona"
+      ],
+      "kg_cab": 487.1,
+      "categorias_remito": [
+        "Vaquillona"
+      ],
+      "remito": [
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 68,
+          "kg_ingreso": 33121.0,
+          "kg_cab": 487.1
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 68,
+          "kg_ingreso": 33121.0,
+          "kg_cab": 487.1
+        }
+      ],
+      "cab_real": 68,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 68,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
     "PEGVIL230726": {
       "tropa": "PEG.VIL.23/07/2026",
       "hotelero": "PEGSA",
@@ -45569,6 +45611,24 @@
       "cabezas": 123,
       "kg_ingreso": 54114.0,
       "kg_cab": 440.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.VIL.22/10/2026",
+      "tropa_norm": "PEGVIL221026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "DARWASH SA",
+      "proveedor": "SOC. RURAL. GRAL VILLEGAS",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "GENERAL VILLEGAS",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Vaquillona",
+      "categoria_sigla": "VQ",
+      "cabezas": 68,
+      "kg_ingreso": 33121.0,
+      "kg_cab": 487.1,
       "fuente": "caravanas"
     },
     {
