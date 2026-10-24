@@ -3967,6 +3967,14 @@ def main():
     # ── 8. JSON Parámetros Productivos (ADP + Estadía) ──
     separador("Parámetros Productivos")
     # v15.13.2: prod_data ya calculado en el pre-step (antes de Stock), solo se guarda.
+    # v15.89: los techos van en meta para la Consulta de Caravana (sin hardcodear).
+    prod_data.setdefault("meta", {}).update({
+        "techo_kg_por_cat": dict(TECHO_KG_POR_CAT),
+        "engorde_recria":   ENGORDE_RECRIA,
+        "techo_kg_recria":  TECHO_KG_RECRIA,
+        "techo_dias":       TECHO_DIAS,
+        "adp_cal_runtime":  dict(_ADP_CAL_RUNTIME),
+    })
     guardar(prod_data, carpeta, f"productivo_{periodo}.json")
     log.info(f"  ✓ productivo_{periodo}.json")
     g = prod_data.get("general", {})
@@ -4961,6 +4969,22 @@ def main():
         log.warning(f"  ⚠ generar_fantasmas falló: {e}")
         import traceback; log.warning(traceback.format_exc())
         resumen["modulos"]["fantasmas"] = {"ok": False, "error": str(e)}
+
+    # ── CONSULTA DE CARAVANA (v15.89) ──────────────────────────
+    # Egresos por animal + lecturas Datamars por EID, para el módulo 14.
+    # Reusa los egresos del pre-step y la cache de Datamars ya sincronizada.
+    separador("Consulta de caravana")
+    try:
+        _cv = generar_consulta_caravana(carpeta, egresos_data, log)
+        resumen["modulos"]["consulta_caravana"] = {
+            "ok":       _cv is not None,
+            "egresos":  _cv["egresos"] if _cv else 0,
+            "eids":     _cv["eids"] if _cv else 0,
+        }
+    except Exception as e:
+        log.warning(f"  ⚠ generar_consulta_caravana falló: {e}")
+        import traceback; log.warning(traceback.format_exc())
+        resumen["modulos"]["consulta_caravana"] = {"ok": False, "error": str(e)}
 
     # ── HISTORIAL DE RESULTADOS POR VENTA (v15.69.1) ───────────
     separador("Historial de resultados por venta")
@@ -10606,6 +10630,110 @@ def generar_gasoil_repartido(carpeta_out, log=None):
              f"{len(maquinas)} maquinas · {len(meses)} meses ({meses[0] if meses else '-'} "
              f"a {meses[-1] if meses else '-'}) · sin maquina {_sm:,.0f} L")
     return salida
+
+
+CV_DESDE = "2025-01-01"   # v15.89: egresos por animal publicados desde esta fecha
+
+
+def generar_consulta_caravana(carpeta_out, egresos_data, log=None):
+    """v15.89 · Datos por animal para el módulo 14 · Consulta de Caravana.
+
+    Escribe dos JSON compactos en `carpeta_out` (los publica el tick):
+      egresos_detalle.json   — un egreso por fila (todos los motivos) desde
+                               CV_DESDE; `remito` = NRO_TRANSACCION.
+      datamars_lecturas.json — EID → [[fecha, peso, sesion, vid], ...] de toda
+                               la cache de sesiones, + índice visual → EIDs.
+    Devuelve {"egresos": n, "eids": n} o None. NO levanta excepción.
+    """
+    if log is None:
+        log = logging.getLogger("caravana")
+    base = Path(carpeta_out)
+    gen = datetime.now().isoformat(timespec="seconds")
+
+    def _f(v):
+        t = str(v or "")[:10]
+        if len(t) == 10 and t[2] == "/":
+            t = f"{t[6:]}-{t[3:5]}-{t[:2]}"
+        return t or None
+
+    def _n(v, dec=1):
+        try:
+            return round(float(v), dec)
+        except (TypeError, ValueError):
+            return None
+
+    out = {}
+    # ── A.1 · egresos ──
+    if egresos_data:
+        cols = ["rfid", "caravana", "tropa", "cat", "hotelero", "corral", "origen",
+                "fecha_ingreso", "fecha_egreso", "motivo", "kg_ing", "kg_egr",
+                "dias", "adp", "destino", "consignatario", "remito"]
+        filas = []
+        for e in egresos_data:
+            fe = _f(e.get("FechaSalida"))
+            if not fe or fe < CV_DESDE:
+                continue
+            filas.append([
+                _rr_rfid(e.get("RFID")),
+                (str(e.get("NRO_CARAVANA") or "").strip() or None),
+                e.get("NRO_TROPA"), e.get("Categoria"), e.get("HOTELERO"),
+                e.get("NRO_CORRAL"), e.get("Origen"),
+                _f(e.get("FechaIngreso")), fe,
+                (str(e.get("MotivoSalida") or "").strip() or None),
+                _n(e.get("KgIngreso")), _n(e.get("KgEgreso")),
+                e.get("Estadia"), _n(e.get("AdpSinDebaste"), 3),
+                e.get("Destino"), e.get("Consignatario"),
+                (str(e.get("NRO_TRANSACCION") or "").strip() or None),
+            ])
+        filas.sort(key=lambda r: r[8] or "", reverse=True)
+        guardar({"meta": {"generado": gen, "desde": CV_DESDE, "filas": len(filas),
+                          "cols": cols}, "filas": filas},
+                base, "egresos_detalle.json")
+        _kb = (base / "egresos_detalle.json").stat().st_size / 1024
+        log.info(f"  ✓ egresos_detalle.json: {len(filas):,} filas · {_kb:,.0f} KB")
+        out["egresos"] = len(filas)
+    else:
+        log.warning("  ⚠ Caravana: sin egresos en este tick, egresos_detalle.json queda como estaba")
+        out["egresos"] = 0
+
+    # ── A.2 · lecturas Datamars ──
+    try:
+        import datamars_source as _DM
+        index = _DM.cargar_index(base)
+    except Exception as e:
+        log.warning(f"  ⚠ Caravana: cache Datamars no disponible ({e})")
+        index = {}
+    if index:
+        sesiones, eids, vids = {}, {}, {}
+        for sid, ses in index.items():
+            fses = _f(ses.get("fecha"))
+            sesiones[sid] = {"nombre": ses.get("nombre"), "fecha": fses}
+            for p in (_DM.cargar_sesion(base, sid) or []):
+                eid = p.get("eid")
+                if not eid:
+                    continue
+                vid = (str(p.get("vid") or "").strip() or None)
+                eids.setdefault(eid, []).append(
+                    [_f(p.get("fecha")) or fses, _n(p.get("peso")), int(sid), vid])
+                if vid:
+                    vv = vids.setdefault(vid.upper(), [])
+                    if eid not in vv:
+                        vv.append(eid)
+        for v in eids.values():
+            v.sort(key=lambda r: (r[0] or "", r[2]))
+        _desde = min((s["fecha"] for s in sesiones.values() if s["fecha"]), default=None)
+        guardar({"meta": {"generado": gen, "desde": _desde, "sesiones": len(sesiones),
+                          "eids": len(eids),
+                          "cols": ["fecha", "peso", "sesion", "vid"]},
+                 "sesiones": sesiones, "eids": eids, "vids": vids},
+                base, "datamars_lecturas.json")
+        _kb = (base / "datamars_lecturas.json").stat().st_size / 1024
+        log.info(f"  ✓ datamars_lecturas.json: {len(eids):,} EIDs · {len(sesiones)} sesiones · {_kb:,.0f} KB")
+        out["eids"] = len(eids)
+    else:
+        log.info("  Caravana: cache de Datamars vacía, datamars_lecturas.json no se escribe")
+        out["eids"] = 0
+    return out
 
 
 def generar_fantasmas(carpeta_out, periodo, egresos_data, log=None, stock_data=None):
