@@ -3313,6 +3313,7 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 'cheques_cartera':   round(cartera),       # v15.87 (activo sumado)
                 'darwash_pos':       round(darwash_pos),   # v15.23 (pasivo restado)
                 'darwash_origen':    darwash_origen,       # v15.23 (hoja del propio financiero)
+                'darwash_varios':    round(float(fin.get('darwash_varios') or 0)),  # v15.87.2 (no restado)
                 'usd_cant':          round(_usd_cant) if _usd_cant else None,
                 'usd_pesos':         usd_pesos,
                 'total_pesos':       total_pesos,
@@ -6870,17 +6871,36 @@ def _parse_financiero_nuevo(sheets, fecha_str):
     #  filas cambian entre archivos y sumar sus columnas duplica el desglose
     #  semanal → da un total erróneo. Verificado empíricamente 2026-06-18.)
     # Validado al 27-may: $2.430.035.525 (matchea exacto con el usuario).
-    darwash_pos    = 0.0
-    darwash_origen = None
+    # v15.87.2 (regla de Nicolás 14/10): la hoja viene en bloques con título en
+    # col A ('Darwash pecuaria Hacienda:', 'Darwash Varios:', …). Se suma por
+    # bloque y el bloque 'Varios' (las taperas / el saguipe) NO es deuda con
+    # Darwash → se excluye. Al 29/09: bruto 903.540.826 − Varios 452.459.755
+    # = 451.081.071.
+    darwash_pos      = 0.0
+    darwash_origen   = None
+    darwash_varios   = 0.0
+    darwash_bloques  = {}
+    _dw_bruto        = 0.0
     _dw_name = next((n for n in sheets.keys()
                      if 'darwash' in str(n).lower() and 'corriente' in str(n).lower()), None)
     if _dw_name is not None:
         _dw = sheets[_dw_name]
         if _dw.shape[1] > 1:
-            _colb = pd.to_numeric(_dw.iloc[:, 1], errors='coerce').fillna(0)
-            darwash_pos    = float(_colb.sum())
-            darwash_origen = f"hoja {_dw_name!r} col B"
-    if darwash_origen is None or darwash_pos == 0:
+            _bloque = '(sin título)'
+            for _i in range(len(_dw)):
+                _a = _dw.iloc[_i, 0]
+                if isinstance(_a, str) and _a.strip():
+                    _bloque = _a.strip()
+                    darwash_bloques.setdefault(_bloque, 0.0)
+                    continue
+                _v = pd.to_numeric(_dw.iloc[_i, 1], errors='coerce')
+                if pd.notna(_v):
+                    darwash_bloques[_bloque] = darwash_bloques.get(_bloque, 0.0) + float(_v)
+            _dw_bruto      = sum(darwash_bloques.values())
+            darwash_varios = sum(v for k, v in darwash_bloques.items() if 'varios' in k.lower())
+            darwash_pos    = _dw_bruto - darwash_varios
+            darwash_origen = f"hoja {_dw_name!r} col B por bloque, sin Varios"
+    if darwash_origen is None or _dw_bruto == 0:
         # Fallback: fila 'Cuenta Corriente Darwash' del resumen (por label)
         for _r in range(len(res)):
             _lbl = gres(_r, 0)
@@ -6894,7 +6914,8 @@ def _parse_financiero_nuevo(sheets, fecha_str):
                     darwash_pos    = _s
                     darwash_origen = f"resumen fila {_r} 'Cuenta Corriente Darwash'"
                 break
-    log.info(f"    Darwash pos: ${darwash_pos:,.0f} (origen: {darwash_origen or 'no encontrado'})")
+    log.info(f"    Darwash pos: ${darwash_pos:,.0f} (origen: {darwash_origen or 'no encontrado'}"
+             f"; Varios excluido ${darwash_varios:,.0f})")
 
     return {
         'fecha':            fecha_str,
@@ -6910,6 +6931,8 @@ def _parse_financiero_nuevo(sheets, fecha_str):
         'tercio_bravo':     round(tercio_bravo, 2),
         'darwash_pos':      round(darwash_pos, 2),   # v15.23
         'darwash_origen':   darwash_origen,          # v15.23 (auditoría)
+        'darwash_varios':   round(darwash_varios, 2),                      # v15.87.2 (excluido)
+        'darwash_bloques':  {k: round(v, 2) for k, v in darwash_bloques.items()},  # v15.87.2
         'cheques_cartera_n': cart_n,                 # v15.87 (auditoría)
     }
 
