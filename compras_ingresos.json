@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-23T20:07:50.414823",
+    "generado": "2026-10-23T21:07:57.005880",
     "desde": "2024-10-23",
     "hasta": "2026-10-23",
     "dias": 730,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-23",
-    "n_tropas": 588,
-    "n_grupos": 1008,
+    "n_tropas": 589,
+    "n_grupos": 1014,
     "excluidas": 183,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 588,
+      "caravanas": 589,
       "remito": 0,
       "distintas_al_remito": 166,
       "cob_min": 90,
@@ -25387,6 +25387,118 @@
       "vendidas_imputadas": 13,
       "muertas": 0
     },
+    "PEGUTE231026": {
+      "tropa": "PEG.UTE.23/10/2026",
+      "hotelero": "PEGSA",
+      "fecha": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "cabezas": 119,
+      "kg_ingreso": 45128.0,
+      "categorias": [
+        "Novillito",
+        "Novillo",
+        "Ternera",
+        "Ternero",
+        "Vaca",
+        "Vaquillona"
+      ],
+      "kg_cab": 379.2,
+      "categorias_remito": [
+        "Novillito",
+        "Novillo",
+        "Ternera",
+        "Ternero",
+        "Vaca",
+        "Vaquillona"
+      ],
+      "remito": [
+        {
+          "categoria": "Novillito",
+          "cabezas": 21,
+          "kg_ingreso": 7575.0,
+          "kg_cab": 360.7
+        },
+        {
+          "categoria": "Novillo",
+          "cabezas": 2,
+          "kg_ingreso": 1036.0,
+          "kg_cab": 518.0
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 15,
+          "kg_ingreso": 3397.0,
+          "kg_cab": 226.5
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 2,
+          "kg_ingreso": 575.0,
+          "kg_cab": 287.5
+        },
+        {
+          "categoria": "Vaca",
+          "cabezas": 58,
+          "kg_ingreso": 24089.0,
+          "kg_cab": 415.3
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 21,
+          "kg_ingreso": 8456.0,
+          "kg_cab": 402.7
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaca",
+          "cabezas": 58,
+          "kg_ingreso": 24089.0,
+          "kg_cab": 415.3
+        },
+        {
+          "categoria": "Vaquillona",
+          "cabezas": 21,
+          "kg_ingreso": 8456.0,
+          "kg_cab": 402.7
+        },
+        {
+          "categoria": "Novillito",
+          "cabezas": 21,
+          "kg_ingreso": 7575.0,
+          "kg_cab": 360.7
+        },
+        {
+          "categoria": "Ternera",
+          "cabezas": 15,
+          "kg_ingreso": 3397.0,
+          "kg_cab": 226.5
+        },
+        {
+          "categoria": "Novillo",
+          "cabezas": 2,
+          "kg_ingreso": 1036.0,
+          "kg_cab": 518.0
+        },
+        {
+          "categoria": "Ternero",
+          "cabezas": 2,
+          "kg_ingreso": 575.0,
+          "kg_cab": 287.5
+        }
+      ],
+      "cab_real": 119,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 118,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 1
+    },
     "PEGVIL121224": {
       "tropa": "PEG.VIL.12/12/24",
       "hotelero": "PEGSA",
@@ -45377,6 +45489,114 @@
       "cabezas": 20,
       "kg_ingreso": 12920.0,
       "kg_cab": 646.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.UTE.23/10/2026",
+      "tropa_norm": "PEGUTE231026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "CARLOS  CASARES",
+      "destino_compra": "CONSUMO",
+      "camiones": 6,
+      "categoria": "Novillito",
+      "categoria_sigla": "NT",
+      "cabezas": 21,
+      "kg_ingreso": 7575.0,
+      "kg_cab": 360.7,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.UTE.23/10/2026",
+      "tropa_norm": "PEGUTE231026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "CARLOS  CASARES",
+      "destino_compra": "CONSUMO",
+      "camiones": 6,
+      "categoria": "Novillo",
+      "categoria_sigla": "NV",
+      "cabezas": 2,
+      "kg_ingreso": 1036.0,
+      "kg_cab": 518.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.UTE.23/10/2026",
+      "tropa_norm": "PEGUTE231026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "CARLOS  CASARES",
+      "destino_compra": "CONSUMO",
+      "camiones": 6,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 15,
+      "kg_ingreso": 3397.0,
+      "kg_cab": 226.5,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.UTE.23/10/2026",
+      "tropa_norm": "PEGUTE231026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "CARLOS  CASARES",
+      "destino_compra": "CONSUMO",
+      "camiones": 6,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 2,
+      "kg_ingreso": 575.0,
+      "kg_cab": 287.5,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.UTE.23/10/2026",
+      "tropa_norm": "PEGUTE231026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "CARLOS  CASARES",
+      "destino_compra": "CONSUMO",
+      "camiones": 6,
+      "categoria": "Vaca",
+      "categoria_sigla": "VA",
+      "cabezas": 58,
+      "kg_ingreso": 24089.0,
+      "kg_cab": 415.3,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.UTE.23/10/2026",
+      "tropa_norm": "PEGUTE231026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": null,
+      "consignatario": "UTE DARWASH SILVIO FER.",
+      "proveedor": "SOCIEDAD  RURAL DE  CARLOS  CASARES",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "CARLOS  CASARES",
+      "destino_compra": "CONSUMO",
+      "camiones": 6,
+      "categoria": "Vaquillona",
+      "categoria_sigla": "VQ",
+      "cabezas": 21,
+      "kg_ingreso": 8456.0,
+      "kg_cab": 402.7,
       "fuente": "caravanas"
     },
     {
