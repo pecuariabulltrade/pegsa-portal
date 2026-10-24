@@ -103,6 +103,11 @@
     <a class="sb-item" data-target="gestion-costos" href="gestion_costos.html">
       <span class="sb-num">13</span><span class="sb-text">Gesti&oacute;n y Costos</span>
     </a>
+    <!-- v15.89: Consulta de Caravana. Misma leccion v15.61.1: 'caravana' tiene
+         que figurar en gerencia y admin de core-home.js o sbInit() lo esconde. -->
+    <a class="sb-item" data-target="caravana" onclick="sbNavigate('caravana')">
+      <span class="sb-num">14</span><span class="sb-text">Consulta de Caravana</span>
+    </a>
   </div>
 
   <div class="sb-user">
@@ -2442,6 +2447,26 @@
   </div>
 </div>
 
+<!-- ═══ MÓDULO 14 · CONSULTA DE CARAVANA (v15.89) ═══ -->
+<div id="screenCaravana" class="screen" style="display:none">
+  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">M&oacute;dulo 14 &middot; Hacienda</div>
+        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">CONSULTA DE CARAVANA</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(212,168,75,.5);margin-top:6px">Compra &middot; feedlot hoy &middot; salida &middot; venta de un animal</div>
+      </div>
+      <div style="text-align:right">
+        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;">&#8592; Panel Principal</button>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1180px;margin:0 auto;padding:24px 32px 60px">
+    <div id="cvLoading" style="padding:60px;text-align:center;font-family:'DM Mono',monospace;opacity:.5">Cargando&hellip;</div>
+    <div id="cvContent" style="display:none"></div>
+  </div>
+</div>
+
 <div id="screenHistorico" class="screen" style="display:none">
   <!-- Header -->
   <div style="background:var(--ink);color:var(--cream);padding:24px 40px 20px">
@@ -2702,7 +2727,7 @@
   </div>
 </div>
 
-<script src="js/core-home.js?v=1576"></script>
+<script src="js/core-home.js?v=1589"></script>
 <script src="js/modulo-05-mercado.js?v=1566"></script>
 <script src="js/modulo-07-simulador.js"></script>
 
@@ -2718,6 +2743,8 @@
 <script src="js/modulo-09-remitos.js?v=1585"></script>
 <!-- v15.71.3: 10 depende de 09 (usa _remM/_remN/_remFec y REM_STYLES) -->
 <script src="js/modulo-10-acumulados.js?v=1584"></script>
+<!-- v15.89: 14 · Consulta de Caravana, depende de 09 (_remM/_remN/_remFec, remFilas) -->
+<script src="js/modulo-11-caravana.js?v=1589"></script>
 
 
 <!-- Panel Principal — React + Babel -->

@@ -4,8 +4,8 @@
 const USERS={
   'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA', modules:['stock','insumos']},
   'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA', modules:['tesoreria']},
-  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','analisis-costos','acumulados','compras','gestion-costos','baseparams']},
-  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','analisis-costos','acumulados','compras','gestion-costos','baseparams']},
+  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','analisis-costos','acumulados','compras','gestion-costos','caravana','baseparams']},
+  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','analisis-costos','acumulados','compras','gestion-costos','caravana','baseparams']},
 };
 const PERIODS={'2025':{available:true},'2024':{available:false}};
 let currentUser=null, selectedPeriod='2025', chartsInited=false;
@@ -32,7 +32,9 @@ function tryLogin(){
   });
   const ls=document.getElementById('screenLogin');
   ls.style.opacity='0';ls.style.transition='opacity .35s ease';
-  setTimeout(()=>{showScreen('screenHome');document.body.style.background='';sbInit(currentUser);loadHomeKpis();},350);
+  setTimeout(()=>{showScreen('screenHome');document.body.style.background='';sbInit(currentUser);loadHomeKpis();
+    // v15.89: un link #caravana=<nro> abre la consulta directo después del login
+    if(/caravana=/.test(location.hash)&&acc.modules.includes('caravana'))sbNavigate('caravana');},350);
 }
 function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.classList.add('show');}
 function shake(){const b=document.querySelector('.login-box');b.style.animation='shake .4s ease';setTimeout(()=>b.style.animation='',400);}
@@ -103,6 +105,14 @@ function openModule(mod){
     document.body.style.background='';
     window.scrollTo(0,0);
     initAcumulados();
+    return;
+  }
+  // v15.89: 14 · Consulta de Caravana
+  if(mod==='caravana'){
+    showScreen('screenCaravana');
+    document.body.style.background='';
+    window.scrollTo(0,0);
+    initCaravana();
     return;
   }
   if(mod==='baseparams'){
