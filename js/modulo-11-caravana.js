@@ -198,6 +198,19 @@ function cvAnimal(key) {
   var hist = [];
   st.forEach(function (r) { hist.push({ tipo: 'stock', fi: r.FECHA_INGRESO, s: r }); });
   eg.forEach(function (r) { hist.push({ tipo: 'egreso', fi: r.fecha_ingreso, fe: r.fecha_egreso, e: r }); });
+  // Lecturas del bastón posteriores a su última salida en WinCampo (o sin
+  // registro en WinCampo): salió como "sin caravana" con la caravana de OTRO
+  // animal cargada. Se busca el egreso de venta de ese día con el mismo peso y
+  // sin lectura propia (caso 982000459618644 → 2432, cargado como LA061B251).
+  var ultEgr = eg.length ? eg[0].fecha_egreso : '';
+  if (!st.length) {
+    lect.filter(function (l) { return l.fecha && l.fecha > ultEgr && l.peso != null; }).forEach(function (l) {
+      var m = cvEgresoPorPeso(l);
+      if (m && !hist.some(function (h) { return h.e === m; })) {
+        hist.push({ tipo: 'egreso', fi: m.fecha_ingreso, fe: m.fecha_egreso, e: m, porPeso: l });
+      }
+    });
+  }
   hist.sort(function (a, b) {
     var fa = a.fe || '9999', fb = b.fe || '9999';
     if (fa !== fb) return fb.localeCompare(fa);
@@ -206,11 +219,38 @@ function cvAnimal(key) {
   return { key: key, eid: eid, visual: visual, hist: hist, lect: lect };
 }
 
+/* Egreso de VENTA del día de la lectura (o el siguiente) con el mismo kg de
+   salida (±1 kg) cuya caravana cargada NO fue leída por el bastón esos días.
+   Solo si hay uno: con dos candidatos al mismo peso no se adivina. */
+var _cvEgrPorFecha = null;
+function cvEgresoPorPeso(l) {
+  if (!_cvEgrPorFecha) {
+    _cvEgrPorFecha = {};
+    _cvD.egr.forEach(function (r) {
+      if (_cvMotivo(r.motivo) !== 'VENTA' || !r.fecha_egreso) return;
+      (_cvEgrPorFecha[r.fecha_egreso] = _cvEgrPorFecha[r.fecha_egreso] || []).push(r);
+    });
+  }
+  var E = _cvD.dm.eids || {}, d1 = new Date(l.fecha + 'T00:00:00');
+  d1.setDate(d1.getDate() + 1);
+  var f1 = d1.toISOString().slice(0, 10);
+  var cand = (_cvEgrPorFecha[l.fecha] || []).concat(_cvEgrPorFecha[f1] || []).filter(function (r) {
+    if (r.kg_egr == null || Math.abs(r.kg_egr - l.peso) > 1) return false;
+    var propias = (r.rfid && E[r.rfid]) || [];
+    return !propias.some(function (x) { var dd = _cvDias(x[0], r.fecha_egreso); return dd != null && Math.abs(dd) <= 1; });
+  });
+  return cand.length === 1 ? cand[0] : null;
+}
+
 function cvResumen(h) {
   var a = cvAnimal(h.key), x = a.hist[0];
   var r = { key: h.key, eid: a.eid, visual: a.visual, tropa: '—', cat: '—', estado: 'Solo Datamars',
             ultFecha: null, ultPesada: null };
-  if (x && x.tipo === 'stock') {
+  if (x && x.porPeso) {
+    r.tropa = x.e.tropa; r.cat = _cvCatLarga(x.e.cat);
+    r.estado = 'Salió ' + _remFec(x.e.fecha_egreso) + ' · remito ' + x.e.remito + ' (por peso)';
+    r.ultFecha = x.e.fecha_egreso;
+  } else if (x && x.tipo === 'stock') {
     r.tropa = x.s.NRO_TROPA; r.cat = _cvCatLarga(x.s.CATEGORIA); r.estado = 'En stock'; r.ultFecha = '9999';
   } else if (x) {
     r.tropa = x.e.tropa; r.cat = _cvCatLarga(x.e.cat);
@@ -246,8 +286,13 @@ function cvCompra(tropa, cat) {
 /* Fila del remito para la tropa + categoría del animal. Si la tropa no tiene
    fila (el cruce Datamars le cambió la tropa a los sin caravana), la de su
    categoría; si hay varias, la más grande. */
-function cvFilaRemito(filas, tropa, cat) {
+function cvFilaRemito(filas, tropa, cat, noLeida) {
   var tn = _cvTropaNorm(tropa), catL = _cvCatLarga(cat);
+  // no leída por el bastón: el 07 la pasó a la fila IMPUTADA del remito
+  if (noLeida) {
+    var im = (filas || []).filter(function (x) { return x.imputado || x.origen === 'imputado'; });
+    if (im.length) return { fila: _cvSumaFilas(im), exacta: true, imputada: true };
+  }
   var f = (filas || []).filter(function (x) {
     return (x.tropa_norm || _cvTropaNorm(x.tropa)) === tn && x.categoria === catL;
   });
@@ -421,6 +466,10 @@ function cvFicha(key) {
   }
   return h;
 }
+function eg0Fecha(a) {
+  var r = a.hist.filter(function (h) { return h.tipo === 'egreso' && !h.porPeso; })[0];
+  return r ? r.e.fecha_egreso : null;
+}
 function _cvBtn() {
   return 'padding:7px 14px;background:#fff;border:1px solid var(--border,#e6e1d6);font-family:\'DM Mono\',monospace;font-size:12px;cursor:pointer';
 }
@@ -454,12 +503,22 @@ function cvBloqueHist(a, x, vigente) {
   var kgIng = esStock ? s.KG_INGRESO : e.kg_ing;
 
   // 1 · Identidad
-  var h = '<div style="' + CV_CARD + (vigente ? ';border-top:3px solid var(--gold,#d4a84b)' : '') + '">'
+  var aviso = x.porPeso
+    ? '<div style="font-family:\'DM Mono\',monospace;font-size:12px;background:#fbf3e0;border-left:3px solid #b8922a;padding:8px 12px;margin-bottom:12px">'
+      + '⚠ El bastón leyó este EID el ' + _remFec(x.porPeso.fecha) + ' (' + _cvEsc(x.porPeso.nombre) + ', ' + _remN(x.porPeso.peso) + ' kg), '
+      + 'pero en WinCampo no figura en ninguna salida de ese día' + (eg0Fecha(a) ? ' (su última salida con este EID es del ' + _remFec(eg0Fecha(a)) + ')' : '') + '. '
+      + 'Por peso, es el egreso del remito <b>' + _cvEsc(e.remito) + '</b> cargado con la caravana <b>' + _cvEsc(e.rfid || '—')
+      + (e.caravana ? ' · ' + _cvEsc(e.caravana) : '') + '</b> (' + _remN(e.kg_egr) + ' kg, no leída por el bastón): '
+      + 'tropa, categoría, ingreso y costeo de abajo son los de ese registro, no necesariamente los de este animal.</div>' : '';
+  if (x.porPeso && vigente) _cvTexto.push('⚠ Leída el ' + _remFec(x.porPeso.fecha) + ' sin salida en WinCampo con este EID; por peso = remito '
+    + e.remito + ' cargado como ' + (e.rfid || '') + (e.caravana ? ' / ' + e.caravana : ''));
+  var h = '<div style="' + CV_CARD + (vigente ? ';border-top:3px solid var(--gold,#d4a84b)' : '') + '">' + aviso
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">'
     + '<div style="' + CV_H + ';font-size:26px">' + _cvEsc(a.eid || a.visual) + '</div><div>' + estado + '</div></div>'
     + _cvGrid([
         _cvKV('EID', _cvEsc(a.eid || '—')),
-        _cvKV('Visual', _cvEsc((esStock ? s.NRO_CARAVANA : e.caravana) || a.visual || '—')),
+        _cvKV('Visual', _cvEsc(x.porPeso ? (x.porPeso.vid || a.visual || '—') : ((esStock ? s.NRO_CARAVANA : e.caravana) || a.visual || '—')),
+          x.porPeso && e.caravana ? 'en WinCampo: ' + _cvEsc(e.caravana) : ''),
         _cvKV('Tropa', _cvEsc(tropa || '—')),
         _cvKV('Categoría', _cvCatChip(catL), esStock && s.CATEGORIA_FINAL ? 'final: ' + _cvEsc(s.CATEGORIA_FINAL) : ''),
         _cvKV('Hotelero', _cvEsc((esStock ? s.HOTELERO : e.hotelero) || '—')),
@@ -638,7 +697,10 @@ function cvBloqueCosteo(e, tropa, cat, filas, vigente) {
   var V = cvVenta(e.remito);
   // si la venta está cargada, su snapshot trae los overrides: se usa su fila
   var vf = V ? (V.filas || []).filter(function (f) { return String(f.remito) === String(e.remito); }) : [];
-  var m = cvFilaRemito(vf.length ? vf : filas, tropa, cat) || cvFilaRemito(filas, tropa, cat);
+  var E = _cvD.dm.eids || {}, propias = (e.rfid && E[e.rfid]) || [];
+  var noLeida = !propias.some(function (x) { var dd = _cvDias(x[0], e.fecha_egreso); return dd != null && Math.abs(dd) <= 1; })
+    && (filas || []).some(function (x) { return x.imputado; });
+  var m = cvFilaRemito(vf.length ? vf : filas, tropa, cat, noLeida) || cvFilaRemito(filas, tropa, cat, noLeida);
   var h = '<div style="' + CV_CARD + '"><div style="' + CV_H + '">Costeo de su fila en el remito ' + _cvEsc(e.remito) + '</div>';
   if (!m) {
     h += '<div style="font-family:\'DM Mono\',monospace;font-size:12.5px">No hay fila de ' + _cvEsc(_cvCatLarga(cat)) + ' en el remito.</div></div>';
@@ -655,6 +717,7 @@ function cvBloqueCosteo(e, tropa, cat, filas, vigente) {
     ])
     + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:rgba(26,22,18,.55);margin-top:10px">'
     + 'Son de la tropa + categoría en ese remito, no del animal solo.'
+    + (m.imputada ? ' Su caravana no la leyó el bastón: el 07 la costeó dentro de la fila de los sin caravana, imputada a ' + _cvEsc(f.tropa) + ' · ' + _cvEsc(f.categoria) + '.' : '')
     + (m.exacta ? '' : ' ⚠ Su tropa WinCampo (' + _cvEsc(tropa) + ') no tiene fila en el remito (el cruce Datamars la imputó a otra): se muestra la fila de su categoría.')
     + (K.prodKg != null && e.kg_egr != null && e.kg_ing != null
        ? ' Prorrateado a este animal por sus ' + _remN(e.kg_egr - e.kg_ing) + ' kg ganados: costo productivo ≈ ' + _remM(K.prodKg * (e.kg_egr - e.kg_ing)) + '.' : '')
