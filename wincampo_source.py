@@ -11,6 +11,7 @@ Tabla 1 (v15.2):
 """
 
 import os
+import re
 import time
 import logging
 from datetime import date
@@ -41,6 +42,72 @@ CORRALES_EXCLUIDOS = {"10000"}
 # Bulltrade y la consignataria Bulltrade mantienen entidad separada
 # en el módulo Tesorería; el alcance acá es solo hacienda.
 HOTELEROS_CONSOLIDADOS_A_PEGSA = {"BULLTRADE SRL", "BULLTRADE", "BULL TRADE SRL"}
+
+
+def _fecha_iso(v):
+    """v15.90: normaliza una fecha cruda de WinCampo a "YYYY-MM-DD" (o None).
+
+    Acepta "2026-05-08 00:00:00.000", "2026-05-08T00:00:00", "20260508",
+    "08/05/2026" (día primero), "/Date(1778198400000)/", epoch en ms o en s
+    (número o string de dígitos) y date/datetime. Lo que no reconoce → None.
+    """
+    from datetime import datetime as _dt, timezone as _tz
+
+    def _epoch(n):
+        n = float(n)
+        if n > 1e11:          # milisegundos
+            n /= 1000.0
+        return _dt.fromtimestamp(n, tz=_tz.utc).date().isoformat()
+
+    if v is None:
+        return None
+    if hasattr(v, "date") and callable(v.date):      # datetime / Timestamp
+        return v.date().isoformat()
+    if hasattr(v, "isoformat"):                      # date
+        return v.isoformat()[:10]
+    if isinstance(v, (int, float)):
+        try:
+            return _epoch(v) if v > 0 else None
+        except (OverflowError, OSError, ValueError):
+            return None
+    s = str(v).strip()
+    if not s:
+        return None
+    try:
+        m = re.fullmatch(r"/Date\((-?\d+)(?:[+-]\d{4})?\)/", s)
+        if m:
+            return _epoch(int(m.group(1)) / 1000.0)
+        if re.fullmatch(r"\d{10}(\.\d+)?|\d{13}", s):
+            return _epoch(s)
+        if re.fullmatch(r"\d{8}", s):
+            return _dt.strptime(s, "%Y%m%d").date().isoformat()
+        m = re.match(r"(\d{4}-\d{2}-\d{2})(?:[ T]|$)", s)
+        if m:
+            return _dt.strptime(m.group(1), "%Y-%m-%d").date().isoformat()
+        m = re.match(r"(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ T]|$)", s)
+        if m:
+            d, mo, y = (int(g) for g in m.groups())
+            return _dt(y, mo, d).date().isoformat()
+    except (ValueError, OverflowError, OSError):
+        return None
+    return None
+
+
+def _valor_ci(d, nombres):
+    """Primer valor no vacío de `d` entre `nombres`, sin distinguir mayúsculas."""
+    if not isinstance(d, dict):
+        return None
+    por_upper = {str(k).upper(): k for k in d}
+    for n in nombres:
+        k = por_upper.get(n.upper())
+        if k is not None and d[k] not in (None, ""):
+            return d[k]
+    return None
+
+
+# v15.90: nombres posibles del campo fecha de ingreso (WinCampo lo movió de
+# nivel tropa a nivel camión el 22/10/2026; esto cubre también un renombre).
+FECHA_INGRESO_KEYS = ("FECHA_INGRESO", "FECHAINGRESO", "FECHA_ING", "FechaIngreso", "FECHA")
 
 
 def consolidar_hotelero(nombre):
@@ -374,9 +441,16 @@ class WinCampoAPI:
         if kg_ing is not None and kg_egr is not None and dias and dias > 0:
             adp = round((kg_egr - kg_ing) / dias, 4)
 
+        # v15.90: el formato de hoy ("2026-05-08 00:00:00.000") pasa tal cual
+        # para no cambiar la forma de los egresos; cualquier otro formato se
+        # normaliza con _fecha_iso (mismo riesgo que tuvo FECHA_INGRESO).
+        fecha_egr = s("FECHA_EGRESO")
+        if fecha_egr and not re.match(r"\d{4}-\d{2}-\d{2}( |$)", fecha_egr):
+            fecha_egr = _fecha_iso(fecha_egr)
+
         return {
             # Compatible con v_PB_Egresos (keys que espera procesar_productivo/procesar_muertes)
-            "FechaSalida":    s("FECHA_EGRESO"),
+            "FechaSalida":    fecha_egr,
             "MotivoSalida":   s("MOTIVO"),
             "Estadia":        dias,
             "KgIngreso":      kg_ing,
@@ -419,9 +493,10 @@ class WinCampoAPI:
         Cada fila = "N cabezas de categoría X que llegaron en este camión-tropa".
         Por eso Cantidad es el ENTERO REAL del sub-grupo, no 1.
 
-        Aplana la jerarquía tropa → CAMIONES[]. CONSIGNATARIO, PROVEEDOR y
-        FECHA_INGRESO viven a nivel tropa y se heredan a cada sub-grupo;
-        CATEGORIA, CANTIDAD y KILOS_CAMION_PARCIAL viven a nivel camión.
+        Aplana la jerarquía tropa → CAMIONES[]. CONSIGNATARIO y PROVEEDOR
+        viven a nivel tropa y se heredan a cada sub-grupo; CATEGORIA, CANTIDAD,
+        KILOS_CAMION_PARCIAL y (desde el 22/10/2026) FECHA_INGRESO viven a
+        nivel camión.
 
         El endpoint lst_movimiento_hacienda NO tiene cap de rango (a diferencia
         de lst_egresos_hacienda que corta a 500d). Verificado 2026-06-08:
@@ -437,7 +512,8 @@ class WinCampoAPI:
         Returns:
             list[dict] con keys que necesita el pipeline (procesar_movimientos,
             líneas 673-689):
-                FechaIngreso  (str ISO date) = tropa.FECHA_INGRESO (parseado)
+                FechaIngreso  (str ISO date) = camion.FECHA_INGRESO, fallback tropa
+                                               (v15.90; parseado con _fecha_iso)
                 hotelero      (str)          = tropa.HOTELERO
                 categoria     (str)          = camion.CATEGORIA
                 Cantidad      (int)          = camion.CANTIDAD (real, NO 1)
@@ -478,6 +554,20 @@ class WinCampoAPI:
                 salida.append(self._normalizar_ingreso(tropa, camion))
 
         log.info(f"Ingresos {fecha_desde} a {fecha_hasta}: {len(salida)} sub-grupos (camion x categoria)")
+
+        # v15.90 canario: si la fecha deja de parsearse (como el 22/10/2026,
+        # cuando FECHA_INGRESO pasó de la tropa al camión) avisar con el crudo.
+        # El pipeline lo lleva a movimientos.meta y el smoke test lo chequea.
+        con_fecha = sum(1 for r in salida if r.get("FechaIngreso"))
+        pct = round(100.0 * con_fecha / len(salida), 1) if salida else None
+        self.ingresos_fechas = {"subgrupos": len(salida), "con_fecha": con_fecha, "pct": pct}
+        if salida and pct < 80:
+            t0 = raiz[0] if raiz else {}
+            c0 = (t0.get("CAMIONES") or [{}])[0] if isinstance(t0, dict) else {}
+            crudo = {f"tropa.{k}": v for k, v in t0.items() if "FECHA" in str(k).upper()}
+            crudo.update({f"camion.{k}": v for k, v in c0.items() if "FECHA" in str(k).upper()})
+            log.warning(f"Ingresos: solo {con_fecha}/{len(salida)} sub-grupos ({pct}%) con FechaIngreso "
+                        f"parseable. Campos FECHA del primer registro: {crudo!r}")
         return salida
 
     def _normalizar_ingreso(self, tropa, camion):
@@ -509,10 +599,11 @@ class WinCampoAPI:
                         return None
             return None
 
-        # FECHA_INGRESO viene como "2026-05-08 00:00:00.000" → recortar a date ISO
-        fecha = _s(tropa, "FECHA_INGRESO")
-        if fecha:
-            fecha = fecha.split(" ")[0]
+        # v15.90: desde el 22/10/2026 FECHA_INGRESO viene en el CAMIÓN (antes en
+        # la tropa). Se busca primero en el camión y después en la tropa.
+        fecha = _fecha_iso(_valor_ci(camion, FECHA_INGRESO_KEYS))
+        if not fecha:
+            fecha = _fecha_iso(_valor_ci(tropa, FECHA_INGRESO_KEYS))
 
         return {
             # keys que matchean los detectores de procesar_movimientos (líneas 673-689)

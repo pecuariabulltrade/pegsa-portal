@@ -382,6 +382,13 @@ def smoke_test(carpeta, periodo):
         cab_ing = ing_anio.get("total_cabezas", 0)
         _check("movimientos.ingresos_anio", 5000 < cab_ing < 30000,
                f"ingresos año={cab_ing:,} fuera de [5000, 30000]")
+        # v15.90: la causa, no solo la consecuencia (el 22/10/2026 WinCampo movió
+        # FECHA_INGRESO de la tropa al camión y todas las fechas quedaron vacías).
+        _ifec = mv.get("meta", {}).get("ingresos_fechas") or {}
+        if _ifec.get("pct") is not None:
+            _check("ingresos.fechas_parseadas", _ifec["pct"] >= 80,
+                   f"solo {_ifec.get('con_fecha')}/{_ifec.get('subgrupos')} sub-grupos ({_ifec['pct']}%) "
+                   f"con FechaIngreso parseable — ¿WinCampo cambió el campo o el formato?")
 
     # --- insumos (al menos los 7 críticos) ---
     ins = _load(f"stock_insumos_{periodo}.json")
@@ -3905,6 +3912,10 @@ def main():
     regs_ing, cols_ing = extraer(tabla_ing, fecha_col="FechaIngreso", dias=730, df_override=df_ing)
 
     mov_data = procesar_movimientos(regs_ing, cols_ing, regs_egr, cols_egr, periodo)
+    # v15.90: % de sub-grupos con fecha parseable (lo chequea el smoke test).
+    _ifec = getattr(wcampo, "ingresos_fechas", None)
+    if _ifec:
+        mov_data.setdefault("meta", {})["ingresos_fechas"] = _ifec
 
     guardar(mov_data, carpeta, f"movimientos_{periodo}.json")
     log.info(f"  ✓ movimientos_{periodo}.json")
