@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-10-28T20:07:46.883322",
+    "generado": "2026-10-28T22:07:55.450993",
     "desde": "2024-01-09",
     "hasta": "2026-10-23",
     "dias": 1023,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-10-28",
-    "n_tropas": 590,
-    "n_grupos": 1016,
+    "n_tropas": 591,
+    "n_grupos": 1017,
     "excluidas": 183,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 590,
+      "caravanas": 591,
       "remito": 0,
       "distintas_al_remito": 166,
       "cob_min": 90,
@@ -2745,8 +2745,8 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 123,
-      "vendidas": 14,
-      "vendidas_imputadas": 0,
+      "vendidas": 30,
+      "vendidas_imputadas": 8,
       "muertas": 0
     },
     "BULDAR231224": {
@@ -16248,7 +16248,7 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": true,
       "en_stock": 4,
-      "vendidas": 19,
+      "vendidas": 20,
       "vendidas_imputadas": 0,
       "muertas": 0
     },
@@ -18649,7 +18649,7 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 61,
-      "vendidas": 134,
+      "vendidas": 138,
       "vendidas_imputadas": 31,
       "muertas": 1
     },
@@ -20199,6 +20199,48 @@
       "vendidas": 63,
       "vendidas_imputadas": 9,
       "muertas": 5
+    },
+    "PEGHUI201026": {
+      "tropa": "PEG.HUI.20/10/2026",
+      "hotelero": "PEGSA",
+      "fecha": "2026-10-20",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "DON RAUL SA",
+      "cabezas": 33,
+      "kg_ingreso": 19074.0,
+      "categorias": [
+        "Novillo"
+      ],
+      "kg_cab": 578.0,
+      "categorias_remito": [
+        "Novillo"
+      ],
+      "remito": [
+        {
+          "categoria": "Novillo",
+          "cabezas": 33,
+          "kg_ingreso": 19074.0,
+          "kg_cab": 578.0
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Novillo",
+          "cabezas": 33,
+          "kg_ingreso": 19074.0,
+          "kg_cab": 578.0
+        }
+      ],
+      "cab_real": 33,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 33,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
     },
     "PEGHUI210325": {
       "tropa": "PEG.HUI.21/03/25",
@@ -25831,7 +25873,7 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": false,
       "en_stock": 66,
-      "vendidas": 7,
+      "vendidas": 9,
       "vendidas_imputadas": 0,
       "muertas": 0
     },
@@ -47813,6 +47855,24 @@
       "cabezas": 21,
       "kg_ingreso": 10500.0,
       "kg_cab": 500.0,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.HUI.20/10/2026",
+      "tropa_norm": "PEGHUI201026",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-10-20",
+      "consignatario": "FERIA RODEO HUINCA S.R.L",
+      "proveedor": "DON RAUL SA",
+      "origen": "DIRECTA",
+      "localidad": "HUINCA RENANCO",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Novillo",
+      "categoria_sigla": "NV",
+      "cabezas": 33,
+      "kg_ingreso": 19074.0,
+      "kg_cab": 578.0,
       "fuente": "caravanas"
     },
     {
