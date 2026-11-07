@@ -310,6 +310,7 @@
       h1Em: "dirección",
       h1Post: ".",
       sub: "Última act. " + lastUpdateFmt +
+           (D.wincampoAl ? " · WinCampo al " + D.wincampoAl : "") +
            " · " + nAlertas + " alerta" + (nAlertas === 1 ? "" : "s") +
            " · " + nModulos + " módulos"
     };

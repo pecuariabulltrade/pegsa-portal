@@ -12,9 +12,12 @@ Tabla 1 (v15.2):
 
 import os
 import re
+import sys
+import json
 import time
 import logging
-from datetime import date
+from collections import Counter
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -26,7 +29,7 @@ _repo_root = Path(__file__).resolve().parent
 load_dotenv(_repo_root / ".env")
 
 API_BASE = "https://elgarabi-api.wincampo.com/api/"
-RATE_LIMIT_SLEEP = 0.3
+RATE_LIMIT_SLEEP = 2.0  # v15.92: condición de WinCampo (era 0.3)
 TIMEOUT_DEFAULT = 90  # el endpoint de stock puede tardar — animal por animal
 
 # v15.46: corrales que NO representan stock productivo real y se excluyen de
@@ -157,7 +160,7 @@ class WinCampoAPI:
         if not self.token:
             raise RuntimeError(f"Login devolvió sin token. Keys: {list(data.keys())}")
         self.session.headers["Authorization"] = f"Bearer {self.token}"
-        log.info("WinCampo login OK (user=%s)", data.get("nombre") or self.email)
+        log.info("WinCampo login OK (user=%s)", self.email)
 
     def _get(self, path, params=None, retry_on_401=True, _retry_left=3):
         # v15.7.3: retry con backoff exponencial (1s/3s/9s) ante hiccups
@@ -668,7 +671,8 @@ class WinCampoAPI:
         log.info(f"Muertes (MOTIVO=M): {len(muertes)} de {len(egresos)} egresos")
         return muertes
 
-    def _remap_muerte(self, e):
+    @staticmethod
+    def _remap_muerte(e):
         """Remapea un egreso MOTIVO=M al shape que esperan procesar_muertes/_30d."""
         dias = e.get("Estadia")
         try:
@@ -851,3 +855,353 @@ class WinCampoAPI:
                 f"Keys: {list(data.keys()) if isinstance(data, dict) else type(data)}")
         log.info(f"Insumo repartido: {len(filas)} entregas ({fecha_desde} a {fecha_hasta})")
         return filas
+
+
+# ════════════════════════════════════════════════════════════════
+#  v15.92 · Una consulta por día, con caché incremental
+# ════════════════════════════════════════════════════════════════
+# El 05/11/2026 el programador de WinCampo se quejó de la carga: el bot hacía
+# ~9 consultas por hora, dos de ~67.000 filas. La condición del usuario de API
+# nuevo es consultar UNA vez por día. WinCampoDiario tiene los mismos fetch_*
+# que WinCampoAPI, pero salen de datos\wincampo_cache\ (subcarpeta: el .bat
+# copia solo datos\*.json, no se publica). La consulta se hace toda junta al
+# crear el objeto, y solo si toca; los demás ticks del día no hacen ni login.
+CACHE_DIR            = "wincampo_cache"
+CACHE_DESDE          = "2024-01-01"   # los teóricos de ADP usan los 2 años previos
+GASOIL_CACHE_DESDE   = "2025-01-01"   # = GASOIL_DESDE de actualizar_datos.py
+HORA_CONSULTA        = "06:00"        # se puede pisar con WINCAMPO_HORA_CONSULTA
+SOLAPE_EGRESOS_DIAS  = 7
+SOLAPE_INGRESOS_DIAS = 30             # los ingresos se cargan con atraso
+SOLAPE_GASOIL_DIAS   = 7
+MAX_INTENTOS_DIA     = 3              # una consulta que falló se reintenta sola, y nada más ella
+FOTOS_A_CONSERVAR    = 7
+CACHE_EDAD_MAX_H     = 36
+CONSULTAS            = ("stock", "egresos", "ingresos", "insumos", "gasoil")
+
+
+def _fecha_fila(r, campo):
+    return str(r.get(campo) or "")[:10]
+
+
+def _clave_egreso(r):
+    return (r.get("RFID") or r.get("NRO_CARAVANA"), r.get("NRO_TROPA"),
+            _fecha_fila(r, "FechaSalida"), r.get("NRO_TRANSACCION"))
+
+
+def _clave_ingreso(r):
+    return (r.get("NRO_TROPA"), r.get("FechaIngreso"), r.get("categoria"),
+            r.get("hotelero"), r.get("Cantidad"), r.get("KgIngreso"))
+
+
+def _merge_ventana(viejas, frescas, desde, campo, clave):
+    """Reemplaza en `viejas` todo lo fechado desde `desde` por `frescas`.
+
+    Se reemplaza la ventana entera, no fila por clave: WinCampo es la verdad de
+    esas fechas. Con merge por clave, un ingreso corregido (cambia Cantidad, que
+    es parte de la clave) quedaría duplicado, uno anulado no se iría nunca, y
+    dos camiones iguales de la misma tropa se pisarían entre sí. La clave queda
+    para contar qué cambió.
+
+    Una respuesta vacía con filas en la ventana NO borra: levanta.
+    """
+    en_ventana = [r for r in viejas if _fecha_fila(r, campo) >= desde]
+    if en_ventana and not frescas:
+        raise RuntimeError(f"vino vacío y la caché tiene {len(en_ventana)} filas desde {desde}; no se pisa")
+    c_viejas, c_frescas = Counter(map(clave, en_ventana)), Counter(map(clave, frescas))
+    claves_frescas = set(c_frescas)
+    quedan = [r for r in viejas
+              if (_fecha_fila(r, campo) and _fecha_fila(r, campo) < desde)
+              or (not _fecha_fila(r, campo) and clave(r) not in claves_frescas)]
+    merged = quedan + list(frescas)
+    return merged, {
+        "nuevas":       sum((c_frescas - c_viejas).values()),
+        "actualizadas": sum((c_frescas & c_viejas).values()),
+        "eliminadas":   sum((c_viejas - c_frescas).values()),
+        "total":        len(merged),
+    }
+
+
+def _enmascarar_usuario(email):
+    """ultima_actualizacion.json es público: del login se publica solo el comienzo."""
+    return (str(email).split("@")[0] + "@…") if email else None
+
+
+def cache_edad_horas(carpeta, ahora=None):
+    """Horas desde el dato más viejo de la caché (None si nunca se consultó)."""
+    try:
+        estado = json.loads((Path(carpeta) / CACHE_DIR / "ultima_consulta.json").read_text(encoding="utf-8"))
+        al = estado.get("datos_al") or {}
+        if not al:
+            return None
+        return round(((ahora or datetime.now()) - datetime.fromisoformat(min(al.values()))).total_seconds() / 3600, 1)
+    except (OSError, ValueError):
+        return None
+
+
+class WinCampoDiario:
+    def __init__(self, carpeta, forzar=False, ahora=None, api_factory=None):
+        self.carpeta = Path(carpeta)
+        self.dir = self.carpeta / CACHE_DIR
+        self.dir.mkdir(parents=True, exist_ok=True)
+        self.ahora = ahora or datetime.now()
+        self.hoy = self.ahora.date()
+        self.hora_consulta = os.environ.get("WINCAMPO_HORA_CONSULTA") or HORA_CONSULTA
+        self._api_factory = api_factory or WinCampoAPI
+        self._mem = {}
+        self.estado = self._leer("ultima_consulta.json") or {}
+        self.modo = "cache"
+        self._actualizar(forzar)
+        # v15.90: el canario de fechas se mide sobre lo último que respondió la
+        # API, no sobre la caché (ahí nunca entran filas sin fecha en masa).
+        self.ingresos_fechas = self.estado.get("ingresos_fechas")
+
+    # ── archivos ─────────────────────────────────────────────────
+    def _leer(self, nombre):
+        ruta = self.dir / nombre
+        if not ruta.exists():
+            return None
+        try:
+            return json.loads(ruta.read_text(encoding="utf-8"))
+        except ValueError as e:
+            log.warning(f"  caché {nombre} ilegible ({e}): se ignora")
+            return None
+
+    def _escribir(self, nombre, datos):
+        # tmp + replace: un corte a mitad de escritura no deja la caché truncada.
+        ruta = self.dir / nombre
+        tmp = ruta.with_name(ruta.name + ".tmp")
+        tmp.write_text(json.dumps(datos, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        os.replace(tmp, ruta)
+
+    def _guardar_foto(self, prefijo, filas):
+        self._escribir(f"{prefijo}_{self.hoy.isoformat()}.json", filas)
+        for vieja in sorted(self.dir.glob(f"{prefijo}_????-??-??.json"))[:-FOTOS_A_CONSERVAR]:
+            vieja.unlink()
+
+    # ── cuándo se consulta ───────────────────────────────────────
+    def _que_consultar(self, forzar):
+        """(consultas, modo). La regla: una vez por día, desde la hora de consulta."""
+        if (self.carpeta / "WINCAMPO_PAUSA.txt").exists():
+            log.warning("WinCampo en PAUSA (existe WINCAMPO_PAUSA.txt): no se consulta, se trabaja con la caché")
+            return [], "cache"
+        if forzar:
+            log.warning("=" * 60)
+            log.warning("WINCAMPO_FORZAR: consulta fuera de la regla de una por día")
+            log.warning("=" * 60)
+            return list(CONSULTAS), "forzado"
+        if self.ahora.strftime("%H:%M") < self.hora_consulta:
+            return [], "cache"
+        if self.estado.get("fecha") != self.hoy.isoformat():
+            return list(CONSULTAS), "diario"
+        pendientes = self.estado.get("pendientes") or []
+        if pendientes and int(self.estado.get("intentos") or 0) < MAX_INTENTOS_DIA:
+            return list(pendientes), "diario"
+        return [], "cache"
+
+    def _actualizar(self, forzar):
+        consultas, self.modo = self._que_consultar(forzar)
+        e = self.estado
+        if not consultas:
+            log.info(f"WinCampo: caché del {self._consultado() or 'nunca'} "
+                     f"(consulta diaria a las {self.hora_consulta})")
+            return
+        mismo_dia = e.get("fecha") == self.hoy.isoformat() and self.modo != "forzado"
+        e.update(fecha=self.hoy.isoformat(), hora=self.ahora.strftime("%H:%M"),
+                 intentos=int(e.get("intentos") or 0) + 1 if mismo_dia else 1)
+        if not mismo_dia:
+            e.update(llamadas=[], filas={})
+        e.setdefault("llamadas", [])
+        e.setdefault("filas", {})
+        e.setdefault("datos_al", {})
+        try:
+            api = self._api_factory()
+        except Exception as ex:
+            log.error(f"  x WinCampo: falló el login, se trabaja con la caché ({type(ex).__name__}: {ex})")
+            e["pendientes"] = consultas
+            self._escribir("ultima_consulta.json", e)
+            return
+        e["usuario"] = getattr(api, "email", None)
+        e["llamadas"].append({"endpoint": "login"})
+        fallidas = []
+        for nombre in consultas:
+            try:
+                getattr(self, f"_bajar_{nombre}")(api)
+                e["datos_al"][nombre] = self.ahora.isoformat(timespec="minutes")
+            except Exception as ex:
+                log.error(f"  x WinCampo {nombre}: {type(ex).__name__}: {ex} (queda la caché anterior)")
+                fallidas.append(nombre)
+        e["pendientes"] = fallidas
+        self._escribir("ultima_consulta.json", e)
+
+    def _anotar(self, nombre, endpoint, desde, hasta, n, detalle=""):
+        self.estado["llamadas"].append({"endpoint": endpoint, "desde": desde, "hasta": hasta, "filas": n})
+        self.estado["filas"][nombre] = n
+        ventana = f"{desde}→{hasta}" if desde else str(hasta)
+        log.info(f"  WinCampo {nombre} {ventana}: {n:,} filas{detalle}")
+
+    # ── bajadas (lo único que toca la API) ───────────────────────
+    def _bajar_incremental(self, nombre, archivo, campo, solape, clave, bajar, endpoint):
+        viejas = self._leer(archivo)
+        fh = self.hoy.isoformat()
+        if not viejas:
+            filas = bajar(CACHE_DESDE, fh)
+            if not filas:
+                raise RuntimeError("la bajada completa vino vacía")
+            self._escribir(archivo, filas)
+            self._anotar(nombre, endpoint, CACHE_DESDE, fh, len(filas), " (bajada completa inicial)")
+            return
+        ultima = min(max(_fecha_fila(r, campo) for r in viejas), fh)
+        fd = (date.fromisoformat(ultima) - timedelta(days=solape)).isoformat()
+        frescas = bajar(fd, fh)
+        merged, c = _merge_ventana(viejas, frescas, fd, campo, clave)
+        self._escribir(archivo, merged)
+        self._anotar(nombre, endpoint, fd, fh, len(frescas),
+                     f" (merge: +{c['nuevas']:,} nuevas, {c['actualizadas']:,} actualizadas"
+                     + (f", {c['eliminadas']:,} eliminadas" if c["eliminadas"] else "")
+                     + f", total {c['total']:,})")
+
+    def _bajar_egresos(self, api):
+        self._bajar_incremental("egresos", "egresos_full.json", "FechaSalida", SOLAPE_EGRESOS_DIAS,
+                                _clave_egreso, api.fetch_egresos, "lst_egresos_hacienda")
+
+    def _bajar_ingresos(self, api):
+        def bajar(fd, fh):
+            filas = api.fetch_ingresos(fecha_desde=fd, fecha_hasta=fh)
+            canario = getattr(api, "ingresos_fechas", None)
+            self.estado["ingresos_fechas"] = canario
+            # v15.90: si WinCampo vuelve a mover la fecha, esas filas no entran a
+            # la caché; el smoke test nombra la causa con el canario.
+            if canario and canario.get("pct") is not None and canario["pct"] < 80:
+                raise RuntimeError(f"solo {canario['pct']}% de los sub-grupos con FechaIngreso parseable")
+            return filas
+        self._bajar_incremental("ingresos", "ingresos_full.json", "FechaIngreso", SOLAPE_INGRESOS_DIAS,
+                                _clave_ingreso, bajar, "lst_movimiento_hacienda")
+
+    def _bajar_stock(self, api):
+        filas = api.fetch_stock_hacienda()
+        if not filas:
+            raise RuntimeError("caravanas_stock vino vacío; queda la foto anterior")
+        self._guardar_foto("stock", filas)
+        self._anotar("stock", "caravanas_stock", None, self.hoy.isoformat(), len(filas))
+
+    def _bajar_insumos(self, api):
+        filas = api.fetch_stock_insumos()
+        if not filas:
+            raise RuntimeError("lst_stock_de_insumo vino vacío; queda la foto anterior")
+        self._guardar_foto("insumos", filas)
+        self._anotar("insumos", "lst_stock_de_insumo", None, self.hoy.isoformat(), len(filas))
+
+    def _bajar_gasoil(self, api):
+        """Caché por año (como desde v15.77); se pide solo lo que puede haber cambiado.
+
+        El mes en curso, y como mínimo desde 7 días antes de lo último en caché:
+        sin ese solape, lo cargado después de la consulta del último día de un
+        mes no entraría nunca (el 1º ya se pide solo el mes nuevo).
+        """
+        fh = self.hoy.isoformat()
+        anios = range(int(GASOIL_CACHE_DESDE[:4]), self.hoy.year + 1)
+        for anio in anios[:-1]:     # año cerrado sin caché: se baja entero, una sola vez
+            if not (self.dir / f"insumo_repartido_{anio}.json").exists():
+                fd, fa = max(f"{anio}-01-01", GASOIL_CACHE_DESDE), min(f"{anio}-12-31", fh)
+                fs = api.fetch_insumo_repartido(fd, fa)
+                self._escribir(f"insumo_repartido_{anio}.json", fs)
+                self._anotar("gasoil", "movimiento_insumo", fd, fa, len(fs), " (año completo)")
+        por_anio = {a: self._leer(f"insumo_repartido_{a}.json") or [] for a in anios}
+        fechas = [_fecha_fila(r, "FECHA") for fs in por_anio.values() for r in fs]
+        fd = max(f"{self.hoy.year}-01-01", GASOIL_CACHE_DESDE)     # nada en caché: el año entero
+        if fechas:
+            ultima = date.fromisoformat(min(max(fechas), fh))
+            fd = min(self.hoy.replace(day=1), ultima - timedelta(days=SOLAPE_GASOIL_DIAS)).isoformat()
+        frescas = api.fetch_insumo_repartido(fd, fh)
+        if not frescas and any(f >= fd for f in fechas):
+            raise RuntimeError(f"vino vacío y la caché tiene filas desde {fd}; no se pisa")
+        total = 0
+        for anio, viejas in por_anio.items():
+            if anio >= int(fd[:4]):
+                de_anio = [r for r in frescas if _fecha_fila(r, "FECHA")[:4] == str(anio)]
+                viejas = [r for r in viejas if _fecha_fila(r, "FECHA") < fd] + de_anio
+                self._escribir(f"insumo_repartido_{anio}.json", viejas)
+            total += len(viejas)
+        self._anotar("gasoil", "movimiento_insumo", fd, fh, len(frescas), f" (total {total:,})")
+
+    # ── lo que consume el pipeline (mismas firmas y formas que WinCampoAPI) ──
+    def _full(self, archivo):
+        if archivo not in self._mem:
+            filas = self._leer(archivo)
+            if filas is None:
+                raise RuntimeError(f"WinCampo: no hay caché {archivo} y hoy no toca consultar")
+            self._mem[archivo] = filas
+        return self._mem[archivo]
+
+    @staticmethod
+    def _rango(filas, campo, fecha_desde, fecha_hasta):
+        fh = fecha_hasta or date.today().isoformat()
+        fd = fecha_desde or (date.today() - timedelta(days=365)).isoformat()
+        # Sin fecha: como la API, no se descartan acá (los consumidores deciden).
+        return [r for r in filas if not _fecha_fila(r, campo) or fd <= _fecha_fila(r, campo) <= fh]
+
+    def fetch_egresos(self, fecha_desde=None, fecha_hasta=None):
+        return self._rango(self._full("egresos_full.json"), "FechaSalida", fecha_desde, fecha_hasta)
+
+    def fetch_ingresos(self, fecha_desde=None, fecha_hasta=None):
+        return self._rango(self._full("ingresos_full.json"), "FechaIngreso", fecha_desde, fecha_hasta)
+
+    def fetch_muertes(self, fecha_desde=None, fecha_hasta=None):
+        egresos = self.fetch_egresos(fecha_desde, fecha_hasta)
+        muertes = [WinCampoAPI._remap_muerte(e) for e in egresos
+                   if (e.get("MotivoSalida") or "").strip().upper() == "M"]
+        log.info(f"Muertes (MOTIVO=M, caché): {len(muertes)} de {len(egresos)} egresos")
+        return muertes
+
+    def _foto(self, prefijo):
+        fotos = sorted(self.dir.glob(f"{prefijo}_????-??-??.json"))
+        if not fotos:
+            raise RuntimeError(f"WinCampo: no hay foto de {prefijo} en caché y hoy no toca consultar")
+        return self._full(fotos[-1].name)
+
+    def fetch_stock_hacienda(self, fecha=None):
+        return self._foto("stock")
+
+    def fetch_stock_insumos(self, fecha=None):
+        return self._foto("insumos")
+
+    def gasoil_filas(self, desde):
+        """Filas crudas de gasoil de todos los años en caché desde `desde`."""
+        filas, hay = [], False
+        for anio in range(int(desde[:4]), self.hoy.year + 1):
+            fs = self._leer(f"insumo_repartido_{anio}.json")
+            if fs is not None:
+                filas += fs
+                hay = True
+        if not hay:
+            raise RuntimeError("WinCampo: no hay caché de gasoil y hoy no toca consultar")
+        return filas
+
+    # ── visibilidad ──────────────────────────────────────────────
+    def _consultado(self):
+        """Fecha del dato MÁS VIEJO: si stock falló hoy, no dice que todo es de hoy."""
+        al = self.estado.get("datos_al") or {}
+        return datetime.fromisoformat(min(al.values())).strftime("%d/%m/%Y %H:%M") if al else None
+
+    def resumen(self):
+        e = self.estado
+        return {
+            "consultado": self._consultado(),
+            "usuario":    _enmascarar_usuario(e.get("usuario")),
+            "modo":       self.modo,
+            "llamadas":   len(e.get("llamadas") or []),
+            "filas":      e.get("filas") or {},
+            "pendientes": e.get("pendientes") or [],
+        }
+
+
+_diario = None
+
+
+def wincampo_diario(carpeta):
+    """El WinCampoDiario del tick: todo el pipeline usa uno solo (un solo login)."""
+    global _diario
+    if _diario is None:
+        forzar = "--wincampo-forzar" in sys.argv or os.environ.get("WINCAMPO_FORZAR") == "1"
+        _diario = WinCampoDiario(carpeta, forzar=forzar)
+    return _diario

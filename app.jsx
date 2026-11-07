@@ -183,7 +183,7 @@ function descartarAlertaLS(hash) {
 }
 
 // Sub-componente "Actualizado · hace X min" con auto-refresh cada 60s
-function LastUpdate({ iso }) {
+function LastUpdate({ iso, wincampoAl }) {
   const [, setTick] = React.useState(0);
   React.useEffect(() => {
     if (!iso) return;
@@ -192,10 +192,11 @@ function LastUpdate({ iso }) {
   }, [iso]);
 
   const style = { fontSize: 12, color: "var(--ink-mute)" };
-  if (!iso) return <span style={style}>Actualizado recientemente</span>;
+  const wc = wincampoAl ? <span style={style}>· Datos de WinCampo al {wincampoAl}</span> : null;
+  if (!iso) return <><span style={style}>Actualizado recientemente</span>{wc}</>;
 
   const fecha = new Date(iso);
-  if (isNaN(fecha.getTime())) return <span style={style}>Actualizado recientemente</span>;
+  if (isNaN(fecha.getTime())) return <><span style={style}>Actualizado recientemente</span>{wc}</>;
 
   const diffMin = Math.max(0, Math.round((Date.now() - fecha.getTime()) / 60000));
   let label;
@@ -203,7 +204,7 @@ function LastUpdate({ iso }) {
   else if (diffMin < 1440) label = `hace ${Math.floor(diffMin / 60)} h`;
   else label = `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')} ${String(fecha.getHours()).padStart(2,'0')}:${String(fecha.getMinutes()).padStart(2,'0')}`;
 
-  return <span style={style}>Actualizado · {label}</span>;
+  return <><span style={style}>Actualizado · {label}</span>{wc}</>;
 }
 
 /* ============================================================
@@ -653,7 +654,7 @@ function Panel() {
             return (
               <div className="alerts-row alerts-row--empty">
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-                  <LastUpdate iso={D.lastUpdate} />
+                  <LastUpdate iso={D.lastUpdate} wincampoAl={D.wincampoAl} />
                   <button className="btn ghost" style={{ padding: "6px 12px", fontSize: 12 }}>
                     <IconExport /> Exportar
                   </button>
@@ -700,7 +701,7 @@ function Panel() {
                 );
               })}
               <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-                <LastUpdate iso={D.lastUpdate} />
+                <LastUpdate iso={D.lastUpdate} wincampoAl={D.wincampoAl} />
                 <button className="btn ghost" style={{ padding: "6px 12px", fontSize: 12 }}>
                   <IconExport /> Exportar
                 </button>

@@ -150,6 +150,8 @@ window.PEGSA_DATA = {
 
   // Última actualización del pipeline (Sprint 5 — B.2)
   if (ultimaAct?.generado) window.PEGSA_DATA.lastUpdate = ultimaAct.generado;
+  // v15.92: WinCampo se consulta una vez por día; "dd/mm/aaaa hh:mm" → "dd/mm hh:mm"
+  if (ultimaAct?.wincampo?.consultado) window.PEGSA_DATA.wincampoAl = ultimaAct.wincampo.consultado.replace(/\/\d{4}/, "");
 
   const D = window.PEGSA_DATA;
 

@@ -390,6 +390,18 @@ def smoke_test(carpeta, periodo):
                    f"solo {_ifec.get('con_fecha')}/{_ifec.get('subgrupos')} sub-grupos ({_ifec['pct']}%) "
                    f"con FechaIngreso parseable — ¿WinCampo cambió el campo o el formato?")
 
+    # --- caché de WinCampo (v15.92): aviso, no error; el portal sigue andando ---
+    try:
+        from wincampo_source import cache_edad_horas, CACHE_EDAD_MAX_H
+        _edad = cache_edad_horas(base)
+        if _edad is None or _edad > CACHE_EDAD_MAX_H:
+            results["avisos"].append(f"wincampo.cache_edad: {_edad} h (máximo {CACHE_EDAD_MAX_H} h)")
+            log.warning("  [!] " + results["avisos"][-1])
+        else:
+            results["checks_passed"] += 1
+    except Exception as e:
+        results["avisos"].append(f"wincampo.cache_edad: no se pudo medir ({e})")
+
     # --- insumos (al menos los 7 críticos) ---
     ins = _load(f"stock_insumos_{periodo}.json")
     if ins:
@@ -3652,12 +3664,13 @@ def main():
     # v15.10: migración completa. Las 5 tablas (Stock, Egresos, Ingresos,
     # Muertes, Stock Insumos) vienen 100% de WinCampo Web; Consumo del Mixer
     # Dropbox. Ya no hay SQL ni conectar(): el adapter es la única fuente.
+    # v15.92: una consulta por día; los fetch_* de abajo salen de la caché.
     try:
-        from wincampo_source import WinCampoAPI
-        wcampo = WinCampoAPI()
-        log.info("  + WinCampoAPI conectado (modo wincampo_web)")
+        from wincampo_source import wincampo_diario
+        wcampo = wincampo_diario(carpeta)
+        log.info(f"  + WinCampo modo {wcampo.modo}")
     except Exception as e:
-        log.error(f"  x Falla conectar WinCampoAPI: {e}")
+        log.error(f"  x Falla preparar WinCampo: {e}")
         raise
 
     resumen = {"generado": datetime.now().isoformat(), "periodo": periodo, "modulos": {}}
@@ -5049,6 +5062,9 @@ def main():
     except Exception as e:
         log.error(f"  ✗ Smoke test crasheó: {e}")
         resumen["modulos"]["smoke_test"] = {"ok": False, "errors": [f"smoke test crashed: {e}"]}
+
+    # v15.92: de cuándo son los datos de WinCampo (el Home lo muestra).
+    resumen["wincampo"] = wcampo.resumen()
 
     separador()
     guardar(resumen, carpeta, "ultima_actualizacion.json")
@@ -8034,11 +8050,11 @@ def generar_compras_ingresos(carpeta_out, log=None, regs_ing=None, muertes_raw=N
 
     if regs_ing is None:
         try:
+            # v15.92: de la caché diaria, nunca de la API.
             import wincampo_source
-            _cli = wincampo_source.WinCampoAPI()
-            regs_ing = _cli.fetch_ingresos(fecha_desde=desde.isoformat(),
-                                           fecha_hasta=hasta.isoformat())
-            log.info(f"  + compras/ingresos: {len(regs_ing):,} sub-grupos pedidos a la API")
+            regs_ing = wincampo_source.wincampo_diario(carpeta_out).fetch_ingresos(
+                fecha_desde=desde.isoformat(), fecha_hasta=hasta.isoformat())
+            log.info(f"  + compras/ingresos: {len(regs_ing):,} sub-grupos de la caché")
         except Exception as e:
             log.warning(f"  ⚠ compras/ingresos: no pude traer los ingresos: {e}")
             return None
@@ -10491,17 +10507,16 @@ RR_FANT_MIN_DIAS = 7   # si ingresó hace <= 7 días, la lectura es su pesada de
 # necesita el texto exacto. Normalizar aca romperia el match del otro lado.
 GASOIL_DESDE    = "2025-01-01"   # el JSON contable arranca en 2024-12
 GASOIL_INSUMO   = "DIESEL"       # COD_INSUMO 99; el reporte trae el nombre
-GASOIL_CACHE    = "wincampo_cache"
 GASOIL_MAX_DET  = 2000           # mas que esto: el detalle no se publica
 
 
 def generar_gasoil_repartido(carpeta_out, log=None):
     """Publica gasoil_repartido.json (litros por mes y por maquina).
 
-    Cache por anio en datos\\wincampo_cache\\insumo_repartido_<anio>.json: los
-    anios cerrados no se vuelven a pedir, solo el corriente. Si el endpoint
-    falla, NO se cae el tick: warning y queda el JSON anterior (mismo patron
-    que fantasmas.json).
+    Cache por anio en datos\\wincampo_cache\\insumo_repartido_<anio>.json. v15.92:
+    la refresca WinCampoDiario una vez por dia; aca solo se lee. Sin cache NO se
+    cae el tick: warning y queda el JSON anterior (mismo patron que
+    fantasmas.json).
 
     Devuelve el dict publicado o None.
     """
@@ -10509,38 +10524,15 @@ def generar_gasoil_repartido(carpeta_out, log=None):
         log = logging.getLogger("gasoil")
     from datetime import date as _date
     hoy = _date.today()
-    anio_hoy = hoy.year
     ruta_out = Path(carpeta_out) / "gasoil_repartido.json"
-    cache_dir = Path(carpeta_out) / GASOIL_CACHE
+    cache_dir = Path(carpeta_out) / "wincampo_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        from wincampo_source import WinCampoAPI
-        wc = WinCampoAPI()
-        filas, desde_real = [], GASOIL_DESDE
-        for anio in range(int(GASOIL_DESDE[:4]), anio_hoy + 1):
-            cache = cache_dir / f"insumo_repartido_{anio}.json"
-            if anio < anio_hoy and cache.exists():
-                try:
-                    filas += json.loads(cache.read_text(encoding="utf-8"))
-                    log.info(f"  · {anio}: desde cache ({cache.name})")
-                    continue
-                except Exception as e:
-                    log.warning(f"  ⚠ cache {cache.name} ilegible ({e}), se vuelve a pedir")
-            d1 = max(f"{anio}-01-01", GASOIL_DESDE)
-            d2 = min(f"{anio}-12-31", hoy.isoformat())
-            # Sin cap de rango: verificado que 638 d en una llamada dan lo
-            # mismo que mes a mes (ver fetch_insumo_repartido).
-            fs = wc.fetch_insumo_repartido(d1, d2)
-            filas += fs
-            try:
-                cache.write_text(json.dumps(fs, ensure_ascii=False,
-                                            separators=(",", ":")), encoding="utf-8")
-            except Exception as e:
-                log.warning(f"  ⚠ no pude cachear {cache.name}: {e}")
+        from wincampo_source import wincampo_diario
+        filas = wincampo_diario(carpeta_out).gasoil_filas(GASOIL_DESDE)
     except Exception as e:
-        log.warning(f"  ⚠ gasoil repartido: WinCampo no respondio ({e}); "
-                    f"queda el JSON anterior")
+        log.warning(f"  ⚠ gasoil repartido: sin datos ({e}); queda el JSON anterior")
         return None
 
     raw_keys = sorted({k for f in filas for k in f})
