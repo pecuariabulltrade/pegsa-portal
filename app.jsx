@@ -192,7 +192,23 @@ function LastUpdate({ iso, wincampoAl }) {
   }, [iso]);
 
   const style = { fontSize: 12, color: "var(--ink-mute)" };
-  const wc = wincampoAl ? <span style={style}>· Datos de WinCampo al {wincampoAl}</span> : null;
+  // v15.93: tipo de la última consulta, próxima, y cargas con fecha atrasada en revisión
+  const wi = (window.PEGSA_DATA || {}).wincampoInfo || {};
+  const pa = wi.pendientes_atraso || {};
+  const nAtr = (pa.egresos || 0) + (pa.ingresos || 0);
+  const sr = wi.sin_resolver_atraso || {};
+  const wcTitle = [
+    wi.ultima_tipo ? `Última consulta: ${wi.ultima_tipo} (${wi.ultima_hora || "—"})` : null,
+    wi.proxima_consulta ? `Próxima: ${wi.proxima_consulta}` : null,
+  ].filter(Boolean).join(" · ");
+  const atrTitle = `En revisión: ${pa.egresos || 0} egresos (salieron del stock sin egreso cargado) y `
+    + `${pa.ingresos || 0} ingresos (entraron al stock con fecha vieja). La próxima consulta mira 400 días hacia atrás.`
+    + ((sr.egresos || sr.ingresos) ? ` Ya informados sin resolver: ${sr.egresos || 0} egresos, ${sr.ingresos || 0} ingresos.` : "");
+  const wc = wincampoAl ? <>
+    <span style={style} title={wcTitle}>· Datos de WinCampo al {wincampoAl}</span>
+    {nAtr > 0 && <span style={{ ...style, color: "var(--warn)" }} title={atrTitle}>
+      · ⚠ {nAtr} movimiento{nAtr === 1 ? "" : "s"} con fecha atrasada en revisión</span>}
+  </> : null;
   if (!iso) return <><span style={style}>Actualizado recientemente</span>{wc}</>;
 
   const fecha = new Date(iso);
