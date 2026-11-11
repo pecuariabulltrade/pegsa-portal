@@ -284,8 +284,7 @@
     "stock-insumos":     "insumos",
     "mercado":           "mercado",
     "tesoreria":         "tesoreria",
-    "historico":         "historico",
-    "parametros-base":   "baseparams"
+    "historico":         "historico"
   };
 
   // ---------- Builder ----------

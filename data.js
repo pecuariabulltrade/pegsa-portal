@@ -35,8 +35,7 @@ window.PEGSA_DATA = {
     { n: "04", grupo: "operativo", id: "tesoreria",         titulo: "Tesorería",            desc: "Saldos · cheques · USD · deuda",             estado: "vivo",       kpi: "—", kpiLabel: "sin datos" },
     { n: "06", grupo: "operativo", id: "historico",         titulo: "Histórico & Evolución",desc: "Hasta 30 meses de historia",                 estado: "acumulando", kpi: "—", kpiLabel: "sin datos" },
     // v15.94: fuera 05 Simulador Feedlot, 07 Estado de Resultados y 08 Flujo de Fondos (obsoletos).
-    // ── Config (no se muestra en sidebar; se accede vía el Simulador) ──
-    { n: "09", grupo: "config",    id: "parametros-base",   titulo: "Parámetros de Mercado", desc: "Precios y rendimientos por categoría para la indiferencia", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" }
+    // v15.97: fuera 09 Parámetros de Mercado (era del simulador viejo).
   ],
   alertas: []
 };
@@ -53,14 +52,13 @@ window.PEGSA_DATA = {
     return null;
   };
 
-  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, negocios, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, preciosCompraReal, tesoreriaDW, tesoreriaDWHist, stockEstHaras] = await Promise.all([
+  const [stockKpis, stockDiario, stockInsumos, mercado, tesoreria, financierohist, valuacionhist, stockPegsa, consumo, stockHistorico, ultimaAct, productivo, indicadores, eficienciaHist, comportamientoHist, preciosInf, preciosInfHist, preciosCompraReal, tesoreriaDW, tesoreriaDWHist, stockEstHaras] = await Promise.all([
     fetchJson('stock_kpis_2025.json'),
     fetchJson('stock_diario.json'),
     fetchJson('stock_insumos_2025.json'),
     fetchJson('mercado_precios.json'),
     fetchJson('tesoreria_ultimo.json'),
     fetchJson('financiero_historico.json'),
-    fetchJson('negocios_resumen.json'),
     fetchJson('valuacion_historica.json'),
     fetchJson('stock_prop_PEGSA_2025.json'),
     fetchJson('consumo_2025.json'),

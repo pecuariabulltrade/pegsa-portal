@@ -160,7 +160,7 @@ function Sidebar({ active, onSelect, modulos }) {
   );
 
   // Particionar módulos por grupo. `config` se omite del sidebar
-  // (parametros-base se accede vía el Simulador, no es módulo de uso diario).
+  // (v15.97: parametros-base ya no existe).
   const operativos = modulos.filter(m => m.grupo === "operativo");
   const economicos = modulos.filter(m => m.grupo === "economico");
 

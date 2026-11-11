@@ -9,12 +9,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="js/chart-patch.js"></script>
 <!-- v15.95: fmt/GREEN/RED/GOLD (antes en modulo-01-resultados.js) -->
-<script src="js/comun.js?v=1595"></script>
+<script src="js/comun.js?v=1597"></script>
 
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/v2-overrides.css">
 <link rel="stylesheet" href="css/historico.css">
-<link rel="stylesheet" href="css/simulador.css">
 <link rel="stylesheet" href="css/animations.css">
 
 <!-- Panel Principal — fuentes -->
@@ -445,14 +444,13 @@
     </div>
   </div>
 
-  <!-- Nav tabs (v14.0): 7 -> 5 con jerarquía. Histórico, Seguimiento e
-       Indiferencia de mercado pasan a sub-tabs del nuevo "Información
-       de Mercado". Los ids "mercadoTabInferencia" / "panelMercadoInferencia"
-       se mantienen (no se renombran a indiferencia2) porque el bridge
-       URL ?mod=mercado&tab=inferencia del mobile usa esa clave. -->
+  <!-- Nav tabs (v15.97): 3. Fuera Últimos Negocios de Compra; Información
+       de Mercado muestra directo el Histórico (Seguimiento e Indiferencia de
+       mercado retirados). Los ids "mercadoTabInferencia" / "panelMercadoInferencia"
+       se mantienen porque el bridge URL ?mod=mercado&tab=inferencia del mobile
+       usa esa clave. -->
   <div class="nav-tabs">
     <div class="nav-tab active" id="mercadoTabHacienda"     onclick="mercadoTab('hacienda',this)">🐄 Precios de Mercado</div>
-    <div class="nav-tab"        id="mercadoTabNegocios"     onclick="mercadoTab('negocios',this)">📋 Últimos Negocios de Compra</div>
     <div class="nav-tab"        id="mercadoTabInferencia"   onclick="mercadoTab('inferencia',this)">💰 Indiferencia de Precios de Compra</div>
     <div class="nav-tab"        id="mercadoTabInfoMercado"  onclick="mercadoTab('infomercado',this)">📈 Información de Mercado</div>
   </div>
@@ -486,15 +484,6 @@
     <!-- Panel Granos (vacío, mantenido para compatibilidad JS) -->
     <div id="panelMercadoCommodities" style="display:none"></div>
 
-    <!-- Panel Negocios -->
-    <div id="panelMercadoNegocios" style="display:none">
-      <div class="panel" style="display:block">
-        <div class="section-header"><span class="section-title">Negocios Ejecutados</span><span class="section-sub">Google Sheets · Cargas / Ventas · Compras</span></div>
-        <div id="mercadoNegociosMsg" class="nota-box"></div>
-        <div id="mercadoNegociosBody"></div>
-      </div>
-    </div>
-
     <!-- v15.95: panel "Análisis Compras" borrado (renderAnalisis() también). -->
 
     <!-- Panel Inferencia (v8): tabla + line chart de precios_inferencia_historico.
@@ -515,23 +504,17 @@
       </div>
     </div>
 
-    <!-- Panel Info Mercado (v14.0): wrapper de 3 sub-tabs Histórico /
-         Seguimiento / Indiferencia (de mercado). El primer sub-tab abre
-         por default. infoMercadoTab() alterna entre los 3 paneles internos. -->
+    <!-- Panel Info Mercado (v15.97): sólo el Histórico (Seguimiento e
+         Indiferencia de mercado retirados). -->
     <div id="panelMercadoInfoMercado" style="display:none">
       <div class="panel" style="display:block;margin-bottom:0">
         <div class="section-header">
           <span class="section-title">Información de Mercado</span>
-          <span class="section-sub">Histórico · Seguimiento · Indiferencia</span>
-        </div>
-        <div class="nav-tabs sub-tabs" style="margin:14px 0 22px;padding:0;position:static;top:auto;box-shadow:none">
-          <div class="nav-tab active" id="infoMercadoTabHistorico"    onclick="infoMercadoTab('historico',this)">📊 Histórico</div>
-          <div class="nav-tab"        id="infoMercadoTabSeguimiento"  onclick="infoMercadoTab('seguimiento',this)">📈 Seguimiento</div>
-          <div class="nav-tab"        id="infoMercadoTabIndiferencia" onclick="infoMercadoTab('indiferencia',this)">💰 Indiferencia (mercado)</div>
+          <span class="section-sub">Histórico de precios</span>
         </div>
       </div>
 
-      <!-- Panel Histórico (v14.0: ahora dentro de InfoMercado · default visible) -->
+      <!-- Panel Histórico (dentro de InfoMercado) -->
       <div id="panelMercadoHistorico" style="display:block">
         <div class="panel" style="display:block">
           <div class="section-header"><span class="section-title">Evolución Histórica de Precios</span><span class="section-sub">Todas las categorías · $/kg en pie · MAG</span></div>
@@ -545,36 +528,6 @@
         </div>
       </div>
 
-      <!-- Panel Seguimiento Económico Diario (v14.0: ahora dentro de InfoMercado) -->
-      <div id="panelMercadoSeguimiento" style="display:none">
-        <div class="panel" style="display:block">
-          <div class="section-header">
-            <span class="section-title">Seguimiento Económico Diario</span>
-            <span class="section-sub">Simulación automática · 5 categorías MAG · Precios del día</span>
-          </div>
-          <div class="nota-box">Resultado por cabeza según precios de hacienda e insumos del día. Los parámetros operativos (flete, comisiones, sanidad, etc.) se toman de los valores cargados en el Simulador.</div>
-          <div id="segHoyTabla" style="margin-top:16px"></div>
-          <div id="segChartWrap" style="margin-top:28px">
-            <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:10px">Evolución histórica · seleccioná la métrica</div>
-            <div id="segMetricBtns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
-            <div class="panel-chart-wrap" style="margin:0">
-              <canvas id="chartSeguimiento" style="max-height:380px"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panel Indiferencia (de mercado · v14.0: ahora dentro de InfoMercado) -->
-      <div id="panelMercadoIndiferencia" style="display:none">
-        <div class="panel" style="display:block">
-          <div class="section-header">
-            <span class="section-title">Precios de Indiferencia · Objetivo $100.000/cab</span>
-            <span class="section-sub">Cuánto pagar por kg para que la tropa rinda $100k/cab</span>
-          </div>
-          <div class="nota-box" style="margin-bottom:0">PI calculado con parámetros base actuales + insumos vigentes + reglas de pesoS dinámico. Verde = mercado por debajo de PI (oportunidad de compra).</div>
-          <div id="indiferenciaBody" style="margin-top:20px"></div>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -659,430 +612,7 @@
 </div>
 
 
-<!-- ══ SCREEN SIMULADOR FEEDLOT ══ -->
-<!-- v15.95 · sin acceso desde el menú. NO BORRAR: es el almacén de entradas de
-     calcSim() (lee los inputs tn-/ta-/va-/in- de esta pantalla); lo usa
-     Mercado → Indiferencia vía window.SIM_LAST_RESULTS. -->
-<div id="screenSimulador" class="screen" style="display:none">
-  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">Módulo 05 · Simulación Económica</div>
-        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">SIMULADOR FEEDLOT</div>
-        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(212,168,75,.5);margin-top:6px">Terneros · Terneras · Vacas · Invernada · Análisis de rentabilidad</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;">← Panel Principal</button>
-        <div id="simPrecioMaiz" style="font-family:'DM Mono',monospace;font-size:12px;color:rgba(212,168,75,.6)"></div>
-      </div>
-    </div>
-    <!-- KPI results strip -->
-    <div id="simKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.08);margin-top:24px">
-      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Días en Engorde</div><div id="skpi-dias" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
-      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Costo Producción ($/kg)</div><div id="skpi-costo" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
-      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">Resultado ($/cabeza)</div><div id="skpi-resultado" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
-      <div style="background:var(--ink);padding:16px 20px"><div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(212,168,75,.5);margin-bottom:6px">TIR Anual Equiv.</div><div id="skpi-tir" style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif">—</div></div>
-    </div>
-  </div>
-
-  <!-- Nav tabs -->
-  <div class="nav-tabs">
-    <div class="nav-tab active" id="simTabTerneros" onclick="simTab('terneros',this)">🐂 Terneros / Novillos</div>
-    <div class="nav-tab" id="simTabTerneras" onclick="simTab('terneras',this)">🐄 Terneras / Vaquillonas</div>
-    <div class="nav-tab" id="simTabVacas" onclick="simTab('vacas',this)">🐮 Vacas</div>
-    <div class="nav-tab" id="simTabInvernada" onclick="simTab('invernada',this)">🌿 Invernada / Recría</div>
-  </div>
-
-  <!-- TERNEROS panel -->
-  <div id="panelSimTerneros" style="display:block;padding:32px 48px">
-    <div style="display:grid;grid-template-columns:420px 1fr;gap:28px">
-      <!-- INPUTS -->
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
-
-        <!-- Panel 1: Precios y Kilos -->
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios y Kilos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="tn-pc" type="number" value="4250" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="tn-pcarne" type="number" value="8100" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="tn-rend" type="number" step="0.1" value="56" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="tn-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Kg Ingreso (kg/cab)</div><input class="sim-input" id="tn-pe" type="number" value="330" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Kg Egreso (kg/cab)</div><input class="sim-input" id="tn-ps" type="number" value="500" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="tn-mort" type="number" step="0.01" value="0" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="tn-decomiso" type="number" step="0.01" value="0" onchange="calcSim('terneros')"></div>
-          </div>
-        </div>
-
-        <!-- Panel 2: Parámetros Comerciales -->
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🚛 Parámetros Comerciales</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="tn-kmo" type="number" value="275" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="tn-kmd" type="number" value="640" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="tn-pflete" type="number" value="2750" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="tn-guias" type="number" value="1725" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="tn-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="tn-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneros')"></div>
-            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Tasa CF anual (%)</div><input class="sim-input" id="tn-tcf" type="number" step="1" value="32" onchange="calcSim('terneros')" style="border-color:rgba(26,22,18,.2)"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro compra (días)</div><input class="sim-input" id="tn-pcf-com" type="number" value="30" onchange="calcSim('terneros')" style="border-color:rgba(26,22,18,.2)"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro venta (días)</div><input class="sim-input" id="tn-pcf-vta" type="number" value="30" onchange="calcSim('terneros')" style="border-color:rgba(26,22,18,.2)"></div>
-          </div>
-        </div>
-
-        <!-- Panel 3: Productivos + Insumos y Ración -->
-        <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Productivos e Insumos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día) <span id="tn-subcat" style="font-style:italic;font-weight:400;font-size:0.82em;opacity:0.75"></span></div><input class="sim-input sim-calc" id="tn-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Consumo TC auto (% PV)</div><input class="sim-input sim-calc" id="tn-consumo" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="tn-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="tn-gluten" type="number" value="130944" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="tn-nucleo" type="number" value="470500" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="tn-germen" type="number" value="235999" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Silo ($/tn)</div><input class="sim-input sim-calc" id="tn-silo" type="number" value="150910" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold);cursor:default" title="Calculado: (Maíz × 0.86 × 7400) / 11640 × 1.15"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="tn-racion" type="number" value="221" onchange="calcSim('terneros')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 63.181 (contraflete) + 20.942 (flete local) · Composición y factor IVA 1,15 según Excel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="tn-hotel" type="number" value="310" onchange="calcSim('terneros')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="tn-sanidad" type="number" value="7500" onchange="calcSim('terneros')"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RESULTS -->
-      <div id="simResultsTerneros">
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Resultados del Análisis</div>
-        <div id="simRes-terneros" style="background:var(--paper)"></div>
-      </div>
-    </div>
-    <!-- CUADRO DIETA full-width -->
-    <div class="sim-diet-wrap">
-      <div class="sim-diet-hdr"><span>🌽 Composición de Dieta por Etapas — Terneros</span><button class="sim-diet-reset" onclick="resetDieta('terneros')">↩ Restaurar valores Excel</button></div>
-      <table class="sim-diet-table">
-        <thead><tr><th>Ingrediente</th><th>Etapa 1</th><th>Etapa 2</th><th>Etapa 3</th><th>Ponderado</th></tr></thead>
-        <tbody>
-          <tr class="sdt-inp"><td>Maíz (%)</td><td><input class="sim-diet-input" id="tn-d1-maiz" type="number" min="0" max="100" value="37" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-maiz" type="number" min="0" max="100" value="35" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-maiz" type="number" min="0" max="100" value="36" onchange="calcSim('terneros')"></td><td id="tn-dw-maiz" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Silo (%)</td><td><input class="sim-diet-input" id="tn-d1-silo" type="number" min="0" max="100" value="20" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-silo" type="number" min="0" max="100" value="22" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-silo" type="number" min="0" max="100" value="22" onchange="calcSim('terneros')"></td><td id="tn-dw-silo" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Gluten (%)</td><td><input class="sim-diet-input" id="tn-d1-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-gluten" type="number" min="0" max="100" value="30" onchange="calcSim('terneros')"></td><td id="tn-dw-gluten" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Núcleo (%)</td><td><input class="sim-diet-input" id="tn-d1-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneros')"></td><td id="tn-dw-nucleo" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Germen (%)</td><td><input class="sim-diet-input" id="tn-d1-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d2-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneros')"></td><td><input class="sim-diet-input" id="tn-d3-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneros')"></td><td id="tn-dw-germen" style="text-align:center">—</td></tr>
-          <tr class="sdt-sum"><td>Total (%)</td><td id="tn-dsum1">—</td><td id="tn-dsum2">—</td><td id="tn-dsum3">—</td><td>—</td></tr>
-        </tbody>
-        <tbody id="simDieta-terneros"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- TERNERAS panel -->
-  <div id="panelSimTerneras" style="display:none;padding:32px 48px">
-    <div style="display:grid;grid-template-columns:420px 1fr;gap:28px">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
-        <!-- Panel 1: Precios y Kilos -->
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios y Kilos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="ta-pc" type="number" value="4000" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="ta-pcarne" type="number" value="7800" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="ta-rend" type="number" step="0.1" value="54" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="ta-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Kg Ingreso (kg/cab)</div><input class="sim-input" id="ta-pe" type="number" value="300" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Kg Egreso (kg/cab)</div><input class="sim-input" id="ta-ps" type="number" value="450" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="ta-mort" type="number" step="0.01" value="0" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="ta-decomiso" type="number" step="0.01" value="0" onchange="calcSim('terneras')"></div>
-          </div>
-        </div>
-        <!-- Panel 2: Parámetros Comerciales -->
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🚛 Parámetros Comerciales</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="ta-kmo" type="number" value="275" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="ta-kmd" type="number" value="640" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="ta-pflete" type="number" value="2750" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="ta-guias" type="number" value="1725" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="ta-ccom" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="ta-cvta" type="number" step="0.1" value="3" onchange="calcSim('terneras')"></div>
-            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Tasa CF anual (%)</div><input class="sim-input" id="ta-tcf" type="number" step="1" value="32" onchange="calcSim('terneras')" style="border-color:rgba(26,22,18,.2)"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro compra (días)</div><input class="sim-input" id="ta-pcf-com" type="number" value="30" onchange="calcSim('terneras')" style="border-color:rgba(26,22,18,.2)"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro venta (días)</div><input class="sim-input" id="ta-pcf-vta" type="number" value="30" onchange="calcSim('terneras')" style="border-color:rgba(26,22,18,.2)"></div>
-          </div>
-        </div>
-        <!-- Panel 3: Productivos + Insumos y Ración -->
-        <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Productivos e Insumos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día) <span id="ta-subcat" style="font-style:italic;font-weight:400;font-size:0.82em;opacity:0.75"></span></div><input class="sim-input sim-calc" id="ta-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Consumo TC auto (% PV)</div><input class="sim-input sim-calc" id="ta-consumo" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="ta-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="ta-gluten" type="number" value="130944" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="ta-nucleo" type="number" value="470500" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="ta-germen" type="number" value="235999" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Silo ($/tn)</div><input class="sim-input sim-calc" id="ta-silo" type="number" value="150910" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold);cursor:default" title="Calculado: (Maíz × 0.86 × 7400) / 11640 × 1.15"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="ta-racion" type="number" value="221" onchange="calcSim('terneras')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 63.181 (contraflete) + 20.942 (flete local) · Composición y factor IVA 1,15 según Excel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="ta-hotel" type="number" value="310" onchange="calcSim('terneras')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="ta-sanidad" type="number" value="7500" onchange="calcSim('terneras')"></div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Resultados del Análisis</div>
-        <div id="simRes-terneras" style="background:var(--paper)"></div>
-      </div>
-    </div>
-    <!-- CUADRO DIETA full-width -->
-    <div class="sim-diet-wrap">
-      <div class="sim-diet-hdr"><span>🌽 Composición de Dieta por Etapas — Terneras</span><button class="sim-diet-reset" onclick="resetDieta('terneras')">↩ Restaurar valores Excel</button></div>
-      <table class="sim-diet-table">
-        <thead><tr><th>Ingrediente</th><th>Etapa 1</th><th>Etapa 2</th><th>Etapa 3</th><th>Ponderado</th></tr></thead>
-        <tbody>
-          <tr class="sdt-inp"><td>Maíz (%)</td><td><input class="sim-diet-input" id="ta-d1-maiz" type="number" min="0" max="100" value="38" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-maiz" type="number" min="0" max="100" value="37" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-maiz" type="number" min="0" max="100" value="37" onchange="calcSim('terneras')"></td><td id="ta-dw-maiz" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Silo (%)</td><td><input class="sim-diet-input" id="ta-d1-silo" type="number" min="0" max="100" value="23" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-silo" type="number" min="0" max="100" value="21" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-silo" type="number" min="0" max="100" value="21" onchange="calcSim('terneras')"></td><td id="ta-dw-silo" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Gluten (%)</td><td><input class="sim-diet-input" id="ta-d1-gluten" type="number" min="0" max="100" value="26" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-gluten" type="number" min="0" max="100" value="30" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-gluten" type="number" min="0" max="100" value="30" onchange="calcSim('terneras')"></td><td id="ta-dw-gluten" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Núcleo (%)</td><td><input class="sim-diet-input" id="ta-d1-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('terneras')"></td><td id="ta-dw-nucleo" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Germen (%)</td><td><input class="sim-diet-input" id="ta-d1-germen" type="number" min="0" max="100" value="9" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d2-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneras')"></td><td><input class="sim-diet-input" id="ta-d3-germen" type="number" min="0" max="100" value="8" onchange="calcSim('terneras')"></td><td id="ta-dw-germen" style="text-align:center">—</td></tr>
-          <tr class="sdt-sum"><td>Total (%)</td><td id="ta-dsum1">—</td><td id="ta-dsum2">—</td><td id="ta-dsum3">—</td><td>—</td></tr>
-        </tbody>
-        <tbody id="simDieta-terneras"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- VACAS panel -->
-  <div id="panelSimVacas" style="display:none;padding:32px 48px">
-    <div style="display:grid;grid-template-columns:420px 1fr;gap:28px">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
-        <!-- Panel 1: Precios y Kilos -->
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios y Kilos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="va-pc" type="number" value="3450" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="va-pcarne" type="number" value="7500" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="va-rend" type="number" step="0.1" value="52.5" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Precio Venta auto ($/kg pie)</div><input class="sim-input sim-calc" id="va-pv" type="number" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Kg Ingreso (kg/cab)</div><input class="sim-input" id="va-pe" type="number" value="500" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Kg Egreso (kg/cab)</div><input class="sim-input" id="va-ps" type="number" value="600" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="va-mort" type="number" step="0.001" value="0.54" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="va-decomiso" type="number" step="0.01" value="0.66" onchange="calcSim('vacas')"></div>
-          </div>
-        </div>
-        <!-- Panel 2: Parámetros Comerciales -->
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🚛 Parámetros Comerciales</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="va-kmo" type="number" value="275" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="va-kmd" type="number" value="640" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="va-pflete" type="number" value="2750" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="va-guias" type="number" value="1725" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="va-ccom" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="va-cvta" type="number" step="0.1" value="3" onchange="calcSim('vacas')"></div>
-            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Tasa CF anual (%)</div><input class="sim-input" id="va-tcf" type="number" step="1" value="32" onchange="calcSim('vacas')" style="border-color:rgba(26,22,18,.2)"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro compra (días)</div><input class="sim-input" id="va-pcf-com" type="number" value="30" onchange="calcSim('vacas')" style="border-color:rgba(26,22,18,.2)"></div>
-            <div><div class="sim-label" style="color:rgba(26,22,18,.5)">Plazo cobro venta (días)</div><input class="sim-input" id="va-pcf-vta" type="number" value="30" onchange="calcSim('vacas')" style="border-color:rgba(26,22,18,.2)"></div>
-          </div>
-        </div>
-        <!-- Panel 3: Productivos + Insumos y Ración -->
-        <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Productivos e Insumos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label" style="color:var(--gold)">↳ ADP auto (kg/día)</div><input class="sim-input sim-calc" id="va-ad" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Consumo TC auto (% PV)</div><input class="sim-input sim-calc" id="va-consumo" type="number" step="0.001" readonly style="background:rgba(184,146,42,.06);border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div style="grid-column:1/-1;border-top:1px solid rgba(26,22,18,.1);margin:4px 0"></div>
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="va-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label">Gluten Feed ($/tn)</div><input class="sim-input" id="va-gluten" type="number" value="130944" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Núcleo ($/tn)</div><input class="sim-input" id="va-nucleo" type="number" value="470500" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Germen ($/tn)</div><input class="sim-input" id="va-germen" type="number" value="235999" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Silo ($/tn)</div><input class="sim-input sim-calc" id="va-silo" type="number" value="150910" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold);cursor:default" title="Calculado: (Maíz × 0.86 × 7400) / 11640 × 1.15"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="va-racion" type="number" value="221" readonly style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-          </div>
-          <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(26,22,18,.45);margin-top:8px">Maíz neto feedlot = pizarra − 63.181 (contraflete) + 20.942 (flete local) · Composición y factor IVA 1,15 según Excel</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="va-hotel" type="number" value="310" onchange="calcSim('vacas')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="va-sanidad" type="number" value="7500" onchange="calcSim('vacas')"></div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Resultados del Análisis</div>
-        <div id="simRes-vacas" style="background:var(--paper)"></div>
-      </div>
-    </div>
-    <!-- CUADRO DIETA full-width -->
-    <div class="sim-diet-wrap">
-      <div class="sim-diet-hdr"><span>🌽 Composición de Dieta por Etapas — Vacas</span><button class="sim-diet-reset" onclick="resetDieta('vacas')">↩ Restaurar valores Excel</button></div>
-      <table class="sim-diet-table">
-        <thead><tr><th>Ingrediente</th><th>Etapa 1</th><th>Etapa 2</th><th>Etapa 3</th><th>Ponderado</th></tr></thead>
-        <tbody>
-          <tr class="sdt-inp"><td>Maíz (%)</td><td><input class="sim-diet-input" id="va-d1-maiz" type="number" min="0" max="100" value="50" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-maiz" type="number" min="0" max="100" value="32" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-maiz" type="number" min="0" max="100" value="33" onchange="calcSim('vacas')"></td><td id="va-dw-maiz" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Silo (%)</td><td><input class="sim-diet-input" id="va-d1-silo" type="number" min="0" max="100" value="50" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-silo" type="number" min="0" max="100" value="21" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-silo" type="number" min="0" max="100" value="20" onchange="calcSim('vacas')"></td><td id="va-dw-silo" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Gluten (%)</td><td><input class="sim-diet-input" id="va-d1-gluten" type="number" min="0" max="100" value="0" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-gluten" type="number" min="0" max="100" value="31" onchange="calcSim('vacas')"></td><td id="va-dw-gluten" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Núcleo (%)</td><td><input class="sim-diet-input" id="va-d1-nucleo" type="number" min="0" max="100" value="0" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-nucleo" type="number" min="0" max="100" value="4" onchange="calcSim('vacas')"></td><td id="va-dw-nucleo" style="text-align:center">—</td></tr>
-          <tr class="sdt-inp"><td>Germen (%)</td><td><input class="sim-diet-input" id="va-d1-germen" type="number" min="0" max="100" value="0" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d2-germen" type="number" min="0" max="100" value="12" onchange="calcSim('vacas')"></td><td><input class="sim-diet-input" id="va-d3-germen" type="number" min="0" max="100" value="12" onchange="calcSim('vacas')"></td><td id="va-dw-germen" style="text-align:center">—</td></tr>
-          <tr class="sdt-sum"><td>Total (%)</td><td id="va-dsum1">—</td><td id="va-dsum2">—</td><td id="va-dsum3">—</td><td>—</td></tr>
-        </tbody>
-        <tbody id="simDieta-vacas"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- INVERNADA panel -->
-  <div id="panelSimInvernada" style="display:none;padding:32px 48px">
-    <div style="display:grid;grid-template-columns:420px 1fr;gap:28px">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Parámetros de Entrada</div>
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">🌽 Suplementación</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Maíz ($/tn)</div><input class="sim-input" id="in-maiz" type="number" value="236000" onchange="syncPrecios('maiz',this.value)"></div>
-            <div><div class="sim-label" style="color:var(--gold)">↳ Costo Ración ($/kgTC)</div><input class="sim-input sim-calc" id="in-racion" type="number" value="221" onchange="calcSim('invernada')" style="border-color:rgba(184,146,42,.4);color:var(--gold)"></div>
-            <div><div class="sim-label">Verdeos y Pasturas ($/ha/año)</div><input class="sim-input" id="in-pasto" type="number" value="95338" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Carga (cab/ha)</div><input class="sim-input" id="in-carga" type="number" step="0.1" value="1" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="in-hotel" type="number" value="155" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="in-sanidad" type="number" value="7500" onchange="calcSim('invernada')"></div>
-          </div>
-        </div>
-        <div class="panel" style="display:block;margin-bottom:16px">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">📊 Parámetros Productivos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Peso Entrada (kg/cab)</div><input class="sim-input" id="in-pe" type="number" value="110" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Peso Salida (kg/cab)</div><input class="sim-input" id="in-ps" type="number" value="250" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Aumento Diario (kg/día)</div><input class="sim-input" id="in-ad" type="number" step="0.01" value="0.504" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Mortandad (%)</div><input class="sim-input" id="in-mort" type="number" step="0.1" value="0.5" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">% Suplementación</div><input class="sim-input" id="in-supl" type="number" step="1" value="40" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Consumo supl. (% PV)</div><input class="sim-input" id="in-consumo" type="number" step="0.001" value="2.8" onchange="calcSim('invernada')"></div>
-          </div>
-        </div>
-        <div class="panel" style="display:block">
-          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">💵 Precios Compra / Venta</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div class="sim-label">Precio Compra ($/kg pie)</div><input class="sim-input" id="in-pc" type="number" value="55" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Km origen</div><input class="sim-input" id="in-kmo" type="number" value="400" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Precio Venta ($/kg pie)</div><input class="sim-input" id="in-pv" type="number" value="49" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Km destino</div><input class="sim-input" id="in-kmd" type="number" value="30" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="in-pflete" type="number" value="2750" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="in-guias" type="number" value="1725" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="in-ccom" type="number" step="0.1" value="4" onchange="calcSim('invernada')"></div>
-            <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="in-cvta" type="number" step="0.1" value="3" onchange="calcSim('invernada')"></div>
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(26,22,18,.5);margin-bottom:14px">Resultados del Análisis</div>
-        <div id="simRes-invernada" style="background:var(--paper)"></div>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- FIN screenSimulador -->
-
-<!-- ══════════════════════════════════════════
-     MÓDULO 09B — PARÁMETROS BASE
-══════════════════════════════════════════ -->
-<div id="screenBaseParams" class="screen" style="display:none">
-  <!-- Header -->
-  <div style="background:var(--ink);color:var(--cream);padding:28px 48px 24px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(212,168,75,.7);margin-bottom:6px">Configuración · Cálculo Automático</div>
-        <div style="font-family:'Playfair Display',serif;font-size:42px;font-weight:700;line-height:1">PARÁMETROS BASE</div>
-        <div style="font-family:'DM Mono',monospace;font-size:13px;color:rgba(212,168,75,.5);margin-top:6px">Terneros · Terneras · Vacas · Seguimiento Diario &amp; Compras</div>
-      </div>
-      <div>
-        <button onclick="goHome()" style="padding:7px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.2);border-radius:2px;color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.08em">&#8592; Panel Principal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div style="padding:32px 48px;max-width:1200px">
-    <div class="nota-box" style="margin-bottom:28px">
-      Estos parámetros se usan para los cálculos automáticos del <strong>Seguimiento Diario</strong> y la tabla de <strong>Compras</strong> en el Módulo 3, independientemente de lo que tengas configurado en el Simulador sandbox. Si los valores operativos de la empresa cambian, actualizalos acá. Se guardan en este dispositivo.
-    </div>
-
-    <!-- TERNEROS -->
-    <div class="panel" style="margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐂 Terneros / Novillos</div>
-        <button onclick="bpCargarDesdeSim('terneros')" style="padding:5px 14px;background:rgba(184,146,42,.1);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.06em">↓ Copiar desde Simulador</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-        <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-tn-kmo" type="number" value="275" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-tn-kmd" type="number" value="640" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-tn-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-tn-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-tn-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-tn-guias" type="number" value="1725" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-tn-hotel" type="number" value="310" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-tn-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-tn-pcarne" type="number" value="8100" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-tn-rend" type="number" step="0.1" value="56" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-tn-decomiso" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-tn-mort" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-      </div>
-    </div>
-
-    <!-- TERNERAS -->
-    <div class="panel" style="margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐄 Terneras / Vaquillonas</div>
-        <button onclick="bpCargarDesdeSim('terneras')" style="padding:5px 14px;background:rgba(184,146,42,.1);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.06em">↓ Copiar desde Simulador</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-        <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-ta-kmo" type="number" value="275" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-ta-kmd" type="number" value="640" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-ta-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-ta-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-ta-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-ta-guias" type="number" value="1725" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-ta-hotel" type="number" value="310" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-ta-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-ta-pcarne" type="number" value="7800" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-ta-rend" type="number" step="0.1" value="54" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-ta-decomiso" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-ta-mort" type="number" step="0.01" value="0" onchange="bpGuardar()"></div>
-      </div>
-    </div>
-
-    <!-- VACAS -->
-    <div class="panel" style="margin-bottom:28px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)">🐮 Vacas</div>
-        <button onclick="bpCargarDesdeSim('vacas')" style="padding:5px 14px;background:rgba(184,146,42,.1);border:1px solid rgba(184,146,42,.4);border-radius:2px;color:rgba(26,22,18,.7);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.06em">↓ Copiar desde Simulador</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-        <div><div class="sim-label">Km origen</div><input class="sim-input" id="bp-va-kmo" type="number" value="275" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Km destino</div><input class="sim-input" id="bp-va-kmd" type="number" value="640" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Precio Flete ($/12tn)</div><input class="sim-input" id="bp-va-pflete" type="number" value="2750" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Comisión Compra (%)</div><input class="sim-input" id="bp-va-ccom" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Comisión Venta (%)</div><input class="sim-input" id="bp-va-cvta" type="number" step="0.1" value="3" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Guías ($/cab)</div><input class="sim-input" id="bp-va-guias" type="number" value="1725" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Hotelería ($/cab/día)</div><input class="sim-input" id="bp-va-hotel" type="number" value="310" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Sanidad ($/cab)</div><input class="sim-input" id="bp-va-sanidad" type="number" value="7500" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Precio Carne ($/kg gancho)</div><input class="sim-input" id="bp-va-pcarne" type="number" value="7500" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Rendimiento campo (%)</div><input class="sim-input" id="bp-va-rend" type="number" step="0.1" value="52.5" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Decomiso Venta (%)</div><input class="sim-input" id="bp-va-decomiso" type="number" step="0.01" value="0.66" onchange="bpGuardar()"></div>
-        <div><div class="sim-label">Mortandad (% mensual)</div><input class="sim-input" id="bp-va-mort" type="number" step="0.01" value="0.54" onchange="bpGuardar()"></div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:12px;align-items:center">
-      <button onclick="bpCargarDesdeSim('terneros');bpCargarDesdeSim('terneras');bpCargarDesdeSim('vacas')" style="padding:9px 20px;background:var(--gold);color:var(--ink);border:none;border-radius:2px;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700;letter-spacing:.06em">↓ Copiar Todo desde Simulador</button>
-      <button onclick="bpRestaurarDefaults()" style="padding:9px 20px;background:transparent;color:rgba(26,22,18,.5);border:1px solid rgba(26,22,18,.2);border-radius:2px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;letter-spacing:.06em">↩ Restaurar Defaults</button>
-      <span id="bpGuardadoMsg" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);opacity:0;transition:opacity .5s">✓ Guardado</span>
-    </div>
-  </div>
-</div>
+<!-- v15.97: screenSimulador y screenBaseParams borrados (simulador viejo). -->
 
 <!-- ══════════════════════════════════════════
      MÓDULO 06 — HISTÓRICO & EVOLUCIÓN
@@ -1406,9 +936,8 @@
   </div>
 </div>
 
-<script src="js/core-home.js?v=1595"></script>
-<script src="js/modulo-05-mercado.js?v=1595"></script>
-<script src="js/modulo-07-simulador.js"></script>
+<script src="js/core-home.js?v=1597"></script>
+<script src="js/modulo-05-mercado.js?v=1597"></script>
 
 <script src="js/modulo-03-stock.js?v=1567"></script>
 
@@ -1432,10 +961,10 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 
 <!-- Panel Principal — datos y componentes (ORDEN: data → charts → shell → app) -->
-<script src="data.js?v=1596"></script>
+<script src="data.js?v=1597"></script>
 <script type="text/babel" src="charts.jsx"></script>
-<script type="text/babel" src="shell.jsx?v=1596"></script>
-<script type="text/babel" src="app.jsx?v=1596"></script>
+<script type="text/babel" src="shell.jsx?v=1597"></script>
+<script type="text/babel" src="app.jsx?v=1597"></script>
 
 <!-- Panel Principal — boot -->
 <script type="text/babel">
