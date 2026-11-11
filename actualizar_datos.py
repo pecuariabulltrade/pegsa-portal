@@ -5025,9 +5025,9 @@ def main():
         resumen["modulos"]["resultados_ventas"] = {"ok": False, "error": str(e)}
 
     # ── ANÁLISIS DE COSTOS · denominadores operativos (v15.61) ─
-    # Sólo los denominadores de los ratios. El JSON contable del módulo
-    # (analisis_costos_datos.json) lo regenera Nicolás a mano con su ejecutable
-    # de Physis — el pipeline NUNCA lo escribe.
+    # Sólo los denominadores de los ratios. v15.95: el módulo Análisis de
+    # Costos (analisis_costos.html + su JSON contable) se retiró; este JSON se
+    # queda porque lo lee el propio pipeline (%PV mensual, ~L10026).
     separador("Análisis de Costos · operativos")
     try:
         _op = generar_analisis_costos_operativos(carpeta, periodo, log)
@@ -11631,8 +11631,8 @@ def generar_analisis_costos_operativos(carpeta_out, periodo, log=None):
     alim = kg de alimento TAL CUAL dados por el mixer en el mes.
     cab  = cabezas PROMEDIO del feedlot (El Haras, TODOS los propietarios).
 
-    El contable (analisis_costos_datos.json) lo regenera Nicolás a mano con su
-    ejecutable de Physis; esto es lo único de ese módulo que se refresca solo.
+    v15.95: la página Análisis de Costos y su JSON contable se retiraron; este
+    archivo sigue porque lo usa el pipeline (cab promedio del %PV mensual).
 
     Devuelve el dict volcado o None. NO levanta excepción.
     """

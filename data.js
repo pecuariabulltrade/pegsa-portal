@@ -82,7 +82,7 @@ window.PEGSA_DATA = {
     { n: "06", grupo: "operativo", id: "historico",         titulo: "Histórico & Evolución",desc: "Hasta 30 meses de historia",                 estado: "acumulando", kpi: "+22,8%",          kpiLabel: "Patrimonio USD vs ene-25" },
     // v15.94: fuera 05 Simulador Feedlot, 07 Estado de Resultados y 08 Flujo de Fondos (obsoletos).
     // ── Config (no se muestra en sidebar; se accede vía el Simulador) ──
-    { n: "09", grupo: "config",    id: "parametros-base",   titulo: "Parámetros Base",      desc: "Configuración del simulador · Precios y rendimientos por categoría", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" }
+    { n: "09", grupo: "config",    id: "parametros-base",   titulo: "Parámetros de Mercado", desc: "Precios y rendimientos por categoría para la indiferencia", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" }
   ],
   alertas: [
     { tipo: "warn", texto: "Diesel: 18 días de stock restantes" },

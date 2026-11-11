@@ -9,10 +9,8 @@ const USERS={
   'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['stock','insumos','mercado','tesoreria','simulador-engorde','historico','remitos','acumulados','compras','gestion-costos','caravana','baseparams']},
   'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['stock','insumos','mercado','tesoreria','simulador-engorde','historico','remitos','acumulados','compras','gestion-costos','caravana','baseparams']},
 };
-const PERIODS={'2025':{available:true},'2024':{available:false}};
-let currentUser=null, selectedPeriod='2025', chartsInited=false;
-
-function selPeriod(btn){document.querySelectorAll('.period-opt').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selectedPeriod=btn.dataset.period;}
+// v15.95: sin selector de período (era del Estado de Resultados).
+let currentUser=null;
 
 function tryLogin(){
   const u=document.getElementById('inputUser').value.trim().toLowerCase();
@@ -22,13 +20,10 @@ function tryLogin(){
   if(!u||!p){showErr('Completá usuario y contraseña.');return;}
   const acc=USERS[u];
   if(!acc||acc.pass!==p){showErr('Usuario o contraseña incorrectos.');shake();return;}
-  if(!PERIODS[selectedPeriod].available){showErr('El período '+selectedPeriod+' no está disponible aún.');return;}
   currentUser=acc;
   // Defensive: estos elementos pueden no existir si el screenHome fue reemplazado
   ['tbAvatar','tbAvatar2','tbAvatar3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=acc.initials;});
   var _tbUser = document.getElementById('tbUser'); if(_tbUser) _tbUser.textContent = acc.name;
-  ['tbPeriod','tbPeriod2','tbPeriod3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=selectedPeriod;});
-  var _hp = document.getElementById('heroPeriod'); if(_hp) _hp.textContent = selectedPeriod;
   document.querySelectorAll('.module-card[data-mod]').forEach(card=>{
     card.style.display=acc.modules.includes(card.dataset.mod)?'':'none';
   });
@@ -124,12 +119,7 @@ function openModule(mod){
     bpRenderUI();
     return;
   }
-  showScreen('screenReport');
-  document.body.style.background='';
-  document.getElementById('reportBreadcrumb').textContent=mod==='resultados'?'Estado de Resultados':'Flujo de Fondos';
-  if(typeof showMain==='function') showMain(mod==='resultados'?'centros':'flujo',null);
-  if(!chartsInited){chartsInited=true;setTimeout(()=>{if(typeof renderConsolidadoChart==='function')renderConsolidadoChart();},300);}
-  window.scrollTo(0,0);
+  // v15.95: un módulo desconocido no hace nada (antes caía a screenReport).
 }
 
 // ── HOME · Live KPIs ─────────────────────────────────────────────────────
@@ -371,7 +361,7 @@ function loadHomeKpis(){
 
 function goHome(){if(typeof sbSetActive==="function") sbSetActive("home");showScreen('screenHome');document.body.style.background='';window.scrollTo(0,0);loadHomeKpis();}
 function logout(){
-  currentUser=null;chartsInited=false;
+  currentUser=null;
   document.querySelectorAll('.module-card[data-mod]').forEach(card=>{card.style.display='';});
   sbHide();showScreen('screenLogin');document.body.style.background='';
   const ls=document.getElementById('screenLogin');
@@ -416,10 +406,8 @@ function sbInit(user){
   if (user) {
     var avatarEl = document.getElementById('sbAvatar');
     var nameEl   = document.getElementById('sbUserName');
-    var periodEl = document.getElementById('sbUserPeriod');
     if (avatarEl) avatarEl.textContent = user.initials || '--';
     if (nameEl)   nameEl.textContent   = user.name || 'Usuario';
-    if (periodEl) periodEl.textContent = (typeof selectedPeriod !== 'undefined' ? selectedPeriod : '');
 
     // Filtrar módulos según permisos
     var modules = user.modules || [];
