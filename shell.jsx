@@ -144,7 +144,9 @@ function StockInsumosDrill() {
   );
 }
 
-function Sidebar({ active, onSelect, modulos, usuario }) {
+function Sidebar({ active, onSelect, modulos }) {
+  // v15.96: el usuario es el logueado (currentUser de core-home.js), no uno fijo.
+  const cu = (typeof currentUser !== "undefined" && currentUser) ? currentUser : null;
   // Helper inline: un ítem de navegación de módulo
   const renderNavItem = (m) => (
     <div
@@ -191,28 +193,22 @@ function Sidebar({ active, onSelect, modulos, usuario }) {
       </nav>
 
       <div className="sidebar-foot">
-        <div className="sidebar-avatar">{usuario.iniciales}</div>
+        <div className="sidebar-avatar">{cu ? cu.initials : "—"}</div>
         <div className="sidebar-foot-info">
-          <b>{usuario.nombre}</b>
-          <small>{usuario.rol}</small>
+          <b>{cu ? cu.name : "—"}</b>
         </div>
       </div>
     </aside>
   );
 }
 
-function Topbar({ periodo }) {
+function Topbar() {   // v15.96: sin período ni rango de fechas fijos
   return (
     <header className="topbar">
       <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2, gap: 2 }}>
-        <span style={{ fontSize: 11, color: "var(--ink-mute)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>Período {periodo}</span>
         <span style={{ fontSize: 17, fontWeight: 700, color: "var(--ink)", letterSpacing: "-0.01em" }}>Panel Principal</span>
       </div>
       <div className="topbar-spacer" />
-      <div className="period-chip" title="Cambiar período">
-        <IconCalendar />
-        Ene – Dic 2025
-      </div>
       <div className="search">
         <IconSearch />
         <input placeholder="Buscar centro, módulo, concepto…" />
@@ -243,8 +239,9 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
         const hoteleros = Math.max(0, totPro - 1);
         const pctPegsa = totCab > 0 ? (pegCab / totCab * 100) : 0;
 
-        const fmtCab = (n) => n.toLocaleString("es-AR");
-        const fmtT   = (kg) => (kg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+        // v15.96: sin dato → "—"
+        const fmtCab = (n) => n ? n.toLocaleString("es-AR") : "—";
+        const fmtT   = (kg) => kg ? (kg / 1000).toLocaleString("es-AR", { maximumFractionDigits: 0 }) : "—";
         const fmtPct = (n) => n.toFixed(1).replace('.', ',') + '%';
 
         return (
@@ -294,62 +291,64 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
       }
       case "stock-insumos":
         return <StockInsumosDrill />;
-      case "mercado":
+      case "mercado": {
+        // v15.96: valores de D.mercado (mercado_precios.json); sin dato → "—".
+        // Las dos Sparkline de ejemplo (novillo / maíz) se sacaron: no hay serie real.
+        const M = data.mercado || {};
+        const pr = (k) => (M[k] && M[k].precio) ? "$" + Math.round(M[k].precio).toLocaleString("es-AR") : "—";
+        const f = M.fecha ? M.fecha.split("-").reverse().join("/") : null;
         return (
           <>
             <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Novillo 461/490</div><div className="v">$4.557</div></div>
-              <div className="drill-stat"><div className="l">Vaca buena</div><div className="v">$3.428</div></div>
-              <div className="drill-stat"><div className="l">Maíz BCR</div><div className="v">$243.150</div></div>
-              <div className="drill-stat"><div className="l">Soja BCR</div><div className="v">$898.987</div></div>
+              <div className="drill-stat"><div className="l">Novillo 461/490</div><div className="v">{pr("novillo")}</div></div>
+              <div className="drill-stat"><div className="l">Vaca buena</div><div className="v">{pr("vaca")}</div></div>
+              <div className="drill-stat"><div className="l">Maíz BCR</div><div className="v">{pr("maiz")}</div></div>
+              <div className="drill-stat"><div className="l">Soja BCR</div><div className="v">{pr("soja")}</div></div>
             </div>
-            <div className="drill-section-title">Tendencia 12 meses</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div style={{ background: "var(--surface-alt)", padding: 16, borderRadius: 10 }}>
-                <div style={{ fontSize: 11, color: "var(--ink-mute)", letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600 }}>Hacienda — $/kg vivo</div>
-                <div style={{ height: 80, marginTop: 10 }}>
-                  <Sparkline data={data.sparks.novillo} color="var(--primary)" height={80} />
-                </div>
-                <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 6 }}>Novillo · +9% YTD</div>
-              </div>
-              <div style={{ background: "var(--surface-alt)", padding: 16, borderRadius: 10 }}>
-                <div style={{ fontSize: 11, color: "var(--ink-mute)", letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600 }}>Granos — $/tn</div>
-                <div style={{ height: 80, marginTop: 10 }}>
-                  <Sparkline data={data.sparks.maiz} color="var(--pos)" height={80} />
-                </div>
-                <div style={{ fontSize: 12, color: "var(--ink-mute)", marginTop: 6 }}>Maíz · +21% YTD</div>
-              </div>
-            </div>
+            <p style={{ color: "var(--ink-soft)", fontSize: 13 }}>{f ? "Precios al " + f + "." : "Sin datos de mercado."}</p>
           </>
         );
-      case "tesoreria":
+      }
+      case "tesoreria": {
+        // v15.96: valores de tesoreria_ultimo.json (data.js → D.tesoreria / D.hero.patrimonio).
+        const T = data.tesoreria || {};
+        const m = (n) => n ? "$" + Math.round(n).toLocaleString("es-AR") : "—";
+        const f = T.fecha_corte ? T.fecha_corte.split("-").reverse().join("/") : null;
         return (
           <>
             <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Cartera positiva</div><div className="v pos">$1.138.000.000</div></div>
-              <div className="drill-stat"><div className="l">Bancos + FCI</div><div className="v">$463.131.340</div></div>
-              <div className="drill-stat"><div className="l">Posición USD</div><div className="v">U$S 1.350 K</div></div>
-              <div className="drill-stat"><div className="l">Cheques diferidos</div><div className="v neg">−$685.000.000</div></div>
+              <div className="drill-stat"><div className="l">Disponibilidades</div><div className="v">{m(T.posicion)}</div></div>
+              <div className="drill-stat"><div className="l">Cheques en cartera</div><div className="v">{m(T.cartera)}</div></div>
+              <div className="drill-stat"><div className="l">Bancos</div><div className="v">{m(T.bancos)}</div></div>
+              <div className="drill-stat"><div className="l">USD en pesos</div><div className="v">{m(T.usd_pos)}</div></div>
             </div>
-            <div className="drill-section-title">Última semana · 25/04</div>
-            <p style={{ color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5 }}>
-              Cartera total positiva por sexta semana consecutiva. La posición en USD aumentó +$1.907.628.109 en pesos equivalentes durante el período. No hay vencimientos críticos en los próximos 30 días.
-            </p>
+            <div className="drill-section-title">{f ? "Corte " + f : "Sin datos de tesorería"}</div>
           </>
         );
-      case "historico":
+      }
+      case "historico": {
+        // v15.96: de valuacion_historica.json. Fuera "Resultado YTD" (era del Estado de Resultados).
+        const pm = Array.isArray(data.patrimonioMensual) ? data.patrimonioMensual : [];
+        const first = pm[0], last = pm[pm.length - 1];
+        const varUsd = (first && last && first.usd > 0) ? (last.usd - first.usd) / first.usd * 100 : null;
+        const u = (data.valuacionUltimo || "").split("-");
         return (
           <>
             <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Patrimonio</div><div className="v pos">+22,8% USD</div></div>
-              <div className="drill-stat"><div className="l">Stock kg</div><div className="v pos">+5,1%</div></div>
-              <div className="drill-stat"><div className="l">Resultado YTD</div><div className="v pos">+$9.191.348.874</div></div>
-              <div className="drill-stat"><div className="l">Meses cargados</div><div className="v">14</div></div>
+              <div className="drill-stat"><div className="l">Patrimonio U$S</div><div className="v">{last ? "U$S " + (last.usd / 1000).toFixed(2).replace(".", ",") + " M" : "—"}</div></div>
+              <div className="drill-stat"><div className="l">{first ? "Var. vs " + first.mes : "Variación"}</div><div className={"v " + (varUsd == null ? "" : varUsd >= 0 ? "pos" : "neg")}>{varUsd == null ? "—" : (varUsd >= 0 ? "+" : "") + varUsd.toFixed(1).replace(".", ",") + "%"}</div></div>
+              <div className="drill-stat"><div className="l">Meses cargados</div><div className="v">{data.valuacionMeses || "—"}</div></div>
+              <div className="drill-stat"><div className="l">Último cierre</div><div className="v">{u.length === 2 ? u[1] + "/" + u[0] : "—"}</div></div>
             </div>
-            <div className="drill-section-title">Patrimonio U$S — últimos 12 meses</div>
-            <PatrimonioChart data={data.patrimonioMensual} currency="usd" />
+            {pm.length > 0 ? (
+              <>
+                <div className="drill-section-title">Patrimonio U$S — últimos 12 meses</div>
+                <PatrimonioChart data={pm.slice(-12)} currency="usd" />
+              </>
+            ) : <p style={{ color: "var(--ink-soft)", fontSize: 13 }}>Sin datos de valuación.</p>}
           </>
         );
+      }
       default:
         return <p>Próximamente.</p>;
     }

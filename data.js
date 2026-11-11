@@ -4,90 +4,41 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 window.PEGSA_DATA = {
-  periodo: "Enero – Diciembre 2025",
-  empresa: "PECUARIA EL GARABÍ SA & BULLTRADE SRL",
-  usuario: { nombre: "Miguel Acosta", rol: "Gerencia · 2025", iniciales: "MA" },
+  // v15.96: semilla SIN valores. Todo número, fecha o nombre del Home sale de
+  // un JSON publicado (loadRealData, abajo) o del usuario logueado. Si un JSON
+  // no carga, los componentes muestran "—" / "sin datos", nunca un ejemplo.
+  // (Fuera también centros, heatmap, empresa y las series de ejemplo de sparks.)
+  periodo: null,
+  usuario: null,
   hero: {
-    patrimonio: { ars: 20640000000, usd: 14430000, mep: 1430 },
-    resultado: { total: 9191348874, operativo: 2948959025, tenencia: 6242389849, ingresosBrutos: 42615291858, margenOp: 6.14, margenTotal: 18.97, rentabilidadAcum: 7.3 },
-    stock: { pegsa: { cabezas: 8651, kg: 3626000 }, total: { cabezas: 9861, kg: 4324000, establecimientos: 3 } }
+    patrimonio: { ars: null, usd: null, mep: null },
+    resultado: null,
+    stock: { pegsa: { cabezas: null, kg: null }, total: { cabezas: null, kg: null, establecimientos: null } }
   },
   mercado: {
-    novillo: { precio: 4557, label: "Novillo 461/490 kg", unidad: "$/kg vivo", fuente: "MAG", delta: 37 },
-    vaca:    { precio: 3428, label: "Vaca buena",         unidad: "$/kg vivo", fuente: "MAG", delta: 21 },
-    ternero: { precio: 5097, label: "Ternero 330–370 kg", unidad: "$/kg vivo", fuente: "E&C", delta: 64 },
-    maiz:    { precio: 243150, label: "Maíz BCR",         unidad: "$/tn",      fuente: "BCR", delta: -2100 },
-    soja:    { precio: 898987, label: "Soja BCR",         unidad: "$/tn",      fuente: "BCR", delta: 12500 },
-    mep:     { precio: 1508,  label: "Dólar BNA divisa venta", unidad: "$/USD", fuente: "BNA", delta: null }
+    novillo: { precio: null, label: "Novillo 461/490 kg", unidad: "$/kg vivo", fuente: "MAG", delta: null },
+    vaca:    { precio: null, label: "Vaca buena",         unidad: "$/kg vivo", fuente: "MAG", delta: null },
+    ternero: { precio: null, label: "Ternero 330–370 kg", unidad: "$/kg vivo", fuente: "E&C", delta: null },
+    maiz:    { precio: null, label: "Maíz BCR",           unidad: "$/tn",      fuente: "BCR", delta: null },
+    soja:    { precio: null, label: "Soja BCR",           unidad: "$/tn",      fuente: "BCR", delta: null },
+    mep:     { precio: null, label: "Dólar BNA divisa venta", unidad: "$/USD", fuente: "BNA", delta: null }
   },
-  tesoreria: { posicion: 1138000000, semana: "25/04", cartera: 1138000000, bancos: 463131340, usd_pos: 1907628109 },
-  centros: [
-    { id: "ganaderia",  nombre: "Ganadería",          ingresos: 27022, egresos: -25923, operativo: 1098,  tenencia: 5825, total: 6924, marginOp: 4.06,  marginTot: 25.62 },
-    { id: "feedlot",    nombre: "Feedlot",            ingresos: 10911, egresos: -9004,  operativo: 1907,  tenencia: 0,    total: 1907, marginOp: 17.48, marginTot: 17.48 },
-    { id: "consig",     nombre: "Consignataria Bull", ingresos: 748,   egresos: -352,   operativo: 396,   tenencia: 0,    total: 396,  marginOp: 52.96, marginTot: 52.96 },
-    { id: "campos",     nombre: "Campos",             ingresos: 668,   egresos: -376,   operativo: 292,   tenencia: 0,    total: 292,  marginOp: 43.65, marginTot: 43.65 },
-    { id: "transporte", nombre: "Transporte",         ingresos: 160,   egresos: -98,    operativo: 61,    tenencia: 0,    total: 61,   marginOp: 38.55, marginTot: 38.55 },
-    { id: "agri",       nombre: "Agricultura 24/25",  ingresos: 2588,  egresos: -2415,  operativo: 10,    tenencia: 162,  total: 173,  marginOp: 0.40,  marginTot: 6.69 },
-    { id: "donpedro",   nombre: "Don Pedro",          ingresos: 513,   egresos: -468,   operativo: -208,  tenencia: 254,  total: 45,   marginOp: -40.5, marginTot: 8.90 },
-    { id: "equinos",    nombre: "Equinos",            ingresos: 0,     egresos: -0.9,   operativo: -0.9,  tenencia: 0,    total: -0.9, marginOp: 0,     marginTot: 0 },
-    { id: "admin",      nombre: "Administración",     ingresos: 0,     egresos: -608,   operativo: -608,  tenencia: 0,    total: -608, marginOp: 0,     marginTot: 0 }
-  ],
-  stockCategorias: [
-    { categoria: "Novillos terminación",     cabezas: 2470, kg: 1135000 },
-    { categoria: "Novillitos / Vaquillonas", cabezas: 2890, kg: 1014000 },
-    { categoria: "Terneros invernada",       cabezas: 1660, kg: 425000 },
-    { categoria: "Vacas",                    cabezas: 1145, kg: 562000 },
-    { categoria: "Vaquillonas reposición",   cabezas: 980,  kg: 318000 },
-    { categoria: "Toros",                    cabezas: 75,   kg: 52000 },
-    { categoria: "Terneras",                 cabezas: 641,  kg: 120000 }
-  ],
-  patrimonioMensual: [
-    { mes: "Ene", ars: 16800, usd: 12100 }, { mes: "Feb", ars: 17200, usd: 12350 },
-    { mes: "Mar", ars: 17900, usd: 12600 }, { mes: "Abr", ars: 18400, usd: 12900 },
-    { mes: "May", ars: 18100, usd: 13050 }, { mes: "Jun", ars: 18950, usd: 13280 },
-    { mes: "Jul", ars: 19400, usd: 13550 }, { mes: "Ago", ars: 19720, usd: 13700 },
-    { mes: "Sep", ars: 19850, usd: 13880 }, { mes: "Oct", ars: 20100, usd: 14050 },
-    { mes: "Nov", ars: 20400, usd: 14260 }, { mes: "Dic", ars: 20640, usd: 14430 }
-  ],
-  sparks: {
-    patrimonioArs: [16.8,17.2,17.9,18.4,18.1,18.95,19.4,19.72,19.85,20.1,20.4,20.64],
-    patrimonioUsd: [12.1,12.35,12.6,12.9,13.05,13.28,13.55,13.7,13.88,14.05,14.26,14.43],
-    rentabilidad:  [4.2,4.6,5.1,5.4,5.9,6.1,6.3,6.5,6.8,7.0,7.15,7.3],
-    stockKg:       [3.45,3.48,3.52,3.50,3.55,3.58,3.60,3.59,3.61,3.62,3.62,3.626],
-    novillo:       [4180,4220,4260,4310,4350,4380,4400,4440,4460,4500,4520,4557],
-    vaca:          [3120,3150,3180,3220,3260,3290,3310,3350,3370,3400,3410,3428],
-    maiz:          [201000,208000,215000,220000,224000,230000,234000,237000,240000,242000,244500,243150],
-    soja:          [820000,835000,850000,860000,868000,875000,880000,885000,890000,895000,901000,898987],
-    mep:           [1280,1295,1310,1325,1338,1350,1362,1375,1390,1398,1408,1414]
-  },
-  heatmap: {
-    meses: ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
-    centros: [
-      { nombre: "Ganadería",   data: [420,510,480,590,615,580,650,690,660,620,580,530] },
-      { nombre: "Feedlot",     data: [120,140,155,165,158,172,180,188,195,178,138,118] },
-      { nombre: "Consig.Bull", data: [28,31,33,35,32,36,38,40,35,33,28,27] },
-      { nombre: "Campos",      data: [22,23,24,25,25,26,26,26,25,24,23,23] },
-      { nombre: "Agricultura", data: [-5,-8,5,12,18,22,28,38,42,28,18,15] },
-      { nombre: "Transporte",  data: [4,5,5,5,5,5,5,5,6,6,5,5] },
-      { nombre: "Don Pedro",   data: [-15,-18,-8,-2,5,12,18,22,18,8,4,-1] },
-      { nombre: "Administr.",  data: [-48,-50,-51,-50,-52,-50,-51,-52,-51,-50,-52,-51] }
-    ]
-  },
+  tesoreria: { posicion: null, semana: null, cartera: null, bancos: null, usd_pos: null, fecha_corte: null },
+  stockCategorias: [],
+  patrimonioMensual: [],
+  sparks: { patrimonioArs: [], patrimonioUsd: [], stockKg: [] },
   modulos: [
     // ── Operativos ─────────────────────────────────────────────
-    { n: "01", grupo: "operativo", id: "stock-masa",        titulo: "Stock de Masa — Kilos",desc: "WinCampo · OneDrive · 07:00 AM",             estado: "vivo",       kpi: "9.861 cab",       kpiLabel: "4.324.000 kg estimados hoy" },
-    { n: "02", grupo: "operativo", id: "stock-insumos",     titulo: "Stock de Insumos",     desc: "Diesel · maíz · soja · gluten · más",        estado: "vivo",       kpi: "12 ítems",        kpiLabel: "Diesel: 18 días restantes" },
-    { n: "03", grupo: "operativo", id: "mercado",           titulo: "Mercado y Precios",    desc: "MAG · BCR · E&C",                            estado: "disponible", kpi: "$4.557",          kpiLabel: "Novillo 461/490 · MAG hoy" },
-    { n: "04", grupo: "operativo", id: "tesoreria",         titulo: "Tesorería",            desc: "Saldos · cheques · USD · deuda",             estado: "vivo",       kpi: "$1.138.000.000",  kpiLabel: "Cartera positiva · sem. 25/04" },
-    { n: "06", grupo: "operativo", id: "historico",         titulo: "Histórico & Evolución",desc: "Hasta 30 meses de historia",                 estado: "acumulando", kpi: "+22,8%",          kpiLabel: "Patrimonio USD vs ene-25" },
+    { n: "01", grupo: "operativo", id: "stock-masa",        titulo: "Stock de Masa — Kilos",desc: "WinCampo · OneDrive · 07:00 AM",             estado: "vivo",       kpi: "—", kpiLabel: "sin datos" },
+    { n: "02", grupo: "operativo", id: "stock-insumos",     titulo: "Stock de Insumos",     desc: "Diesel · maíz · soja · gluten · más",        estado: "vivo",       kpi: "—", kpiLabel: "sin datos" },
+    { n: "03", grupo: "operativo", id: "mercado",           titulo: "Mercado y Precios",    desc: "MAG · BCR · E&C",                            estado: "disponible", kpi: "—", kpiLabel: "sin datos" },
+    { n: "04", grupo: "operativo", id: "tesoreria",         titulo: "Tesorería",            desc: "Saldos · cheques · USD · deuda",             estado: "vivo",       kpi: "—", kpiLabel: "sin datos" },
+    { n: "06", grupo: "operativo", id: "historico",         titulo: "Histórico & Evolución",desc: "Hasta 30 meses de historia",                 estado: "acumulando", kpi: "—", kpiLabel: "sin datos" },
     // v15.94: fuera 05 Simulador Feedlot, 07 Estado de Resultados y 08 Flujo de Fondos (obsoletos).
     // ── Config (no se muestra en sidebar; se accede vía el Simulador) ──
     { n: "09", grupo: "config",    id: "parametros-base",   titulo: "Parámetros de Mercado", desc: "Precios y rendimientos por categoría para la indiferencia", estado: "disponible", kpi: "Config", kpiLabel: "Estimación de precios" }
   ],
-  alertas: [
-    { tipo: "warn", texto: "Diesel: 18 días de stock restantes" },
-    { tipo: "info", texto: "Nuevo cierre mensual disponible · marzo 2026" }
-  ]
+  alertas: []
 };
 
 /* ════════════════════════════ FETCH REAL DATA ═════════════════════════════ */
@@ -357,6 +308,7 @@ window.PEGSA_DATA = {
     if (pos.saldo_disponibilidades) D.tesoreria.posicion = pos.saldo_disponibilidades;
     if (pos.usd_ars) D.tesoreria.usd_pos = pos.usd_ars;
     if (tesoreria.fecha_corte) D.tesoreria.semana = tesoreria.fecha_corte.split('-').reverse().slice(0,2).join('/');
+    if (tesoreria.fecha_corte) D.tesoreria.fecha_corte = tesoreria.fecha_corte;
 
     const totalARS = bancosT + (pos.efectivo || 0) + (pos.becerra || 0) + (pos.fima_peg || 0) + (pos.fima_bull || 0) + (pos.fci || 0) + (pos.echeq || 0);
     if (totalARS > 0) D.hero.patrimonio.ars = totalARS;
@@ -524,6 +476,9 @@ window.PEGSA_DATA = {
         usd: Math.round((c.total_usd   || 0) / 1e3),    // U$S K
       };
     }).filter(p => p.ars > 0);
+    // v15.96: meses cargados y último cierre (tarjeta y vista rápida de Histórico).
+    D.valuacionMeses  = snaps.length;
+    D.valuacionUltimo = snaps[snaps.length - 1].periodo || null;
     if (patM.length >= 2) {
       D.patrimonioMensual = patM;
       D.sparks.patrimonioArs = patM.map(p => p.ars / 1000);
@@ -586,7 +541,7 @@ window.PEGSA_DATA = {
     });
   }
   newAl.push({ tipo: 'info', texto: 'Cierre mensual: ' + (financierohist?.cortes?.length ? 'último corte ' + financierohist.cortes[financierohist.cortes.length - 1].fecha_corte : 'pendiente') });
-  if (newAl.length > 0) D.alertas = newAl;
+  D.alertas = newAl;   // v15.96: siempre (antes quedaban las de ejemplo si no había ninguna)
 
   // Insumos críticos (top 2 sin Diesel/Gasoil, dias > 0, ordenado ascendente)
   if (Array.isArray(stockInsumos?.insumos)) {
@@ -908,7 +863,25 @@ window.PEGSA_DATA = {
   }
   if (D.tesoreria.posicion) {
     const m6 = D.modulos.find(m => m.id === 'tesoreria');
-    if (m6) { m6.kpi = '$' + D.tesoreria.posicion.toLocaleString('es-AR'); m6.kpiLabel = 'Cartera · sem. ' + (D.tesoreria.semana || ''); }
+    // v15.96: posicion = saldo_disponibilidades (no la cartera de cheques).
+    if (m6) { m6.kpi = '$' + D.tesoreria.posicion.toLocaleString('es-AR'); m6.kpiLabel = 'Disponibilidades · corte ' + (D.tesoreria.semana || '—'); }
+  }
+  // v15.96: Insumos = cantidad de ítems de stock_insumos_2025.json + el de menos días.
+  if (Array.isArray(stockInsumos?.insumos) && stockInsumos.insumos.length) {
+    const m2 = D.modulos.find(m => m.id === 'stock-insumos');
+    const crit2 = stockInsumos.insumos
+      .filter(i => i.dias_restantes != null && i.dias_restantes >= 0)
+      .sort((a, b) => a.dias_restantes - b.dias_restantes)[0];
+    if (m2) {
+      m2.kpi = stockInsumos.insumos.length + ' ítems';
+      m2.kpiLabel = crit2 ? crit2.nombre + ': ' + Math.round(crit2.dias_restantes) + ' días' : 'sin días de stock calculados';
+    }
+  }
+  // v15.96: Histórico = meses de valuacion_historica.json + último cierre.
+  if (D.valuacionMeses) {
+    const m7 = D.modulos.find(m => m.id === 'historico');
+    const u = (D.valuacionUltimo || '').split('-');
+    if (m7) { m7.kpi = D.valuacionMeses + ' meses'; m7.kpiLabel = 'último cierre ' + (u.length === 2 ? u[1] + '/' + u[0] : '—'); }
   }
 
   window.dispatchEvent(new CustomEvent('panel:data-ready', { detail: D }));

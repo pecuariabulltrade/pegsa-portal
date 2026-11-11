@@ -165,7 +165,8 @@
   "use strict";
 
   // ---------- Helpers ----------
-  var fmt = function (n) { return Number(n).toLocaleString("es-AR"); };
+  // v15.96: sin dato → "—" (antes la semilla de data.js traía números de ejemplo)
+  var fmt = function (n) { return (n == null || isNaN(n)) ? "—" : Number(n).toLocaleString("es-AR"); };
   var fmtPct = function (n, dec) {
     if (n == null || isNaN(n)) return "—";
     var d = typeof dec === "number" ? dec : 1;
@@ -302,7 +303,8 @@
     };
 
     var SALUDO = {
-      eyebrow: "PERÍODO " + (D.periodo || "—").toUpperCase(),
+      // v15.96: fecha de hoy en vez de "PERÍODO ENERO – DICIEMBRE 2025"
+      eyebrow: (function () { var f = new Date(); var MS = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]; return f.getDate() + " DE " + MS[f.getMonth()] + " DE " + f.getFullYear(); })(),
       h1Pre: getSaludo() + ", ",
       h1Em: "dirección",
       h1Post: ".",
@@ -344,7 +346,7 @@
       sub: "Grupo completo · " + (totalEst || "—") + " establecimientos",
       pegsa: {
         tag: "propio",
-        cab: pegsaCab,
+        cab: pegsaCab || null,   // v15.96: null → "—"
         t: Math.round(pegsaKg / 1000),
         kg: Math.round(pegsaKg),          // v15.28: kg crudo para mostrar en modal
         kgCab: pegsaCab ? Math.round(pegsaKg / pegsaCab) : 0,
@@ -352,7 +354,7 @@
       },
       grupo: {
         tag: "total",
-        cab: totalCab,
+        cab: totalCab || null,
         t: Math.round(totalKg / 1000),
         kg: Math.round(totalKg),          // v15.28
         kgCab: totalCab ? Math.round(totalKg / totalCab) : 0,
@@ -382,7 +384,7 @@
 
     function cot(key, label, fuente) {
       var m = M[key];
-      if (!m) return { label: label, fuente: fuente, delta: null, value: "—", unit: "", deltaSrc: null };
+      if (!m || !m.precio) return { label: label, fuente: fuente, delta: null, value: "—", unit: "", deltaSrc: null };   // v15.96: sin precio → "—"
 
       // Delta real: D.mercado[key].delta es diferencia absoluta en $ vs día anterior.
       // Convertimos a %: delta / (precio - delta) * 100. Si delta=null o precio<=0, null.
@@ -1086,8 +1088,7 @@
     var ledMap = { vivo: "vivo", acumulando: "acumulando", disponible: "disponible" };
     function kindByModulo(m) {
       if (m.id === "stock-insumos") return "neg";
-      if (m.id === "historico" || m.id === "estado-resultados" ||
-          m.id === "flujo-fondos" || m.id === "simulador") return "pos";
+      if (m.id === "historico") return "pos";   // v15.96: sin ids retirados
       return "primary";
     }
     // v4 fix: NO hay kpiOverrides. Mobile muestra el m.kpi / m.kpiLabel

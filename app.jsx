@@ -633,14 +633,11 @@ function FinancieroCard({ flujo, title, sub, onClick, onKeyDown }) {
 function Panel() {
   const D = window.PEGSA_DATA;
   const [drillModulo, setDrillModulo] = useState(null);
-  const [heatPeriod, setHeatPeriod] = useState("12m");
   const [alertasDescartadas, setAlertasDescartadas] = useState(() => cargarDescartadas());
-
-  const sortedCentros = useMemo(() => D.centros.slice().sort((a, b) => b.total - a.total), [D.centros]);
 
   return (
     <>
-      <Topbar periodo={D.periodo} />
+      <Topbar />
 
       <div className="content">
         {/* Page header (Sprint 5 — B.1: saludo dinámico "Buen día, dirección") */}
@@ -734,8 +731,9 @@ function Panel() {
             const pegEst = D.haciendaPegsaPorEstab?.length || 0;
             const hotCab = D.hoteleros?.cabezas != null ? D.hoteleros.cabezas : Math.max(0, totCab - pegCab);
             const var12m = D.stockVar12m;
-            const fmtCab = (n) => n.toLocaleString("es-AR");
-            const fmtKg  = (n) => n.toLocaleString("es-AR");
+            // v15.96: sin dato → "—" (antes la semilla traía números de ejemplo).
+            const fmtCab = (n) => n ? n.toLocaleString("es-AR") : "—";
+            const fmtKg  = (n) => n ? n.toLocaleString("es-AR") : "—";
             const fmtPerCab = (kg, cab) => cab > 0 ? Math.round(kg / cab).toLocaleString("es-AR") : "—";
             const fmtVar = (v) => v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(1).replace('.', ',') + "%";
 
@@ -841,7 +839,7 @@ function Panel() {
                       </div>
                       <div className="cot-value"
                            style={m.estado === 'desactualizado' ? { color: 'rgba(26,22,18,.45)' } : undefined}>
-                        ${precio.toLocaleString("es-AR")}
+                        {precio ? "$" + precio.toLocaleString("es-AR") : "—"}
                       </div>
                       <div className="cot-ctx">{c.ctx}</div>
                     </div>
@@ -1072,7 +1070,7 @@ function Panel() {
         </div>
 
         <div style={{ marginTop: 40, fontSize: 11, color: "var(--ink-faint)", textAlign: "center", letterSpacing: ".06em" }}>
-          PEGSA & BULLTRADE · Uso interno · Cierre Diciembre 2025 · Confeccionado Feb 2026
+          PEGSA & BULLTRADE · Uso interno · datos al {D.lastUpdate ? new Date(D.lastUpdate).toLocaleDateString("es-AR") : "—"}
         </div>
       </div>
 
@@ -1094,7 +1092,7 @@ function App() {
 
   return (
     <div className="app" data-screen-label="01 Panel Principal">
-      <Sidebar active={active} onSelect={setActive} modulos={D.modulos} usuario={D.usuario} />
+      <Sidebar active={active} onSelect={setActive} modulos={D.modulos} />
       <main className="main">
         <Panel />
       </main>
