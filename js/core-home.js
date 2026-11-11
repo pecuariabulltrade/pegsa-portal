@@ -4,8 +4,10 @@
 const USERS={
   'pegsa':    {pass:'garobi2025',name:'PEGSA Admin',    initials:'PA', modules:['stock','insumos']},
   'bulltrade':{pass:'bull2025',  name:'Bulltrade Admin',initials:'BA', modules:['tesoreria']},
-  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','analisis-costos','acumulados','compras','gestion-costos','caravana','baseparams']},
-  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['resultados','flujo','stock','insumos','mercado','tesoreria','simulador','historico','remitos','analisis-costos','acumulados','compras','gestion-costos','caravana','baseparams']},
+  // v15.94: fuera 'resultados','flujo','simulador','analisis-costos' (obsoletos, etapa 1:
+  // sin acceso, el codigo sigue). 'simulador-engorde' = simulador.html (pagina propia).
+  'gerencia': {pass:'gestion25', name:'Gerencia',       initials:'GR', modules:['stock','insumos','mercado','tesoreria','simulador-engorde','historico','remitos','acumulados','compras','gestion-costos','caravana','baseparams']},
+  'admin':    {pass:'admin123',  name:'Administrador',  initials:'AD', modules:['stock','insumos','mercado','tesoreria','simulador-engorde','historico','remitos','acumulados','compras','gestion-costos','caravana','baseparams']},
 };
 const PERIODS={'2025':{available:true},'2024':{available:false}};
 let currentUser=null, selectedPeriod='2025', chartsInited=false;

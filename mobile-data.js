@@ -283,10 +283,7 @@
     "stock-insumos":     "insumos",
     "mercado":           "mercado",
     "tesoreria":         "tesoreria",
-    "simulador":         "simulador",
     "historico":         "historico",
-    "estado-resultados": "resultados",
-    "flujo-fondos":      "flujo",
     "parametros-base":   "baseparams"
   };
 

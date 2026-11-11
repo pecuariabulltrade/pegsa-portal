@@ -185,7 +185,8 @@ function Sidebar({ active, onSelect, modulos, usuario }) {
         <div className="sidebar-section-label">Módulos Operativos</div>
         {operativos.map(renderNavItem)}
 
-        <div className="sidebar-section-label sidebar-section-divider">Análisis Económico</div>
+        {/* v15.94: sin Estado de Resultados ni Flujo el grupo puede quedar vacío */}
+        {economicos.length > 0 && <div className="sidebar-section-label sidebar-section-divider">Análisis Económico</div>}
         {economicos.map(renderNavItem)}
       </nav>
 
@@ -230,68 +231,8 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
 
   // Drill-down content por módulo
   const renderBody = () => {
+    // v15.94: sin drill de estado-resultados, flujo-fondos ni simulador (retirados).
     switch (modulo.id) {
-      case "estado-resultados":
-        return (
-          <>
-            <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Ingresos brutos</div><div className="v">$42.615.291.858</div></div>
-              <div className="drill-stat"><div className="l">Resultado operativo</div><div className="v pos">+$2.948.959.025</div></div>
-              <div className="drill-stat"><div className="l">Tenencia</div><div className="v pos">+$6.242.389.849</div></div>
-              <div className="drill-stat"><div className="l">Resultado neto</div><div className="v pos">+$9.191.348.874</div></div>
-            </div>
-            <div className="drill-section-title">Resultado mensual por centro · M$</div>
-            <Heatmap data={data.heatmap.centros} meses={data.heatmap.meses} />
-            <div className="drill-section-title">Ranking por resultado total</div>
-            <table className="tbl">
-              <thead><tr><th>Centro</th><th className="num">Ingresos</th><th className="num">Operativo</th><th className="num">Tenencia</th><th className="num">Total</th><th className="num">Margen</th></tr></thead>
-              <tbody>
-                {data.centros.slice().sort((a,b) => b.total - a.total).map(c => {
-                  const fullPes = (n) => (n * 1_000_000).toLocaleString("es-AR", { maximumFractionDigits: 0 });
-                  return (
-                    <tr key={c.id}>
-                      <td className="name">{c.nombre}</td>
-                      <td className="num">{c.ingresos > 0 ? `$${fullPes(c.ingresos)}` : "—"}</td>
-                      <td className="num"><span className={`chip ${c.operativo >= 0 ? "pos" : "neg"}`}>{c.operativo >= 0 ? "+" : "−"}${fullPes(Math.abs(c.operativo))}</span></td>
-                      <td className="num">{c.tenencia > 0 ? `+$${fullPes(c.tenencia)}` : "—"}</td>
-                      <td className="num"><span className={`chip ${c.total >= 0 ? "pos" : "neg"}`}>{c.total >= 0 ? "+" : "−"}${fullPes(Math.abs(c.total))}</span></td>
-                      <td className="num">{c.marginTot.toFixed(1)}%</td>
-                    </tr>
-                  );
-                })}
-                <tr className="foot">
-                  <td className="name">CONSOLIDADO</td>
-                  <td className="num">$42.615.291.858</td>
-                  <td className="num"><span className="chip pos">+$2.948.959.025</span></td>
-                  <td className="num">+$6.242.389.849</td>
-                  <td className="num"><span className="chip pos">+$9.191.348.874</span></td>
-                  <td className="num">18,97%</td>
-                </tr>
-              </tbody>
-            </table>
-          </>
-        );
-      case "flujo-fondos":
-        return (
-          <>
-            <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Ingresos cobrados</div><div className="v">$30.846.826.913</div></div>
-              <div className="drill-stat"><div className="l">Egresos corrientes</div><div className="v neg">−$27.043.395.456</div></div>
-              <div className="drill-stat"><div className="l">Superávit operativo</div><div className="v pos">+$3.803.431.457</div></div>
-              <div className="drill-stat"><div className="l">Aplicaciones netas</div><div className="v neg">−$3.845.595.521</div></div>
-            </div>
-            <div className="drill-section-title">Top conceptos cobrados</div>
-            <table className="tbl">
-              <tbody>
-                <tr><td className="name">Venta de Hacienda</td><td className="num">$27.022.178.029</td><td className="num">87,6%</td></tr>
-                <tr><td className="name">Facturación Feedlot a Terceros</td><td className="num">$2.350.414.723</td><td className="num">7,5%</td></tr>
-                <tr><td className="name">Venta de Soja</td><td className="num">$1.205.945.602</td><td className="num">3,8%</td></tr>
-                <tr><td className="name">Comisiones BULL + Servicios</td><td className="num">$84.666.513</td><td className="num">0,3%</td></tr>
-                <tr><td className="name">Intereses FIMA + Otros</td><td className="num">$171.963.052</td><td className="num">0,6%</td></tr>
-              </tbody>
-            </table>
-          </>
-        );
       case "stock-masa": {
         const pegCab = data.hero?.stock?.pegsa?.cabezas || 0;
         const pegKg  = data.hero?.stock?.pegsa?.kg     || 0;
@@ -393,20 +334,6 @@ function ModuleDrill({ modulo, data, onClose, onOpen }) {
             <div className="drill-section-title">Última semana · 25/04</div>
             <p style={{ color: "var(--ink-soft)", fontSize: 14, lineHeight: 1.5 }}>
               Cartera total positiva por sexta semana consecutiva. La posición en USD aumentó +$1.907.628.109 en pesos equivalentes durante el período. No hay vencimientos críticos en los próximos 30 días.
-            </p>
-          </>
-        );
-      case "simulador":
-        return (
-          <>
-            <div className="drill-stats">
-              <div className="drill-stat"><div className="l">Días engorde</div><div className="v">112</div></div>
-              <div className="drill-stat"><div className="l">Costo prod.</div><div className="v">$3.840/kg</div></div>
-              <div className="drill-stat"><div className="l">Resultado/cabeza</div><div className="v pos">+$182.500</div></div>
-              <div className="drill-stat"><div className="l">TIR anual equiv.</div><div className="v pos">+38,2%</div></div>
-            </div>
-            <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>
-              Simulación con precios de mercado del día. Abrí el módulo para ajustar parámetros (raciones, fletes, plazos, etc.) y exportar resultados.
             </p>
           </>
         );

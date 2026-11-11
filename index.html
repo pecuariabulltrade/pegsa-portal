@@ -57,8 +57,12 @@
     <a class="sb-item" data-target="tesoreria" onclick="sbNavigate('tesoreria')">
       <span class="sb-num">04</span><span class="sb-text">Tesorería</span>
     </a>
-    <a class="sb-item" data-target="simulador" onclick="sbNavigate('simulador')">
-      <span class="sb-num">05</span><span class="sb-text">Simulador Feedlot</span>
+    <!-- v15.94: el Simulador Feedlot viejo (screenSimulador) sale del menu; lo
+         reemplaza el Simulador de Engorde, pagina propia como compras.html.
+         'simulador-engorde' tiene que figurar en gerencia y admin de
+         core-home.js o sbInit() lo esconde (leccion v15.61.1). -->
+    <a class="sb-item" data-target="simulador-engorde" href="simulador.html">
+      <span class="sb-num">05</span><span class="sb-text">Simulador de Engorde</span>
     </a>
     <a class="sb-item" data-target="historico" onclick="sbNavigate('historico')">
       <span class="sb-num">06</span><span class="sb-text">Histórico &amp; Evolución</span>
@@ -70,18 +74,9 @@
 
   <div class="sb-section sb-section-divider">
     <div class="sb-section-label">Análisis Económico</div>
-    <a class="sb-item" data-target="resultados" onclick="sbNavigate('resultados')">
-      <span class="sb-num">08</span><span class="sb-text">Estado Resultados</span>
-    </a>
-    <a class="sb-item" data-target="flujo" onclick="sbNavigate('flujo')">
-      <span class="sb-num">09</span><span class="sb-text">Flujo de Fondos</span>
-    </a>
-    <!-- v15.61.1: pagina aparte (no es seccion React) → link directo. Necesita
-         data-target igual: sbInit() oculta todo .sb-item cuyo data-target no
-         este en user.modules, y sin el quedaba en display:none. -->
-    <a class="sb-item" data-target="analisis-costos" href="analisis_costos.html">
-      <span class="sb-num">10</span><span class="sb-text">An&aacute;lisis de Costos</span>
-    </a>
+    <!-- v15.94: 08 Estado Resultados, 09 Flujo de Fondos y 10 Analisis de Costos
+         salieron del menu (obsoletos: los reemplaza 13 Gestion y Costos). Sus
+         pantallas y archivos siguen (etapa 2). No renumerar el resto. -->
     <!-- v15.71.3: los informes acumulados salieron de adentro del modulo 07 y
          son pantalla propia. Como sbInit() esconde todo .sb-item cuyo
          data-target no este en user.modules, 'acumulados' tiene que figurar en
@@ -1766,7 +1761,7 @@
   <div class="nav-tabs">
     <div class="nav-tab active" id="mercadoTabHacienda"     onclick="mercadoTab('hacienda',this)">🐄 Precios de Mercado</div>
     <div class="nav-tab"        id="mercadoTabNegocios"     onclick="mercadoTab('negocios',this)">📋 Últimos Negocios de Compra</div>
-    <div class="nav-tab"        id="mercadoTabAnalisis"     onclick="mercadoTab('analisis',this)">🔍 Análisis Compras</div>
+    <!-- v15.94: pestaña "Análisis Compras" retirada (obsoleta). panelMercadoAnalisis y renderAnalisis() quedan hasta la etapa 2. -->
     <div class="nav-tab"        id="mercadoTabInferencia"   onclick="mercadoTab('inferencia',this)">💰 Indiferencia de Precios de Compra</div>
     <div class="nav-tab"        id="mercadoTabInfoMercado"  onclick="mercadoTab('infomercado',this)">📈 Información de Mercado</div>
   </div>
@@ -2727,7 +2722,7 @@
   </div>
 </div>
 
-<script src="js/core-home.js?v=1589"></script>
+<script src="js/core-home.js?v=1594"></script>
 <script src="js/modulo-05-mercado.js?v=1566"></script>
 <script src="js/modulo-07-simulador.js"></script>
 
@@ -2753,10 +2748,10 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 
 <!-- Panel Principal — datos y componentes (ORDEN: data → charts → shell → app) -->
-<script src="data.js?v=1593"></script>
+<script src="data.js?v=1594"></script>
 <script type="text/babel" src="charts.jsx"></script>
-<script type="text/babel" src="shell.jsx"></script>
-<script type="text/babel" src="app.jsx?v=1593"></script>
+<script type="text/babel" src="shell.jsx?v=1594"></script>
+<script type="text/babel" src="app.jsx?v=1594"></script>
 
 <!-- Panel Principal — boot -->
 <script type="text/babel">

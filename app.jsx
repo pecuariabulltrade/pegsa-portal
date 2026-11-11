@@ -18,13 +18,10 @@ function HeroValue({ currency, value, unit, featured }) {
 
 // Mapeo: id del Panel React → id que entiende openModule del portal viejo
 const _PANEL_TO_PORTAL_ID = {
-  "estado-resultados": "resultados",
-  "flujo-fondos": "flujo",
   "stock-masa": "stock",
   "stock-insumos": "insumos",
   "mercado": "mercado",
   "tesoreria": "tesoreria",
-  "simulador": "simulador",
   "historico": "historico",
   "parametros-base": "baseparams"
 };
