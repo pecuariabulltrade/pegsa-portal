@@ -3003,6 +3003,79 @@ def _tc_prom_mes_historico(carpeta, periodo, minimo=10):
     return round(sum(vals) / len(vals), 2)
 
 
+# ── v15.99 · TC histórico: memoria de intentos fallidos ─────────────────
+# Para los meses cerrados sin TC real, cada tick volvía a pedir Ámbito y BNA
+# histórico (15 meses × 24 ticks, siempre fallando) y terminaba en _TC_APROX.
+# Ahora el último intento fallido por período queda en datos\cache# tc_intentos.json (subcarpeta: no se publica) y las fuentes externas se
+# reintentan como máximo una vez cada TC_REINTENTO_DIAS. Un valor real se
+# guarda en la caché de siempre (valuacion_historica.json → precios) y el
+# período sale de la memoria. El mes en curso no pasa por acá.
+TC_REINTENTO_DIAS = 7
+
+
+def _tc_intentos_path(carpeta):
+    return Path(carpeta) / 'cache' / 'tc_intentos.json'
+
+
+def _tc_intentos_leer(carpeta):
+    try:
+        d = json.loads(_tc_intentos_path(carpeta).read_text(encoding='utf-8'))
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def _tc_intentos_guardar(carpeta, intentos):
+    try:
+        p = _tc_intentos_path(carpeta)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(intentos, ensure_ascii=False, indent=1, sort_keys=True),
+                     encoding='utf-8')
+    except Exception as e:
+        log.warning(f'    TC histórico: no pude guardar {_tc_intentos_path(carpeta)}: {e}')
+
+
+def _tc_hist_externo(periodo, intentos, ahora, periodo_hoy, fuentes, dias=TC_REINTENTO_DIAS):
+    """TC de un mes CERRADO desde las fuentes externas, con memoria de intentos.
+    Devuelve (valor o None, consulto). Modifica `intentos` en el lugar:
+    un fallo anota la hora; un valor real saca al período de la memoria.
+    Si el último fallo tiene menos de `dias` días, no llama a nadie."""
+    if not periodo or not periodo_hoy or periodo >= periodo_hoy:
+        return None, False
+    prev = (intentos.get(periodo) or {}).get('ultimo_intento')
+    if prev:
+        try:
+            if ahora - datetime.fromisoformat(prev) < _td(days=dias):
+                return None, False
+        except (TypeError, ValueError):
+            pass
+    valor = None
+    for fuente in fuentes:
+        try:
+            valor = fuente(periodo)
+        except Exception:
+            valor = None
+        if valor:
+            break
+    if valor:
+        intentos.pop(periodo, None)
+    else:
+        intentos[periodo] = {'ultimo_intento': ahora.isoformat(timespec='seconds'),
+                             'fuentes': [getattr(f, '__name__', str(f)) for f in fuentes]}
+    return valor, True
+
+
+def _tc_hist_proximo(intentos, dias=TC_REINTENTO_DIAS):
+    """Fecha del próximo reintento (el más cercano) o None."""
+    fs = []
+    for v in intentos.values():
+        try:
+            fs.append(datetime.fromisoformat(v.get('ultimo_intento')))
+        except (TypeError, ValueError, AttributeError):
+            pass
+    return (min(fs) + _td(days=dias)) if fs else None
+
+
 def actualizar_valuacion(carpeta, snaps_historico):
     """
     Calcula la valuación mensual en pesos para cada snapshot histórico.
@@ -3093,6 +3166,12 @@ def actualizar_valuacion(carpeta, snaps_historico):
     # más alto). Es la misma cotización que muestra el portal.
     _bna_tc_hoy, _bna_tc_fecha = _scrap_bna_tc('divisa')
 
+    # v15.99 · memoria de intentos del TC histórico (ver _tc_hist_externo)
+    _tc_int = _tc_intentos_leer(carpeta)
+    _tc_int_cambio = False
+    _tc_ahora = datetime.now()
+    _tc_aprox = []
+
     nuevos_snaps = []
 
     # v15.21: Forward-fill de precios cuando el scraping devuelve None.
@@ -3167,19 +3246,23 @@ def actualizar_valuacion(carpeta, snaps_historico):
                 if bna_tc:
                     log.info(f'    TC {periodo}: ${bna_tc:,.2f} (promedio BNA divisa '
                              f'del histórico propio)')
-                # 1) Intentar MEP promedio mensual desde Ambito (fuente preferida)
+                # 1) MEP promedio mensual de Ambito (preferida) y 2) BNA histórico
+                # (último día hábil). v15.99: como máximo una vez cada
+                # TC_REINTENTO_DIAS por mes; el resto de los ticks no pide nada.
                 if bna_tc is None:
-                    bna_tc = _scrap_mep_tc_ambito(periodo)
-                # 2) Fallback: BNA histórico (último día hábil del mes)
-                if bna_tc is None:
-                    bna_tc = _scrap_bna_tc_historico(periodo)
+                    bna_tc, _consulto = _tc_hist_externo(
+                        periodo, _tc_int, _tc_ahora, _periodo_hoy,
+                        (_scrap_mep_tc_ambito, _scrap_bna_tc_historico))
+                    _tc_int_cambio = _tc_int_cambio or _consulto
                     if bna_tc:
-                        log.info(f'    BNA TC {periodo}: ${bna_tc:,.2f} (scraping BNA histórico)')
+                        log.info(f'    TC {periodo}: ${bna_tc:,.2f} (fuente externa)')
             # Fallback: TC aproximado por mes (promedios MEP Ambito conocidos)
             if bna_tc is None:
                 bna_tc = _TC_APROX.get(periodo)
                 if bna_tc:
-                    log.info(f'    MEP TC {periodo}: ${bna_tc:,.0f} (tabla mensual MEP — aproximado)')
+                    # v15.99: una línea resumen al final en vez de una por mes
+                    _tc_aprox.append(periodo)
+                    log.debug(f'    MEP TC {periodo}: ${bna_tc:,.0f} (tabla mensual MEP — aproximado)')
             # Último fallback: TC actual del día
             if bna_tc is None and _bna_tc_hoy:
                 log.info(f'    TC {periodo}: ${_bna_tc_hoy:,.0f} (TC actual como fallback)')
@@ -3345,6 +3428,15 @@ def actualizar_valuacion(carpeta, snaps_historico):
         log.info(f'    Total {periodo}: {("${:,.0f}".format(total_pesos)) if total_pesos else "—"}{tc_str}{usd_str}')
 
     nuevos_snaps.sort(key=lambda x: x.get('periodo', ''))
+
+    # v15.99 · memoria de intentos del TC + una sola línea de resumen
+    if _tc_int_cambio:
+        _tc_intentos_guardar(carpeta, _tc_int)
+    if _tc_aprox:
+        _prox = _tc_hist_proximo(_tc_int)
+        log.info(f'  TC histórico: {len(_tc_aprox)} meses con tabla aproximada '
+                 f'({_tc_aprox[0]} a {_tc_aprox[-1]}), próximo reintento '
+                 f'{_prox.strftime("%d/%m") if _prox else "—"}')
 
     # v15.49: alertar cuando los precios de commodities quedan heredados
     # (forward-fill). El scraping de BCR estuvo roto de 2026-05 a 2026-08 sin que
