@@ -5866,20 +5866,18 @@ def actualizar_mercado_precios(carpeta, repo):
     log.info(f"  Fecha: {today}")
 
     # ── 1. Cargar JSON existente ────────────────────────────────
+    # v15.98: primero datos\ (se escribe en cada tick); el repo queda de
+    # respaldo, porque desde v15.98 sólo se publica cuando cambia algo.
     repo_json = Path(repo) / "mercado_precios.json" if repo else None
     existing = {}
-    if repo_json and repo_json.exists():
-        try:
-            with open(repo_json, "r", encoding="utf-8") as f:
-                existing = json.load(f)
-        except Exception:
-            pass
-    elif (Path(carpeta) / "mercado_precios.json").exists():
-        try:
-            with open(Path(carpeta) / "mercado_precios.json", "r", encoding="utf-8") as f:
-                existing = json.load(f)
-        except Exception:
-            pass
+    for _cand in (Path(carpeta) / "mercado_precios.json", repo_json):
+        if _cand and _cand.exists():
+            try:
+                with open(_cand, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+                break
+            except Exception:
+                pass
 
     historico      = existing.get("historico", [])
     insumos_ant    = existing.get("insumos", {})
@@ -6155,24 +6153,17 @@ def actualizar_mercado_precios(carpeta, repo):
         except Exception:
             pass
 
-    # Guardar en repo GitHub Pages
+    # v15.98: sólo a datos\. Antes también se escribían directo al repo, lo
+    # que salteaba la puerta única de publicación (bloque AUTO GIT PUSH:
+    # copia sólo si cambió y nunca negocios_*, ver PUB_NO_PUBLICAR).
     _files_to_save = [("mercado_precios.json", mercado_json),
                       ("negocios_resumen.json", negocios_json)]
     if snap_data:
         _files_to_save.append(("negocios_snapshots.json", snap_data))
 
     for fname, data in _files_to_save:
-        if repo_json:
-            dest = Path(repo) / fname
-            try:
-                with open(dest, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                log.info(f"  ✓ {fname} → repo ({dest})")
-            except Exception as e:
-                log.warning(f"  ⚠ No se pudo guardar {fname} en repo: {e}")
-
         guardar(data, carpeta, fname)
-        log.info(f"  ✓ {fname} → OneDrive")
+        log.info(f"  ✓ {fname} → OneDrive (datos)")
 
 
 # ══════════════════════════════════════════════════════════════
