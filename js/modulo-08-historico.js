@@ -670,9 +670,9 @@ function _renderHistDiario(dias, filtro){
   });
 
   // Mostrar fecha de generación
-  if(genLbl && _histDiario.generado){
-    var gd = new Date(_histDiario.generado);
-    genLbl.textContent = 'Actualizado ' + gd.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + gd.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  // v15.98: hora de la última consulta a WinCampo (cae al generado del archivo)
+  if(genLbl){
+    wincampoAlTexto(_histDiario.generado, function(t){ genLbl.textContent = 'WinCampo al ' + t; });
   }
 
   // KPIs rápidos

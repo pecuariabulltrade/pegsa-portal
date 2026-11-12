@@ -41,9 +41,8 @@ function StockInsumosDrill() {
   const criticoEsDiesel = !!dieselCritico;
   const fmt      = (n) => Number(Math.round(n)).toLocaleString("es-AR");
   const fmtD1    = (n) => Number(n).toFixed(1).replace(".", ",");
-  const fechaUpd = meta.generado
-    ? new Date(meta.generado).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
-    : "—";
+  // v15.98: hora de la última consulta a WinCampo (cae al generado del archivo)
+  const fechaUpd = wincampoAlTexto(meta.generado);
   const hayNegativos = insumos.some(i => i.stock_kg < 0);
 
   return (

@@ -98,6 +98,8 @@ window.PEGSA_DATA = {
   if (ultimaAct?.generado) window.PEGSA_DATA.lastUpdate = ultimaAct.generado;
   // v15.92: WinCampo se consulta una vez por día; "dd/mm/aaaa hh:mm" → "dd/mm hh:mm"
   if (ultimaAct?.wincampo?.consultado) window.PEGSA_DATA.wincampoAl = ultimaAct.wincampo.consultado.replace(/\/\d{4}/, "");
+  // v15.98: con año, para Stock / Insumos / Histórico diario / móvil (wincampoAlTexto en js/comun.js).
+  if (ultimaAct?.wincampo?.consultado) window.PEGSA_DATA.wincampoConsultado = ultimaAct.wincampo.consultado;
   // v15.93: consultas en horas clave + control por stock de cargas con fecha atrasada
   if (ultimaAct?.wincampo) window.PEGSA_DATA.wincampoInfo = ultimaAct.wincampo;
 

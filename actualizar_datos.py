@@ -5082,18 +5082,21 @@ def main():
             _repo = Path(_repo_path)
 
             # 1) Copiar JSONs de datos de OneDrive → repo
-            #    Excluir archivos con credenciales o configuración sensible
-            _EXCLUIR = {"lector-robot", "credential", "secret", "config", "key"}
-            _copiados = 0
-            for _json in Path(carpeta).glob("*.json"):
-                _nombre_lower = _json.name.lower()
-                if any(excl in _nombre_lower for excl in _EXCLUIR):
-                    log.info(f"  ⚠ Omitido (sensible): {_json.name}")
+            #    v15.98: sólo los que cambiaron (sin contar las marcas de hora);
+            #    ver _pub_hay_que_copiar. Fuera credenciales y PUB_NO_PUBLICAR.
+            _copiados, _iguales, _omitidos = [], 0, []
+            for _json in sorted(Path(carpeta).glob("*.json")):
+                _excl = _pub_excluido(_json.name)
+                if _excl:
+                    _omitidos.append(_json.name)
                     continue
                 _dst = _repo / _json.name
-                _shutil.copy2(str(_json), str(_dst))
-                _copiados += 1
-            log.info(f"  ✓ {_copiados} JSON copiados a repo")
+                if _pub_hay_que_copiar(_json, _dst):
+                    _shutil.copy2(str(_json), str(_dst))
+                    _copiados.append(_json.name)
+                else:
+                    _iguales += 1
+            log.info(f"  ✓ {len(_copiados)} JSON copiados a repo ({_iguales} sin cambios, {len(_omitidos)} no se publican)")
 
             # v15.76: la carpeta resultado_remitos\ (un JSON de filas por
             # remito). El glob de arriba NO entra en subcarpetas. Va acá y no
@@ -5103,11 +5106,21 @@ def main():
             if _sub.is_dir():
                 _dst_sub = _repo / RR_DIRNAME
                 _dst_sub.mkdir(parents=True, exist_ok=True)
-                _nsub = 0
+                _nsub, _nsub_igual = 0, 0
                 for _f in _sub.glob("*.json"):
-                    _shutil.copy2(str(_f), str(_dst_sub / _f.name))
-                    _nsub += 1
-                log.info(f"  ✓ {_nsub} JSON de {RR_DIRNAME} copiados a repo")
+                    # v15.98: por remito, sólo si los bytes cambiaron
+                    if _pub_bytes_distintos(_f, _dst_sub / _f.name):
+                        _shutil.copy2(str(_f), str(_dst_sub / _f.name))
+                        _copiados.append(f"{RR_DIRNAME}/{_f.name}")
+                        _nsub += 1
+                    else:
+                        _iguales += 1
+                        _nsub_igual += 1
+                log.info(f"  ✓ {_nsub} JSON de {RR_DIRNAME} copiados a repo ({_nsub_igual} sin cambios)")
+
+            # v15.98: una línea por tick con el resumen de la publicación
+            _det = (": " + ", ".join(_copiados)) if 0 < len(_copiados) <= 12 else ""
+            log.info(f"  Publicación: {len(_copiados)} copiados · {_iguales} sin cambios{_det}")
 
             # 2) Commit + push
             subprocess.run(["git", "-C", str(_repo), "add", "-A"],
@@ -10917,6 +10930,89 @@ def generar_fantasmas(carpeta_out, periodo, egresos_data, log=None, stock_data=N
 # real al abrir el 07 es ~332 KB -> ~35 KB (8x), no 3,2 MB -> 227 KB.
 # El archivo COMPLETO se sigue publicando igual: lo leen la auditoria de este
 # mismo script, `precios_compra_real`/compras y Cowork para verificar.
+
+# ══════════════════════════════════════════════════════════════
+# v15.98 · PUBLICACIÓN: sólo lo que cambió
+# ══════════════════════════════════════════════════════════════
+# Cada tick reescribe todos los JSON de datos\ con un `generado` nuevo
+# aunque no haya datos nuevos. Al copiar al repo se comparan los objetos
+# parseados SIN las marcas de hora; si lo demás es igual no se copia (queda
+# publicada la versión anterior). datos\ se sigue escribiendo como siempre.
+# Ésta es la única puerta de publicación de JSON (el .bat AUTO ya no copia).
+PUB_SIEMPRE = {"ultima_actualizacion.json"}
+# Se generan en datos\ pero ninguna pantalla los lee (desde v15.97).
+# resultado_remitos.json: el módulo 07 usa resultado_remitos_index.json.
+PUB_NO_PUBLICAR = {
+    "negocios_resumen.json",
+    "negocios_snapshots.json",
+    "precios_indiferencia_historico.json",
+    "resultado_remitos.json",
+    "consumo_2025.backup_test.json",
+}
+# Credenciales: nombre exacto + red por subcadena (nunca publicar por error).
+PUB_SENSIBLES = {"lector-robot-credentials.json"}
+PUB_SENSIBLES_SUBCADENA = ("credential", "secret")
+
+
+def _pub_excluido(nombre):
+    """None si se publica; 'sensible' o 'no_publicar' si no."""
+    n = nombre.lower()
+    if n in PUB_SENSIBLES or any(x in n for x in PUB_SENSIBLES_SUBCADENA):
+        return "sensible"
+    if n in PUB_NO_PUBLICAR or ".backup" in n:
+        return "no_publicar"
+    return None
+
+
+def _pub_sin_marcas(obj):
+    """Copia del objeto sin `generado`, `meta.generado` ni `meta.tc.capturado`."""
+    if not isinstance(obj, dict):
+        return obj
+    o = dict(obj)
+    o.pop("generado", None)
+    m = o.get("meta")
+    if isinstance(m, dict):
+        m = dict(m)
+        m.pop("generado", None)
+        tc = m.get("tc")
+        if isinstance(tc, dict):
+            tc = dict(tc)
+            tc.pop("capturado", None)
+            m["tc"] = tc
+        o["meta"] = m
+    return o
+
+
+def _pub_leer(path):
+    # NaN/Infinity -> texto, para que dos NaN comparen iguales
+    return json.loads(Path(path).read_text(encoding="utf-8-sig"),
+                      parse_constant=lambda c: "__" + c)
+
+
+def _pub_hay_que_copiar(src, dst):
+    """True si el JSON de datos\\ tiene que llegar al repo."""
+    nombre = Path(src).name
+    if _pub_excluido(nombre):
+        return False
+    if nombre.lower() in PUB_SIEMPRE:
+        return True
+    if not Path(dst).exists():
+        return True
+    try:
+        return _pub_sin_marcas(_pub_leer(src)) != _pub_sin_marcas(_pub_leer(dst))
+    except Exception:
+        return True
+
+
+def _pub_bytes_distintos(src, dst):
+    import filecmp
+    if not Path(dst).exists():
+        return True
+    try:
+        return not filecmp.cmp(str(src), str(dst), shallow=False)
+    except Exception:
+        return True
+
 RR_DIRNAME = "resultado_remitos"
 
 

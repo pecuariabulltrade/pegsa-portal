@@ -3,8 +3,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from actualizar_datos import smoke_test
 
-# Apuntar al repo donde están los JSONs reales actualizados
-carpeta = "C:\\Users\\USER\\Documents\\GitHub\\pegsa-portal"
+# v15.98: apuntar a datos\ (donde el pipeline corre el smoke). El repo ya no
+# tiene todos los JSON: resultado_remitos.json se genera pero no se publica.
+carpeta = "C:\\Users\\USER\\OneDrive - pecuaria el garabi sa\\PEGSA_Portal\\datos"
+if not Path(carpeta).is_dir():
+    carpeta = "C:\\Users\\USER\\Documents\\GitHub\\pegsa-portal"
 result = smoke_test(carpeta, "2025")
 
 print(f"OK: {result['ok']}")

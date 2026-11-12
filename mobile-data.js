@@ -521,7 +521,8 @@
       INSUMOS_TOTAL = {
         totalKg: (stk.meta && stk.meta.total_kg) || 0,
         count:   (stk.meta && stk.meta.count) || stk.items.length,
-        fecha:   (stk.meta && stk.meta.generado) ? fmtFechaCorta(stk.meta.generado) : null
+        // v15.98: hora de la última consulta a WinCampo (cae al generado del archivo)
+        fecha:   D.wincampoConsultado || ((stk.meta && stk.meta.generado) ? fmtFechaCorta(stk.meta.generado) : null)
       };
       // Orden: críticos (bad) primero, luego warn, luego ok, luego sin dato.
       var ORD = { bad: 0, warn: 1, ok: 2, null: 3 };

@@ -45,10 +45,11 @@ async function cargarDesdeOneDrive() {
     if(fechaUltDato){
       var _fp = fechaUltDato.split('-');
       document.getElementById('kpi-fecha').textContent = (_fp[2]||'?')+'/'+(_fp[1]||'?')+'/'+(_fp[0]||'?');
-      document.getElementById('kpi-fecha-sub').textContent = 'último reparto · script: '+(meta.generado ? meta.generado.slice(0,10) : '—');
+      // v15.98: hora de la última consulta a WinCampo (no la del script)
+      wincampoAlTexto(meta.generado, function(t){ document.getElementById('kpi-fecha-sub').textContent = 'último reparto · WinCampo: '+t; });
     } else {
-      document.getElementById('kpi-fecha').textContent = meta.generado ? meta.generado.slice(0,10).split('-').reverse().join('/') : '—';
-      document.getElementById('kpi-fecha-sub').textContent = 'fecha de generación del script';
+      wincampoAlTexto(meta.generado, function(t){ document.getElementById('kpi-fecha').textContent = t.slice(0,10); });
+      document.getElementById('kpi-fecha-sub').textContent = 'última consulta a WinCampo';
     }
     document.getElementById('stockLoading').style.display = 'none';
     document.getElementById('stockData').style.display    = 'block';

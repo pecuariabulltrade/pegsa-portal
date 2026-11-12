@@ -54,7 +54,8 @@ function renderInsumos(data) {
 
   document.getElementById('ins-kpi-total').textContent = Number(Math.round(totalKg)).toLocaleString('es-AR')+' kg';
   document.getElementById('ins-kpi-count').textContent = insumos.length;
-  document.getElementById('ins-kpi-fecha').textContent = meta.generado ? new Date(meta.generado).toLocaleString('es-AR') : '-';
+  // v15.98: hora de la última consulta a WinCampo
+  wincampoAlTexto(meta.generado, function(t){ document.getElementById('ins-kpi-fecha').textContent = t; });
 
   /* v15.70 · Los dias de stock ya no salen de dividir por el promedio de 3 dias
      (volatil: un dia de lluvia movia el silo de 476 a 300 dias) sino por el

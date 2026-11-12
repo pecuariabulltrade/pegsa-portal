@@ -563,7 +563,9 @@ function StockScreen(props) {
   var whoSt = React.useState("pegsa"), who = whoSt[0], setWho = whoSt[1];
   var mainRef = React.useRef(null);
   var gen = data.kpis && data.kpis.meta && data.kpis.meta.generado;
-  var upd = gen ? skDM(gen) + " " + gen.slice(11, 16) : "";
+  // v15.98: hora de la última consulta a WinCampo (cae al generado del archivo)
+  var wcAl = (window.PEGSA_DATA && window.PEGSA_DATA.wincampoConsultado) || null;
+  var upd = wcAl || (gen ? skDM(gen) + "/" + gen.slice(0, 4) + " " + gen.slice(11, 16) : "");
   var cambiarTab = function (t) {
     setTab(t);
     try { window.scrollTo({ top: 0, behavior: "instant" }); } catch (e) { window.scrollTo(0, 0); }
