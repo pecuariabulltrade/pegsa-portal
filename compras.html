@@ -141,6 +141,13 @@
 #res-filtros{margin:2px 0 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .fchip{background:#1a1612;color:#d4a84b;border-radius:2px;padding:4px 10px;font-size:11px;cursor:pointer;letter-spacing:.04em}
 .fchip.flimpia{background:transparent;color:#8a827a;border:1px solid #e3e1da}
+
+/* v15.100 · filtros globales (Propietario + Desde) */
+#gfil{flex-basis:100%;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--text-2)}
+#gfil .lbl{margin:0}
+#gfil select,#gfil input[type=date]{height:28px;font-size:12px}
+#gfil button.btn.mini{height:24px}
+#gfil .gnota{color:#7a5c12;background:var(--ambar-soft);border:1px solid #e8d9ad;border-radius:6px;padding:2px 8px}
 </style>
 </head>
 <body>
@@ -159,6 +166,16 @@
     <button data-tab="resumen" onclick="tab('resumen')">Resumen</button>
   </nav>
   <div class="sync"><span class="dot" id="sync-dot"></span><span id="sync-txt">—</span></div>
+  <!-- v15.100 · filtros globales: Ingresos, Liquidaciones y Resumen (no Nueva liquidación) -->
+  <div id="gfil">
+    <span class="lbl">Propietario</span>
+    <select id="g-prop" onchange="gSet('prop', this.value)"><option value="">todos</option><option>PEGSA</option></select>
+    <span class="lbl" style="margin-left:6px">Desde</span>
+    <input type="date" id="g-desde" onchange="gSet('desde', this.value)">
+    <button class="btn sec mini" onclick="gSet('desde', '')" title="Sin fecha: todas las tropas">todo</button>
+    <button class="btn sec mini" onclick="gSet('desde', G_DEF.desde)" title="Volver al default">01/09/25</button>
+    <span id="g-nota"></span>
+  </div>
 </header>
 
 <main>
@@ -167,7 +184,6 @@
 <section id="tab-ingresos">
   <div class="card">
     <div class="filtros">
-      <div><div class="lbl">Propietario</div><select id="f-prop" onchange="rIngresos()"></select></div>
       <div><div class="lbl">Categoría</div><select id="f-cat" onchange="rIngresos()"></select></div>
       <div><div class="lbl">Consignataria</div><select id="f-cons" onchange="rIngresos()"></select></div>
       <div><div class="lbl">Mes</div><select id="f-mes" onchange="rIngresos()"></select></div>
@@ -281,6 +297,7 @@
 
 <!-- ══════════════ 4 · RESUMEN ══════════════ -->
 <section id="tab-resumen" class="hide">
+  <div class="muted" id="sub-res" style="margin:0 0 10px"></div>
   <div class="kpis" id="kpis-res"></div>
   <div id="res-filtros"></div>
   <div class="card">
@@ -366,10 +383,19 @@
    gráfico y las cuatro tablas a la vez; chips arriba muestran lo activo y
    se destapan tocando de nuevo o con "limpiar todo". El Informe PDF sale
    sobre lo filtrado y lo dice en la cabecera.
+
+   v15.100 · Filtros GLOBALES arriba de las pestañas: Propietario (default
+   PEGSA, que incluye Bulltrade: propDe) y Desde (default 01/09/2025, antes
+   las compras se costeaban con el Excel y nunca van a tener liquidación).
+   Valen para Ingresos, Liquidaciones y Resumen; no para Nueva liquidación.
+   Los chips del semáforo cuentan sólo lo filtrado (meta.semaforo del
+   pipeline no cambia). Se guardan en localStorage (pegsa_compras_prop /
+   pegsa_compras_desde). Un enlace #tropa=… a una tropa fuera del filtro
+   los suspende para esa vista (G_OVR) sin tocar lo guardado.
    ════════════════════════════════════════════════════════════ */
 'use strict';
 
-var VERSION = 'v15.74.16';
+var VERSION = 'v15.100';
 var ING  = null;             // compras_ingresos.json
 var LIQ  = [];               // operaciones (base o archivo), incluidas anuladas
 var IDX  = {};               // tropa_norm → categoria → {liq_id, ...}
@@ -414,6 +440,120 @@ function toast(msg, cls, ms) {
   setTimeout(function () { d.remove(); }, ms || 7000);
 }
 
+/* ════════ v15.100 · FILTROS GLOBALES ════════ */
+var G_DEF = {prop: 'PEGSA', desde: '2025-09-01'};
+var G_KEY = {prop: 'pegsa_compras_prop', desde: 'pegsa_compras_desde'};
+var G = {prop: G_DEF.prop, desde: G_DEF.desde};   // lo elegido (y guardado)
+var G_OVR = null;                                  // vista de un #tropa=… fuera del filtro
+
+function gLeer() {
+  ['prop', 'desde'].forEach(function (c) {
+    try { var v = localStorage.getItem(G_KEY[c]); if (v !== null) G[c] = v; } catch (e) {}
+  });
+  if (G.desde && !/^\d{4}-\d{2}-\d{2}$/.test(G.desde)) G.desde = G_DEF.desde;
+}
+function gProp()  { return G_OVR ? G_OVR.prop  : G.prop; }
+function gDesde() { return G_OVR ? G_OVR.desde : G.desde; }
+/* PEGSA incluye a Bulltrade, como el pipeline (liqEsTercero): las 4 líneas
+   con hotelero "BULLTRADE SRL" cuentan como PEGSA. */
+function propDe(h) { return liqEsTercero(h) ? String(h) : 'PEGSA'; }
+function fechaTropa(k, fb) { var t = ((ING && ING.tropas) || {})[k]; return (t && t.fecha) || fb || ''; }
+
+function gPasaTropa(t) {
+  var gp = gProp(), gd = gDesde();
+  if (gp && propDe(t.hotelero) !== gp) return false;
+  if (gd && String(t.fecha || '') < gd) return false;
+  return true;
+}
+function gPasaTropaK(k) {
+  var t = ((ING && ING.tropas) || {})[k] || tropaSinWc(k);
+  return !!t && gPasaTropa(t);
+}
+/* Liquidación: alguna línea del propietario, y fecha ≥ Desde o alguna de sus
+   tropas ingresó desde esa fecha. */
+function gPasaLiq(o) {
+  var gp = gProp(), gd = gDesde(), cs = o.categorias || [];
+  if (gp && !cs.some(function (c) { return propDe(c.hotelero) === gp; })) return false;
+  if (gd && String(o.fecha || '') < gd
+      && !cs.some(function (c) { return fechaTropa(c.tropa_norm || normTropa(c.tropa)) >= gd; })) return false;
+  return true;
+}
+/* Línea del resumen: por propietario de la línea y fecha de ingreso de su tropa
+   (si WinCampo no la tiene, la de la liquidación). */
+function gPasaLinea(o, c) {
+  var gp = gProp(), gd = gDesde();
+  if (gp && propDe(c.hotelero) !== gp) return false;
+  if (gd && fechaTropa(c.tropa_norm || normTropa(c.tropa), o.fecha) < gd) return false;
+  return true;
+}
+function gTxt() {
+  var p = [], gd = gDesde(), gp = gProp();
+  if (gd) p.push('desde ' + fec(gd));
+  if (gp) p.push('propietario ' + gp);
+  return p.join(' · ');
+}
+function gSet(campo, val) {
+  if (G_OVR) {   // elegir algo a mano termina la vista del enlace
+    G_OVR = null;
+    if (/tropa=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+  }
+  G[campo] = val || '';
+  try { localStorage.setItem(G_KEY[campo], G[campo]); } catch (e) {}
+  gAplicar();
+}
+function gRestaurar() {
+  G_OVR = null;
+  if (/tropa=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+  document.getElementById('f-q').value = '';
+  gAplicar();
+}
+function gInitUI() {
+  var ps = {PEGSA: 1};
+  Object.keys(ING.tropas || {}).forEach(function (k) { ps[propDe(ING.tropas[k].hotelero)] = 1; });
+  LIQ.forEach(function (o) { (o.categorias || []).forEach(function (c) { if (c.hotelero) ps[propDe(c.hotelero)] = 1; }); });
+  var vals = Object.keys(ps).filter(function (p) { return p !== 'PEGSA'; }).sort();
+  document.getElementById('g-prop').innerHTML = '<option value="">todos</option><option>PEGSA</option>'
+    + vals.map(function (v) { return '<option>' + esc(v) + '</option>'; }).join('');
+}
+function gPintar() {
+  var sp = document.getElementById('g-prop'), gp = gProp();
+  if (gp && !Array.prototype.some.call(sp.options, function (op) { return op.value === gp; })) {
+    sp.insertAdjacentHTML('beforeend', '<option>' + esc(gp) + '</option>');
+  }
+  sp.value = gp;
+  document.getElementById('g-desde').value = gDesde();
+  document.getElementById('g-nota').innerHTML = G_OVR
+    ? '<span class="gnota">vista del enlace: filtros en «todos» y sin fecha · '
+      + '<a href="#" onclick="gRestaurar();return false" style="color:inherit;font-weight:600">volver a mis filtros</a></span>'
+    : '';
+}
+/* Meses de Ingresos: sólo los que caen dentro del rango global. */
+function gMeses() {
+  var s = document.getElementById('f-mes'), prev = s.value, gd = gDesde();
+  var ms = uniq((ING.grupos || []).filter(function (g) {
+    return (!gd || String(g.fecha_ingreso || '') >= gd) && (!gProp() || propDe(g.hotelero) === gProp());
+  }).map(function (g) { return mesDe(g.fecha_ingreso); })).reverse();
+  s.innerHTML = '<option value="">todos</option>' + ms.map(function (v) { return '<option>' + esc(v) + '</option>'; }).join('');
+  s.value = ms.indexOf(prev) >= 0 ? prev : '';
+}
+function gAplicar() {
+  gPintar();
+  gMeses();
+  if (gProp()) RFIL.prop = null;   // el global ya fija el propietario: sin segundo chip
+  rIngresos();
+  if (!document.getElementById('tab-liqs').classList.contains('hide')) rLiqs();
+  if (!document.getElementById('tab-resumen').classList.contains('hide')) rResumen();
+}
+/* Conteo del semáforo sobre lo que pasa el filtro global (chips y PDF). */
+function semConteo() {
+  var cnt = {ok: 0, revisar: 0, sin_liquidar: 0, terceros: 0};
+  Object.keys(SEM).forEach(function (k) {
+    if (!gPasaTropaK(k)) return;
+    cnt[SEM[k].estado] = (cnt[SEM[k].estado] || 0) + 1;
+  });
+  return cnt;
+}
+
 /* ── pestañas ── */
 function tab(t) {
   ['ingresos', 'nueva', 'liqs', 'resumen'].forEach(function (x) {
@@ -421,6 +561,7 @@ function tab(t) {
     var b = document.querySelector('nav button[data-tab="' + x + '"]');
     if (b) b.classList.toggle('on', x === t);
   });
+  document.getElementById('gfil').classList.toggle('hide', t === 'nueva');   // v15.100
   if (t === 'liqs') rLiqs();
   if (t === 'resumen') rResumen();
   if (t === 'nueva') rNueva();
@@ -495,7 +636,9 @@ async function cargar() {
   reindexar();
   document.getElementById('sync-dot').className = 'dot' + (FUENTE === 'supabase' ? '' : ' off');
   actualizarSync();
+  gLeer();          // v15.100
   initFiltros();
+  gInitUI(); gPintar(); gMeses();
   rIngresos();
   document.getElementById('carga').style.display = 'none';
   aplicarHash();
@@ -734,10 +877,9 @@ function initFiltros() {
     s.innerHTML = '<option value="">' + todos + '</option>'
       + vals.map(function (v) { return '<option>' + esc(v) + '</option>'; }).join('');
   }
-  llenar('f-prop', uniq(G.map(function (g) { return g.hotelero; })), 'todos');
+  // v15.100 · Propietario es global (g-prop); los meses los arma gMeses() según Desde
   llenar('f-cat',  uniq(G.map(function (g) { return g.categoria; })), 'todas');
   llenar('f-cons', uniq(G.map(function (g) { return g.consignatario; })), 'todas');
-  llenar('f-mes',  uniq(G.map(function (g) { return mesDe(g.fecha_ingreso); })).reverse(), 'todos');
   // autocompletado de tropas para "renombrar"
   document.getElementById('dl-tropas').innerHTML = Object.keys(T).sort().map(function (k) {
     return '<option value="' + esc(T[k].tropa) + '">' + esc(fec(T[k].fecha) + ' · ' + T[k].hotelero
@@ -764,8 +906,7 @@ function tropaSinWc(k) {
 }
 
 function tropasFiltradas() {
-  var fp = document.getElementById('f-prop').value,
-      fc = document.getElementById('f-cat').value,
+  var fc = document.getElementById('f-cat').value,
       fs = document.getElementById('f-cons').value,
       fm = document.getElementById('f-mes').value,
       fe = document.getElementById('f-est').value,
@@ -778,7 +919,7 @@ function tropasFiltradas() {
   ks.forEach(function (k) {
     var t = (ING.tropas || {})[k] || tropaSinWc(k), cs = catsDe(k);
     if (!t) return;
-    if (fp && t.hotelero !== fp) return;
+    if (!gPasaTropa(t)) return;   // v15.100 · propietario + desde globales
     if (fs && t.consignatario !== fs) return;
     if (fm && mesDe(t.fecha) !== fm) return;
     if (fc && !cs.some(function (g) { return g.categoria === fc; })) return;
@@ -929,23 +1070,24 @@ function rIngresos() {
     + '<td class="num">' + N(totCab ? totKg / totCab : null, 1) + '</td><td colspan="4"></td></tr>';
 
   document.getElementById('sub-ing').textContent =
-    (ING.meta || {}).desde + ' a ' + (ING.meta || {}).hasta + ' · '
+    (gTxt() ? gTxt() + ' · ' : '')   // v15.100
+    + (ING.meta || {}).desde + ' a ' + (ING.meta || {}).hasta + ' · '
     + (ING.meta || {}).n_tropas + ' tropas · ' + (ING.meta || {}).n_grupos + ' grupos · '
     + 'destete y traslado excluidos · semáforo: categoría + cabezas + kg ±' + LIQ_TOL_KG_PCT + ' %'
     + (((ING.meta || {}).categorias || {}).caravanas != null
         ? ' · categorías por caravana (cobertura ≥ ' + (ING.meta.categorias.cob_min || 90) + ' %)' : '');
 
-  // chips del semáforo sobre TODAS las tropas (PEGSA/Bulltrade primero, terceros al final)
-  var cnt = {ok: 0, revisar: 0, sin_liquidar: 0, terceros: 0};
-  Object.keys(SEM).forEach(function (k) { cnt[SEM[k].estado] = (cnt[SEM[k].estado] || 0) + 1; });
+  // chips del semáforo: v15.100 · sólo las tropas que pasan el filtro global
+  // (propietario + desde); con "todos" + "todo" coinciden con meta.semaforo
+  var cnt = semConteo();
   var fsem = document.getElementById('f-sem').value;
   var chipSem = function (e, lbl) {
     return '<span class="chip click' + (fsem === e ? ' on' : '') + '" onclick="setSem(\'' + e + '\')">'
       + semDot(e) + '<b>' + N(cnt[e]) + '</b> ' + lbl + '</span>';
   };
   var MC = (ING.meta || {}).categorias || {};
-  var nDist = Object.keys(ING.tropas || {}).filter(function (k) { return ING.tropas[k].remito_distinto; }).length;
-  var nKg = Object.keys(SEM).filter(soloKg).length;
+  var nDist = Object.keys(ING.tropas || {}).filter(function (k) { return ING.tropas[k].remito_distinto && gPasaTropa(ING.tropas[k]); }).length;
+  var nKg = Object.keys(SEM).filter(function (k) { return soloKg(k) && gPasaTropaK(k); }).length;
   document.getElementById('chips-ing').innerHTML =
     chipSem('ok', 'verdes') + chipSem('revisar', 'a revisar')
     + '<span class="chip click' + (F_KG ? ' on' : '') + '" onclick="setSoloKg()" title="A revisar cuyo único motivo es el kg (desbaste): '
@@ -1372,10 +1514,20 @@ async function guardarSnap(snap) {
 /* compras.html#tropa=PEGDAR121225 → filtra y resalta esa tropa (link desde el módulo 07/09). */
 function aplicarHash() {
   var m = String(location.hash || '').match(/tropa=([^&]+)/);
-  if (!m) return;
+  if (!m) {
+    // v15.100 · se fue del enlace: vuelven los filtros guardados
+    if (G_OVR) { G_OVR = null; gAplicar(); }
+    return;
+  }
   var k = normTropa(decodeURIComponent(m[1]));
-  ['f-prop', 'f-cat', 'f-cons', 'f-mes', 'f-est', 'f-sem'].forEach(function (id) { document.getElementById(id).value = ''; });
+  ['f-cat', 'f-cons', 'f-mes', 'f-est', 'f-sem'].forEach(function (id) { document.getElementById(id).value = ''; });
   document.getElementById('f-q').value = k;
+  // v15.100 · el enlace no puede quedar tapado: si la tropa es de otro
+  // propietario o anterior a Desde, los globales pasan a "todos"/sin fecha
+  // SÓLO para esta vista (no se toca localStorage)
+  G_OVR = null;
+  if (((ING.tropas || {})[k] || LIN[k]) && !gPasaTropaK(k)) G_OVR = {prop: '', desde: ''};
+  gPintar(); gMeses();
   tab('ingresos');
   rIngresos();
   var tr = document.querySelector('#t-ing tr.tropa[data-k="' + k + '"]');
@@ -1826,6 +1978,7 @@ function liqsFiltradas() {
   var fe = document.getElementById('l-est').value;
   var q = document.getElementById('l-q').value.trim().toUpperCase();
   return LIQ.filter(function (o) {
+    if (!gPasaLiq(o)) return false;   // v15.100 · propietario + desde globales
     var an = String(o.estado || '').toLowerCase() === 'anulada';
     if (fe === 'activas' && an) return false;
     if (fe === 'anulada' && !an) return false;
@@ -1902,7 +2055,8 @@ function rLiqs() {
     + '<td class="num">' + N(tKg) + '</td><td class="num">' + M(tImp) + '</td>'
     + '<td class="num">' + (tKg ? M(tImp / tKg) : '—') + '</td><td colspan="5"></td></tr>';
   document.getElementById('sub-liqs').textContent =
-    L.length + ' en pantalla · fuente: ' + (FUENTE === 'supabase' ? 'base de datos' : 'JSON del pipeline');
+    (gTxt() ? gTxt() + ' · ' : '')   // v15.100
+    + L.length + ' en pantalla · fuente: ' + (FUENTE === 'supabase' ? 'base de datos' : 'JSON del pipeline');
 }
 
 function abrirLiq(id) {
@@ -1985,10 +2139,13 @@ function exportCSV() {
               'hotelero', 'cabezas_wc', 'kg_wc', 'cabezas_liq', 'kg_liq', 'precio_modo',
               'precio_valor', 'precio_kg', 'importe', 'comision_cat', 'gastos_cat',
               'importe_cg', 'precio_kg_cg', 'precio_cab_cg', 'desbaste_pct'];
-  var filas = [cols.join(';')];
+  // v15.100 · con filtros globales, la primera línea lo dice y sólo van las
+  // líneas del propietario elegido
+  var filas = gTxt() ? ['Filtros: ' + gTxt().replace(/;/g, ','), cols.join(';')] : [cols.join(';')];
   L.forEach(function (o) {
     var R = liqCalcular(o);
     R.categorias.forEach(function (c) {
+      if (gProp() && propDe(c.hotelero) !== gProp()) return;
       var kT = c.tropa_norm || normTropa(c.tropa);
       var S = SEM[kT] || {estado: '', motivos: {}}, T = (ING.tropas || {})[kT] || {};
       filas.push(cols.map(function (k) {
@@ -2010,7 +2167,8 @@ function exportCSV() {
   var blob = new Blob(['﻿' + filas.join('\r\n')], {type: 'text/csv;charset=utf-8'});
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'compras_liquidaciones_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.download = 'compras_liquidaciones_' + new Date().toISOString().slice(0, 10)
+    + (gTxt() ? '_filtrado' : '') + '.csv';
   document.body.appendChild(a); a.click();
   setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
 }
@@ -2022,6 +2180,7 @@ function filasActivas() {
     if (String(o.estado || '').toLowerCase() === 'anulada') return;
     var R = liqCalcular(o);
     R.categorias.forEach(function (c) {
+      if (!gPasaLinea(o, c)) return;   // v15.100 · filtro base: propietario + desde globales
       out.push({o: o, c: c, mes: mesDe(o.fecha)});
     });
   });
@@ -2037,7 +2196,7 @@ function filasFiltradas(excepto) {
     if (RFIL.cat  && excepto !== 'cat'  && f.c.categoria     !== RFIL.cat)  return false;
     if (RFIL.cons && excepto !== 'cons' && f.o.consignataria !== RFIL.cons) return false;
     if (RFIL.mes  && excepto !== 'mes'  && f.mes             !== RFIL.mes)  return false;
-    if (RFIL.prop && excepto !== 'prop' && f.c.hotelero      !== RFIL.prop) return false;
+    if (RFIL.prop && excepto !== 'prop' && propDe(f.c.hotelero) !== RFIL.prop) return false;
     return true;
   });
 }
@@ -2110,6 +2269,9 @@ var CAT_COLOR = {Vaca: '#1a1612', Vaquillona: '#b8922a', Novillo: '#2d6a8a',
                  Novillito: '#d4a84b', Ternero: '#27613d', Ternera: '#8a827a', Toro: '#c0392b'};
 
 function rResumen() {
+  if (gProp()) RFIL.prop = null;   // v15.100 · un solo filtro de propietario
+  document.getElementById('sub-res').textContent = gTxt()
+    ? gTxt() + ' · los filtros de las tablas se aplican encima' : '';
   var F = filasFiltradas();
   var NOM = {cat: 'Categoría', cons: 'Consignataria', mes: 'Mes', prop: 'Propietario'};
   var chips = '';
@@ -2142,7 +2304,10 @@ function rResumen() {
   tablaRes('t-cat',  'Categoría',     agrupar(filasFiltradas('cat'),  function (f) { return f.c.categoria; }),     'cat');
   tablaRes('t-cons', 'Consignataria', agrupar(filasFiltradas('cons'), function (f) { return f.o.consignataria; }), 'cons');
   tablaRes('t-mes',  'Mes',           agrupar(filasFiltradas('mes'),  function (f) { return f.mes; }),             'mes');
-  tablaRes('t-prop', 'Propietario',   agrupar(filasFiltradas('prop'), function (f) { return f.c.hotelero; }),      'prop');
+  // v15.100 · por propietario consolidado (Bulltrade = PEGSA); si el global ya
+  // fija uno, la tabla no filtra (sería un segundo chip de propietario)
+  tablaRes('t-prop', 'Propietario',   agrupar(filasFiltradas('prop'), function (f) { return propDe(f.c.hotelero); }),
+           gProp() ? null : 'prop');
   graficoMes(F);
 }
 
@@ -2203,8 +2368,8 @@ function graficoMes(F) {
 function informePDF() {
   var F = filasFiltradas();
   var NOMF = {cat: 'Categoría', cons: 'Consignataria', mes: 'Mes', prop: 'Propietario'};
-  var filtrosTxt = Object.keys(RFIL).filter(function (k) { return RFIL[k]; })
-    .map(function (k) { return NOMF[k] + ': ' + RFIL[k]; }).join(' · ');
+  var filtrosTxt = [gTxt()].concat(Object.keys(RFIL).filter(function (k) { return RFIL[k]; })   // v15.100
+    .map(function (k) { return NOMF[k] + ': ' + RFIL[k]; })).filter(Boolean).join(' · ');
   var T = agrupar(F, function () { return 'todo'; })[0];
   if (!T) { toast('No hay liquidaciones para informar.', 'err'); return; }
   var img = '';
@@ -2288,9 +2453,11 @@ function informePDF() {
   h += tabla('Por mes', agrupar(F, function (f) { return f.mes; }));
 
   // v15.74.5 · semáforo: cuántas tropas en cada estado y cuáles hay que acomodar
-  var cnt = {ok: 0, revisar: 0, sin_liquidar: 0, terceros: 0}, pend = [];
+  // v15.100 · sólo las tropas que pasan el filtro global
+  var cnt = semConteo(), pend = [];
   Object.keys(SEM).forEach(function (k) {
-    var e = SEM[k].estado; cnt[e] = (cnt[e] || 0) + 1;
+    if (!gPasaTropaK(k)) return;
+    var e = SEM[k].estado;
     if (e === 'revisar' || e === 'sin_liquidar') {
       var t = (ING.tropas || {})[k] || tropaSinWc(k) || {};
       pend.push({k: k, t: t, e: e, m: liqMotivosTxt(SEM[k].motivos)});
