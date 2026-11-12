@@ -10996,11 +10996,12 @@ def _pub_hay_que_copiar(src, dst):
 
 
 def _pub_bytes_distintos(src, dst):
-    import filecmp
+    # Lectura directa: filecmp.cmp cachea por (ruta, tamaño, mtime) dentro del
+    # proceso y puede dar "igual" con contenido distinto del mismo tamaño.
     if not Path(dst).exists():
         return True
     try:
-        return not filecmp.cmp(str(src), str(dst), shallow=False)
+        return Path(src).read_bytes() != Path(dst).read_bytes()
     except Exception:
         return True
 
