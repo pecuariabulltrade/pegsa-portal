@@ -58,7 +58,8 @@ function _colorCampo(nombre){
 function initHistorico(){
   if(_histInited) return;
   _histInited = true;
-  var base = window.DATA_BASE_URL || 'https://raw.githubusercontent.com/pecuariabulltrade/pegsa-portal/main/';
+  // v15.102: del propio sitio (misma base que los demás módulos), no de raw.githubusercontent.com
+  var base = window.DATA_BASE_URL || ((typeof STOCK_SB !== 'undefined' ? STOCK_SB : '/pegsa-portal') + '/');
   Promise.all([
     fetch(base + 'stock_diario.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),
     fetch(base + 'comportamiento_historico.json').then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}),

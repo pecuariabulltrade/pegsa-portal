@@ -1,4 +1,4 @@
-/* core-home.js — Login, navegación y helpers globales · 2026-04-26 · v15.97: fuera loadHomeKpis */
+/* core-home.js — Login, navegación y helpers globales · 2026-04-26 · v15.97: fuera loadHomeKpis · v15.102: sesión recordada + identidad de Cloudflare Access */
 
 
 const USERS={
@@ -11,6 +11,43 @@ const USERS={
 };
 // v15.95: sin selector de período (era del Estado de Resultados).
 let currentUser=null;
+let origenSesion=null; // v15.102: 'password' | 'cloudflare'
+
+/* v15.102 · Sesión recordada: misma clave y formato que mobile.jsx (sessionStorage,
+   8 horas; solo usuario y hora, NUNCA la contraseña). Al compartirla, pasar del móvil
+   a index.html?mod=… tampoco pide contraseña. */
+const SESION_KEY='pegsa_mobile_user';
+const SESION_TTL_MS=8*60*60*1000;
+function sesionLeer(){
+  try{
+    const s=JSON.parse(sessionStorage.getItem(SESION_KEY)||'null');
+    if(!s||!s.ts||!s.username)return null;
+    if(Date.now()-s.ts>SESION_TTL_MS){sessionStorage.removeItem(SESION_KEY);return null;}
+    return s;
+  }catch(e){return null;}
+}
+function sesionGuardar(username,origen){
+  const a=USERS[username];if(!a)return;
+  try{sessionStorage.setItem(SESION_KEY,JSON.stringify({username:username,name:a.name,initials:a.initials,ts:Date.now(),origen:origen}));}catch(e){}
+}
+function sesionBorrar(){try{sessionStorage.removeItem(SESION_KEY);}catch(e){}}
+
+/* v15.102 · Identidad de Cloudflare Access. Detrás de Access, /cdn-cgi/access/get-identity
+   (mismo origen) devuelve un JSON con `email`. Quién entra lo decide la política de
+   Cloudflare: hoy todos los mails autorizados son de gerencia, así que cualquier identidad
+   válida entra como 'gerencia'. NO poner mails en este archivo (el repo es público): cuando
+   haya perfiles distintos por mail, el mapa va en un archivo que no se publique en un repo
+   público. En GitHub Pages no se consulta (no hay Access y el 404 ensucia la consola). */
+function identidadCloudflare(){
+  if(/\.github\.io$/i.test(location.hostname))return Promise.resolve(null);
+  const ctl=(typeof AbortController==='function')?new AbortController():null;
+  const t=setTimeout(()=>{if(ctl)ctl.abort();},2500);
+  return fetch('/cdn-cgi/access/get-identity',{cache:'no-store',credentials:'same-origin',signal:ctl?ctl.signal:undefined})
+    .then(r=>r.ok?r.json():null)
+    .then(j=>(j&&typeof j.email==='string'&&j.email.indexOf('@')>0)?j.email:null)
+    .catch(()=>null)
+    .finally(()=>clearTimeout(t));
+}
 
 function tryLogin(){
   const u=document.getElementById('inputUser').value.trim().toLowerCase();
@@ -20,7 +57,14 @@ function tryLogin(){
   if(!u||!p){showErr('Completá usuario y contraseña.');return;}
   const acc=USERS[u];
   if(!acc||acc.pass!==p){showErr('Usuario o contraseña incorrectos.');shake();return;}
-  currentUser=acc;
+  sesionGuardar(u,'password');
+  entrar(u,'password',true);
+}
+
+// v15.102: lo que pasa después de validar (antes estaba dentro de tryLogin).
+function entrar(username,origen,animar){
+  const acc=USERS[username];if(!acc)return false;
+  currentUser=acc;origenSesion=origen||'password';
   // Defensive: estos elementos pueden no existir si el screenHome fue reemplazado
   ['tbAvatar','tbAvatar2','tbAvatar3'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=acc.initials;});
   var _tbUser = document.getElementById('tbUser'); if(_tbUser) _tbUser.textContent = acc.name;
@@ -28,10 +72,12 @@ function tryLogin(){
     card.style.display=acc.modules.includes(card.dataset.mod)?'':'none';
   });
   const ls=document.getElementById('screenLogin');
-  ls.style.opacity='0';ls.style.transition='opacity .35s ease';
-  setTimeout(()=>{showScreen('screenHome');document.body.style.background='';sbInit(currentUser);
+  const fin=()=>{showScreen('screenHome');document.body.style.background='';ls.style.visibility='';sbInit(currentUser);
     // v15.89: un link #caravana=<nro> abre la consulta directo después del login
-    if(/caravana=/.test(location.hash)&&acc.modules.includes('caravana'))sbNavigate('caravana');},350);
+    if(/caravana=/.test(location.hash)&&acc.modules.includes('caravana'))sbNavigate('caravana');};
+  if(animar){ls.style.opacity='0';ls.style.transition='opacity .35s ease';setTimeout(fin,350);}
+  else fin();
+  return true;
 }
 function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.classList.add('show');}
 function shake(){const b=document.querySelector('.login-box');b.style.animation='shake .4s ease';setTimeout(()=>b.style.animation='',400);}
@@ -110,16 +156,41 @@ function openModule(mod){
 
 function goHome(){if(typeof sbSetActive==="function") sbSetActive("home");showScreen('screenHome');document.body.style.background='';window.scrollTo(0,0);}
 function logout(){
-  currentUser=null;
+  const porCloudflare=(origenSesion==='cloudflare');
+  sesionBorrar();
+  currentUser=null;origenSesion=null;
+  // v15.102: si se entró con la identidad de Cloudflare, "Salir" cierra esa sesión
+  // (volver a entrar pide el código por mail).
+  if(porCloudflare){location.href='/cdn-cgi/access/logout';return;}
   document.querySelectorAll('.module-card[data-mod]').forEach(card=>{card.style.display='';});
   sbHide();showScreen('screenLogin');document.body.style.background='';
   const ls=document.getElementById('screenLogin');
-  ls.style.display='flex';ls.style.opacity='0';
+  ls.style.display='flex';ls.style.opacity='0';ls.style.visibility='';
   document.getElementById('inputPass').value='';
   document.getElementById('loginErr').classList.remove('show');
   setTimeout(()=>{ls.style.opacity='1';ls.style.transition='opacity .35s ease';},10);
 }
-window.addEventListener('load',()=>document.getElementById('inputUser').focus());
+
+/* v15.102 · Arranque: 1) sesión guardada vigente → entra; 2) identidad de Cloudflare →
+   entra como gerencia; 3) login como siempre. El login queda oculto mientras se decide
+   (sin parpadeo). Se entra recién en 'load', cuando ya cargaron todos los módulos (igual
+   que cuando alguien escribe la contraseña). */
+(function arranque(){
+  const ls=document.getElementById('screenLogin');
+  const cargada=new Promise(r=>{if(document.readyState==='complete')r();else window.addEventListener('load',r,{once:true});});
+  const mostrarLogin=()=>{if(ls)ls.style.visibility='';cargada.then(()=>{const i=document.getElementById('inputUser');if(i&&!currentUser)i.focus();});};
+  if(ls)ls.style.visibility='hidden';
+  const s=sesionLeer();
+  if(s&&USERS[s.username]){
+    cargada.then(()=>{if(!currentUser)entrar(s.username,s.origen||'password',false);});
+    return;
+  }
+  identidadCloudflare().then(email=>{
+    if(!email){mostrarLogin();return;}
+    sesionGuardar('gerencia','cloudflare');
+    cargada.then(()=>{if(!currentUser)entrar('gerencia','cloudflare',false);});
+  });
+})();
 
 
 /* ════════════════════════════════════════════════════════════

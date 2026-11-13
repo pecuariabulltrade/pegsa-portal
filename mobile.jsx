@@ -41,7 +41,7 @@ function loadSession() {
     return s;
   } catch (e) { return null; }
 }
-function saveSession(username) {
+function saveSession(username, origen) {
   const acc = USERS[username];
   if (!acc) return;
   try {
@@ -49,9 +49,23 @@ function saveSession(username) {
       username: username,
       name: acc.name,
       initials: acc.initials,
-      ts: Date.now()
+      ts: Date.now(),
+      origen: origen || 'password'   // v15.102: 'password' | 'cloudflare'
     }));
   } catch (e) {}
+}
+/* v15.102 · Identidad de Cloudflare Access (misma regla que js/core-home.js): detrás de
+   Access, /cdn-cgi/access/get-identity trae `email`; hoy todos los autorizados son de
+   gerencia. Sin mails en el código (repo público). En GitHub Pages no se consulta. */
+function mobIdentidadCF() {
+  if (/\.github\.io$/i.test(location.hostname)) return Promise.resolve(null);
+  const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const t = setTimeout(() => { if (ctl) ctl.abort(); }, 2500);
+  return fetch('/cdn-cgi/access/get-identity', { cache: 'no-store', credentials: 'same-origin', signal: ctl ? ctl.signal : undefined })
+    .then((r) => r.ok ? r.json() : null)
+    .then((j) => (j && typeof j.email === 'string' && j.email.indexOf('@') > 0) ? j.email : null)
+    .catch(() => null)
+    .finally(() => clearTimeout(t));
 }
 function clearSession() {
   try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
@@ -1602,6 +1616,15 @@ function TabBar({ active, onChange }) {
    ============================================================ */
 function App() {
   const [session, setSession] = useState(() => loadSession());
+  // v15.102: sin sesión guardada, probar la identidad de Cloudflare antes de mostrar el login.
+  const [cfProbando, setCfProbando] = useState(() => !loadSession());
+  useEffect(() => {
+    if (!cfProbando) return;
+    mobIdentidadCF().then((email) => {
+      if (email) { saveSession('gerencia', 'cloudflare'); setSession(loadSession()); }
+      setCfProbando(false);
+    });
+  }, []);
   // v4: state `tab` eliminado junto con la barra de tabs superior.
   const [bottomTab, setBottomTab] = useState("panel");
   const [modalContent, setModalContent] = useState(null);
@@ -1676,11 +1699,15 @@ function App() {
 
   // Login gate
   if (!session) {
+    if (cfProbando) return null;   // v15.102: sin parpadeo del login mientras se decide
     return <LoginScreen onLogin={(u) => setSession(loadSession())} />;
   }
 
   const onLogout = () => {
+    const porCloudflare = session && session.origen === 'cloudflare';
     clearSession();
+    // v15.102: con identidad de Cloudflare, "Salir" cierra esa sesión.
+    if (porCloudflare) { location.href = '/cdn-cgi/access/logout'; return; }
     setSession(null);
   };
 
