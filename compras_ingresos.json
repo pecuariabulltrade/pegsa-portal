@@ -1,13 +1,13 @@
 {
   "meta": {
-    "generado": "2026-11-13T00:03:01.225240",
+    "generado": "2026-11-13T06:03:34.158287",
     "desde": "2024-01-09",
-    "hasta": "2026-11-11",
+    "hasta": "2026-11-12",
     "dias": 1039,
     "ventana_pedida_dias": 730,
     "ventana_pedida_desde": "2024-11-13",
-    "n_tropas": 599,
-    "n_grupos": 1030,
+    "n_tropas": 602,
+    "n_grupos": 1033,
     "excluidas": 192,
     "excluidas_por": [
       "destete",
@@ -15,7 +15,7 @@
     ],
     "vendidas_desde": "2026-07-01",
     "categorias": {
-      "caravanas": 599,
+      "caravanas": 602,
       "remito": 0,
       "distintas_al_remito": 166,
       "cob_min": 90,
@@ -1758,6 +1758,48 @@
       "fuente_categorias": "caravanas",
       "remito_distinto": true,
       "en_stock": 0,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
+    },
+    "BULDAR111126": {
+      "tropa": "BUL.DAR.11/11/2026",
+      "hotelero": "PEGSA",
+      "fecha": "2026-11-11",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 59,
+      "kg_ingreso": 28125.0,
+      "categorias": [
+        "Vaca"
+      ],
+      "kg_cab": 476.7,
+      "categorias_remito": [
+        "Vaca"
+      ],
+      "remito": [
+        {
+          "categoria": "Vaca",
+          "cabezas": 59,
+          "kg_ingreso": 28125.0,
+          "kg_cab": 476.7
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Vaca",
+          "cabezas": 59,
+          "kg_ingreso": 28125.0,
+          "kg_cab": 476.7
+        }
+      ],
+      "cab_real": 59,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 59,
       "vendidas": 0,
       "vendidas_imputadas": 0,
       "muertas": 0
@@ -13388,6 +13430,48 @@
       "vendidas": 37,
       "vendidas_imputadas": 4,
       "muertas": 1
+    },
+    "PEGDAR111126": {
+      "tropa": "PEG.DAR.11/11/2026",
+      "hotelero": "PEGSA",
+      "fecha": "2026-11-12",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 62,
+      "kg_ingreso": 16395.0,
+      "categorias": [
+        "Ternero"
+      ],
+      "kg_cab": 264.4,
+      "categorias_remito": [
+        "Ternero"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 62,
+          "kg_ingreso": 16395.0,
+          "kg_cab": 264.4
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Ternero",
+          "cabezas": 62,
+          "kg_ingreso": 16395.0,
+          "kg_cab": 264.4
+        }
+      ],
+      "cab_real": 62,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 62,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
     },
     "PEGDAR111224": {
       "tropa": "PEG.DAR.11/12/24",
@@ -27549,6 +27633,48 @@
       "vendidas": 2,
       "vendidas_imputadas": 0,
       "muertas": 16
+    },
+    "TAPDAR111126": {
+      "tropa": "TAP.DAR.11/11/2026",
+      "hotelero": "LAS TAPERAS",
+      "fecha": "2026-11-12",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "cabezas": 1,
+      "kg_ingreso": 225.0,
+      "categorias": [
+        "Ternera"
+      ],
+      "kg_cab": 225.0,
+      "categorias_remito": [
+        "Ternera"
+      ],
+      "remito": [
+        {
+          "categoria": "Ternera",
+          "cabezas": 1,
+          "kg_ingreso": 225.0,
+          "kg_cab": 225.0
+        }
+      ],
+      "categorias_real": [
+        {
+          "categoria": "Ternera",
+          "cabezas": 1,
+          "kg_ingreso": 225.0,
+          "kg_cab": 225.0
+        }
+      ],
+      "cab_real": 1,
+      "cobertura_pct": 100.0,
+      "dif_remito": 0,
+      "cab_sin_caravana": 0,
+      "fuente_categorias": "caravanas",
+      "remito_distinto": false,
+      "en_stock": 1,
+      "vendidas": 0,
+      "vendidas_imputadas": 0,
+      "muertas": 0
     },
     "TAPDAR111225": {
       "tropa": "TAP.DAR.11/12/25",
@@ -48678,6 +48804,24 @@
       "fuente": "caravanas"
     },
     {
+      "tropa": "BUL.DAR.11/11/2026",
+      "tropa_norm": "BULDAR111126",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-11-11",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "CAMPO",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Vaca",
+      "categoria_sigla": "VA",
+      "cabezas": 59,
+      "kg_ingreso": 28125.0,
+      "kg_cab": 476.7,
+      "fuente": "caravanas"
+    },
+    {
       "tropa": "SAG.DAR.11/11/2026",
       "tropa_norm": "SAGDAR111126",
       "hotelero": "EL SAGUAIPE SAS",
@@ -48729,6 +48873,42 @@
       "cabezas": 81,
       "kg_ingreso": 29353.6,
       "kg_cab": 362.4,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "PEG.DAR.11/11/2026",
+      "tropa_norm": "PEGDAR111126",
+      "hotelero": "PEGSA",
+      "fecha_ingreso": "2026-11-12",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Ternero",
+      "categoria_sigla": "TM",
+      "cabezas": 62,
+      "kg_ingreso": 16395.0,
+      "kg_cab": 264.4,
+      "fuente": "caravanas"
+    },
+    {
+      "tropa": "TAP.DAR.11/11/2026",
+      "tropa_norm": "TAPDAR111126",
+      "hotelero": "LAS TAPERAS",
+      "fecha_ingreso": "2026-11-12",
+      "consignatario": "DARWASH SA",
+      "proveedor": "DARWASH SA",
+      "origen": "FERIAS Y REMATES",
+      "localidad": "WASHINGTON",
+      "destino_compra": "CONSUMO",
+      "camiones": 1,
+      "categoria": "Ternera",
+      "categoria_sigla": "TH",
+      "cabezas": 1,
+      "kg_ingreso": 225.0,
+      "kg_cab": 225.0,
       "fuente": "caravanas"
     }
   ]
