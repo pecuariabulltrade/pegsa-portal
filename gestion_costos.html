@@ -141,10 +141,13 @@
 <main>
   <!-- LOGIN: sin sesión no se pide ningún dato -->
   <div id="login" class="oculto">
-    <div class="card">
+    <p id="lIngresando" class="muted oculto">Ingresando…</p>
+    <div class="card" id="lCard">
       <h2>Acceso restringido</h2>
-      <p class="muted" style="margin-top:0">Resultados de gestión y costos. Ingresá con tu usuario de
-        <b>Gestión</b> (Supabase · proyecto «gestion»; no es el de Hotelería ni el del portal).</p>
+      <p class="muted" style="margin-top:0">Resultados de gestión y costos. Si entraste al portal, se ingresa
+        solo con esa sesión. Si no, ingresá con tu email y contraseña de <b>Gestión</b> (Supabase · proyecto
+        «gestion»; no es el usuario de Hotelería).</p>
+      <button class="btn sec oculto" id="lPase" style="width:100%;margin-bottom:12px">Entrar con la sesión del portal</button>
       <div class="lbl">Email</div><input id="lEmail" type="email" autocomplete="username">
       <div class="lbl">Contraseña</div><input id="lPass" type="password" autocomplete="current-password">
       <div id="lErr" class="aviso err oculto"></div>
@@ -220,27 +223,108 @@ GC.leer = async function (tabla, filtros, orden) {
 };
 
 /* ── sesión ── */
+/* v15.104 · pase directo: detrás de Cloudflare, quien entró al portal con Microsoft
+   (identidad de Access con idp.type 'oidc') entra a Gestión y Costos sin email ni
+   contraseña: Supabase con el proveedor custom:cloudflare y flujo PKCE. Vuelve con
+   ?code= y el cliente lo canjea solo al crearse (no llamar exchangeCodeForSession).
+   El #vista se guarda antes de salir y se restaura al volver. Sin mails ni ids acá. */
+var PASE = {intento: 'gc_pase_intento', salio: 'gc_pase_salio', fallo: 'gc_pase_fallo', hash: 'gc_pase_hash'};
+var PASE_MSG = 'No se pudo entrar con la sesión del portal. Entrá con tu email y contraseña.';
+function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function ssSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* sin storage */ } }
+function ssDel(k) { try { sessionStorage.removeItem(k); } catch (e) { /* sin storage */ } }
+/* error de la vuelta (?error=…): se lee y se limpia ANTES de crear el cliente */
+function paseErrorDeUrl() {
+  var q = new URLSearchParams(location.search);
+  if (!q.has('error') && !q.has('error_code') && !q.has('error_description')) return null;
+  var e = {error: q.get('error'), code: q.get('error_code'), desc: q.get('error_description')};
+  ['error', 'error_code', 'error_description'].forEach(function (k) { q.delete(k); });
+  var qs = q.toString();
+  try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (x) { /* file:// */ }
+  return e;
+}
+/* identidad de Cloudflare Access (mismo origen); no existe en GitHub Pages ni en file:// */
+async function identidadPortal() {
+  if (!/^https?:$/.test(location.protocol) || /\.github\.io$/i.test(location.hostname)) return null;
+  var ctl = window.AbortController ? new AbortController() : null;
+  var t = setTimeout(function () { if (ctl) ctl.abort(); }, 2500);
+  try {
+    var r = await fetch('/cdn-cgi/access/get-identity', {cache: 'no-store', credentials: 'same-origin', signal: ctl ? ctl.signal : undefined});
+    if (!r.ok) return null;
+    var j = await r.json();
+    return j && j.email ? j : null;
+  } catch (e) { return null; } finally { clearTimeout(t); }
+}
+function esOidc(idp) { return !!(idp && idp.idp && idp.idp.type === 'oidc'); }
+function intentoReciente() { var t = Number(ssGet(PASE.intento)); return t > 0 && Date.now() - t < 60000; }
+/* devuelve null si ya está redirigiendo, o el mensaje de error */
+async function lanzarPase() {
+  ssSet(PASE.intento, String(Date.now()));
+  if (location.hash) ssSet(PASE.hash, location.hash);
+  try {
+    var r = await GC.sb.auth.signInWithOAuth({provider: 'custom:cloudflare', options: {redirectTo: location.origin + location.pathname}});
+    if (r && r.error) { console.warn('[gestion] pase directo:', r.error); ssSet(PASE.fallo, '1'); return PASE_MSG; }
+    return null;
+  } catch (e) { console.warn('[gestion] pase directo:', e); ssSet(PASE.fallo, '1'); return PASE_MSG; }
+}
+function entrarCon(user) {
+  ssDel(PASE.intento);
+  var h = ssGet(PASE.hash); ssDel(PASE.hash);
+  if (h && !location.hash) { try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { /* file:// */ } }
+  return GC.iniciar(user);
+}
 async function arrancar() {
   if (!window.supabase) { $('sinRed').classList.remove('oculto'); return; }
-  GC.sb = window.supabase.createClient(GC_CFG.url, GC_CFG.anon, {auth: {persistSession: true, storageKey: 'pegsa-gestion-auth'}});
+  var err = paseErrorDeUrl();
+  GC.sb = window.supabase.createClient(GC_CFG.url, GC_CFG.anon, {auth: {persistSession: true, storageKey: 'pegsa-gestion-auth', flowType: 'pkce'}});
   var s = await GC.sb.auth.getSession();
-  if (s.data && s.data.session) return GC.iniciar(s.data.session.user);
-  mostrarLogin();
+  if (s.data && s.data.session) return entrarCon(s.data.session.user);
+  $('login').classList.remove('oculto'); $('lCard').classList.add('oculto'); $('lIngresando').classList.remove('oculto');
+  var msg = null;
+  if (err) {
+    console.warn('[gestion] la vuelta del pase directo trajo un error:', err);
+    ssDel(PASE.intento); ssDel(PASE.hash); ssSet(PASE.fallo, '1');
+    msg = err.code === 'signup_disabled'
+      ? 'Tu usuario todavía no está dado de alta en Gestión y Costos. Pedile el alta a Nicolás o entrá con tu email y contraseña.'
+      : PASE_MSG;
+  }
+  var idp = await identidadPortal(), oidc = esOidc(idp);
+  if (!err && oidc && !intentoReciente() && !ssGet(PASE.salio) && !ssGet(PASE.fallo)) {
+    msg = await lanzarPase();
+    if (!msg) return;            /* redirigiendo: queda «Ingresando…» */
+  }
+  mostrarLogin(msg, oidc);
 }
-function mostrarLogin(msg) {
+function mostrarLogin(msg, conPase) {
   $('app').classList.add('oculto'); $('nav').classList.add('oculto'); $('sesion').innerHTML = '';
-  $('login').classList.remove('oculto');
+  $('login').classList.remove('oculto'); $('lIngresando').classList.add('oculto'); $('lCard').classList.remove('oculto');
+  if (conPase !== undefined) $('lPase').classList.toggle('oculto', !conPase);
   if (msg) { $('lErr').textContent = msg; $('lErr').classList.remove('oculto'); }
 }
+$('lPase').onclick = async function () {
+  $('lErr').classList.add('oculto');
+  ssDel(PASE.salio); ssDel(PASE.fallo); ssDel(PASE.intento);
+  $('lCard').classList.add('oculto'); $('lIngresando').classList.remove('oculto');
+  var msg = await lanzarPase();
+  if (msg) mostrarLogin(msg);
+};
 $('lBtn').onclick = async function () {
   $('lErr').classList.add('oculto');
   var r = await GC.sb.auth.signInWithPassword({email: $('lEmail').value.trim(), password: $('lPass').value});
   if (r.error) return mostrarLogin(r.error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos.' : r.error.message);
   $('lPass').value = '';
-  GC.iniciar(r.data.user);
+  ssDel(PASE.salio); ssDel(PASE.fallo);
+  entrarCon(r.data.user);
 };
 $('lPass').onkeydown = function (e) { if (e.key === 'Enter') $('lBtn').click(); };
-async function salir() { await GC.sb.auth.signOut(); GC.cache = {}; location.reload(); }
+/* salir a mano: cierra solo este navegador y no vuelve a entrar solo hasta que se pida */
+async function salir() {
+  try { await GC.sb.auth.signOut({scope: 'local'}); } catch (e) { /* igual se muestra el login */ }
+  ssSet(PASE.salio, '1'); GC.cache = {}; GC.user = null; $('lErr').classList.add('oculto');
+  mostrarLogin(null, false);
+  var idp = await identidadPortal();
+  if (esOidc(idp) && !GC.user) $('lPase').classList.remove('oculto');
+}
 
 GC.iniciar = async function (user) {
   GC.user = user;
