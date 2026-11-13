@@ -111,6 +111,9 @@
     <div class="sb-user-info">
       <div class="sb-user-name" id="sbUserName">Usuario</div>
     </div>
+    <!-- v15.103: cerrar sesion en el escritorio. logout() (core-home.js) vuelve
+         al login, o cierra la sesion de Cloudflare Access si se entro por ahi. -->
+    <button type="button" class="sb-logout" onclick="logout()" title="Cerrar sesi&oacute;n" style="margin-left:auto;flex-shrink:0;background:none;border:1px solid rgba(255,255,255,.25);border-radius:4px;color:inherit;opacity:.75;font:inherit;font-size:11px;padding:3px 8px;cursor:pointer">Salir</button>
   </div>
 </aside>
 <!-- /APP SIDEBAR -->

@@ -1459,7 +1459,7 @@ html, body {
           <em>Uso interno · Dirección</em>
         </div>
         <div class="foot-link">
-          <a href="https://pecuariabulltrade.github.io/pegsa-portal/mobile.html"
+          <a class="portal-link" href="https://pecuariabulltrade.github.io/pegsa-portal/mobile.html"
              target="_blank" rel="noopener">pecuariabulltrade.github.io/pegsa-portal/mobile.html</a>
         </div>
       </footer>
@@ -1643,7 +1643,7 @@ html, body {
           <em>Uso interno · Dirección</em>
         </div>
         <div class="foot-link">
-          <a href="https://pecuariabulltrade.github.io/pegsa-portal/mobile.html"
+          <a class="portal-link" href="https://pecuariabulltrade.github.io/pegsa-portal/mobile.html"
              target="_blank" rel="noopener">pecuariabulltrade.github.io/pegsa-portal/mobile.html</a>
         </div>
       </footer>
@@ -1652,6 +1652,21 @@ html, body {
   </div>
 </div>
 
+<!-- v15.103: el enlace al portal sale de la direccion desde la que se abrio el
+     informe (GitHub Pages o Cloudflare). Abierto como archivo local queda el de
+     GitHub escrito en el HTML. -->
+<script>
+(function portalLink() {
+  try {
+    if (!/^https?:$/.test(location.protocol)) return;
+    var u = new URL('mobile.html', location.href);
+    var txt = u.host + u.pathname;
+    document.querySelectorAll('a.portal-link').forEach(function (a) {
+      a.href = u.href; a.textContent = txt;
+    });
+  } catch (e) {}
+})();
+</script>
 <!-- v13.0: inyección de datos reales antes del auto-print.
      El payload viene de sessionStorage (puesto por mobile.jsx
      handleSharePdf). Si no hay payload, los valores demo del HTML
